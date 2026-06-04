@@ -862,52 +862,7 @@ footer {
 }
 .ps-btn.premium { background: var(--secondary-gradient); }
 
-/* Popup */
-#tiktok-popup {
-  position: fixed; inset: 0; z-index: 99998;
-  background: rgba(15,23,42,0.5); backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-  opacity: 0; visibility: hidden; transition: all 0.35s;
-}
-#tiktok-popup.show { opacity: 1; visibility: visible; }
-.popup-box {
-  background: #fff; border-radius: 24px; padding: 28px 24px;
-  max-width: 400px; width: 100%; text-align: center;
-  border: 1px solid var(--border); box-shadow: var(--shadow-lg);
-  transform: scale(0.95); transition: transform 0.35s var(--ease-bounce);
-}
-#tiktok-popup.show .popup-box { transform: scale(1); }
-.popup-tt-icon { font-size: 40px; color: var(--ink2); margin-bottom: 12px; }
-.popup-title { font-size: 20px; font-weight: 800; margin-bottom: 8px; }
-.popup-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
-.tt-accounts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; text-align: left; }
-.tt-card {
-  display: flex; align-items: center; gap: 12px; padding: 12px;
-  background: var(--bg3); border: 1px solid var(--border); border-radius: 12px;
-  text-decoration: none; transition: all 0.2s;
-}
-.tt-card:hover { border-color: var(--primary2); background: #fff; }
-.tt-avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--ink2); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-}
-.tt-name { font-size: 13px; font-weight: 700; color: var(--ink); }
-.tt-handle { font-size: 11px; color: var(--muted); }
-.tt-role { font-size: 10px; color: var(--muted2); }
-.tt-verified { color: var(--primary); font-size: 11px; }
-.tt-follow-btn { background: var(--primary); color: #fff; font-size: 10px; font-weight: 700; padding: 6px 12px; border-radius: 8px; margin-left: auto; }
-.robot-row {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 12px; background: var(--bg3); border-radius: 10px; margin-bottom: 14px;
-  font-size: 13px;
-}
-.popup-cta {
-  width: 100%; padding: 14px; border: none; border-radius: 12px;
-  background: var(--primary-gradient); color: #fff;
-  font-size: 14px; font-weight: 700; cursor: pointer;
-}
-.popup-cta:disabled { opacity: 0.4; cursor: not-allowed; background: var(--border2); color: var(--muted); }
+
 
 #ann-details-modal { display: none; opacity: 0; visibility: hidden; transition: all 0.4s; position: fixed; inset: 0; z-index: 999999; background: rgba(15,23,42,0.5); backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 20px; }
 #ann-details-modal.show-modal { display: flex; opacity: 1; visibility: visible; }
@@ -979,29 +934,7 @@ footer {
     <i class="fa-solid fa-globe"></i> Official Website: Ini website rasmi 
   </a>
 </div>
-<div id="tiktok-popup">
-  <div class="popup-box">
-    <i class="fa-brands fa-tiktok popup-tt-icon"></i>
-    <div class="popup-title">SELAMAT DATANG! 🎉</div>
-    <p class="popup-desc">Terima kasih singgah ke <strong>H4SX Store</strong>! Follow TikTok kami untuk tawaran eksklusif.</p>
-    <div class="tt-accounts">
-      <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank" class="tt-card">
-        <div class="tt-avatar"><i class="fa-brands fa-tiktok"></i></div>
-        <div class="tt-info">
-          <div class="tt-name-row"><span class="tt-name">H4SX Store</span><i class="fa-solid fa-circle-check tt-verified"></i></div>
-          <span class="tt-handle">@h4sxshop</span>
-          <span class="tt-role">Official Store Account</span>
-        </div>
-        <div class="tt-follow-btn">FOLLOW</div>
-      </a>
-    </div>
-    <div class="robot-row">
-      <input type="checkbox" id="not-robot" onclick="checkRobot()">
-      <label for="not-robot">Saya bukan robot</label>
-    </div>
-    <button class="popup-cta" id="shopping-btn" onclick="closePopup()" disabled>🛍️ JOM SHOPPING!</button>
-  </div>
-</div>
+
 <!-- ANNOUNCEMENT DETAILS MODAL -->
 <div id="ann-details-modal">
   <div class="closure-container" style="max-width: 700px; transform: scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" id="ann-modal-content">
@@ -1387,7 +1320,6 @@ const INVENTORY_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json'
 ];
 let activePayMethod = 'duitnow';
-let popupTimer = null;
 let spamCounts = {};
 let toastTimeouts = {};
 const PAY_QR = {
@@ -1409,7 +1341,6 @@ async function fetchKedaiJson() {
   }
   return null;
 }
-function checkRobot() { document.getElementById('shopping-btn').disabled = !document.getElementById('not-robot').checked; }
 function closeAnnDetails() {
   const m = document.getElementById('ann-details-modal');
   const c = document.getElementById('ann-modal-content');
@@ -1431,28 +1362,6 @@ function openAnnDetails() {
   });
   document.body.style.overflow = 'hidden';
 }
-function closePopup() {
-  try { localStorage.setItem('h4sx_popup_closed', Date.now().toString()); } catch(e) {}
-  const p = document.getElementById('tiktok-popup');
-  p.classList.remove('show');
-  setTimeout(() => { p.style.display = 'none'; }, 400);
-  if (popupTimer) clearTimeout(popupTimer);
-  popupTimer = setTimeout(showTikTokPopupIfReady, 3600000);
-}
-function showTikTokPopupIfReady() {
-  const p = document.getElementById('tiktok-popup'); if (!p) return;
-  let last = 0;
-  try { last = parseInt(localStorage.getItem('h4sx_popup_closed') || '0'); } catch(e) {}
-  if (Date.now() - last >= 3600000) {
-    p.style.display = 'flex';
-    document.getElementById('not-robot').checked = false;
-    document.getElementById('shopping-btn').disabled = true;
-    requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add('show'))); return;
-  }
-  if (popupTimer) clearTimeout(popupTimer);
-  popupTimer = setTimeout(showTikTokPopupIfReady, Math.max(1000, 3600000 - (Date.now() - last)));
-}
-setTimeout(showTikTokPopupIfReady, 2000);
 function toggleMenu() { const m = document.getElementById('mob-menu'); m.style.display = (!m.style.display || m.style.display === 'none') ? 'block' : 'none'; }
 const VIEWS = ['home-view','product-view','checkout-view','ps-view'];
 function showView(id) {
@@ -1579,13 +1488,40 @@ async function loadInv() {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
       const data = await r.json();
-      if (Array.isArray(data) && data.length) { inventory = data; break; }
+      if (Array.isArray(data) && data.length) { 
+        inventory = data; 
+        // Save hash of inventory to localStorage for later check
+        const invHash = JSON.stringify(inventory).length + '-' + inventory.length;
+        localStorage.setItem('h4sx_inv_hash', invHash);
+        break; 
+      }
     } catch(e) {}
   }
   if (!inventory.length) {
     inventory = [{"id":4,"game":"Blox Fruits","name":"ANGEL,GHOUL,CYBORG,RABBIT,HUMAN,SHARK","originalPrice":80,"price":27,"promoLabel":"PROMOSI","desc":"SEMUA RACE V4 FULL GEAR — PILIH SATU. STATUS POLOSAN.","img":"https://i.ibb.co/BKThLPwy/image.png","sold":86,"stock":10},{"id":14,"game":"Blox Fruits","name":"Level Max Gh & Cdk. Skull Guitar","price":14,"promoLabel":"almost out of stock","desc":"GODHUMAN+CURSED DUAL KATANA+SOUL GUITAR [Level MAX]","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":200,"stock":3},{"id":23,"game":"Blox Fruits","name":"200 LEVEL SEA 2-3","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"200 LEVEL SEA 2-3","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":5,"stock":20},{"id":24,"game":"Blox Fruits","name":"200 LEVEL SEA 1","originalPrice":3,"price":1.5,"promoLabel":"BARU","desc":"UNTUK SEA 1","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":10,"stock":20},{"id":5,"game":"Brookhaven","name":"VIP GAMEPASS","originalPrice":31,"price":26,"promoLabel":"HOT","desc":"VIP GAMEPASS","img":"https://i.ibb.co/tpHXYPbc/image.png","sold":45,"stock":50},{"id":6,"game":"Brookhaven","name":"Vehicle Customization","price":16,"desc":"Vehicle Customization","img":"https://i.ibb.co/bR5fdPVr/image.png","sold":89,"stock":50},{"id":7,"game":"Brookhaven","name":"Premium Gamepass","originalPrice":13,"price":8,"promoLabel":"MOST POPULAR","desc":"Premium Gamepass","img":"https://i.ibb.co/BK50Nf0x/image.png","sold":201,"stock":50},{"id":8,"game":"Brookhaven","name":"Speed Vehicle Unlocked","price":8,"desc":"Speed Vehicle Unlocked","img":"https://i.ibb.co/JwK8kH35/image.png","sold":156,"stock":50},{"id":9,"game":"Brookhaven","name":"Vehicle Pack","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Vehicle Pack","img":"https://i.ibb.co/xKX5X0fZ/image.png","sold":34,"stock":15},{"id":10,"game":"Brookhaven","name":"Estate Unlocked","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Estate Unlocked","img":"https://i.ibb.co/277MSz0R/image.png","sold":41,"stock":15},{"id":11,"game":"Brookhaven","name":"Music Unlocked","price":8,"desc":"Music Unlocked","img":"https://i.ibb.co/v4YBMzrp/image.png","sold":203,"stock":50},{"id":13,"game":"fish it","name":"Ghostfin Rod & singularity bait","price":4,"desc":"Starter account fishit","img":"https://i.ibb.co/vnvpkvh/image.png","sold":135,"stock":30},{"id":22,"game":"fish it","name":"Bunny Staff / Easter Parasol","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/LAfMl0V.png","sold":69,"stock":5},{"id":26,"game":"fish it","name":"Golden Clockwork","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/q5bKsnv.png","sold":20,"stock":8},{"id":27,"game":"fish it","name":"Limited Skin Rod","originalPrice":24,"price":13,"promoLabel":"BARU","desc":"VIA TRADE — PILIH SALAH SATU SKIN","img":"https://i.imgur.com/feaPapV.png","sold":23,"stock":4},{"id":28,"game":"fish it","name":"Secret Tumbal","originalPrice":3,"price":0.40,"promoLabel":"BARU","desc":"Random Secret Tumbal","img":"https://i.imgur.com/oKRszAz.png","sold":192,"stock":100},{"id":17,"game":"Robux Via Log in","name":"80 ROBUX","price":4,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":20,"stock":99},{"id":18,"game":"Robux Via Log in","name":"400 ROBUX","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":39,"stock":99},{"id":19,"game":"Robux Via Log in","name":"800 ROBUX","price":33,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":19,"stock":99},{"id":20,"game":"Robux Via Log in","name":"1000 ROBUX","price":36,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":24,"stock":99},{"id":21,"game":"Robux Via Log in","name":"450 ROBUX + PREMIUM","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":35,"stock":99},{"id":29,"game":"Robux Via Log in","name":"160 ROBUX","price":7.5,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":33,"stock":99},{"id":25,"game":"Open sea for Brainrot","name":"100B/S MONEY","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"OPEN SEA FOR BRAINROT BELUM MAX / REBIRT 6","img":"https://i.ibb.co/0R8CzmrK/image.png","sold":20,"stock":50}];
   }
   renderGames();
+}
+async function checkForInventoryUpdate() {
+  try {
+    for (const url of INVENTORY_GIST_URLS) {
+      const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); 
+      if (!r.ok) continue;
+      const data = await r.json();
+      if (Array.isArray(data) && data.length) {
+        const newInvHash = JSON.stringify(data).length + '-' + data.length;
+        const savedHash = localStorage.getItem('h4sx_inv_hash');
+        if (savedHash && savedHash !== newInvHash) {
+          // Inventory changed - hard refresh!
+          window.location.reload(true); 
+          return;
+        }
+        break;
+      }
+    }
+  } catch(e) {
+    // Just ignore errors
+  }
 }
 function getDailySeed() { const d = new Date(); return Number('' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0')); }
 function seededRand(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return function() { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; }; }
@@ -1642,9 +1578,16 @@ async function startCountdown() {
 window.addEventListener('load', () => {
   loadGames().then(renderGames);
   loadInv(); loadReviews(); startCountdown(); initScrollReveal(); animateCounters();
+  // Auto-refresh when inventory changes (check every 30 seconds)
+  setInterval(checkForInventoryUpdate, 30000);
 });
 function getStockBadge(item) { const s = item.stock; if (s == null) return ''; if (s === 0) return '<span class="stock-badge out">Out of Stock</span>'; if (s <= 5) return '<span class="stock-badge low">Tinggal ' + s + '</span>'; return ''; }
-function isOutOfStock(item) { return item.stock != null && item.stock === 0; }
+function isOutOfStock(item) { 
+  if (item.stock == null) return false;
+  const cartItem = cartItems.find(ci => ci.id === item.id);
+  const currentQty = cartItem ? cartItem.qty : 0;
+  return currentQty >= item.stock; 
+}
 function renderGames() {
   document.getElementById('game-grid').innerHTML = gamesList.map(g => {
     const badge = g.badge ? '<div class="gc-badge ' + g.badge.toLowerCase() + '">' + g.badge + '</div>' : '';
@@ -1692,7 +1635,7 @@ function doSearch(q) {
     const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy" disabled style="height:26px;font-size:9px">BUY</button>' : '<button class="pbuy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')">BUY</button>';
-    return '<div class="pc" style="cursor:pointer" onclick="closeSearch();openGame(\'' + item.game.replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false"></div><div class="pbody" style="padding:10px"><div class="pname" style="font-size:13px">' + item.name + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + item.game + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
+    return '<div class="pc" style="cursor:pointer" onclick="closeSearch();openGame(\'' + item.game.replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false"></div><div class="pbody" style="padding:10px"><div class="pname" style="font-size:13px">' + item.name + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + item.game + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSearch(); closeQR(); closeProductImage(); } });
@@ -1708,7 +1651,13 @@ function animateCounters() {
   });
 }
 function getCartCount() { return cartItems.reduce((s,ci)=>s+ci.qty,0); }
-function getMaxPurchase(item) { if (!item) return null; if (Number.isFinite(item.maxPurchase) && item.maxPurchase > 0) return Math.floor(item.maxPurchase); if (item.game === 'Brookhaven') return 1; return null; }
+function getMaxPurchase(item) { 
+  if (!item) return null; 
+  if (Number.isFinite(item.maxPurchase) && item.maxPurchase > 0) return Math.floor(item.maxPurchase); 
+  if (Number.isFinite(item.stock) && item.stock > 0) return item.stock;
+  if (item.game === 'Brookhaven') return 1; 
+  return null; 
+}
 function boolFromItem(item, keys) {
   for (const k of keys) {
     if (item[k] === true) return true;
@@ -1760,6 +1709,44 @@ function updateCredentialFields() {
   back1.classList.toggle('hidden', checkoutReq.backupCodeCount < 1);
   back2.classList.toggle('hidden', checkoutReq.backupCodeCount < 2);
 }
+function updateAddButtons() {
+  // Update all product buttons (add and buy now)
+  document.querySelectorAll('.pc').forEach(card => {
+    const imgEl = card.querySelector('[data-product-id]');
+    if (!imgEl) return;
+    const itemId = parseInt(imgEl.getAttribute('data-product-id'));
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    const oos = isOutOfStock(item);
+    const addBtn = card.querySelector('.padd');
+    const buyBtn = card.querySelector('.pbuy');
+    
+    if (addBtn) {
+      addBtn.disabled = oos;
+      if (oos) {
+        addBtn.innerHTML = '<i class="fa-solid fa-ban"></i>';
+      } else {
+        addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+      }
+    }
+    if (buyBtn) {
+      buyBtn.disabled = oos;
+    }
+    card.style.opacity = oos ? '0.65' : '1';
+  });
+  
+  // Update search result buttons
+  document.querySelectorAll('#search-results .pc').forEach(card => {
+    const imgEl = card.querySelector('[data-product-id]');
+    if (!imgEl) return;
+    const itemId = parseInt(imgEl.getAttribute('data-product-id'));
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+    const oos = isOutOfStock(item);
+    const buyBtn = card.querySelector('.pbuy');
+    if (buyBtn) buyBtn.disabled = oos;
+  });
+}
 function addCart(input) {
   let item, name;
   if (typeof input === 'number') {
@@ -1785,6 +1772,7 @@ function addCart(input) {
   else cartItems.push({id: (typeof input === 'number' ? input : name), qty:1});
   
   updateBadge();
+  updateAddButtons();
   
   // Spam counter logic
   if (!spamCounts[name]) spamCounts[name] = 0;
@@ -1800,10 +1788,24 @@ function changeQty(id, delta) {
   const item = inventory.find(i=>i.id===id); const max = getMaxPurchase(item);
   if (delta > 0 && max && ci.qty >= max) { toast('Limit: ' + max + 'x', true); return; }
   ci.qty += delta; if (ci.qty<=0) cartItems = cartItems.filter(c=>c.id!==id);
-  updateBadge(); renderCart();
+  updateBadge(); 
+  renderCart();
+  updateAddButtons();
 }
-function removeItem(id) { cartItems = cartItems.filter(c=>c.id!==id); updateBadge(); renderCart(); }
-function clearCart() { if (!cartItems.length) return; cartItems=[]; updateBadge(); renderCart(); toast('Cart cleared'); }
+function removeItem(id) { 
+  cartItems = cartItems.filter(c=>c.id!==id); 
+  updateBadge(); 
+  renderCart();
+  updateAddButtons();
+}
+function clearCart() { 
+  if (!cartItems.length) return; 
+  cartItems=[]; 
+  updateBadge(); 
+  renderCart(); 
+  updateAddButtons();
+  toast('Cart cleared');
+}
 function updateBadge() {
   const count = getCartCount();
   const b = document.getElementById('cart-badge'), p = document.getElementById('cart-pill'), bnb = document.getElementById('bn-badge');
