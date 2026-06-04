@@ -942,6 +942,7 @@ footer {
   <a href="https://h4sx-store.vercel.app" target="_blank">
     <i class="fa-solid fa-globe"></i> Official Website: Ini website rasmi 
   </a>
+  <div style="margin-left: auto; color: white; font-size: 12px; font-weight: 600;" id="datetime-display"></div>
 </div>
 
 <!-- ANNOUNCEMENT DETAILS MODAL -->
@@ -1311,11 +1312,174 @@ footer {
     </div>
   </div>
 </div>
+<!-- RECEIPT MODAL -->
+<div class="qr-modal" id="receipt-modal">
+  <div class="qr-modal-bg" onclick="closeReceipt()"></div>
+  <div class="qr-modal-content" style="max-width: 500px; text-align: left;">
+    <button class="qr-modal-close" onclick="closeReceipt()"><i class="fa-solid fa-xmark"></i></button>
+    <div style="text-align: center; margin-bottom: 16px;">
+      <h2 style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">H4SX STORE</h2>
+      <p style="font-size: 12px; color: var(--muted);">Resit Pembelian</p>
+    </div>
+    <div style="padding: 16px; background: var(--bg3); border-radius: 12px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">No. Resit:</span>
+        <span style="font-size: 14px; font-weight: 800; color: var(--ink);" id="receipt-code"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Tarikh & Masa:</span>
+        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-datetime"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Negara:</span>
+        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-country">Malaysia</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Username Roblox:</span>
+        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-username"></span>
+      </div>
+    </div>
+    <div style="margin-bottom: 16px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">Item Dibeli:</h3>
+      <div id="receipt-items" style="background: var(--bg3); border-radius: 12px; padding: 12px;"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--primary); border-radius: 12px; margin-bottom: 16px;">
+      <span style="font-size: 14px; font-weight: 700; color: white;">Jumlah:</span>
+      <span style="font-size: 20px; font-weight: 800; color: white;" id="receipt-total"></span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <button class="btn-primary" onclick="copyReceipt()" style="padding: 12px 16px; font-size: 14px;">
+        <i class="fa-solid fa-copy"></i> Salin Resit
+      </button>
+      <a href="#" id="receipt-wa-link" target="_blank" class="btn-primary" style="padding: 12px 16px; font-size: 14px; text-align: center; text-decoration: none; background: #25d366;">
+        <i class="fa-brands fa-whatsapp"></i> Hantar ke WhatsApp
+      </a>
+    </div>
+  </div>
+</div>
 <a href="https://wa.me/60193263016" target="_blank" class="chat-cs-float">
   <i class="fa-brands fa-whatsapp"></i> Bantuan? Chat CS
 </a>
 <div id="toasts"></div>
 <script>
+// --- DATE & TIME DISPLAY ---
+function updateDateTime() {
+  const now = new Date();
+  const options = { 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, timeZone: 'Asia/Kuala_Lumpur'
+  };
+  const dtEl = document.getElementById('datetime-display');
+  if (dtEl) {
+    dtEl.textContent = now.toLocaleString('ms-MY', options);
+  }
+}
+updateDateTime();
+setInterval(updateDateTime, 1000);
+
+// --- RECEIPT FUNCTIONS ---
+let currentReceiptText = '';
+
+function generateReceiptCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'h4sx-';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code.toUpperCase();
+}
+
+function formatReceiptDateTime() {
+  const now = new Date();
+  const options = { 
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    hour12: false, timeZone: 'Asia/Kuala_Lumpur'
+  };
+  return now.toLocaleString('ms-MY', options);
+}
+
+function openReceipt() {
+  const username = document.getElementById('roblox-username').value;
+  const receiptCode = generateReceiptCode();
+  const receiptDatetime = formatReceiptDateTime();
+  
+  // Set receipt fields
+  document.getElementById('receipt-code').textContent = receiptCode;
+  document.getElementById('receipt-datetime').textContent = receiptDatetime;
+  document.getElementById('receipt-username').textContent = username;
+  
+  // Build receipt items
+  const receiptItemsEl = document.getElementById('receipt-items');
+  receiptItemsEl.innerHTML = '';
+  let total = 0;
+  
+  cartItems.forEach(ci => {
+    const item = inventory.find(i => i.id === ci.id);
+    if (!item) return;
+    const itemTotal = item.price * ci.qty;
+    total += itemTotal;
+    const div = document.createElement('div');
+    div.style.cssText = 'display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);';
+    div.innerHTML = `
+      <div>
+        <div style="font-size: 13px; font-weight: 700; color: var(--ink);">${item.name}</div>
+        <div style="font-size: 11px; color: var(--muted);">x${ci.qty}</div>
+      </div>
+      <div style="font-size: 13px; font-weight: 800; color: var(--primary);">RM${itemTotal.toFixed(2)}</div>
+    `;
+    receiptItemsEl.appendChild(div);
+  });
+  
+  document.getElementById('receipt-total').textContent = `RM${total.toFixed(2)}`;
+  
+  // Build receipt text for copy/WA
+  currentReceiptText = `
+H4SX STORE - RESIT PEMBELIAN
+============================
+No. Resit: ${receiptCode}
+Tarikh & Masa: ${receiptDatetime}
+Negara: Malaysia
+Username Roblox: ${username}
+
+Item Dibeli:
+`;
+  cartItems.forEach(ci => {
+    const item = inventory.find(i => i.id === ci.id);
+    if (!item) return;
+    currentReceiptText += `- ${item.name} x${ci.qty} = RM${(item.price * ci.qty).toFixed(2)}\n`;
+  });
+  currentReceiptText += `
+============================
+Jumlah: RM${total.toFixed(2)}
+============================
+Terima kasih kerana membeli di H4SX STORE!
+`;
+  
+  // Update WA link
+  const waLink = document.getElementById('receipt-wa-link');
+  waLink.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(currentReceiptText)}`;
+  
+  // Show modal
+  const modal = document.getElementById('receipt-modal');
+  modal.classList.add('show');
+}
+
+function closeReceipt() {
+  const modal = document.getElementById('receipt-modal');
+  modal.classList.remove('show');
+}
+
+function copyReceipt() {
+  navigator.clipboard.writeText(currentReceiptText).then(() => {
+    toast('Resit disalin ke papan keratan!', false);
+  }).catch(err => {
+    console.error('Copy failed:', err);
+    toast('Gagal menyalin resit', true);
+  });
+}
+
 // --- CONFIGURATION ---
 const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pixel-earth-low-poly-139cb0a9b41a4e088dd42ca4871a3125'; 
 // 💡 Tukar link kat atas ni je kalau nak tukar model background.
@@ -1923,19 +2087,9 @@ function valCO() {
   const backup1Ok = checkoutReq.backupCodeCount < 1 || backup1.length >= 3;
   const backup2Ok = checkoutReq.backupCodeCount < 2 || backup2.length >= 3;
   if (usernameOk && loginOk && passOk && backup1Ok && backup2Ok) {
-    b.classList.remove('dis'); b.innerHTML = 'Send Receipt to Admin &nbsp;<i class="fa-solid fa-arrow-right"></i>';
-    const payLabel = PAY_QR[activePayMethod] ? PAY_QR[activePayMethod].wa : 'DuitNow QR';
-    let msg = '*H4SX STORE ORDER*\n\n*Username:* ' + u + '\n*Bayaran:* ' + payLabel + '\n*Items:*\n';
-    cartItems.forEach((ci,x) => { const it = inventory.find(i=>i.id===ci.id); if (it) msg += (x+1) + '. ' + it.name + (ci.qty>1?' ×'+ci.qty:'') + ' — RM' + (it.price*ci.qty).toFixed(2) + '\n'; });
-    if (checkoutReq.requireLogin || checkoutReq.requirePassword || checkoutReq.backupCodeCount > 0) {
-      msg += '\n*Login Details (Untuk item tertentu):*\n';
-      if (checkoutReq.requireLogin) msg += '- Login Username: ' + loginUser + '\n';
-      if (checkoutReq.requirePassword) msg += '- Login Password: ' + loginPass + '\n';
-      if (checkoutReq.backupCodeCount >= 1) msg += '- Backup Code 1: ' + backup1 + '\n';
-      if (checkoutReq.backupCodeCount >= 2) msg += '- Backup Code 2: ' + backup2 + '\n';
-    }
-    msg += '\n*Total: RM' + tot.toFixed(2) + '*';
-    b.href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(msg);
+    b.classList.remove('dis'); b.innerHTML = 'Generate Receipt &nbsp;<i class="fa-solid fa-arrow-right"></i>';
+    b.onclick = openReceipt;
+    b.href = 'javascript:void(0)';
   } else {
     b.classList.add('dis');
     if (!usernameOk) b.innerHTML = 'Enter username first';
@@ -1945,6 +2099,7 @@ function valCO() {
     else if (!backup2Ok) b.innerHTML = 'Isi backup code 2';
     else b.innerHTML = 'Lengkapkan maklumat';
     b.href = 'javascript:void(0)';
+    b.onclick = null;
   }
 }
 function selectPay(method) {
