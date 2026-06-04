@@ -102,18 +102,33 @@ body {
 /* Closure */
 #closure-overlay {
   position: fixed; inset: 0; z-index: 999999999;
-  background: rgba(248, 250, 252, 0.95);
-  backdrop-filter: blur(20px);
+  background: transparent;
+  backdrop-filter: blur(10px);
   display: none; align-items: center; justify-content: center;
   padding: var(--container-padding);
 }
+#closure-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(14,165,233,0.3), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 0%, rgba(124,58,237,0.25), transparent 45%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(16,185,129,0.2), transparent 40%),
+    radial-gradient(ellipse 40% 30% at 10% 80%, rgba(245,158,11,0.15), transparent 40%);
+  pointer-events: none;
+  opacity: 0.8;
+}
 .closure-container {
-  background: var(--card);
+  background: rgba(255,255,255,0.85);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: clamp(28px, 5vw, 48px);
   max-width: 520px; width: 100%; text-align: center;
   box-shadow: var(--shadow-lg);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(15px);
 }
 .closure-icon { font-size: clamp(40px, 8vw, 64px); margin-bottom: 16px; }
 .closure-title { font-family: var(--ff-disp); font-size: clamp(22px, 4vw, 32px); font-weight: 800; color: var(--ink2); margin-bottom: 12px; }
