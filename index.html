@@ -1317,49 +1317,54 @@ footer {
   <div class="qr-modal-bg" onclick="closeReceipt()"></div>
   <div class="qr-modal-content" style="max-width: 500px; text-align: left;">
     <button class="qr-modal-close" onclick="closeReceipt()"><i class="fa-solid fa-xmark"></i></button>
-    <div style="text-align: center; margin-bottom: 16px;">
-      <h2 style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">H4SX STORE</h2>
-      <p style="font-size: 12px; color: var(--muted);">Resit Pembelian</p>
-    </div>
-    <div style="padding: 16px; background: var(--bg3); border-radius: 12px; margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">No. Resit:</span>
-        <span style="font-size: 14px; font-weight: 800; color: var(--ink);" id="receipt-code"></span>
+    <div id="receipt-content" style="background: white; padding: 20px; border-radius: 16px;">
+      <div style="text-align: center; margin-bottom: 16px;">
+        <h2 style="font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 4px;">H4SX STORE</h2>
+        <p style="font-size: 12px; color: var(--muted);">Resit Pembelian</p>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Tarikh & Masa:</span>
-        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-datetime"></span>
+      <div style="padding: 16px; background: var(--bg3); border-radius: 12px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--muted);">No. Resit:</span>
+          <span style="font-size: 14px; font-weight: 800; color: var(--ink);" id="receipt-code"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Tarikh & Masa:</span>
+          <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-datetime"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Negara:</span>
+          <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-country">Malaysia</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Username Roblox:</span>
+          <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-username"></span>
+        </div>
       </div>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Negara:</span>
-        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-country">Malaysia</span>
+      <div style="margin-bottom: 16px;">
+        <h3 style="font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">Item Dibeli:</h3>
+        <div id="receipt-items" style="background: var(--bg3); border-radius: 12px; padding: 12px;"></div>
       </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Username Roblox:</span>
-        <span style="font-size: 14px; font-weight: 700; color: var(--ink);" id="receipt-username"></span>
+      <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--primary); border-radius: 12px; margin-bottom: 16px;">
+        <span style="font-size: 14px; font-weight: 700; color: white;">Jumlah:</span>
+        <span style="font-size: 20px; font-weight: 800; color: white;" id="receipt-total"></span>
       </div>
     </div>
-    <div style="margin-bottom: 16px;">
-      <h3 style="font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 8px;">Item Dibeli:</h3>
-      <div id="receipt-items" style="background: var(--bg3); border-radius: 12px; padding: 12px;"></div>
-    </div>
-    <div style="display: flex; justify-content: space-between; padding: 12px; background: var(--primary); border-radius: 12px; margin-bottom: 16px;">
-      <span style="font-size: 14px; font-weight: 700; color: white;">Jumlah:</span>
-      <span style="font-size: 20px; font-weight: 800; color: white;" id="receipt-total"></span>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-      <button class="btn-primary" onclick="copyReceipt()" style="padding: 12px 16px; font-size: 14px;">
-        <i class="fa-solid fa-copy"></i> Salin Resit
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+      <button class="btn-primary" onclick="copyReceipt()" style="padding: 10px 6px; font-size: 11px;">
+        <i class="fa-solid fa-copy"></i><br>Salin Teks
       </button>
-      <a href="#" id="receipt-wa-link" target="_blank" class="btn-primary" style="padding: 12px 16px; font-size: 14px; text-align: center; text-decoration: none; background: #25d366;">
-        <i class="fa-brands fa-whatsapp"></i> Hantar ke WhatsApp
+      <button class="btn-primary" onclick="copyReceiptImage()" style="padding: 10px 6px; font-size: 11px; background: #10b981;">
+        <i class="fa-solid fa-image"></i><br>Salin Gambar
+      </button>
+      <a href="#" id="receipt-wa-link" target="_blank" class="btn-primary" style="padding: 10px 6px; font-size: 11px; text-align: center; text-decoration: none; background: #25d366;">
+        <i class="fa-brands fa-whatsapp"></i><br>Hantar WA
       </a>
+      <button class="btn-primary" onclick="downloadReceiptImage()" style="padding: 10px 6px; font-size: 11px; background: var(--secondary);">
+        <i class="fa-solid fa-download"></i><br>Muat Turun
+      </button>
     </div>
   </div>
 </div>
-<a href="https://wa.me/60193263016" target="_blank" class="chat-cs-float">
-  <i class="fa-brands fa-whatsapp"></i> Bantuan? Chat CS
-</a>
 <div id="toasts"></div>
 <script>
 // --- DATE & TIME DISPLAY ---
@@ -1478,6 +1483,47 @@ function copyReceipt() {
     console.error('Copy failed:', err);
     toast('Gagal menyalin resit', true);
   });
+}
+
+async function getReceiptCanvas() {
+  const receiptContent = document.getElementById('receipt-content');
+  return await html2canvas(receiptContent, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff'
+  });
+}
+
+async function downloadReceiptImage() {
+  try {
+    toast('Sila tunggu, sedang memuat turun resit...', false);
+    const canvas = await getReceiptCanvas();
+    const link = document.createElement('a');
+    link.download = `resit-h4sx-${new Date().getTime()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast('Resit berjaya dimuat turun!', false);
+  } catch (error) {
+    console.error('Download failed:', error);
+    toast('Gagal memuat turun resit', true);
+  }
+}
+
+async function copyReceiptImage() {
+  try {
+    toast('Sila tunggu, sedang menyalin gambar resit...', false);
+    const canvas = await getReceiptCanvas();
+    canvas.toBlob(async (blob) => {
+      if (blob) {
+        const item = new ClipboardItem({ 'image/png': blob });
+        await navigator.clipboard.write([item]);
+        toast('Gambar resit disalin ke papan keratan!', false);
+      }
+    });
+  } catch (error) {
+    console.error('Copy image failed:', error);
+    toast('Gagal menyalin gambar resit', true);
+  }
 }
 
 // --- CONFIGURATION ---
