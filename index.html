@@ -74,7 +74,7 @@
 }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 25%, #f5f3ff 50%, #fef3c7 75%, #fef9c3 100%);
   color: var(--ink);
   font-family: var(--ff-body);
   overflow-x: hidden;
@@ -85,9 +85,10 @@ body {
 .page-mesh {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(14,165,233,0.12), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 90% 0%, rgba(124,58,237,0.08), transparent 45%),
-    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(16,185,129,0.06), transparent 40%);
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(14,165,233,0.3), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 0%, rgba(124,58,237,0.25), transparent 45%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(16,185,129,0.2), transparent 40%),
+    radial-gradient(ellipse 40% 30% at 10% 80%, rgba(245,158,11,0.15), transparent 40%);
 }
 #earth-bg { display: none !important; }
 .wrap, nav, .marquee-wrap, .bottom-nav, .site-top-link { position: relative; z-index: 1; }
@@ -1554,10 +1555,15 @@ let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0
 async function fetchKedaiJson() {
   const url = 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/kedai.json';
   try { 
+    console.log('Fetching kedai.json from:', url);
     const r = await fetch(url + '?cb=' + Date.now(), { cache:'no-store' }); 
+    console.log('Response status:', r.status);
     if (r.ok) {
       const text = await r.text();
-      return JSON.parse(text);
+      console.log('Response text:', text);
+      const data = JSON.parse(text);
+      console.log('Parsed data:', data);
+      return data;
     }
   } catch(e) {
     console.error("Gist fetch error:", e);
@@ -1611,23 +1617,38 @@ function goSection(id) {
 }
 function backCO() { currentGame ? showView('product-view') : showHome(); }
 async function checkStore() {
+  console.log('Running checkStore...');
   const d = await fetchKedaiJson();
   const overlay = document.getElementById('closure-overlay');
-  if (!d || !overlay) return;
-  // Global closure check from Gist
+  
+  if (!d) {
+    console.log('No data received from gist!');
+    return;
+  }
+  if (!overlay) {
+    console.log('Closure overlay not found!');
+    return;
+  }
+  
+  console.log('Data from gist:', d);
+  
+  // Check conditions
   if (d.bukakedai === false || d.bukakedai === "close") {
+    console.log('Showing store closed popup');
     showClosure(
       d.tajuk_tutup || d.tajuk_maintenance || 'KEDAI TUTUP',
       d.sub_tutup || d.sub_maintenance || 'TIADA OPERASI',
       d.mesej_tutup || d.mesej_maintenance || 'Kedai kami sedang ditutup buat sementara waktu.<br>Sila datang semula pada waktu yang ditetapkan.'
     );
   } else if (d.maintenance === true) {
+    console.log('Showing maintenance popup');
     showClosure(
       d.tajuk_maintenance || 'SISTEM UPDATE',
       d.sub_maintenance || 'REHAT JAP',
       d.mesej_maintenance || 'Tengah restock barang baru mat!'
     );
   } else {
+    console.log('Store is open, hiding overlay');
     overlay.style.display = 'none';
     document.body.style.overflow = '';
   }
