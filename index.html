@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="https://i.imgur.com/LjWuizN.png">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
 /* H4SX STORE v2 — White Modern Design */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -513,6 +514,14 @@ nav {
 }
 .pbuy:hover { border-color: var(--primary); color: var(--primary); background: rgba(14,165,233,0.06); }
 .pbuy:disabled { opacity: 0.5; cursor: not-allowed; }
+.pss {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--secondary); color: #fff; border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+.pss:hover { transform: scale(1.08); background: var(--secondary2); }
 
 /* Steps */
 .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -1157,6 +1166,7 @@ footer {
       <div class="ph">
         <button class="bk" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i></button>
         <div><div class="ph-title" id="pv-title"></div><div class="ph-count" id="pv-count"></div></div>
+        <button class="pss" id="pv-ss-btn" onclick="takeScreenshot()"><i class="fa-solid fa-camera"></i></button>
       </div>
       <div class="detail-note"><i class="fa-solid fa-magnifying-glass-plus"></i> Nak tengok gambar jelas? Klik mana-mana gambar item untuk buka paparan detail.</div>
       <div id="inventory-grid"></div>
@@ -1618,7 +1628,7 @@ function openGame(name) {
       const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + item.originalPrice + '</span>' : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
       const addBtn = oos ? '<button class="padd" disabled><i class="fa-solid fa-ban"></i></button>' : '<button class="padd" onclick="addCart(' + item.id + ')"><i class="fa-solid fa-plus"></i></button>';
       const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="buyNowItem(' + item.id + ')">BUY NOW</button>';
-      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody"><div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div></div></div>';
+      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody"><div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div></div></div>';
     }).join('');
   }
   showView('product-view');
@@ -1708,6 +1718,58 @@ function updateCredentialFields() {
   document.getElementById('login-password').style.display = checkoutReq.requirePassword ? 'block' : 'none';
   back1.classList.toggle('hidden', checkoutReq.backupCodeCount < 1);
   back2.classList.toggle('hidden', checkoutReq.backupCodeCount < 2);
+}
+async function takeScreenshot() {
+  try {
+    const ssBtn = document.getElementById('pv-ss-btn');
+    if (ssBtn) ssBtn.style.opacity = '0';
+    
+    toast('Screenshot sedang diambil...', false);
+    
+    // Capture the product view (from top of screen to bottom of inventory grid)
+    const targetEl = document.getElementById('product-view');
+    const rect = targetEl.getBoundingClientRect();
+    const topPos = window.scrollY;
+    const bottomPos = window.scrollY + rect.bottom;
+    
+    const canvas = await html2canvas(document.body, {
+      y: topPos,
+      height: bottomPos - topPos,
+      useCORS: true,
+      allowTaint: true
+    });
+    
+    // Convert canvas to blob and copy to clipboard
+    canvas.toBlob(async (blob) => {
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          const item = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([item]);
+          toast('Screenshot disalin ke clipboard!', false);
+        } else {
+          // Fallback: download if clipboard not supported
+          const link = document.createElement('a');
+          link.download = `screenshot-${Date.now()}.png`;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+          toast('Clipboard tidak disokong, muat turun screenshot...', false);
+        }
+      } catch (clipErr) {
+        console.error('Clipboard error:', clipErr);
+        // Fallback: download
+        const link = document.createElement('a');
+        link.download = `screenshot-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        toast('Clipboard tidak disokong, muat turun screenshot...', false);
+      }
+    });
+    
+    if (ssBtn) ssBtn.style.opacity = '1';
+  } catch (err) {
+    toast('Gagal mengambil screenshot', true);
+    console.error(err);
+  }
 }
 function updateAddButtons() {
   // Update all product buttons (add and buy now)
