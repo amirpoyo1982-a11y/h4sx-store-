@@ -550,12 +550,14 @@ nav {
 .padd:disabled { background: var(--bg3); color: var(--muted2); cursor: not-allowed; transform: none; }
 .pbuy {
   height: 36px; padding: 0 14px; border-radius: 10px;
-  background: #fff; border: 1px solid var(--border);
-  font-size: 11px; font-weight: 700; color: var(--ink);
+  background: linear-gradient(145deg, #10b981 0%, #059669 100%);
+  color: #fff; border: none;
+  font-size: 11px; font-weight: 800;
   cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.3);
 }
-.pbuy:hover { border-color: var(--primary); color: var(--primary); background: rgba(14,165,233,0.06); }
-.pbuy:disabled { opacity: 0.5; cursor: not-allowed; }
+.pbuy:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+.pbuy:disabled { opacity: 0.5; cursor: not-allowed; background: #6b7280; box-shadow: none; }
 .pss {
   width: 44px; height: 44px; border-radius: 12px;
   background: var(--secondary); color: #fff; border: none;
@@ -943,6 +945,10 @@ footer {
 @media (max-width: 480px) {
   #game-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   #inventory-grid { grid-template-columns: repeat(2, 1fr); }
+  .pc { min-height: 280px; }
+  .padd { width: 40px; height: 40px; border-radius: 12px; font-size: 16px; }
+  .pbuy { height: 40px; padding: 0 16px; font-size: 12px; font-weight: 800; }
+  .pfoot { padding-top: 10px; }
   .pay-methods { grid-template-columns: 1fr; }
   .trust-grid { grid-template-columns: 1fr; }
 }
@@ -1402,7 +1408,7 @@ body {
   </div>
 </div>
 <!-- BACKGROUND MUSIC -->
-<audio id="bgMusic" src="https://files.catbox.moe/lpugzm.mp3 " loop>
+<audio id="bgMusic" src="https://files.catbox.moe/lpugzm.mp3" loop>
   Your browser does not support the audio element.
 </audio>
 <button class="music-btn" id="musicBtn" title="Toggle Music">
@@ -2219,7 +2225,9 @@ function openGame(name) {
   currentGame = name;
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
-  const items = inventory.filter(i => i.game === name);
+  let items = inventory.filter(i => i.game === name);
+  // Sort items: in-stock first, out-of-stock last
+  items.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
   document.getElementById('pv-title').textContent = name;
   document.getElementById('pv-count').textContent = items.length + ' item tersedia';
   const grid = document.getElementById('inventory-grid');
@@ -2248,7 +2256,9 @@ function closeSearch() { document.getElementById('search-overlay').classList.rem
 function doSearch(q) {
   const res = document.getElementById('search-results');
   if (!q.trim()) { res.innerHTML=''; return; }
-  const hits = inventory.filter(i => i.name.toLowerCase().includes(q.toLowerCase()) || i.game.toLowerCase().includes(q.toLowerCase()) || i.desc.toLowerCase().includes(q.toLowerCase()));
+  let hits = inventory.filter(i => i.name.toLowerCase().includes(q.toLowerCase()) || i.game.toLowerCase().includes(q.toLowerCase()) || i.desc.toLowerCase().includes(q.toLowerCase()));
+  // Sort search results too: in-stock first
+  hits.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
   if (!hits.length) { res.innerHTML='<p class="sr-empty">Tiada produk untuk "' + q + '"</p>'; return; }
   res.innerHTML = hits.slice(0,6).map(item => {
     const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
