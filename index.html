@@ -81,6 +81,16 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+input, textarea {
+  -webkit-user-select: auto !important;
+  -moz-user-select: auto !important;
+  -ms-user-select: auto !important;
+  user-select: auto !important;
 }
 .page-mesh {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -120,25 +130,40 @@ body {
   opacity: 0.8;
 }
 .closure-container {
-  background: rgba(255,255,255,0.85);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: clamp(28px, 5vw, 48px);
-  max-width: 520px; width: 100%; text-align: center;
-  box-shadow: var(--shadow-lg);
+  background: linear-gradient(145deg, #fefdf6 0%, #fdfbf1 50%, #faf7e8 100%);
+  border: 3px double #d4c5a9;
+  border-radius: 16px;
+  padding: clamp(32px, 6vw, 56px);
+  max-width: 560px; width: 100%; text-align: center;
+  box-shadow: 0 20px 60px rgba(139, 119, 78, 0.25), inset 0 1px 0 rgba(255,255,255,0.6);
   position: relative;
   z-index: 1;
   backdrop-filter: blur(15px);
 }
-.closure-icon { font-size: clamp(40px, 8vw, 64px); margin-bottom: 16px; }
-.closure-title { font-family: var(--ff-disp); font-size: clamp(22px, 4vw, 32px); font-weight: 800; color: var(--ink2); margin-bottom: 12px; }
-.closure-message { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+.closure-container::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(212, 197, 169, 0.5);
+  border-radius: 12px;
+  pointer-events: none;
+}
+.closure-icon { font-size: clamp(44px, 9vw, 72px); margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(139, 119, 78, 0.2)); }
+.closure-title { font-family: 'Georgia', 'Times New Roman', serif; font-size: clamp(24px, 4.5vw, 36px); font-weight: 800; color: #4a3f2f; margin-bottom: 14px; letter-spacing: 0.5px; }
+.closure-message { font-family: 'Georgia', 'Times New Roman', serif; font-size: 15px; color: #6b5f4a; line-height: 1.8; margin-bottom: 26px; }
 .closure-status {
   display: inline-flex; align-items: center; gap: 8px;
-  background: var(--red-bg); border: 1px solid var(--red-bdr);
-  border-radius: 99px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: var(--red);
+  background: linear-gradient(145deg, #fff5f5 0%, #ffe8e8 100%); 
+  border: 2px solid #e8b4b4;
+  border-radius: 99px; 
+  padding: 10px 18px; 
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 13px; 
+  font-weight: 600; 
+  color: #924040;
+  box-shadow: 0 2px 6px rgba(146, 64, 64, 0.1);
 }
-.status-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; }
+.status-dot { width: 9px; height: 9px; background: #dc2626; border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
 /* Top bar & marquee */
@@ -154,6 +179,7 @@ body {
 .site-header {
   position: relative;
   z-index: 200;
+  margin-top: 0;
 }
 .marquee-wrap {
   background: var(--primary-gradient);
@@ -923,6 +949,97 @@ footer {
 @media (min-width: 769px) {
   .overlay { justify-content: flex-end; }
 }
+/* Business Hours Bar */
+.business-hours-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 201;
+  background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid #374151;
+  border-top: none;
+}
+.bh-inner {
+  max-width: var(--max-w); margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.bh-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 18px;
+  box-shadow: 0 4px 12px rgba(14,165,233,0.35);
+}
+.bh-text { flex: 1; }
+.bh-title { font-size: 12px; font-weight: 800; color: white; letter-spacing: 0.5px; }
+.bh-desc { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.bh-status {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 12px; font-weight: 800;
+}
+.bh-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+}
+.bh-dot.open { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.25); animation: pulse-green 2s infinite; }
+.bh-dot.closed { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.25); animation: pulse-red 2s infinite; }
+.bh-status:has(.bh-dot.open) { background: rgba(16,185,129,0.15); color: #10b981; }
+.bh-status:has(.bh-dot.closed) { background: rgba(239,68,68,0.15); color: #ef4444; }
+@keyframes pulse-green { 0%,100%{opacity:1}50%{opacity:0.5} }
+@keyframes pulse-red { 0%,100%{opacity:1}50%{opacity:0.5} }
+@keyframes music-pulse { 0%,100%{transform: scale(1);}50%{transform: scale(1.05);} }
+/* Add padding to body so content isn't hidden under business hours */
+body {
+  padding-top: 68px;
+}
+/* Adjust music button position for desktop */
+@media (min-width: 768px) {
+  .music-btn {
+    top: 90px;
+  }
+}
+@media (max-width: 767px) {
+  body {
+    padding-top: 68px;
+  }
+  .music-btn {
+    bottom: 140px;
+  }
+}
+/* Music Button */
+.music-btn {
+  position: fixed;
+  bottom: 140px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #7c3aed 0%, #5b21b6 100%);
+  color: white;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(124,58,237,0.45);
+  z-index: 188;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.music-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(124,58,237,0.55);
+}
+.music-btn.playing {
+  animation: music-pulse 1.2s infinite;
+}
+.music-btn.paused {
+  background: linear-gradient(145deg, #6b7280 0%, #4b5563 100%);
+  box-shadow: 0 6px 20px rgba(107,114,128,0.35);
+}
 
   </style>
 </head>
@@ -936,8 +1053,12 @@ footer {
 <!-- WEBSITE CLOSURE OVERLAY -->
 <div id="closure-overlay">
   <div class="closure-container">
-    <div class="closure-icon">
+    <div class="closure-icon" id="closure-icon">
       <i class="fas fa-lock"></i>
+    </div>
+    <div style="margin-top: 16px; padding: 10px 20px; background: linear-gradient(145deg, #fef9e7 0%, #fdf6e3 100%); border: 2px solid #e8d7b8; border-radius: 8px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(139,119,78,0.1);">
+      <i class="fa-solid fa-clock" style="color: #92703f; font-size: 18px;"></i>
+      <span id="closure-datetime" style="font-family: 'Georgia', 'Times New Roman', serif; font-size: 14px; font-weight: 600; color: #6b5f4a;"></span>
     </div>
     <h1 class="closure-title" id="closure-title">KEDAI TUTUP</h1>
     <div class="closure-status">
@@ -948,8 +1069,8 @@ footer {
       Kedai kami sedang ditutup buat sementara waktu.<br>
       Sila datang semula pada waktu yang ditetapkan.
     </p>
-    <a href="https://wa.me/60193263016" target="_blank" class="btn-primary" style="display:inline-flex;margin-top:20px;text-decoration:none;">
-      <i class="fa-brands fa-whatsapp"></i> Hubungi Admin
+    <a href="https://wa.me/60193263016" target="_blank" style="display:inline-flex;margin-top:24px;text-decoration:none; padding:12px 28px; background: linear-gradient(145deg, #8b5a2b 0%, #704214 100%); color: #fffdf8; border-radius:10px; font-family:'Georgia','Times New Roman',serif; font-weight:700; font-size:15px; box-shadow:0 6px 18px rgba(112,66,20,0.35); border:2px solid #5c3a12;">
+      <i class="fa-brands fa-whatsapp" style="margin-right:8px;"></i> Hubungi Admin
     </a>
   </div>
 </div>
@@ -1097,14 +1218,6 @@ footer {
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 5-25 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
     </section>
-    <div class="countdown-strip reveal" id="cd-strip">
-      <div class="cd-left"><span class="cd-fire">🔥</span><div><div class="cd-label" id="cd-label">Flash Sale Aktif</div><div class="cd-sub" id="cd-sub">Tawaran terhad — habis bila habis!</div></div></div>
-      <div class="cd-right">
-        <div class="cd-unit"><div class="cd-num" id="cd-h">00</div><div class="cd-ulab">Jam</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cd-m">00</div><div class="cd-ulab">Minit</div></div>
-        <div class="cd-unit"><div class="cd-num" id="cd-s">00</div><div class="cd-ulab">Saat</div></div>
-      </div>
-    </div>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
       <div class="sh"><div><div class="sh-tag">Collections</div><div class="sh-title">Pilih game anda</div></div></div>
@@ -1137,7 +1250,7 @@ footer {
       </div>
     </section>
     <footer>
-      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved.</div>
+      <div class="foot-left">&copy; 2024 H4SX STORE. All rights reserved.</div>
       <div class="foot-social">
         <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
         <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
@@ -1283,6 +1396,27 @@ footer {
     <a href="https://wa.me/60193263016" target="_blank" class="bn-item"><i class="fa-brands fa-whatsapp"></i>Support</a>
   </div>
 </div>
+<!-- BUSINESS HOURS DISPLAY -->
+<div class="business-hours-bar">
+  <div class="bh-inner">
+    <div class="bh-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <div class="bh-text">
+      <div class="bh-title">Waktu Operasi</div>
+      <div class="bh-desc" id="business-hours-text">Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup</div>
+    </div>
+    <div class="bh-status" id="bh-status">
+      <span class="bh-dot open"></span>
+      <span id="bh-status-text">BUKA</span>
+    </div>
+  </div>
+</div>
+<!-- BACKGROUND MUSIC -->
+<audio id="bgMusic" src="https://files.catbox.moe/lpugzm.mp3" loop>
+  Your browser does not support the audio element.
+</audio>
+<button class="music-btn" id="musicBtn" title="Toggle Music">
+  <i class="fas fa-music"></i>
+</button>
 <!-- CART -->
 <div class="overlay" id="cart-overlay" onclick="ocClose(event)">
   <div class="cart-box">
@@ -1386,6 +1520,63 @@ footer {
 </div>
 <div id="toasts"></div>
 <script>
+// --- ANTI-INSPECT / ANTI-COPY ---
+document.addEventListener('contextmenu', function(e) {
+  e.preventDefault();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F12') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.key === 'u') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.key === 'U') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.key === 'S') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'i') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'j') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+    e.preventDefault();
+  }
+  if (e.ctrlKey && e.shiftKey && e.key === 'c') {
+    e.preventDefault();
+  }
+});
+// Detect dev tools opening
+let devToolsOpen = false;
+const threshold = 160;
+const checkDevTools = function() {
+  const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+  const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+  if (widthThreshold || heightThreshold) {
+    if (!devToolsOpen) {
+      devToolsOpen = true;
+      alert('Developer tools dikesan! Sila tutup untuk teruskan.');
+    }
+  } else {
+    devToolsOpen = false;
+  }
+};
+setInterval(checkDevTools, 1000);
+// --- END ANTI-INSPECT ---
+
 // --- DATE & TIME DISPLAY ---
 function updateDateTime() {
   const now = new Date();
@@ -1397,6 +1588,10 @@ function updateDateTime() {
   const dtEl = document.getElementById('datetime-display');
   if (dtEl) {
     dtEl.textContent = now.toLocaleString('ms-MY', options);
+  }
+  const closureDtEl = document.getElementById('closure-datetime');
+  if (closureDtEl) {
+    closureDtEl.textContent = now.toLocaleString('ms-MY', options);
   }
 }
 updateDateTime();
@@ -1631,48 +1826,167 @@ function goSection(id) {
   else { showHome(); setTimeout(() => smoothScrollWithHeader(document.getElementById(id)), 500); }
 }
 function backCO() { currentGame ? showView('product-view') : showHome(); }
+// --- BUSINESS HOURS & STORE STATUS ---
+let currentStoreConfig = {
+  bukakedai: true,
+  maintenance: false,
+  buka_jam: "09:00", // 9 AM
+  tutup_jam: "23:00", // 11 PM
+  tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
+  business_hours_text: "Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup"
+};
+
+function isTimeWithinRange(currentTime, startTime, endTime) {
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  const currentTotal = currentTime.getHours() * 60 + currentTime.getMinutes();
+  const startTotal = startHour * 60 + startMin;
+  const endTotal = endHour * 60 + endMin;
+  
+  return currentTotal >= startTotal && currentTotal < endTotal;
+}
+
+function getDayNameInMalay(date) {
+  const days = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
+  return days[date.getDay()];
+}
+
+function shouldStoreCloseAutomatically(config) {
+  const now = new Date();
+  const klTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+  
+  // Check if today is a closed day
+  const todayName = getDayNameInMalay(klTime);
+  if (config.tutup_hari && config.tutup_hari.includes(todayName)) {
+    return { closed: true, reason: "Hari Tutup" };
+  }
+  
+  // Check time range
+  if (config.buka_jam && config.tutup_jam) {
+    if (!isTimeWithinRange(klTime, config.buka_jam, config.tutup_jam)) {
+      return { closed: true, reason: "Luar Waktu Operasi" };
+    }
+  }
+  
+  return { closed: false, reason: "" };
+}
+
+function updateBusinessHoursDisplay(config, isOpen) {
+  const hoursTextEl = document.getElementById('business-hours-text');
+  const statusTextEl = document.getElementById('bh-status-text');
+  const statusDotEl = document.querySelector('.bh-dot');
+  const statusEl = document.getElementById('bh-status');
+  
+  if (hoursTextEl && config.business_hours_text) {
+    hoursTextEl.textContent = config.business_hours_text;
+  }
+  
+  if (statusTextEl && statusDotEl && statusEl) {
+    if (isOpen) {
+      statusTextEl.textContent = "BUKA";
+      statusDotEl.classList.remove('closed');
+      statusDotEl.classList.add('open');
+    } else {
+      statusTextEl.textContent = "TUTUP";
+      statusDotEl.classList.remove('open');
+      statusDotEl.classList.add('closed');
+    }
+  }
+}
+
 async function checkStore() {
   console.log('Running checkStore...');
   const d = await fetchKedaiJson();
   const overlay = document.getElementById('closure-overlay');
+  const closureIconEl = document.getElementById('closure-icon');
   
   if (!d) {
-    console.log('No data received from gist!');
-    return;
+    console.log('No data received from gist! Using default config.');
+  } else {
+    console.log('Data from gist:', d);
+    // Update current config with gist data
+    currentStoreConfig = { ...currentStoreConfig, ...d };
   }
+  
   if (!overlay) {
     console.log('Closure overlay not found!');
     return;
   }
   
-  console.log('Data from gist:', d);
+  let shouldClose = false;
+  let closureType = 'closed'; // 'closed' or 'maintenance'
+  let title, status, message;
   
-  // Check conditions
-  if (d.bukakedai === false || d.bukakedai === "close") {
-    console.log('Showing store closed popup');
-    showClosure(
-      d.tajuk_tutup || d.tajuk_maintenance || 'KEDAI TUTUP',
-      d.sub_tutup || d.sub_maintenance || 'TIADA OPERASI',
-      d.mesej_tutup || d.mesej_maintenance || 'Kedai kami sedang ditutup buat sementara waktu.<br>Sila datang semula pada waktu yang ditetapkan.'
-    );
-  } else if (d.maintenance === true) {
-    console.log('Showing maintenance popup');
-    showClosure(
-      d.tajuk_maintenance || 'SISTEM UPDATE',
-      d.sub_maintenance || 'REHAT JAP',
-      d.mesej_maintenance || 'Tengah restock barang baru mat!'
-    );
+  // First check manual overrides
+  if (currentStoreConfig.maintenance === true) {
+    shouldClose = true;
+    closureType = 'maintenance';
+    title = currentStoreConfig.tajuk_maintenance || 'SISTEM UPDATE';
+    status = currentStoreConfig.sub_maintenance || 'REHAT JAP';
+    message = currentStoreConfig.mesej_maintenance || 'Tengah restock barang baru mat!';
+  } else if (currentStoreConfig.bukakedai === false || currentStoreConfig.bukakedai === "close") {
+    shouldClose = true;
+    closureType = 'closed';
+    title = currentStoreConfig.tajuk_tutup || 'KEDAI TUTUP';
+    status = currentStoreConfig.sub_tutup || 'TIADA OPERASI';
+    message = currentStoreConfig.mesej_tutup || 'Kedai kami sedang ditutup buat sementara waktu.<br>Sila datang semula pada waktu yang ditetapkan.';
+  } else {
+    // Check automatic business hours
+    const autoCheck = shouldStoreCloseAutomatically(currentStoreConfig);
+    if (autoCheck.closed) {
+      shouldClose = true;
+      closureType = 'closed';
+      title = 'KEDAI TUTUP';
+      status = autoCheck.reason;
+      message = currentStoreConfig.mesej_tutup || 'Kedai kami hanya buka pada waktu operasi.<br>Sila datang semula nanti!';
+    }
+  }
+  
+  if (shouldClose) {
+    console.log(`Showing ${closureType} popup`);
+    showClosure(title, status, message, closureType);
+    updateBusinessHoursDisplay(currentStoreConfig, false);
   } else {
     console.log('Store is open, hiding overlay');
     overlay.style.display = 'none';
     document.body.style.overflow = '';
+    updateBusinessHoursDisplay(currentStoreConfig, true);
   }
 }
-function showClosure(title, status, message) {
+
+function showClosure(title, status, message, type = 'closed') {
   const overlay = document.getElementById('closure-overlay');
   const titleEl = document.getElementById('closure-title');
   const statusEl = document.getElementById('closure-status-text');
   const messageEl = document.getElementById('closure-message');
+  const closureIconEl = document.getElementById('closure-icon');
+  const statusDotEl = document.querySelector('.closure-status .status-dot');
+  const statusWrapEl = document.querySelector('.closure-status');
+  
+  // Update icon based on type
+  if (closureIconEl) {
+    if (type === 'maintenance') {
+      closureIconEl.innerHTML = '<i class="fas fa-tools"></i>';
+    } else {
+      closureIconEl.innerHTML = '<i class="fas fa-lock"></i>';
+    }
+  }
+  
+  // Update status styling based on type
+  if (statusWrapEl && statusDotEl) {
+    if (type === 'maintenance') {
+      statusWrapEl.style.background = 'linear-gradient(145deg, #fff7ed 0%, #ffedd5 100%)';
+      statusWrapEl.style.borderColor = '#fed7aa';
+      statusWrapEl.style.color = '#9a3412';
+      statusDotEl.style.background = '#f97316';
+    } else {
+      statusWrapEl.style.background = 'linear-gradient(145deg, #fff5f5 0%, #ffe8e8 100%)';
+      statusWrapEl.style.borderColor = '#fecaca';
+      statusWrapEl.style.color = '#991b1b';
+      statusDotEl.style.background = '#ef4444';
+    }
+  }
   
   if (titleEl) titleEl.textContent = title;
   if (statusEl) statusEl.textContent = status;
@@ -2309,6 +2623,54 @@ function toast(msg, err, name, count) {
     requestAnimationFrame(tick);
   }
   tick();
+})();
+// Music Player Control
+(() => {
+  const audio = document.getElementById('bgMusic');
+  const btn = document.getElementById('musicBtn');
+  let isPlaying = false;
+
+  function updateButton() {
+    if (isPlaying) {
+      btn.classList.remove('paused');
+      btn.classList.add('playing');
+      btn.innerHTML = '<i class="fas fa-pause"></i>';
+    } else {
+      btn.classList.remove('playing');
+      btn.classList.add('paused');
+      btn.innerHTML = '<i class="fas fa-music"></i>';
+    }
+  }
+
+  btn.addEventListener('click', async () => {
+    try {
+      if (isPlaying) {
+        audio.pause();
+        isPlaying = false;
+      } else {
+        // Try to play (will require user interaction on most browsers)
+        await audio.play();
+        isPlaying = true;
+      }
+      updateButton();
+    } catch (e) {
+      console.log('Music play error:', e);
+      toast('Sila klik butang untuk mainkan muzik!', true);
+    }
+  });
+
+  // Auto play on user interaction (optional, but better for browser policies)
+  document.body.addEventListener('click', () => {
+    if (!isPlaying) {
+      audio.play().then(() => {
+        isPlaying = true;
+        updateButton();
+      }).catch(() => {});
+    }
+  }, { once: true });
+
+  // Initialize button state
+  updateButton();
 })();
 </script>
 
