@@ -1085,27 +1085,18 @@ body {
 <div id="ann-details-modal">
   <div class="closure-container" style="max-width: 700px; transform: scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" id="ann-modal-content">
     <div class="closure-icon">📢</div>
-    <div class="closure-title">PENGUMUMAN PENTING</div>
-    <div class="closure-title" style="font-size: clamp(20px, 4vw, 32px); margin-top: 10px;">PENUKARAN MAKLUMAT HUBUNGAN</div>
+    <div class="closure-title" id="announcement-title">PENGUMUMAN PENTING</div>
+    <div class="closure-title" style="font-size: clamp(20px, 4vw, 32px); margin-top: 10px;" id="announcement-subtitle">Barang baru ditambah!</div>
     
-    <div class="closure-message" style="margin: 30px 0; text-align: left; line-height: 1.8;">
+    <div class="closure-message" style="margin: 30px 0; text-align: left; line-height: 1.8;" id="announcement-message">
       <p style="margin-bottom: 15px;"><strong>Makluman kepada semua pelanggan dan pengguna,</strong></p>
       
-      <p style="margin-bottom: 15px;">Pada tarikh <strong>5/5/2026 (Esok)</strong>, jam <strong>9:00 PM</strong>, semua urusan melalui nombor telefon, WhatsApp, dan website akan dikemas kini kepada maklumat yang baru.</p>
+      <p style="margin-bottom: 15px;">Kami telah menambah item-item baru! Sila semak katalog kami.</p>
       
-      <p style="margin-bottom: 15px;">Buat masa ini, butiran nombor baru masih dalam proses dan akan dimaklumkan kemudian.</p>
-      
-      <p style="margin-bottom: 20px;"><strong>Segala urusan akan terhenti seketika buat sementara waktu.</strong></p>
-      
-      <p style="text-align: center; font-style: italic; color: var(--sky);">Harap maklum.</p>
+      <p style="text-align: center; font-style: italic; color: var(--sky);">Terima kasih!</p>
     </div>
     
-    <div class="closure-status">
-      <span class="status-dot"></span>
-      <span>Kemas kini pada 5/5/2026 jam 9:00 PM</span>
-    </div>
-    
-    <button class="popup-cta" onclick="closeAnnDetails()" style="margin-top: 20px;">Saya faham</button>
+    <button class="popup-cta" onclick="closeAnnDetails()" style="margin-top: 20px;" id="announcement-button">Saya faham</button>
   </div>
 </div>
 <!-- MARQUEE -->
@@ -1250,7 +1241,7 @@ body {
       </div>
     </section>
     <footer>
-      <div class="foot-left">&copy; 2024 H4SX STORE. All rights reserved.</div>
+      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved.</div>
       <div class="foot-social">
         <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
         <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
@@ -1411,7 +1402,7 @@ body {
   </div>
 </div>
 <!-- BACKGROUND MUSIC -->
-<audio id="bgMusic" src="https://files.catbox.moe/lpugzm.mp3" loop>
+<audio id="bgMusic" src="https://files.catbox.moe/or1flu.mp3" loop>
   Your browser does not support the audio element.
 </audio>
 <button class="music-btn" id="musicBtn" title="Toggle Music">
@@ -1833,8 +1824,59 @@ let currentStoreConfig = {
   buka_jam: "09:00", // 9 AM
   tutup_jam: "23:00", // 11 PM
   tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
-  business_hours_text: "Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup"
+  business_hours_text: "Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup",
+  // Announcement settings
+  announcement_active: false,
+  announcement_id: "v1", // Change this ID every time you want a new popup
+  announcement_title: "KEMASKINI BARU!",
+  announcement_subtitle: "Barang baru ditambah!",
+  announcement_message: "Kami telah menambah item-item baru! Sila semak katalog kami.",
+  announcement_button_text: "Saya faham"
 };
+
+// Announcement popup handler
+function checkAndShowAnnouncement() {
+  if (!currentStoreConfig.announcement_active) return;
+  
+  const storedId = localStorage.getItem('h4sx_last_announcement_id');
+  
+  if (storedId !== currentStoreConfig.announcement_id) {
+    // Show the announcement
+    const modal = document.getElementById('ann-details-modal');
+    const titleEl = document.getElementById('announcement-title');
+    const subtitleEl = document.getElementById('announcement-subtitle');
+    const messageEl = document.getElementById('announcement-message');
+    const buttonEl = document.getElementById('announcement-button');
+    
+    // Update content
+    if (titleEl) titleEl.textContent = currentStoreConfig.announcement_title;
+    if (subtitleEl) subtitleEl.textContent = currentStoreConfig.announcement_subtitle;
+    if (messageEl) messageEl.innerHTML = currentStoreConfig.announcement_message;
+    if (buttonEl) buttonEl.textContent = currentStoreConfig.announcement_button_text;
+    
+    if (modal) {
+      modal.classList.add('show-modal');
+      modal.style.display = 'flex';
+      const content = document.getElementById('ann-modal-content');
+      if (content) {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+      }
+    }
+  }
+}
+
+function closeAnnDetails() {
+  const modal = document.getElementById('ann-details-modal');
+  if (modal) {
+    modal.classList.remove('show-modal');
+    modal.style.display = 'none';
+  }
+  // Store the current announcement ID so it won't show again
+  if (currentStoreConfig.announcement_id) {
+    localStorage.setItem('h4sx_last_announcement_id', currentStoreConfig.announcement_id);
+  }
+}
 
 function isTimeWithinRange(currentTime, startTime, endTime) {
   const [startHour, startMin] = startTime.split(':').map(Number);
@@ -1911,6 +1953,8 @@ async function checkStore() {
   
   if (!overlay) {
     console.log('Closure overlay not found!');
+    // Still check announcements even if no overlay
+    checkAndShowAnnouncement();
     return;
   }
   
@@ -1952,6 +1996,8 @@ async function checkStore() {
     overlay.style.display = 'none';
     document.body.style.overflow = '';
     updateBusinessHoursDisplay(currentStoreConfig, true);
+    // Check and show announcement after ensuring store is open
+    checkAndShowAnnouncement();
   }
 }
 
