@@ -1892,7 +1892,14 @@ function isTimeWithinRange(currentTime, startTime, endTime) {
   const startTotal = startHour * 60 + startMin;
   const endTotal = endHour * 60 + endMin;
   
-  return currentTotal >= startTotal && currentTotal < endTotal;
+  // LOGIK BARU: SOKONG KEDAI LAJAK TENGAH MALAM
+  if (startTotal < endTotal) {
+    // Kes Biasa: Contoh 09:00 pagi hingga 23:00 malam (Hari yang sama)
+    return currentTotal >= startTotal && currentTotal < endTotal;
+  } else {
+    // Kes Lintas Tengah Malam: Contoh 09:00 pagi hingga 03:00 pagi (Lajak ke esok hari)
+    return currentTotal >= startTotal || currentTotal < endTotal;
+  }
 }
 
 function getDayNameInMalay(date) {
