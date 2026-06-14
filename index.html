@@ -2361,9 +2361,13 @@ function openGame(name) {
       if (storeConfig.promote.enabled && item.promotedBy) {
         promotedByHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:var(--sky);font-weight:700;"><i class="fa-solid fa-star"></i>Promoted by ' + item.promotedBy + '</div>';
       }
-      // Add QR codes if available on item
+      // Add QR codes OR promoter info
       let itemQRHTML = '';
-      if (item.qrDuitNow || item.qrTng) {
+      const isPromotedItem = storeConfig.promote.enabled && item.promotedBy && item.promoterPhone;
+      
+      if (isPromotedItem) {
+        itemQRHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2);text-align:center;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;display:block;">Hubungi Promoter</small><div style="display:flex;align-items:center;justify-content:center;gap:6px;"><a href="https://wa.me/' + item.promoterPhone + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;background:#25D366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div></div>';
+      } else if (item.qrDuitNow || item.qrTng) {
         itemQRHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2);">';
         if (item.qrDuitNow && storeConfig.payment.duitNow.enabled) {
           itemQRHTML += '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:8px;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;">DuitNow</small><img src="' + item.qrDuitNow + '" alt="DuitNow QR" style="width:100px;height:100px;border-radius:8px;border:1px solid var(--border2);"></div>';
@@ -2644,6 +2648,10 @@ function goCO(focusPayment) {
   if (!cartItems.length) { toast('Cart is empty',true); return; }
   document.getElementById('cart-overlay').classList.remove('show');
   let tot = 0;
+  
+  // Check if this is a promoted item
+  const firstItem = inventory.find(i=>i.id===cartItems[0].id);
+  const isPromotedItem = firstItem && firstItem.promotedBy && firstItem.promoterPhone;
   document.getElementById('co-items').innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
     const line = item.price*ci.qty; tot += line;
@@ -2651,20 +2659,55 @@ function goCO(focusPayment) {
   }).join('');
   document.getElementById('co-total').textContent = 'RM' + tot.toFixed(2);
   
-  // Show/hide Roblox username field based on config
+  // Show/hide Roblox username field based on config and if it's promoted item
   const usernameBlock = document.getElementById('roblox-username')?.closest('.co-block');
-  const usernameRequired = storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false;
+  const usernameRequired = !isPromotedItem && (storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false);
   if (usernameBlock) {
     usernameBlock.style.display = usernameRequired ? '' : 'none';
   }
   
+  // Show/hide payment methods (QR) based on if it's promoted item
+  const paymentSection = document.querySelector('.pay-methods');
+  const qrModalBtn = document.getElementById('qr-modal-img');
+  if (paymentSection) {
+    paymentSection.style.display = isPromotedItem ? 'none' : '';
+  }
+  // Hide QR panels in checkout for promoted items
+  const qrPanels = document.querySelectorAll('[id^="panel-"]');
+  qrPanels.forEach(p => p.style.display = isPromotedItem ? 'none' : '');
+  
   checkoutReq = resolveCheckoutRequirements();
   updateCredentialFields();
-  showView('checkout-view'); valCO();
-  if (focusPayment) {
+  showView('checkout-view');
+  
+  // For promoted items, hide send button and show contact promoter button
+  const sendBtn = document.getElementById('send-btn');
+  let promoterBtn = document.getElementById('promoter-contact-btn');
+  if (isPromotedItem) {
+    if (sendBtn) sendBtn.style.display = 'none';
+    if (!promoterBtn) {
+      promoterBtn = document.createElement('button');
+      promoterBtn.id = 'promoter-contact-btn';
+      promoterBtn.style.cssText = 'width:100%;padding:12px;background:#25D366;color:#fff;border:none;border-radius:var(--radius);font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;';
+      sendBtn.parentNode.appendChild(promoterBtn);
+    }
+    promoterBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Hubungi ' + firstItem.promotedBy;
+    promoterBtn.onclick = () => {
+      const message = encodeURIComponent('Hi! Saya ingin membeli ' + firstItem.name + ' (RM' + Number(firstItem.price).toFixed(2) + ')');
+      window.open('https://wa.me/' + firstItem.promoterPhone + '?text=' + message, '_blank');
+    };
+  } else {
+    if (sendBtn) sendBtn.style.display = '';
+    if (promoterBtn) promoterBtn.remove();
+  }
+  
+  valCO();
+  if (focusPayment && !isPromotedItem) {
     setTimeout(() => {
       const paySection = document.querySelector('.pay-methods');
-      smoothScrollWithHeader(paySection);
+      if (paySection) {
+        smoothScrollWithHeader(paySection);
+      }
     }, 280);
   }
 }
@@ -2674,9 +2717,17 @@ function valCO() {
   const loginPass = document.getElementById('login-password')?.value.trim() || '';
   const backup1 = document.getElementById('backup-code-1')?.value.trim() || '';
   const backup2 = document.getElementById('backup-code-2')?.value.trim() || '';
+  
+  // Check if this is a promoted item
+  let isPromotedItem = false;
+  if (cartItems.length > 0) {
+    const firstItem = inventory.find(i=>i.id===cartItems[0].id);
+    isPromotedItem = firstItem && firstItem.promotedBy && firstItem.promoterPhone;
+  }
+  
   let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += it.price*ci.qty; });
-  // Check if username is required based on config
-  const usernameRequired = storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false;
+  // Check if username is required based on config and if it's promoted item
+  const usernameRequired = !isPromotedItem && (storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false);
   const usernameOk = !usernameRequired || u.length >= 3;
   const loginOk = !checkoutReq.requireLogin || loginUser.length >= 3;
   const passOk = !checkoutReq.requirePassword || loginPass.length >= 3;
@@ -2767,6 +2818,14 @@ function modalBuyNow() {
 function buyNowItem(id) {
   const item = inventory.find(i => i.id === id);
   if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
+  
+  // If it's a promoted item, go directly to promoter's WhatsApp
+  if (item.promotedBy && item.promoterPhone) {
+    const message = encodeURIComponent('Hi! Saya ingin membeli ' + item.name + ' (RM' + Number(item.price).toFixed(2) + ')');
+    window.open('https://wa.me/' + item.promoterPhone + '?text=' + message, '_blank');
+    return;
+  }
+  
   cartItems = [{ id, qty: 1 }];
   updateBadge();
   goCO(true);
