@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ms">
 <head>
   <meta charset="UTF-8"/>
@@ -2238,27 +2238,7 @@ function updateWarnBoxUI() {
     warnBoxName.textContent = '"' + storeConfig.warnBox.accountName + '"';
   }
 }
-async function checkForInventoryUpdate() {
-  try {
-    for (const url of INVENTORY_GIST_URLS) {
-      const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); 
-      if (!r.ok) continue;
-      const data = await r.json();
-      if (Array.isArray(data) && data.length) {
-        const newInvHash = JSON.stringify(data).length + '-' + data.length;
-        const savedHash = localStorage.getItem('h4sx_inv_hash');
-        if (savedHash && savedHash !== newInvHash) {
-          // Inventory changed - hard refresh!
-          window.location.reload(true); 
-          return;
-        }
-        break;
-      }
-    }
-  } catch(e) {
-    // Just ignore errors
-  }
-}
+
 function getDailySeed() { const d = new Date(); return Number('' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0')); }
 function seededRand(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return function() { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; }; }
 function shuffleBySeed(arr, seed) { const out = [...arr]; const rnd = seededRand(seed); for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; } return out; }
@@ -2317,8 +2297,6 @@ window.addEventListener('load', () => {
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
-  // Auto-refresh when inventory changes (check every 30 seconds)
-  setInterval(checkForInventoryUpdate, 30000);
 });
 function getStockBadge(item) { const s = item.stock; if (s == null) return ''; if (s === 0) return '<span class="stock-badge out">Out of Stock</span>'; if (s <= 5) return '<span class="stock-badge low">Tinggal ' + s + '</span>'; return ''; }
 function isOutOfStock(item) { 
