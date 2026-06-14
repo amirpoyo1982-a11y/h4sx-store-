@@ -1336,7 +1336,7 @@ body {
           <div>
             <div class="wt">Penting sebelum bayar</div>
             <ul class="wl">
-              <li>Pastikan nama di QR adalah <strong style="color:var(--sky)">"Nurwazni"</strong></li>
+              <li>Pastikan nama di QR adalah <strong id="warn-box-name" style="color:var(--sky)">"Nurwazni"</strong></li>
               <li>Jika nama tidak betul, hubungi kami segera</li>
               <li>Tier Gamepass hanya boleh dibeli <strong style="color:var(--sky)">1x sahaja</strong></li>
             </ul>
@@ -1617,7 +1617,7 @@ function formatReceiptDateTime() {
 }
 
 function openReceipt() {
-  const username = document.getElementById('roblox-username').value;
+  const username = document.getElementById('roblox-username').value || '-';
   const receiptCode = generateReceiptCode();
   const receiptDatetime = formatReceiptDateTime();
   
@@ -1750,6 +1750,34 @@ const INVENTORY_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/' + GIST_ID + '/raw/inventory.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json'
 ];
+
+// === STORE CONFIG (Payment & Checkout Settings) ===
+// Edit setting kat bawah ni untuk enable/disable QR dan username
+let storeConfig = {
+  payment: {
+    duitNow: {
+      enabled: true,
+      qrUrl: 'https://i.ibb.co/bRyG06zY/image.png',
+      accountName: 'Nurwazni'
+    },
+    tng: {
+      enabled: true,
+      qrUrl: 'https://i.ibb.co/bRyG06zY/image.png',
+      accountName: 'Nurwazni'
+    }
+  },
+  checkout: {
+    requireRobloxUsername: true
+  },
+  warnBox: {
+    showName: true,
+    accountName: 'Nurwazni'
+  },
+  promote: {
+    enabled: true
+  }
+};
+
 let activePayMethod = 'duitnow';
 let spamCounts = {};
 let toastTimeouts = {};
@@ -2120,12 +2148,39 @@ async function loadInv() {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
       const data = await r.json();
-      if (Array.isArray(data) && data.length) { 
-        inventory = data; 
-        // Save hash of inventory to localStorage for later check
-        const invHash = JSON.stringify(inventory).length + '-' + inventory.length;
-        localStorage.setItem('h4sx_inv_hash', invHash);
-        break; 
+      if (data) {
+        // Check if first item is config object (storeConfig)
+        if (data.storeConfig) {
+          // Merge config with existing storeConfig
+          storeConfig = { ...storeConfig, ...data.storeConfig };
+          // Update PAY_QR with config values
+          if (storeConfig.payment.duitNow) {
+            PAY_QR.duitnow.url = storeConfig.payment.duitNow.qrUrl || PAY_QR.duitnow.url;
+            PAY_QR.duitnow.name = storeConfig.payment.duitNow.accountName || PAY_QR.duitnow.name;
+          }
+          if (storeConfig.payment.tng) {
+            PAY_QR.tng.url = storeConfig.payment.tng.qrUrl || PAY_QR.tng.url;
+            PAY_QR.tng.name = storeConfig.payment.tng.accountName || PAY_QR.tng.name;
+          }
+          // Update UI with new config
+          updatePaymentUI();
+          updateWarnBoxUI();
+        }
+        // Get inventory array (skip config object if present)
+        if (Array.isArray(data)) {
+          if (data.length > 0 && data[0].storeConfig) {
+            inventory = data.slice(1);
+          } else {
+            inventory = data;
+          }
+        } else if (Array.isArray(data.inventory)) {
+          inventory = data.inventory;
+        }
+        if (inventory && inventory.length) { 
+          const invHash = JSON.stringify(inventory).length + '-' + inventory.length;
+          localStorage.setItem('h4sx_inv_hash', invHash);
+          break; 
+        }
       }
     } catch(e) {}
   }
@@ -2133,6 +2188,55 @@ async function loadInv() {
     inventory = [{"id":4,"game":"Blox Fruits","name":"ANGEL,GHOUL,CYBORG,RABBIT,HUMAN,SHARK","originalPrice":80,"price":27,"promoLabel":"PROMOSI","desc":"SEMUA RACE V4 FULL GEAR — PILIH SATU. STATUS POLOSAN.","img":"https://i.ibb.co/BKThLPwy/image.png","sold":86,"stock":10},{"id":14,"game":"Blox Fruits","name":"Level Max Gh & Cdk. Skull Guitar","price":14,"promoLabel":"almost out of stock","desc":"GODHUMAN+CURSED DUAL KATANA+SOUL GUITAR [Level MAX]","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":200,"stock":3},{"id":23,"game":"Blox Fruits","name":"200 LEVEL SEA 2-3","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"200 LEVEL SEA 2-3","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":5,"stock":20},{"id":24,"game":"Blox Fruits","name":"200 LEVEL SEA 1","originalPrice":3,"price":1.5,"promoLabel":"BARU","desc":"UNTUK SEA 1","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":10,"stock":20},{"id":5,"game":"Brookhaven","name":"VIP GAMEPASS","originalPrice":31,"price":26,"promoLabel":"HOT","desc":"VIP GAMEPASS","img":"https://i.ibb.co/tpHXYPbc/image.png","sold":45,"stock":50},{"id":6,"game":"Brookhaven","name":"Vehicle Customization","price":16,"desc":"Vehicle Customization","img":"https://i.ibb.co/bR5fdPVr/image.png","sold":89,"stock":50},{"id":7,"game":"Brookhaven","name":"Premium Gamepass","originalPrice":13,"price":8,"promoLabel":"MOST POPULAR","desc":"Premium Gamepass","img":"https://i.ibb.co/BK50Nf0x/image.png","sold":201,"stock":50},{"id":8,"game":"Brookhaven","name":"Speed Vehicle Unlocked","price":8,"desc":"Speed Vehicle Unlocked","img":"https://i.ibb.co/JwK8kH35/image.png","sold":156,"stock":50},{"id":9,"game":"Brookhaven","name":"Vehicle Pack","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Vehicle Pack","img":"https://i.ibb.co/xKX5X0fZ/image.png","sold":34,"stock":15},{"id":10,"game":"Brookhaven","name":"Estate Unlocked","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Estate Unlocked","img":"https://i.ibb.co/277MSz0R/image.png","sold":41,"stock":15},{"id":11,"game":"Brookhaven","name":"Music Unlocked","price":8,"desc":"Music Unlocked","img":"https://i.ibb.co/v4YBMzrp/image.png","sold":203,"stock":50},{"id":13,"game":"fish it","name":"Ghostfin Rod & singularity bait","price":4,"desc":"Starter account fishit","img":"https://i.ibb.co/vnvpkvh/image.png","sold":135,"stock":30},{"id":22,"game":"fish it","name":"Bunny Staff / Easter Parasol","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/LAfMl0V.png","sold":69,"stock":5},{"id":26,"game":"fish it","name":"Golden Clockwork","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/q5bKsnv.png","sold":20,"stock":8},{"id":27,"game":"fish it","name":"Limited Skin Rod","originalPrice":24,"price":13,"promoLabel":"BARU","desc":"VIA TRADE — PILIH SALAH SATU SKIN","img":"https://i.imgur.com/feaPapV.png","sold":23,"stock":4},{"id":28,"game":"fish it","name":"Secret Tumbal","originalPrice":3,"price":0.40,"promoLabel":"BARU","desc":"Random Secret Tumbal","img":"https://i.imgur.com/oKRszAz.png","sold":192,"stock":100},{"id":17,"game":"Robux Via Log in","name":"80 ROBUX","price":4,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":20,"stock":99},{"id":18,"game":"Robux Via Log in","name":"400 ROBUX","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":39,"stock":99},{"id":19,"game":"Robux Via Log in","name":"800 ROBUX","price":33,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":19,"stock":99},{"id":20,"game":"Robux Via Log in","name":"1000 ROBUX","price":36,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":24,"stock":99},{"id":21,"game":"Robux Via Log in","name":"450 ROBUX + PREMIUM","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":35,"stock":99},{"id":29,"game":"Robux Via Log in","name":"160 ROBUX","price":7.5,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":33,"stock":99},{"id":25,"game":"Open sea for Brainrot","name":"100B/S MONEY","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"OPEN SEA FOR BRAINROT BELUM MAX / REBIRT 6","img":"https://i.ibb.co/0R8CzmrK/image.png","sold":20,"stock":50}];
   }
   renderGames();
+}
+
+// Update payment UI based on config
+function updatePaymentUI() {
+  const duitNowQR = document.querySelector('#panel-duitnow .qr-frame img');
+  const tngQR = document.querySelector('#panel-tng .qr-frame img');
+  const duitNowName = document.querySelector('#panel-duitnow .qr-name');
+  const tngName = document.querySelector('#panel-tng .qr-name');
+  
+  if (duitNowQR) duitNowQR.src = PAY_QR.duitnow.url;
+  if (tngQR) tngQR.src = PAY_QR.tng.url;
+  if (duitNowName) duitNowName.textContent = PAY_QR.duitnow.name;
+  if (tngName) tngName.textContent = PAY_QR.tng.name;
+  
+  const qrModalImg = document.getElementById('qr-modal-img');
+  const qrModalName = document.getElementById('qr-modal-name');
+  if (qrModalImg) qrModalImg.src = PAY_QR.duitnow.url;
+  if (qrModalName) qrModalName.textContent = PAY_QR.duitnow.name;
+  
+  const duitNowBtn = document.getElementById('pay-btn-duitnow');
+  const tngBtn = document.getElementById('pay-btn-tng');
+  const duitNowPanel = document.getElementById('panel-duitnow');
+  const tngPanel = document.getElementById('panel-tng');
+  
+  if (duitNowBtn) duitNowBtn.style.display = storeConfig.payment.duitNow.enabled ? '' : 'none';
+  if (tngBtn) tngBtn.style.display = storeConfig.payment.tng.enabled ? '' : 'none';
+  if (duitNowPanel) duitNowPanel.style.display = storeConfig.payment.duitNow.enabled ? '' : 'none';
+  if (tngPanel) tngPanel.style.display = storeConfig.payment.tng.enabled ? '' : 'none';
+  
+  if (!storeConfig.payment.duitNow.enabled && !storeConfig.payment.tng.enabled) {
+    // Both disabled
+  } else if (!storeConfig.payment.duitNow.enabled && activePayMethod === 'duitnow') {
+    activePayMethod = 'tng';
+    selectPay('tng');
+  } else if (!storeConfig.payment.tng.enabled && activePayMethod === 'tng') {
+    activePayMethod = 'duitnow';
+    selectPay('duitnow');
+  }
+}
+
+// Update warn box UI
+function updateWarnBoxUI() {
+  const warnBox = document.querySelector('.warn-box');
+  if (!warnBox) return;
+  
+  const warnBoxName = document.getElementById('warn-box-name');
+  if (storeConfig.warnBox.showName && storeConfig.warnBox.accountName && warnBoxName) {
+    warnBoxName.textContent = '"' + storeConfig.warnBox.accountName + '"';
+  }
 }
 async function checkForInventoryUpdate() {
   try {
@@ -2210,6 +2314,9 @@ async function startCountdown() {
 window.addEventListener('load', () => {
   loadGames().then(renderGames);
   loadInv(); loadReviews(); startCountdown(); initScrollReveal(); animateCounters();
+  // Initialize payment UI with config
+  setTimeout(updatePaymentUI, 500);
+  setTimeout(updateWarnBoxUI, 500);
   // Auto-refresh when inventory changes (check every 30 seconds)
   setInterval(checkForInventoryUpdate, 30000);
 });
@@ -2249,10 +2356,15 @@ function openGame(name) {
     grid.innerHTML = banner + items.map(item => {
       const oos = isOutOfStock(item);
       const promo = item.promoLabel ? '<div class="ptag">' + item.promoLabel + '</div>' : '';
+      // Add Promoted By label
+      let promotedByHTML = '';
+      if (storeConfig.promote.enabled && item.promotedBy) {
+        promotedByHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:var(--sky);font-weight:700;"><i class="fa-solid fa-star"></i>Promoted by ' + item.promotedBy + '</div>';
+      }
       const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + item.originalPrice + '</span>' : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
       const addBtn = oos ? '<button class="padd" disabled><i class="fa-solid fa-ban"></i></button>' : '<button class="padd" onclick="addCart(' + item.id + ')"><i class="fa-solid fa-plus"></i></button>';
       const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="buyNowItem(' + item.id + ')">BUY NOW</button>';
-      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody"><div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div></div></div>';
+      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div></div></div>';
     }).join('');
   }
   showView('product-view');
@@ -2526,6 +2638,14 @@ function goCO(focusPayment) {
     return '<div class="order-row"><span class="or-name">' + item.name + (ci.qty>1?' ×'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
   }).join('');
   document.getElementById('co-total').textContent = 'RM' + tot.toFixed(2);
+  
+  // Show/hide Roblox username field based on config
+  const usernameBlock = document.getElementById('roblox-username')?.closest('.co-block');
+  const usernameRequired = storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false;
+  if (usernameBlock) {
+    usernameBlock.style.display = usernameRequired ? '' : 'none';
+  }
+  
   checkoutReq = resolveCheckoutRequirements();
   updateCredentialFields();
   showView('checkout-view'); valCO();
@@ -2543,7 +2663,9 @@ function valCO() {
   const backup1 = document.getElementById('backup-code-1')?.value.trim() || '';
   const backup2 = document.getElementById('backup-code-2')?.value.trim() || '';
   let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += it.price*ci.qty; });
-  const usernameOk = u.length >= 3;
+  // Check if username is required based on config
+  const usernameRequired = storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false;
+  const usernameOk = !usernameRequired || u.length >= 3;
   const loginOk = !checkoutReq.requireLogin || loginUser.length >= 3;
   const passOk = !checkoutReq.requirePassword || loginPass.length >= 3;
   const backup1Ok = checkoutReq.backupCodeCount < 1 || backup1.length >= 3;
@@ -2576,6 +2698,16 @@ function openQR(method) {
   const m = method || activePayMethod, data = PAY_QR[m]; if (!data) return;
   const img = document.getElementById('qr-modal-img'), name = document.getElementById('qr-modal-name'), sub = document.getElementById('qr-modal-sub');
   if (img) img.src = data.url; if (name) name.textContent = data.name; if (sub) sub.textContent = data.sub;
+  
+  // Update QR modal subtitle based on payment method
+  if (sub) {
+    if (m === 'tng') {
+      sub.textContent = "Touch 'n Go eWallet";
+    } else {
+      sub.textContent = 'DuitNow QR';
+    }
+  }
+  
   document.getElementById('qr-modal')?.classList.add('show');
 }
 function closeQR() { document.getElementById('qr-modal')?.classList.remove('show'); }
