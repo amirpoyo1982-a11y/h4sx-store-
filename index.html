@@ -2361,10 +2361,22 @@ function openGame(name) {
       if (storeConfig.promote.enabled && item.promotedBy) {
         promotedByHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:var(--sky);font-weight:700;"><i class="fa-solid fa-star"></i>Promoted by ' + item.promotedBy + '</div>';
       }
+      // Add QR codes if available on item
+      let itemQRHTML = '';
+      if (item.qrDuitNow || item.qrTng) {
+        itemQRHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2);">';
+        if (item.qrDuitNow && storeConfig.payment.duitNow.enabled) {
+          itemQRHTML += '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:8px;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;">DuitNow</small><img src="' + item.qrDuitNow + '" alt="DuitNow QR" style="width:100px;height:100px;border-radius:8px;border:1px solid var(--border2);"></div>';
+        }
+        if (item.qrTng && storeConfig.payment.tng.enabled) {
+          itemQRHTML += '<div style="display:flex;flex-direction:column;align-items:center;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;">TNG eWallet</small><img src="' + item.qrTng + '" alt="TNG QR" style="width:100px;height:100px;border-radius:8px;border:1px solid var(--border2);"></div>';
+        }
+        itemQRHTML += '</div>';
+      }
       const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + item.originalPrice + '</span>' : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
       const addBtn = oos ? '<button class="padd" disabled><i class="fa-solid fa-ban"></i></button>' : '<button class="padd" onclick="addCart(' + item.id + ')"><i class="fa-solid fa-plus"></i></button>';
       const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="buyNowItem(' + item.id + ')">BUY NOW</button>';
-      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div></div></div>';
+      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
     }).join('');
   }
   showView('product-view');
