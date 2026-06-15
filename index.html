@@ -501,6 +501,7 @@ nav {
   display: flex; flex-direction: column;
   transition: all 0.3s; min-height: 320px;
   box-shadow: var(--shadow-sm);
+  position: relative;
 }
 .pc:hover { border-color: var(--primary2); box-shadow: var(--shadow); transform: translateY(-4px); }
 .ptag {
@@ -539,24 +540,32 @@ nav {
 .pfoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
 .pprice { font-size: 18px; font-weight: 800; color: var(--primary); }
 .pprice-old { font-size: 11px; color: var(--muted2); text-decoration: line-through; margin-left: 4px; }
-.pactions { display: flex; gap: 6px; }
+.pactions { display: flex; gap: 6px; flex-shrink: 0; }
 .padd {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 40px; height: 40px; border-radius: 12px;
   background: var(--primary); color: #fff; border: none;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: transform 0.2s;
+  font-size: 16px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
-.padd:hover { transform: scale(1.08); }
+.padd:hover { transform: scale(1.05); }
+.padd:active { transform: scale(0.95); }
 .padd:disabled { background: var(--bg3); color: var(--muted2); cursor: not-allowed; transform: none; }
 .pbuy {
-  height: 36px; padding: 0 14px; border-radius: 10px;
+  height: 40px; padding: 0 16px; border-radius: 12px;
   background: linear-gradient(145deg, #10b981 0%, #059669 100%);
   color: #fff; border: none;
-  font-size: 11px; font-weight: 800;
+  font-size: 12px; font-weight: 800;
   cursor: pointer; transition: all 0.2s;
   box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  white-space: nowrap;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .pbuy:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+.pbuy:active { transform: translateY(0); }
 .pbuy:disabled { opacity: 0.5; cursor: not-allowed; background: #6b7280; box-shadow: none; }
 .pss {
   width: 44px; height: 44px; border-radius: 12px;
@@ -725,14 +734,18 @@ details.faq[open] .faq-ic { background: var(--primary); color: #fff; transform: 
 .product-modal-desc { font-size: 14px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
 .product-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .pm-btn {
-  flex: 1; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 700;
+  flex: 1; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 700;
   border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .pm-btn.cart { background: var(--bg3); color: var(--ink); border: 1px solid var(--border); }
 .pm-btn.cart:hover { border-color: var(--primary); color: var(--primary); }
+.pm-btn.cart:active { background: var(--border); }
 .pm-btn.buy { background: var(--primary-gradient); color: #fff; box-shadow: var(--shadow-glow); }
 .pm-btn.buy:hover { transform: translateY(-1px); }
+.pm-btn.buy:active { transform: translateY(0); }
 .product-modal-close {
   position: absolute; top: 12px; right: 12px; z-index: 5;
   width: 40px; height: 40px; border-radius: 50%;
@@ -944,11 +957,14 @@ footer {
 }
 @media (max-width: 480px) {
   #game-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  #inventory-grid { grid-template-columns: repeat(2, 1fr); }
-  .pc { min-height: 280px; }
-  .padd { width: 40px; height: 40px; border-radius: 12px; font-size: 16px; }
-  .pbuy { height: 40px; padding: 0 16px; font-size: 12px; font-weight: 800; }
-  .pfoot { padding-top: 10px; }
+  #inventory-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pc { min-height: 300px; }
+  .padd { width: 44px; height: 44px; border-radius: 12px; font-size: 18px; }
+  .pbuy { height: 44px; padding: 0 14px; font-size: 11px; font-weight: 800; }
+  .pfoot { padding-top: 12px; flex-direction: column; align-items: stretch; gap: 10px; }
+  .pfoot > div:first-child { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+  .pactions { width: 100%; justify-content: stretch; }
+  .pactions .pbuy { flex: 1; }
   .pay-methods { grid-template-columns: 1fr; }
   .trust-grid { grid-template-columns: 1fr; }
 }
@@ -2356,8 +2372,8 @@ function openGame(name) {
         itemQRHTML += '</div>';
       }
       const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + item.originalPrice + '</span>' : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
-      const addBtn = oos ? '<button class="padd" disabled><i class="fa-solid fa-ban"></i></button>' : '<button class="padd" onclick="addCart(' + item.id + ')"><i class="fa-solid fa-plus"></i></button>';
-      const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="buyNowItem(' + item.id + ')">BUY NOW</button>';
+      const addBtn = oos ? '<button class="padd" disabled><i class="fa-solid fa-ban"></i></button>' : '<button class="padd" onclick="event.stopPropagation();event.preventDefault();addCart(' + item.id + ')"><i class="fa-solid fa-plus"></i></button>';
+      const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
       return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div style="display:flex;align-items:baseline;gap:4px">' + pHTML + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
     }).join('');
   }
