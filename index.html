@@ -1674,6 +1674,16 @@ body {
         document.getElementById('changelog-title').textContent = data.title;
       }
       
+      // Update date & time from Gist, or use current time
+      const dateEl = document.getElementById('changelog-date-text');
+      const timeEl = document.getElementById('changelog-time-text');
+      if (data.date && dateEl) {
+        dateEl.textContent = data.date;
+      }
+      if (data.time && timeEl) {
+        timeEl.textContent = data.time;
+      }
+      
       let html = '';
       for (const section of data.sections) {
         let iconClass;
