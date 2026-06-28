@@ -72,7 +72,10 @@
   --section-spacing: clamp(48px, 7vw, 96px);
   --nav-h: 76px;
 }
-html { scroll-behavior: smooth; }
+html { 
+  scroll-behavior: smooth; 
+  overflow-x: hidden;
+}
 body {
   background: 
     linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 30%, #f8fafc 60%, #ffffff 100%),
@@ -83,12 +86,17 @@ body {
   overflow-x: hidden;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   position: relative;
+  /* Performance optimizations */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: scroll-position;
 }
 body::before {
   content: '';
@@ -1238,6 +1246,7 @@ footer {
 }
 .changelog-section-title.added { color: var(--green); }
 .changelog-section-title.fixed { color: var(--primary); }
+.changelog-section-title.removed { color: var(--red); }
 .changelog-list {
   list-style: none; display: flex; flex-direction: column; gap: 8px;
 }
@@ -1299,15 +1308,25 @@ footer {
 @media (max-width: 480px) {
   #game-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   #inventory-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .pc { min-height: 300px; }
-  .padd { height: 42px; min-width: 42px; padding: 0 10px; font-size: 11px; }
+  .pc { min-height: 280px; padding: 0; }
+  .pimg { aspect-ratio: 4/3; }
+  .pbody { padding: 12px; }
+  .pname { font-size: 13px; min-height: 36px; }
+  .psold { font-size: 10px; }
+  .pdesc { font-size: 11px; -webkit-line-clamp: 1; line-clamp: 1; margin-bottom: 10px; }
+  .pfoot { padding-top: 10px; gap: 8px; }
+  .padd { height: 40px; min-width: 40px; padding: 0 8px; font-size: 11px; }
   .padd-txt { display: none; }
-  .pbuy { height: 42px; padding: 0 12px; font-size: 11px; font-weight: 800; }
+  .pbuy { height: 40px; padding: 0 10px; font-size: 11px; font-weight: 800; }
   .pquick { display: none; }
   .pay-methods { grid-template-columns: 1fr; }
   .trust-grid { grid-template-columns: 1fr; }
   .product-modal-trust { grid-template-columns: 1fr; }
   .product-modal-actions { flex-direction: column; }
+}
+/* Performance: add will-change to animated elements */
+.pc, .trust-item, .step, .testi-card, .faq, .hstat, .hero-cta-row a {
+  will-change: transform;
 }
 @media (min-width: 769px) {
   .overlay { justify-content: flex-end; }
@@ -1478,25 +1497,8 @@ body {
       <button class="changelog-x" onclick="dismissChangelog()" aria-label="Tutup changelog"><i class="fa-solid fa-xmark"></i></button>
     </div>
     
-    <div class="changelog-body">
-      <div>
-        <div class="changelog-section-title added"><i class="fa-solid fa-plus-circle"></i> Ditambah</div>
-        <ul class="changelog-list">
-          <li class="added"><i class="fa-solid fa-wand-magic-sparkles"></i><span><strong>Hover Quick Bar</strong> — bila hover gambar produk (PC), muncul butang <em>Add Cart</em> &amp; <em>Buy Now</em> pantas.</span></li>
-          <li class="added"><i class="fa-solid fa-cart-plus"></i><span><strong>Badge Cart Qty</strong> — nombor item dalam cart papar pada butang Cart &amp; modal produk.</span></li>
-          <li class="added"><i class="fa-solid fa-paper-plane"></i><span><strong>Fly-to-Cart Animation</strong> — animasi dot terbang ke icon cart bila add item.</span></li>
-          <li class="added"><i class="fa-solid fa-circle-info"></i><span><strong>Product Modal Upgrade</strong> — chip info (sold, stok, promo), trust badges &amp; butang sticky di bawah.</span></li>
-          <li class="added"><i class="fa-solid fa-check-circle"></i><span><strong>"X in cart" hint</strong> — paparan hijau sebelah harga bila item dah dalam cart.</span></li>
-        </ul>
-      </div>
-      <div>
-        <div class="changelog-section-title fixed"><i class="fa-solid fa-wrench"></i> Diperbaiki</div>
-        <ul class="changelog-list">
-          <li class="fixed"><i class="fa-solid fa-screwdriver-wrench"></i><span><strong>Add to Cart tenggelam tepi (PC)</strong> — layout footer produk diubah supaya butang tak lagi terpotong/overflow.</span></li>
-          <li class="fixed"><i class="fa-solid fa-border-all"></i><span><strong>Product card overflow</strong> — butang cart &amp; buy now muat kemas dalam kad produk semua saiz skrin.</span></li>
-          <li class="fixed"><i class="fa-solid fa-tag"></i><span><strong>Label butang Cart</strong> — butang cart ada teks + ikon (bukan icon + sahaja) supaya lebih jelas.</span></li>
-        </ul>
-      </div>
+    <div class="changelog-body" id="changelog-body">
+      <!-- Changelog will be loaded from Gist here -->
     </div>
     
     <div class="changelog-foot">
@@ -1506,22 +1508,60 @@ body {
 </div>
 
 <script>
+  // ======================================
+  // CONFIG: GANTI DENGAN URL RAW GIST ANDA!
+  // ======================================
+  const CHANGELOG_GIST_URL = "https://gist.githubusercontent.com/amirpoyo1982-a11y/f3bc2c131056d998c768765d36f29b58/raw/changelog.json";
+
   function updateChangelogTime() {
     const now = new Date();
-    
-    // Format masa kepada 24-jam (Contoh: 16:09)
     const timeString = now.toLocaleTimeString('ms-MY', { 
       hour: '2-digit', 
       minute: '2-digit',
       hour12: false 
     });
-    
-    // Masukkan masa ke dalam elemen HTML
     document.getElementById('changelog-time-text').textContent = timeString;
   }
 
-  // Jalankan fungsi terus semasa page di-load
+  // Fetch and render changelog from Gist
+  async function loadChangelogFromGist() {
+    const changelogBody = document.getElementById('changelog-body');
+    try {
+      const response = await fetch(CHANGELOG_GIST_URL);
+      const data = await response.json();
+      
+      if (data.title) {
+        document.getElementById('changelog-title').textContent = data.title;
+      }
+      
+      let html = '';
+      for (const section of data.sections) {
+        let iconClass;
+        if (section.type === 'added') iconClass = 'fa-plus-circle';
+        else if (section.type === 'fixed') iconClass = 'fa-wrench';
+        else if (section.type === 'removed') iconClass = 'fa-trash';
+        
+        html += '<div>';
+        html += `<div class="changelog-section-title ${section.type}"><i class="fa-solid ${iconClass}"></i> ${section.title}</div>`;
+        html += '<ul class="changelog-list">';
+        for (const item of section.items) {
+          html += `<li class="${section.type}"><i class="fa-solid ${item.icon}"></i><span>${item.text}</span></li>`;
+        }
+        html += '</ul>';
+        html += '</div>';
+      }
+      changelogBody.innerHTML = html;
+      
+    } catch (error) {
+      console.error('Error loading changelog from Gist:', error);
+      changelogBody.innerHTML = '<div style="text-align:center; color:var(--red); padding:20px;">Gagal memuat changelog. Sila periksa URL Gist.</div>';
+    }
+  }
+
+  // Run on page load
   updateChangelogTime();
+  loadChangelogFromGist();
+  loadPSFromGist();
 </script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
@@ -1552,7 +1592,6 @@ body {
       <a onclick="goSection('guide')">Guide</a>
       <a onclick="goSection('faq')">FAQ</a>
       <a onclick="goSection('reviews')">Reviews</a>
-      <a onclick="showPS()">H4SX PS</a>
     </div>
     <div class="nav-right">
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
@@ -1573,7 +1612,6 @@ body {
   <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
-  <a onclick="showPS();toggleMenu()"><i class="fa-solid fa-server"></i> H4SX PS</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
   <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
 </div>
@@ -1681,33 +1719,8 @@ body {
       <h2 class="ps-page-title">H4SX PRIVATE SERVERS</h2>
       <p class="ps-page-desc">Nikmati pengalaman bermain tanpa gangguan di server kami.</p>
       
-      <div class="server-card">
-        <div class="server-info">
-          <div class="server-name">Server 1 (Blox Fruits)</div>
-          <div class="server-status"><span style="color:var(--green)">●</span> Aktif & Ping Rendah</div>
-        </div>
-        <button class="ps-btn" onclick="addCart('Server 1')">
-          <i class="fas fa-cart-plus"></i> Add to Cart
-        </button>
-      </div>
-      <div class="server-card">
-        <div class="server-info">
-          <div class="server-name">Server 2 (Blox Fruits)</div>
-          <div class="server-status"><span style="color:var(--green)">●</span> Aktif & Ping Rendah</div>
-        </div>
-        <button class="ps-btn" onclick="addCart('Server 2')">
-          <i class="fas fa-cart-plus"></i> Add to Cart
-        </button>
-      </div>
-      <div class="server-card">
-        <div class="server-info">
-          <div class="server-name">Server VIP</div>
-          <div class="server-status" style="color:var(--ps-secondary)">Premium Access</div>
-        </div>
-        <button class="ps-btn premium" onclick="addCart('Server VIP')">
-          <i class="fas fa-crown"></i> Add to Cart
-        </button>
-      </div>
+      <!-- Server cards will be loaded from Gist here -->
+      <div id="ps-container"></div>
     </div>
   </div>
   <!-- PRODUCT LIST -->
