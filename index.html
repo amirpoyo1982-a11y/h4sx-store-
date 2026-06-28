@@ -1167,37 +1167,17 @@ footer {
 }
 .bn-item.bn-cart { position: relative; }
 
-/* PS */
-.ps-container { max-width: 720px; }
-.ps-page-title { font-size: clamp(26px, 4vw, 34px); font-weight: 800; color: var(--ink2); margin-bottom: 8px; letter-spacing: -0.5px; }
-.ps-page-desc { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
-.server-card {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  background: #fff; border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px; margin-bottom: 12px;
-  box-shadow: var(--shadow-sm); transition: all 0.25s;
-}
-.server-card:hover { border-color: var(--primary2); box-shadow: var(--shadow); }
-.server-name { font-size: 17px; font-weight: 800; color: var(--ink2); margin-bottom: 4px; }
-.server-status { font-size: 12px; color: var(--muted); }
-.ps-btn {
-  display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
-  background: var(--primary-gradient); color: #fff; border: none;
-  border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;
-}
-.ps-btn.premium { background: var(--secondary-gradient); }
-
 /* Changelog Modal */
 #changelog-modal {
   display: none; opacity: 0; visibility: hidden;
   transition: all 0.35s ease;
   position: fixed; inset: 0; z-index: 999997;
   background: rgba(15,23,42,0.55); backdrop-filter: blur(10px);
-  align-items: center; justify-content: center; padding: 20px;
+  align-items: flex-start; justify-content: center; padding: 40px 20px 20px;
 }
 #changelog-modal.show { display: flex; opacity: 1; visibility: visible; }
 .changelog-box {
-  position: relative; width: min(520px, 96vw); max-height: 88vh;
+  position: relative; width: min(520px, 96vw); max-height: 95vh;
   background: #fff; border-radius: 22px;
   border: 1px solid rgba(14,165,233,0.18);
   box-shadow: 0 24px 64px rgba(15,23,42,0.18);
@@ -1209,7 +1189,7 @@ footer {
 }
 #changelog-modal.show .changelog-box { transform: scale(1) translateY(0); opacity: 1; }
 .changelog-head {
-  padding: 22px 24px 18px;
+  padding: 16px 20px 14px;
   background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(6,182,212,0.06));
   border-bottom: 1px solid rgba(14,165,233,0.12);
   position: relative;
@@ -1219,15 +1199,15 @@ footer {
   padding: 5px 12px; border-radius: 99px;
   background: var(--primary-gradient); color: #fff;
   font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
-  text-transform: uppercase; margin-bottom: 10px;
+  text-transform: uppercase; margin-bottom: 8px;
 }
-.changelog-title { font-size: 22px; font-weight: 800; color: var(--ink2); line-height: 1.2; }
+.changelog-title { font-size: 20px; font-weight: 800; color: var(--ink2); line-height: 1.2; }
 .changelog-datetime {
-  margin-top: 8px; font-size: 12px; font-weight: 600; color: var(--muted);
+  margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--muted);
   display: flex; align-items: center; gap: 6px;
 }
 .changelog-x {
-  position: absolute; top: 16px; right: 16px;
+  position: absolute; top: 14px; right: 14px;
   width: 36px; height: 36px; border-radius: 10px;
   border: 1px solid var(--border); background: #fff;
   color: var(--muted); cursor: pointer;
@@ -1236,37 +1216,37 @@ footer {
 }
 .changelog-x:hover { background: var(--red); color: #fff; border-color: var(--red); }
 .changelog-body {
-  padding: 20px 24px; overflow-y: auto; flex: 1;
-  display: flex; flex-direction: column; gap: 18px;
+  padding: 16px 20px; overflow-y: auto; flex: 1;
+  display: flex; flex-direction: column; gap: 14px;
 }
 .changelog-section-title {
   font-size: 11px; font-weight: 800; text-transform: uppercase;
-  letter-spacing: 1px; margin-bottom: 10px;
+  letter-spacing: 1px; margin-bottom: 6px;
   display: flex; align-items: center; gap: 8px;
 }
 .changelog-section-title.added { color: var(--green); }
 .changelog-section-title.fixed { color: var(--primary); }
 .changelog-section-title.removed { color: var(--red); }
 .changelog-list {
-  list-style: none; display: flex; flex-direction: column; gap: 8px;
+  list-style: none; display: flex; flex-direction: column; gap: 6px;
 }
 .changelog-list li {
-  font-size: 13px; color: var(--ink); line-height: 1.6;
-  padding: 10px 12px; border-radius: 12px;
+  font-size: 12px; color: var(--ink); line-height: 1.5;
+  padding: 8px 10px; border-radius: 10px;
   background: var(--bg3); border: 1px solid var(--border);
-  display: flex; gap: 10px; align-items: flex-start;
+  display: flex; gap: 8px; align-items: flex-start;
 }
-.changelog-list li i { margin-top: 2px; flex-shrink: 0; font-size: 12px; }
+.changelog-list li i { margin-top: 2px; flex-shrink: 0; font-size: 11px; }
 .changelog-list li.added i { color: var(--green); }
 .changelog-list li.fixed i { color: var(--primary); }
 .changelog-foot {
-  padding: 16px 24px 22px; border-top: 1px solid var(--border);
+  padding: 12px 20px 16px; border-top: 1px solid var(--border);
   background: #fff;
 }
 .changelog-ok {
-  width: 100%; padding: 14px; border: none; border-radius: 14px;
+  width: 100%; padding: 12px; border: none; border-radius: 12px;
   background: var(--primary-gradient); color: #fff;
-  font-size: 14px; font-weight: 800; cursor: pointer;
+  font-size: 13px; font-weight: 800; cursor: pointer;
   box-shadow: 0 8px 24px var(--primary-glow);
   transition: all 0.2s;
 }
@@ -1554,14 +1534,29 @@ body {
       
     } catch (error) {
       console.error('Error loading changelog from Gist:', error);
-      changelogBody.innerHTML = '<div style="text-align:center; color:var(--red); padding:20px;">Gagal memuat changelog. Sila periksa URL Gist.</div>';
+      // Fallback to default changelog if Gist fails
+      let fallbackHtml = '';
+      fallbackHtml += '<div>';
+      fallbackHtml += '<div class="changelog-section-title added"><i class="fa-solid fa-plus-circle"></i> Ditambah</div>';
+      fallbackHtml += '<ul class="changelog-list">';
+      fallbackHtml += '<li class="added"><i class="fa-solid fa-gauge-high"></i><span><strong>Performance Optimizations</strong> — smooth scrolling &amp; less lag!</span></li>';
+      fallbackHtml += '</ul>';
+      fallbackHtml += '</div>';
+      fallbackHtml += '<div>';
+      fallbackHtml += '<div class="changelog-section-title fixed"><i class="fa-solid fa-wrench"></i> Diperbaiki</div>';
+      fallbackHtml += '<ul class="changelog-list">';
+      fallbackHtml += '<li class="fixed"><i class="fa-solid fa-mobile-screen-button"></i><span><strong>Saiz item Mobile</strong> — kad produk lebih kecil &amp; kemas!</span></li>';
+      fallbackHtml += '<li class="fixed"><i class="fa-solid fa-scroll"></i><span><strong>Changelog Modal</strong> — modal changelog lebih mudah untuk PC &amp; Phone!</span></li>';
+      fallbackHtml += '</ul>';
+      fallbackHtml += '</div>';
+      changelogBody.innerHTML = fallbackHtml;
     }
   }
 
   // Run on page load
   updateChangelogTime();
   loadChangelogFromGist();
-  loadPSFromGist();
+  initChangelog();
 </script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
@@ -1712,16 +1707,6 @@ body {
         <a href="https://www.roblox.com/id/users/3264062884/profile" target="_blank"><i class="fa-solid fa-gamepad"></i></a>
       </div>
     </footer>
-  </div>
-  <!-- PS VIEW -->
-  <div id="ps-view" class="hidden" style="padding-top:16px">
-    <div class="ps-container section-panel">
-      <h2 class="ps-page-title">H4SX PRIVATE SERVERS</h2>
-      <p class="ps-page-desc">Nikmati pengalaman bermain tanpa gangguan di server kami.</p>
-      
-      <!-- Server cards will be loaded from Gist here -->
-      <div id="ps-container"></div>
-    </div>
   </div>
   <!-- PRODUCT LIST -->
   <div id="product-view" class="hidden" style="padding-top:16px">
@@ -2310,7 +2295,7 @@ function openAnnDetails() {
   document.body.style.overflow = 'hidden';
 }
 function toggleMenu() { const m = document.getElementById('mob-menu'); m.style.display = (!m.style.display || m.style.display === 'none') ? 'block' : 'none'; }
-const VIEWS = ['home-view','product-view','checkout-view','ps-view'];
+const VIEWS = ['home-view','product-view','checkout-view'];
 function showView(id) {
   VIEWS.forEach(v => {
     const el = document.getElementById(v);
@@ -2320,7 +2305,6 @@ function showView(id) {
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 function showHome() { showView('home-view'); }
-function showPS() { showView('ps-view'); }
 function getStickyOffset() {
   return 16;
 }
