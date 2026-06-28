@@ -588,7 +588,8 @@ nav {
   display: flex; flex-direction: column;
   transition: all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   min-height: 370px;
-  height: 100%;
+  height: 370px;
+  max-height: 370px;
   box-shadow: 0 6px 24px rgba(15, 23, 42, 0.07);
   position: relative;
   isolation: isolate;
@@ -676,7 +677,7 @@ nav {
 }
 .stock-badge.out { background: rgba(239,68,68,0.12); color: #dc2626; border: 1px solid rgba(239,68,68,0.25); }
 .stock-badge.low { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.25); }
-.pbody { padding: 20px; flex: 1; display: flex; flex-direction: column; border-top: 1px solid rgba(14,165,233,0.1); }
+.pbody { padding: 20px; flex: 0 1 auto; display: flex; flex-direction: column; border-top: 1px solid rgba(14,165,233,0.1); overflow: hidden; }
 .pname { 
   font-size: 15px; font-weight: 800; color: var(--ink2); line-height: 1.4; 
   min-height: 44px; margin-bottom: 8px;
@@ -1293,9 +1294,9 @@ footer {
 @media (max-width: 480px) {
   #game-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   #inventory-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .pc { min-height: 280px; padding: 0; }
+  .pc { min-height: 280px; height: 280px; max-height: 280px; padding: 0; }
   .pimg { aspect-ratio: 4/3; }
-  .pbody { padding: 12px; }
+  .pbody { padding: 12px; flex: 0 1 auto; overflow: hidden; }
   .pname { 
     font-size: 13px; min-height: 36px;
     display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
