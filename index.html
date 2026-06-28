@@ -1651,7 +1651,7 @@ body {
   // ======================================
   // CONFIG: GANTI DENGAN URL RAW GIST ANDA!
   // ======================================
-  const CHANGELOG_GIST_URL = "https://gist.githubusercontent.com/amirpoyo1982-a11y/f3bc2c131056d998c768765d36f29b58/raw/changelog.json";
+  const CHANGELOG_GIST_URL = "https://gist.githubusercontent.com/amirpoyo1982-a11y/f3bc2c131056d998c768765d36f29b58/raw/";
 
   function updateChangelogTime() {
     const now = new Date();
@@ -1682,6 +1682,15 @@ body {
       }
       if (data.time && timeEl) {
         timeEl.textContent = data.time;
+      } else {
+        // Fallback to current time if no custom time
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ms-MY', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false 
+        });
+        timeEl.textContent = timeString;
       }
       
       let html = '';
@@ -1724,7 +1733,6 @@ body {
   }
 
   // Run on page load
-  updateChangelogTime();
   loadChangelogFromGist();
   initChangelog();
 </script>
