@@ -194,6 +194,14 @@ input, textarea {
 .status-dot { width: 9px; height: 9px; background: #dc2626; border-radius: 50%; animation: pulse 2s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 
+/* Tawk.to Custom Styles */
+iframe[title*="Tawk"], 
+#tawkchat-iframe-container, 
+#tawkchat-container, 
+.tawk-to-chat-widget {
+  z-index: 99999 !important;
+}
+
 /* Top bar & marquee */
 .site-top-link {
   background: var(--ink2); height: 32px;
@@ -1178,7 +1186,7 @@ details.faq[open] .faq-ic {
 .product-modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
 
 .chat-cs-float {
-  position: fixed; right: 20px; bottom: 20px; z-index: 500;
+  position: fixed; right: 20px; bottom: 100px; z-index: 500;
   display: inline-flex; align-items: center; gap: 8px;
   padding: 12px 18px; border-radius: 99px;
   background: #25d366; color: #fff; font-size: 13px; font-weight: 700;
@@ -1439,7 +1447,7 @@ footer {
   .nav-links, .btn-wa .btn-txt { display: none; }
   .nav-ham { display: flex; }
   .bottom-nav { display: block; }
-  .chat-cs-float { bottom: 80px; }
+  .chat-cs-float { bottom: 150px; }
   #game-grid { grid-template-columns: repeat(3, 1fr); }
   .product-modal-content { grid-template-columns: 1fr; }
   .product-modal-info { border-left: none; border-top: 1px solid var(--border); max-height: 45vh; }
@@ -1525,6 +1533,8 @@ body {
 @media (min-width: 768px) {
   .music-btn {
     top: 105px;
+    left: 20px;
+    right: auto;
   }
 }
 @media (max-width: 767px) {
@@ -1532,14 +1542,15 @@ body {
     padding-top: 80px;
   }
   .music-btn {
-    bottom: 155px;
+    bottom: 20px;
+    left: 20px;
   }
 }
 /* Music Button */
 .music-btn {
   position: fixed;
-  bottom: 155px;
-  right: 20px;
+  bottom: 20px;
+  left: 20px;
   width: 64px;
   height: 64px;
   border-radius: 50%;
@@ -3721,6 +3732,18 @@ function toast(msg, err, name, count) {
   updateButton();
 })();
 initChangelog();
+</script>
+
+<!-- Tawk.to Configuration -->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+Tawk_API.onLoad = function(){
+  // Adjust widget position
+  Tawk_API.setAttributes({
+    'zIndex': 99999,
+    'position': 'right'
+  }, function(error){});
+};
 </script>
 
 <!--Start of Tawk.to Script-->
