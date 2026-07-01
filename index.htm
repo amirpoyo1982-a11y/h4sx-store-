@@ -79,6 +79,9 @@ html {
   scroll-behavior: smooth; 
   overflow-x: hidden;
 }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
 body {
   background: 
     linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 30%, #f8fafc 60%, #ffffff 100%),
@@ -96,10 +99,12 @@ body {
   -ms-user-select: none;
   user-select: none;
   position: relative;
-  /* Performance optimizations */
-  backface-visibility: hidden;
-  transform: translateZ(0);
-  will-change: scroll-position;
+  /* NOTE: removed backface-visibility / translateZ(0) / will-change:scroll-position.
+     Forcing the WHOLE <body> into one giant compositing layer was the actual
+     cause of the scroll lag: on a long page (many products) the browser had to
+     keep rasterizing that huge layer on every scroll/repaint. Hardware
+     acceleration is applied only to the small elements that actually animate
+     (see .pc / .trust-item / etc. below), and only while they're animating. */
 }
 body::before {
   content: '';
@@ -599,6 +604,8 @@ nav {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
   transition: all 0.3s ease;
   height: 100%;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
@@ -1475,10 +1482,14 @@ footer {
   .product-modal-trust { grid-template-columns: 1fr; }
   .product-modal-actions { flex-direction: column; }
 }
-/* Performance: add will-change to animated elements */
-.pc, .trust-item, .step, .testi-card, .faq, .hstat, .hero-cta-row a {
-  will-change: transform;
-}
+/* Performance fix: the old rule set "will-change: transform" PERMANENTLY on
+   every .pc product card, .trust-item, .step, .testi-card, .faq, .hstat and
+   .hero-cta-row link. With dozens of products on the page that meant dozens
+   of GPU-composited layers held in memory at all times — that's what was
+   causing the lag/jank, especially on phones. These elements already have
+   "transition: transform ..." set where they need it, and modern browsers
+   handle that fine on their own without a standing will-change. Removing it
+   here is the actual fix — no replacement rule is needed. */
 @media (min-width: 769px) {
   .overlay { justify-content: flex-end; }
 }
@@ -3752,7 +3763,7 @@ var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
 s1.async=true;
-s1.src='https://embed.tawk.to/69f1077a0463871c3746a259/1jnaorp4s';
+s1.src='https://embed.tawk.to/69f1077a0463871c3746a259/1jr3dr95a';
 s1.charset='UTF-8';
 s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
