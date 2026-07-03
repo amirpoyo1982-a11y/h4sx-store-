@@ -597,14 +597,14 @@ function showClosure(title, status, message, type = 'closed') {
   // Update status styling based on type
   if (statusWrapEl && statusDotEl) {
     if (type === 'maintenance') {
-      statusWrapEl.style.background = 'linear-gradient(145deg, #fff7ed 0%, #ffedd5 100%)';
+      statusWrapEl.style.background = '#fff7ed';
       statusWrapEl.style.borderColor = '#fed7aa';
-      statusWrapEl.style.color = '#9a3412';
+      statusWrapEl.style.color = '#c2410c';
       statusDotEl.style.background = '#f97316';
     } else {
-      statusWrapEl.style.background = 'linear-gradient(145deg, #fff5f5 0%, #ffe8e8 100%)';
-      statusWrapEl.style.borderColor = '#fecaca';
-      statusWrapEl.style.color = '#991b1b';
+      statusWrapEl.style.background = '#fff1f2';
+      statusWrapEl.style.borderColor = '#fecdd3';
+      statusWrapEl.style.color = '#be123c';
       statusDotEl.style.background = '#ef4444';
     }
   }
