@@ -279,10 +279,12 @@ nav {
   height: 100%; display: flex; align-items: center;
   justify-content: space-between; gap: 12px;
 }
-.nav-brand { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
+.nav-brand { display: flex; align-items: center; gap: 12px; background: none; border: none; cursor: pointer; padding: 0; }
 .nav-logo {
-  width: 42px; height: 42px; border-radius: 12px; overflow: hidden;
+  width: 50px; height: 50px; border-radius: 14px; overflow: hidden;
   border: 2px solid var(--border); box-shadow: var(--shadow-sm);
+  background: #fff;
+  padding: 3px;
 }
 .nav-logo img { width: 100%; height: 100%; object-fit: contain; }
 .nav-wordmark { font-size: 17px; font-weight: 800; color: var(--ink2); letter-spacing: -0.3px; }
@@ -1117,10 +1119,12 @@ nav {
   box-shadow: 0 12px 34px rgba(15,23,42,.08);
 }
 .product-ss-head img {
-  width: 54px;
-  height: 54px;
-  border-radius: 14px;
+  width: 66px;
+  height: 66px;
+  border-radius: 16px;
   object-fit: contain;
+  background: #fff;
+  padding: 3px;
 }
 .product-ss-brand {
   font-size: 13px;
