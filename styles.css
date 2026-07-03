@@ -1,4 +1,4 @@
-﻿/* H4SX STORE v4 â€” Soft White + Blue Elegance */
+﻿/* H4SX STORE v4 ? Soft White + Blue Elegance */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #f8fafc;
@@ -1055,8 +1055,8 @@ nav {
   position: fixed;
   left: -9999px;
   top: 0;
-  width: 1120px;
-  padding: 30px;
+  width: 1280px;
+  padding: 28px;
   border-radius: 28px;
   background:
     radial-gradient(circle at 15% 0%, rgba(14,165,233,.25), transparent 24%),
@@ -1070,7 +1070,7 @@ nav {
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   border: 1px solid rgba(14,165,233,.18);
   border-radius: 20px;
   background: rgba(255,255,255,.88);
@@ -1107,8 +1107,8 @@ nav {
 }
 .product-ss-grid {
   display: grid;
-  grid-template-columns: repeat(var(--ss-cols, 4), minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(var(--ss-cols, 5), minmax(0, 1fr));
+  gap: 10px;
 }
 .product-ss-card {
   overflow: hidden;
@@ -1122,7 +1122,7 @@ nav {
 }
 .product-ss-img {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 10;
   background: linear-gradient(135deg, #f8fafc, #dff4ff);
   overflow: hidden;
 }
@@ -1158,13 +1158,13 @@ nav {
   border: 1px solid rgba(239,68,68,.26);
 }
 .product-ss-body {
-  padding: 12px;
+  padding: 10px 12px 12px;
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 .product-ss-name {
-  min-height: 38px;
-  font-size: 13px;
+  min-height: 34px;
+  font-size: 12.5px;
   font-weight: 900;
   line-height: 1.35;
   color: #0f172a;
@@ -1186,7 +1186,7 @@ nav {
   color: #0284c7;
 }
 .product-ss-price span:first-child {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 900;
 }
 .product-ss-old {
@@ -1240,7 +1240,7 @@ details.faq[open] .faq-ic {
 }
 .faq-ans { padding: 0 24px 22px; font-size: 13px; color: var(--muted); line-height: 1.75; }
 
-/* Payment â€” structure preserved */
+/* Payment ? structure preserved */
 .pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 .pay-method-btn {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -1300,7 +1300,7 @@ details.faq[open] .faq-ic {
 .qr-name-large { font-size: 24px; font-weight: 800; color: var(--primary); }
 .qr-modal-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
 
-/* Product modal â€” full image gist */
+/* Product modal ? full image gist */
 .product-modal { position: fixed; inset: 0; z-index: 999998; display: none; align-items: center; justify-content: center; padding: 16px; }
 .product-modal.show { display: flex; }
 .product-modal-bg { position: absolute; inset: 0; background: rgba(15,23,42,0.55); backdrop-filter: blur(8px); }
@@ -1681,11 +1681,11 @@ footer {
 /* Performance fix: the old rule set "will-change: transform" PERMANENTLY on
    every .pc product card, .trust-item, .step, .testi-card, .faq, .hstat and
    .hero-cta-row link. With dozens of products on the page that meant dozens
-   of GPU-composited layers held in memory at all times â€” that's what was
+   of GPU-composited layers held in memory at all times ? that's what was
    causing the lag/jank, especially on phones. These elements already have
    "transition: transform ..." set where they need it, and modern browsers
    handle that fine on their own without a standing will-change. Removing it
-   here is the actual fix â€” no replacement rule is needed. */
+   here is the actual fix ? no replacement rule is needed. */
 @media (min-width: 769px) {
   .overlay { justify-content: flex-end; }
 }
