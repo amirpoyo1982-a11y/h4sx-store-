@@ -810,15 +810,15 @@ function updateWarnBoxUI() {
 function getDailySeed() { const d = new Date(); return Number('' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0')); }
 function seededRand(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return function() { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; }; }
 function shuffleBySeed(arr, seed) { const out = [...arr]; const rnd = seededRand(seed); for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; } return out; }
-// Firebase Configuration - SILA TUKAR DENGAN CONFIG FIREBASE AWAK SENDIRI!
+// Firebase Configuration
 const firebaseConfig = {
-  // Contoh config (awak kena tukar ni):
-  // apiKey: "YOUR_API_KEY",
-  // authDomain: "YOUR_PROJECT.firebaseapp.com",
-  // projectId: "YOUR_PROJECT_ID",
-  // storageBucket: "YOUR_PROJECT.appspot.com",
-  // messagingSenderId: "YOUR_SENDER_ID",
-  // appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBOkyPe2f1tHu9OQiwHHpgfJTYM-KM7cuU",
+  authDomain: "h4sx-6712c.firebaseapp.com",
+  projectId: "h4sx-6712c",
+  storageBucket: "h4sx-6712c.firebasestorage.app",
+  messagingSenderId: "416803081247",
+  appId: "1:416803081247:web:e201174233b953e539992a",
+  measurementId: "G-J9QWB39V87"
 };
 
 // Inisialisasi Firebase (jika config ada)
@@ -833,60 +833,87 @@ if (firebaseConfig.apiKey) {
   }
 }
 
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
+}
+function clampRating(value) {
+  const n = parseInt(value, 10);
+  return Math.min(5, Math.max(1, Number.isFinite(n) ? n : 5));
+}
+function warnaHexSah(value, fallback) {
+  return /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
+}
+function badgeStyle(data = {}) {
+  const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
+  const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
+  const text = warnaHexSah(data.badgeTextColor, '#ffffff');
+  const glow = warnaHexSah(data.badgeGlowColor, c1);
+  const gradient = data.badgeGradient !== false;
+  const bg = gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1;
+  return `background:${bg}; color:${text}; --badge-glow:${glow}; box-shadow:0 4px 16px -8px ${glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+}
+function toReviewTime(value) {
+  if (!value) return 'Baru sahaja';
+  const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Baru sahaja';
+  return date.toLocaleString('ms-MY', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+}
+let unsubscribeReviews = null;
 async function loadReviews() {
-  const fallback = [
-    {nama:'Arif F.',komen:'Servis sangat laju, dapat dalam 5 minit. Akaun selamat!',rating:5,tarikh:'Blox Fruits'},
-    {nama:'Nazri Z.',komen:'Dah 3 kali beli. Setiap kali smooth. Highly recommended!',rating:5,tarikh:'Brookhaven'},
-    {nama:'Syahira H.',komen:'Anti-hackback betul-betul terbukti. Terima kasih H4SX!',rating:5,tarikh:'Robux Via Log in'},
-    {nama:'Aiman R.',komen:'Admin friendly, detail order jelas dan cepat siap.',rating:5,tarikh:'fish it'},
-    {nama:'Izzah N.',komen:'Checkout senang, terus dapat respon dekat WhatsApp.',rating:5,tarikh:'Sailor piece'},
-    {nama:'Hakim P.',komen:'Harga okay dan proses kemas. Memang repeat lagi.',rating:5,tarikh:'Open sea for Brainrot'}
-  ];
   const grid = document.getElementById('testi-grid');
-  const seed = getDailySeed();
-  
-  // Cuba load dari Firebase dahulu (jika config ada)
-  if (db) {
-    try {
-      console.log("Loading reviews from Firebase...");
-      const snapshot = await db.collection('reviews').orderBy('timestamp', 'desc').limit(10).get();
-      if (!snapshot.empty) {
-        const data = snapshot.docs.map(doc => {
-          const d = doc.data();
-          return {
-            nama: d.nama || d.name || 'Pelanggan',
-            komen: d.komen || d.comment || d.feedback || '',
-            rating: d.rating || 5,
-            tarikh: d.tarikh || d.game || d.date || ''
-          };
-        });
-        renderReviews(shuffleBySeed(data, seed).slice(0,6));
-        setTimeout(initScrollReveal, 100);
-        return;
-      }
-    } catch(e) {
-      console.error("Firebase load error:", e);
-    }
+  if (!grid) return;
+  if (!db) {
+    grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
+    return;
   }
+  if (unsubscribeReviews) unsubscribeReviews();
   
-  // Fallback ke Gist jika Firebase gagal atau tiada config
   try {
-    const r = await fetch('https://gist.githubusercontent.com/amirpoyo1982-a11y/a68a8644726d0d69e9f910a97e7126d4/raw/h4sx-feedback.json?t=' + Date.now(), { cache:'no-store' });
-    if (!r.ok) throw 0;
-    const data = await r.json();
-    if (!data?.length) throw 0;
-    renderReviews(shuffleBySeed(data, seed).slice(0,6));
-  } catch(e) { 
-    renderReviews(shuffleBySeed(fallback, seed).slice(0,3)); 
+    unsubscribeReviews = db.collection('ratings')
+      .orderBy('diciptaPada', 'desc')
+      .limit(6)
+      .onSnapshot(snapshot => {
+        const data = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(item => {
+            const text = (item.ulasan || item.komen || item.comment || item.feedback || '').trim();
+            return text && text !== 'Tiada ulasan ditinggalkan.';
+          });
+        renderReviews(data);
+        setTimeout(initScrollReveal, 100);
+      }, error => {
+        console.error("Firebase review listener error:", error);
+        grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
+      });
+  } catch(e) {
+    console.error("Firebase review setup error:", e);
+    grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
   }
-  setTimeout(initScrollReveal, 100);
 }
 function renderReviews(list) {
   const grid = document.getElementById('testi-grid'); if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = '<div class="testi-loading">Belum ada ulasan terbaru.</div>';
+    return;
+  }
   grid.innerHTML = list.map((item,i) => {
-    const stars = Array(5).fill(0).map((_,si) => '<i class="fa-solid fa-star" style="color:' + (si<(item.rating||5)?'var(--sky)':'var(--border2)') + '"></i>').join('');
-    const initials = (item.nama||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    return '<div class="testi-card reveal ' + (['','reveal-delay-1','reveal-delay-2'][i%3]) + '"><div class="testi-stars">' + stars + '</div><div class="testi-text">"' + (item.komen||'') + '"</div><div class="testi-bottom"><div class="testi-avatar">' + initials + '</div><div><div class="testi-name">' + (item.nama||'Pelanggan') + '</div><div class="testi-game">' + (item.tarikh||'') + '</div></div><div class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</div></div></div>';
+    const rating = clampRating(item.bintang ?? item.rating);
+    const stars = Array(5).fill(0).map((_,si) => '<i class="fa-solid fa-star" style="color:' + (si<rating?'var(--sky)':'var(--border2)') + '"></i>').join('');
+    const name = item.nama || item.name || 'Pelanggan';
+    const text = item.ulasan || item.komen || item.comment || item.feedback || '';
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+    const avatar = item.profileImg
+      ? '<img src="' + escapeHtml(item.profileImg) + '" alt="">'
+      : escapeHtml(item.emojiProfil || initials);
+    const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
+    const isAdmin = name.toLowerCase().includes('h4sx');
+    const roleText = item.role || item.badgeText;
+    const role = roleText
+      ? '<span class="testi-role' + (item.badgeAnimated === false ? '' : ' is-animated') + '" style="' + badgeStyle(item) + '">' + escapeHtml(roleText) + '</span>'
+      : (isAdmin ? '<span class="testi-role is-animated" style="' + badgeStyle({ badgeColor:'#2fa8e0', badgeColor2:'#0f2a45', badgeTextColor:'#ffffff', badgeGlowColor:'#2fa8e0', badgeGradient:true }) + '">ADMIN RASMI</span>' : '<span class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>');
+    return '<div class="testi-card reveal ' + (['','reveal-delay-1','reveal-delay-2'][i%3]) + '"><div class="testi-stars">' + stars + '</div><div class="testi-text">"' + escapeHtml(text) + '"</div><div class="testi-bottom"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div><div class="testi-name">' + escapeHtml(name) + '</div><div class="testi-game">' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</div></div>' + role + '</div></div>';
   }).join('');
 }
 async function startCountdown() {
