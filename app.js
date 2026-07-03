@@ -231,6 +231,7 @@ const INVENTORY_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/' + GIST_ID + '/raw/inventory.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json'
 ];
+const KEDAI_GIST_URL = 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/kedai.json';
 
 // === STORE CONFIG (Payment & Checkout Settings) ===
 // Edit setting kat bawah ni untuk enable/disable QR dan username
@@ -269,7 +270,7 @@ const PAY_QR = {
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 async function fetchKedaiJson() {
-  const url = 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/kedai.json';
+  const url = KEDAI_GIST_URL;
   try { 
     console.log('Fetching kedai.json from:', url);
     const r = await fetch(url + '?cb=' + Date.now(), { cache:'no-store' }); 
@@ -285,6 +286,12 @@ async function fetchKedaiJson() {
     console.error("Gist fetch error:", e);
   }
   return null;
+}
+function flagOn(value) {
+  return value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'on';
+}
+function flagOff(value) {
+  return value === false || String(value).toLowerCase() === 'false' || String(value).toLowerCase() === 'close' || String(value).toLowerCase() === 'off';
 }
 function closeAnnDetails() {
   const m = document.getElementById('ann-details-modal');
@@ -538,13 +545,13 @@ async function checkStore() {
   let title, status, message;
   
   // First check manual overrides
-  if (currentStoreConfig.maintenance === true) {
+  if (flagOn(currentStoreConfig.maintenance)) {
     shouldClose = true;
     closureType = 'maintenance';
     title = currentStoreConfig.tajuk_maintenance || 'SISTEM UPDATE';
     status = currentStoreConfig.sub_maintenance || 'REHAT JAP';
     message = currentStoreConfig.mesej_maintenance || 'Tengah restock barang baru mat!';
-  } else if (currentStoreConfig.bukakedai === false || currentStoreConfig.bukakedai === "close") {
+  } else if (flagOff(currentStoreConfig.bukakedai)) {
     shouldClose = true;
     closureType = 'closed';
     title = currentStoreConfig.tajuk_tutup || 'KEDAI TUTUP';
