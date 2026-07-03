@@ -1192,7 +1192,15 @@ async function takeScreenshot() {
     const board = document.createElement('div');
     board.className = 'product-ss-board';
     const maxCols = items.length <= 5 ? items.length : 5;
-    board.style.setProperty('--ss-cols', String(Math.max(1, maxCols)));
+    const ssCols = Math.max(1, maxCols);
+    const ssCardWidth = items.length <= 2 ? 270 : 230;
+    const ssGap = 10;
+    const ssPadding = 48;
+    const ssGridWidth = (ssCols * ssCardWidth) + ((ssCols - 1) * ssGap);
+    const ssBoardWidth = Math.max(560, Math.min(1280, ssGridWidth + ssPadding));
+    board.style.setProperty('--ss-cols', String(ssCols));
+    board.style.setProperty('--ss-card-width', `${ssCardWidth}px`);
+    board.style.setProperty('--ss-board-width', `${ssBoardWidth}px`);
     board.innerHTML = `
       <div class="product-ss-head">
         <img src="https://i.imgur.com/LjWuizN.png" alt="H4SX">
