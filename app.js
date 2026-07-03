@@ -1203,7 +1203,7 @@ async function takeScreenshot() {
     board.style.setProperty('--ss-board-width', `${ssBoardWidth}px`);
     board.innerHTML = `
       <div class="product-ss-head">
-        <img src="https://i.imgur.com/LjWuizN.png" alt="H4SX">
+        <img src="https://i.imgur.com/UUAt0GO.png" alt="H4SX">
         <div>
           <div class="product-ss-brand">H4SX STORE</div>
           <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}</div>
@@ -1295,7 +1295,7 @@ function getStockLabelForScreenshot(item) {
 }
 function getProductScreenshotFallback() {
   const game = gamesList.find(g => g.name === currentGame);
-  return cleanUrl(game?.img || 'https://i.imgur.com/LjWuizN.png');
+  return cleanUrl(game?.img || 'https://i.imgur.com/UUAt0GO.png');
 }
 function waitForBoardImages(root) {
   const imgs = [...root.querySelectorAll('img')];
