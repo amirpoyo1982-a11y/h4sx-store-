@@ -293,6 +293,10 @@ function flagOn(value) {
 function flagOff(value) {
   return value === false || String(value).toLowerCase() === 'false' || String(value).toLowerCase() === 'close' || String(value).toLowerCase() === 'off';
 }
+function isPreviewBypass() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('preview') === '1' || params.get('preview') === 'true';
+}
 function closeAnnDetails() {
   const m = document.getElementById('ann-details-modal');
   const c = document.getElementById('ann-modal-content');
@@ -521,9 +525,18 @@ function updateBusinessHoursDisplay(config, isOpen) {
 
 async function checkStore() {
   console.log('Running checkStore...');
-  const d = await fetchKedaiJson();
   const overlay = document.getElementById('closure-overlay');
   const closureIconEl = document.getElementById('closure-icon');
+
+  if (isPreviewBypass()) {
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    updateBusinessHoursDisplay(currentStoreConfig, true);
+    checkAndShowAnnouncement();
+    return;
+  }
+
+  const d = await fetchKedaiJson();
   
   if (!d) {
     console.log('No data received from gist! Using default config.');
