@@ -913,8 +913,34 @@ function renderReviews(list) {
     const role = roleText
       ? '<span class="testi-role' + (item.badgeAnimated === false ? '' : ' is-animated') + '" style="' + badgeStyle(item) + '">' + escapeHtml(roleText) + '</span>'
       : (isAdmin ? '<span class="testi-role is-animated" style="' + badgeStyle({ badgeColor:'#2fa8e0', badgeColor2:'#0f2a45', badgeTextColor:'#ffffff', badgeGlowColor:'#2fa8e0', badgeGradient:true }) + '">ADMIN RASMI</span>' : '<span class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>');
-    return '<div class="testi-card reveal ' + (['','reveal-delay-1','reveal-delay-2'][i%3]) + '"><div class="testi-stars">' + stars + '</div><div class="testi-text">"' + escapeHtml(text) + '"</div><div class="testi-bottom"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div><div class="testi-name">' + escapeHtml(name) + '</div><div class="testi-game">' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</div></div>' + role + '</div></div>';
+    const feedbackBtn = item.feedbackImg ? '<button class="testi-feedback-btn" type="button" data-review-index="' + i + '">See image</button>' : '';
+    return '<div class="testi-card reveal ' + (['','reveal-delay-1','reveal-delay-2'][i%3]) + '"><div class="testi-stars">' + stars + '</div><div class="testi-text">"' + escapeHtml(text) + '"</div>' + feedbackBtn + '<div class="testi-bottom"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div><div class="testi-name">' + escapeHtml(name) + '</div><div class="testi-game">' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</div></div>' + role + '</div></div>';
   }).join('');
+  grid.querySelectorAll('.testi-feedback-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = list[Number(btn.dataset.reviewIndex)];
+      openTestimonialImage(item?.feedbackImg);
+    });
+  });
+}
+function openTestimonialImage(src) {
+  if (!src) return;
+  let modal = document.getElementById('testimonial-image-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'testimonial-image-modal';
+    modal.className = 'testimonial-image-modal';
+    modal.innerHTML = '<div class="testimonial-image-box"><div class="testimonial-image-head"><span>Gambar Feedback</span><button type="button" class="testimonial-image-close">×</button></div><img class="testimonial-image-img" alt="Gambar feedback"></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => {
+      if (e.target === modal || e.target.classList.contains('testimonial-image-close')) {
+        modal.classList.remove('show');
+        modal.querySelector('img').src = '';
+      }
+    });
+  }
+  modal.querySelector('img').src = src;
+  modal.classList.add('show');
 }
 async function startCountdown() {
   const strip = document.getElementById('cd-strip'), labelEl = document.getElementById('cd-label'), subEl = document.getElementById('cd-sub');
@@ -1151,22 +1177,63 @@ function updateCredentialFields() {
 async function takeScreenshot() {
   try {
     const ssBtn = document.getElementById('pv-ss-btn');
-    if (ssBtn) ssBtn.style.opacity = '0';
+    if (ssBtn) { ssBtn.disabled = true; ssBtn.style.opacity = '0.55'; }
     
-    toast('Screenshot sedang diambil...', false);
-    
-    // Capture the product view (from top of screen to bottom of inventory grid)
-    const targetEl = document.getElementById('product-view');
-    const rect = targetEl.getBoundingClientRect();
-    const topPos = window.scrollY;
-    const bottomPos = window.scrollY + rect.bottom;
-    
-    const canvas = await html2canvas(document.body, {
-      y: topPos,
-      height: bottomPos - topPos,
+    toast('Screenshot produk sedang dibuat...', false);
+
+    const items = inventory
+      .filter(i => i.game === currentGame)
+      .sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
+    if (!items.length) {
+      toast('Tiada produk untuk screenshot', true);
+      return;
+    }
+
+    const board = document.createElement('div');
+    board.className = 'product-ss-board';
+    const maxCols = items.length <= 4 ? items.length : 4;
+    board.style.setProperty('--ss-cols', String(Math.max(1, maxCols)));
+    board.innerHTML = `
+      <div class="product-ss-head">
+        <img src="https://i.imgur.com/LjWuizN.png" alt="H4SX">
+        <div>
+          <div class="product-ss-brand">H4SX STORE</div>
+          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}</div>
+        </div>
+        <div class="product-ss-count">${items.length} item</div>
+      </div>
+      <div class="product-ss-grid">
+        ${items.map(item => {
+          const oos = isOutOfStock(item);
+          const price = Number(item.price || 0).toFixed(2);
+          const oldPrice = item.originalPrice && item.originalPrice > item.price
+            ? `<span class="product-ss-old">RM${escapeForHtml(item.originalPrice)}</span>`
+            : '';
+          return `
+            <div class="product-ss-card${oos ? ' is-oos' : ''}">
+              <div class="product-ss-img">
+                <img src="${escapeForHtml(cleanUrl(item.img || ''))}" alt="${escapeForHtml(item.name || '')}">
+                ${oos ? '<span class="product-ss-stock out">Habis</span>' : getStockLabelForScreenshot(item)}
+              </div>
+              <div class="product-ss-body">
+                <div class="product-ss-name">${escapeForHtml(item.name || 'Item')}</div>
+                <div class="product-ss-meta">${escapeForHtml(String(item.sold || 0))} sold</div>
+                <div class="product-ss-price"><span>RM${price}</span>${oldPrice}</div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div class="product-ss-foot">h4sx-store.vercel.app</div>`;
+    document.body.appendChild(board);
+
+    const canvas = await html2canvas(board, {
+      backgroundColor: null,
+      scale: 2,
       useCORS: true,
-      allowTaint: true
+      allowTaint: false,
+      logging: false
     });
+    board.remove();
     
     // Convert canvas to blob and copy to clipboard
     canvas.toBlob(async (blob) => {
@@ -1174,11 +1241,11 @@ async function takeScreenshot() {
         if (navigator.clipboard && window.ClipboardItem) {
           const item = new ClipboardItem({ 'image/png': blob });
           await navigator.clipboard.write([item]);
-          toast('Screenshot disalin ke clipboard!', false);
+          toast('Screenshot produk disalin ke clipboard!', false);
         } else {
           // Fallback: download if clipboard not supported
           const link = document.createElement('a');
-          link.download = `screenshot-${Date.now()}.png`;
+          link.download = `h4sx-${(currentGame || 'produk').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${Date.now()}.png`;
           link.href = canvas.toDataURL('image/png');
           link.click();
           toast('Clipboard tidak disokong, muat turun screenshot...', false);
@@ -1187,18 +1254,35 @@ async function takeScreenshot() {
         console.error('Clipboard error:', clipErr);
         // Fallback: download
         const link = document.createElement('a');
-        link.download = `screenshot-${Date.now()}.png`;
+        link.download = `h4sx-${(currentGame || 'produk').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         toast('Clipboard tidak disokong, muat turun screenshot...', false);
       }
     });
     
-    if (ssBtn) ssBtn.style.opacity = '1';
   } catch (err) {
     toast('Gagal mengambil screenshot', true);
     console.error(err);
+  } finally {
+    const ssBtn = document.getElementById('pv-ss-btn');
+    if (ssBtn) { ssBtn.disabled = false; ssBtn.style.opacity = '1'; }
   }
+}
+function escapeForHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+function getStockLabelForScreenshot(item) {
+  const stock = Number(item.stock);
+  if (Number.isFinite(stock) && stock > 0 && stock <= 3) {
+    return '<span class="product-ss-stock low">Stok ' + stock + '</span>';
+  }
+  return '<span class="product-ss-stock ok">Ready</span>';
 }
 function updateAddButtons() {
   document.querySelectorAll('.pc').forEach(card => {
