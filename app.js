@@ -37,22 +37,6 @@ document.addEventListener('keydown', function(e) {
     e.preventDefault();
   }
 });
-// Detect dev tools opening
-let devToolsOpen = false;
-const threshold = 160;
-const checkDevTools = function() {
-  const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-  const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-  if (widthThreshold || heightThreshold) {
-    if (!devToolsOpen) {
-      devToolsOpen = true;
-      alert('Developer tools dikesan! Sila tutup untuk teruskan.');
-    }
-  } else {
-    devToolsOpen = false;
-  }
-};
-setInterval(checkDevTools, 1000);
 // --- END ANTI-INSPECT ---
 
 // --- DATE & TIME DISPLAY ---
@@ -77,6 +61,21 @@ setInterval(updateDateTime, 1000);
 
 // --- RECEIPT FUNCTIONS ---
 let currentReceiptText = '';
+let html2CanvasPromise = null;
+
+function ensureHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (html2CanvasPromise) return html2CanvasPromise;
+  html2CanvasPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    script.async = true;
+    script.onload = () => resolve(window.html2canvas);
+    script.onerror = () => reject(new Error('Gagal load html2canvas'));
+    document.head.appendChild(script);
+  });
+  return html2CanvasPromise;
+}
 
 function generateReceiptCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -178,6 +177,7 @@ function copyReceipt() {
 }
 
 async function getReceiptCanvas() {
+  await ensureHtml2Canvas();
   const receiptContent = document.getElementById('receipt-content');
   return await html2canvas(receiptContent, {
     scale: 2,
@@ -686,6 +686,13 @@ const DEFAULT_GAMES = [
 ];
 let gamesList = [...DEFAULT_GAMES];
 async function loadGames() {
+  try {
+    const cachedGames = JSON.parse(localStorage.getItem('h4sx_games_cache') || '[]');
+    if (Array.isArray(cachedGames) && cachedGames.length) {
+      gamesList = cachedGames;
+      renderGames();
+    }
+  } catch(e) {}
   for (const url of GAMES_GIST_URLS) {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
@@ -698,6 +705,7 @@ async function loadGames() {
           });
           return game;
         });
+        try { localStorage.setItem('h4sx_games_cache', JSON.stringify(gamesList)); } catch(e) {}
         return;
       }
     } catch(e) {}
@@ -754,8 +762,11 @@ function renderMediaHTML(item = {}, context = 'card') {
   const video = isVideoMediaUrl(src, item);
   if (video) {
     const controls = context === 'modal' ? ' controls' : '';
+    const eagerAttrs = context === 'modal'
+      ? ' autoplay loop muted playsinline preload="metadata"'
+      : ' muted playsinline preload="none" onmouseenter="this.play().catch(function(){})" onmouseleave="this.pause()"';
     const fallback = escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback());
-    return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + ' autoplay loop muted playsinline preload="metadata"' + controls + ' draggable="false" onerror="this.outerHTML=\'<img class=&quot;product-media product-media-img&quot; src=&quot;' + fallback + '&quot; alt=&quot;' + name + '&quot; draggable=&quot;false&quot;>\'"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
+    return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + eagerAttrs + controls + ' draggable="false" onerror="this.outerHTML=\'<img class=&quot;product-media product-media-img&quot; src=&quot;' + fallback + '&quot; alt=&quot;' + name + '&quot; draggable=&quot;false&quot;>\'"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
   }
   return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
 }
@@ -780,6 +791,14 @@ function syncInventoryGames() {
 }
 
 async function loadInv() {
+  try {
+    const cachedInventory = JSON.parse(localStorage.getItem('h4sx_inventory_cache') || '[]');
+    if (Array.isArray(cachedInventory) && cachedInventory.length) {
+      inventory = cachedInventory;
+      syncInventoryGames();
+      renderGames();
+    }
+  } catch(e) {}
   for (const url of INVENTORY_GIST_URLS) {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' });
@@ -844,6 +863,7 @@ async function loadInv() {
         if (inventory && inventory.length) { 
           const invHash = JSON.stringify(inventory).length + '-' + inventory.length;
           localStorage.setItem('h4sx_inv_hash', invHash);
+          try { localStorage.setItem('h4sx_inventory_cache', JSON.stringify(inventory)); } catch(e) {}
           syncInventoryGames();
           renderGames();
           break; 
@@ -1065,13 +1085,29 @@ async function startCountdown() {
   }
   tick();
 }
-window.addEventListener('load', () => {
+function runWhenIdle(fn, timeout = 1800) {
+  if ('requestIdleCallback' in window) requestIdleCallback(fn, { timeout });
+  else setTimeout(fn, Math.min(timeout, 1000));
+}
+
+function bootStoreApp() {
   loadGames().then(renderGames);
-  loadInv(); loadReviews(); startCountdown(); initScrollReveal(); animateCounters();
+  loadInv();
+  startCountdown();
+  initScrollReveal();
+  runWhenIdle(loadReviews, 1200);
+  runWhenIdle(animateCounters, 1600);
+  runWhenIdle(initChangelog, 2200);
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootStoreApp, { once: true });
+} else {
+  bootStoreApp();
+}
 function getStockBadge(item) { const s = item.stock; if (s == null) return ''; if (s === 0) return '<span class="stock-badge out">Out of Stock</span>'; if (s <= 5) return '<span class="stock-badge low">Tinggal ' + s + '</span>'; return ''; }
 function isOutOfStock(item) { 
   if (item.stock == null) return false;
@@ -1336,6 +1372,7 @@ async function takeScreenshot() {
       <div class="product-ss-foot">h4sx-store.vercel.app</div>`;
     document.body.appendChild(board);
     await waitForBoardImages(board);
+    await ensureHtml2Canvas();
 
     const canvas = await html2canvas(board, {
       backgroundColor: null,

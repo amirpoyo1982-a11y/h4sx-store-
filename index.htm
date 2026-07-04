@@ -7,10 +7,12 @@
   <link rel="icon" type="image/png" href="https://i.imgur.com/cLPulXQ.png">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://i.imgur.com">
+  <link rel="preconnect" href="https://gist.githubusercontent.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -94,7 +96,7 @@
   </div>
 </div>
 
-<script src="changelog-loader.js"></script>
+<script defer src="changelog-loader.js"></script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
   <div class="marquee-track">
@@ -475,7 +477,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script src="app.js"></script>
+<script defer src="app.js"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
@@ -493,12 +495,16 @@ Tawk_API.onLoad = function(){
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
+function loadTawk(){
 var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
 s1.async=true;
 s1.src='https://embed.tawk.to/69f1077a0463871c3746a259/1jr3dr95a';
 s1.charset='UTF-8';
 s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
+}
+if ('requestIdleCallback' in window) requestIdleCallback(loadTawk, { timeout: 5000 });
+else setTimeout(loadTawk, 3500);
 })();
 </script>
 <!--End of Tawk.to Script-->

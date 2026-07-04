@@ -92,6 +92,19 @@ body {
      acceleration is applied only to the small elements that actually animate
      (see .pc / .trust-item / etc. below), and only while they're animating. */
 }
+
+.section-panel,
+.pc,
+.testi-card,
+.gc {
+  content-visibility: auto;
+}
+
+.section-panel { contain-intrinsic-size: 1px 520px; }
+.pc { contain-intrinsic-size: 1px 420px; }
+.gc { contain-intrinsic-size: 1px 190px; }
+.testi-card { contain-intrinsic-size: 1px 190px; }
+
 body::before {
   content: '';
   position: fixed;
