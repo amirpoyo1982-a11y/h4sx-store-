@@ -691,7 +691,13 @@ async function loadGames() {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
       const data = await r.json();
       if (Array.isArray(data) && data.length) {
-        gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => ({ name:g.name.trim(), img:g.img||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:g.badge||null }));
+        gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => {
+          const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:g.badge||null };
+          ['img', 'video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
+            if (game[key]) game[key] = cleanUrl(game[key]);
+          });
+          return game;
+        });
         return;
       }
     } catch(e) {}
@@ -717,7 +723,7 @@ function normalizeImgurUrl(url, forceVideo = false) {
   return clean;
 }
 function isVideoMediaUrl(url, item = {}) {
-  const type = String(item.mediaType || item.media || item.type || '').toLowerCase();
+  const type = String(item.mediaType || item.mediatype || item.media || item.type || '').toLowerCase();
   if (type.includes('video')) return true;
   return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
 }
@@ -748,9 +754,29 @@ function renderMediaHTML(item = {}, context = 'card') {
   const video = isVideoMediaUrl(src, item);
   if (video) {
     const controls = context === 'modal' ? ' controls' : '';
-    return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + ' autoplay loop muted playsinline preload="metadata"' + controls + ' draggable="false"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
+    const fallback = escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback());
+    return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + ' autoplay loop muted playsinline preload="metadata"' + controls + ' draggable="false" onerror="this.outerHTML=\'<img class=&quot;product-media product-media-img&quot; src=&quot;' + fallback + '&quot; alt=&quot;' + name + '&quot; draggable=&quot;false&quot;>\'"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
   }
   return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
+}
+
+function syncInventoryGames() {
+  if (!Array.isArray(inventory) || !inventory.length) return;
+  const seen = new Set(gamesList.map(g => String(g.name || '').toLowerCase()));
+  inventory.forEach(item => {
+    const name = String(item.game || '').trim();
+    if (!name || seen.has(name.toLowerCase())) return;
+    seen.add(name.toLowerCase());
+    gamesList.push({
+      name,
+      img: productPosterUrl(item),
+      poster: productPosterUrl(item),
+      video: isVideoMediaUrl(productMediaUrl(item), item) ? productMediaUrl(item) : '',
+      mediaType: isVideoMediaUrl(productMediaUrl(item), item) ? 'video' : 'image',
+      oos: false,
+      badge: 'new'
+    });
+  });
 }
 
 async function loadInv() {
@@ -818,6 +844,8 @@ async function loadInv() {
         if (inventory && inventory.length) { 
           const invHash = JSON.stringify(inventory).length + '-' + inventory.length;
           localStorage.setItem('h4sx_inv_hash', invHash);
+          syncInventoryGames();
+          renderGames();
           break; 
         }
       }
@@ -828,6 +856,7 @@ async function loadInv() {
   if (!inventory.length) {
     inventory = [{"id":4,"game":"Blox Fruits","name":"ANGEL,GHOUL,CYBORG,RABBIT,HUMAN,SHARK","originalPrice":80,"price":27,"promoLabel":"PROMOSI","desc":"SEMUA RACE V4 FULL GEAR ? PILIH SATU. STATUS POLOSAN.","img":"https://i.ibb.co/BKThLPwy/image.png","sold":86,"stock":10},{"id":14,"game":"Blox Fruits","name":"Level Max Gh & Cdk. Skull Guitar","price":14,"promoLabel":"almost out of stock","desc":"GODHUMAN+CURSED DUAL KATANA+SOUL GUITAR [Level MAX]","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":200,"stock":3},{"id":23,"game":"Blox Fruits","name":"200 LEVEL SEA 2-3","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"200 LEVEL SEA 2-3","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":5,"stock":20},{"id":24,"game":"Blox Fruits","name":"200 LEVEL SEA 1","originalPrice":3,"price":1.5,"promoLabel":"BARU","desc":"UNTUK SEA 1","img":"https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png","sold":10,"stock":20},{"id":5,"game":"Brookhaven","name":"VIP GAMEPASS","originalPrice":31,"price":26,"promoLabel":"HOT","desc":"VIP GAMEPASS","img":"https://i.ibb.co/tpHXYPbc/image.png","sold":45,"stock":50},{"id":6,"game":"Brookhaven","name":"Vehicle Customization","price":16,"desc":"Vehicle Customization","img":"https://i.ibb.co/bR5fdPVr/image.png","sold":89,"stock":50},{"id":7,"game":"Brookhaven","name":"Premium Gamepass","originalPrice":13,"price":8,"promoLabel":"MOST POPULAR","desc":"Premium Gamepass","img":"https://i.ibb.co/BK50Nf0x/image.png","sold":201,"stock":50},{"id":8,"game":"Brookhaven","name":"Speed Vehicle Unlocked","price":8,"desc":"Speed Vehicle Unlocked","img":"https://i.ibb.co/JwK8kH35/image.png","sold":156,"stock":50},{"id":9,"game":"Brookhaven","name":"Vehicle Pack","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Vehicle Pack","img":"https://i.ibb.co/xKX5X0fZ/image.png","sold":34,"stock":15},{"id":10,"game":"Brookhaven","name":"Estate Unlocked","originalPrice":30,"price":24,"promoLabel":"PROMOSI","desc":"Estate Unlocked","img":"https://i.ibb.co/277MSz0R/image.png","sold":41,"stock":15},{"id":11,"game":"Brookhaven","name":"Music Unlocked","price":8,"desc":"Music Unlocked","img":"https://i.ibb.co/v4YBMzrp/image.png","sold":203,"stock":50},{"id":13,"game":"fish it","name":"Ghostfin Rod & singularity bait","price":4,"desc":"Starter account fishit","img":"https://i.ibb.co/vnvpkvh/image.png","sold":135,"stock":30},{"id":22,"game":"fish it","name":"Bunny Staff / Easter Parasol","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/LAfMl0V.png","sold":69,"stock":5},{"id":26,"game":"fish it","name":"Golden Clockwork","originalPrice":25,"price":23,"promoLabel":"BARU","desc":"Skin Rod fish it","img":"https://i.imgur.com/q5bKsnv.png","sold":20,"stock":8},{"id":27,"game":"fish it","name":"Limited Skin Rod","originalPrice":24,"price":13,"promoLabel":"BARU","desc":"VIA TRADE ? PILIH SALAH SATU SKIN","img":"https://i.imgur.com/feaPapV.png","sold":23,"stock":4},{"id":28,"game":"fish it","name":"Secret Tumbal","originalPrice":3,"price":0.40,"promoLabel":"BARU","desc":"Random Secret Tumbal","img":"https://i.imgur.com/oKRszAz.png","sold":192,"stock":100},{"id":17,"game":"Robux Via Log in","name":"80 ROBUX","price":4,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":20,"stock":99},{"id":18,"game":"Robux Via Log in","name":"400 ROBUX","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":39,"stock":99},{"id":19,"game":"Robux Via Log in","name":"800 ROBUX","price":33,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":19,"stock":99},{"id":20,"game":"Robux Via Log in","name":"1000 ROBUX","price":36,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":24,"stock":99},{"id":21,"game":"Robux Via Log in","name":"450 ROBUX + PREMIUM","price":18,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":35,"stock":99},{"id":29,"game":"Robux Via Log in","name":"160 ROBUX","price":7.5,"promoLabel":"BARU","desc":"via log in","img":"https://i.imgur.com/A9W8r4g.png","sold":33,"stock":99},{"id":25,"game":"Open sea for Brainrot","name":"100B/S MONEY","originalPrice":5,"price":2,"promoLabel":"BARU","desc":"OPEN SEA FOR BRAINROT BELUM MAX / REBIRT 6","img":"https://i.ibb.co/0R8CzmrK/image.png","sold":20,"stock":50}];
   }
+  syncInventoryGames();
   renderGames();
 }
 
