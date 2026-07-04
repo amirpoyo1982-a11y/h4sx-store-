@@ -702,6 +702,56 @@ function cleanUrl(url) {
   if (!url) return url;
   return String(url).replace(/[`\s]/g, '');
 }
+function normalizeImgurUrl(url, forceVideo = false) {
+  const clean = cleanUrl(url || '');
+  if (!clean) return clean;
+  if (/\.gifv(\?|#|$)/i.test(clean)) return clean.replace(/\.gifv(\?|#|$)/i, '.mp4$1');
+  const directMatch = clean.match(/^https?:\/\/i\.imgur\.com\/([a-z0-9]+)(?:\.[a-z0-9]+)?([?#].*)?$/i);
+  if (directMatch && forceVideo && !/\.(mp4|webm|mov)(\?|#|$)/i.test(clean)) {
+    return `https://i.imgur.com/${directMatch[1]}.mp4${directMatch[2] || ''}`;
+  }
+  const pageMatch = clean.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-z0-9]+)([?#].*)?$/i);
+  if (pageMatch) {
+    return `https://i.imgur.com/${pageMatch[1]}${forceVideo ? '.mp4' : '.jpg'}${pageMatch[2] || ''}`;
+  }
+  return clean;
+}
+function isVideoMediaUrl(url, item = {}) {
+  const type = String(item.mediaType || item.media || item.type || '').toLowerCase();
+  if (type.includes('video')) return true;
+  return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
+}
+function productMediaUrl(item = {}) {
+  const raw = item.video || item.videoUrl || item.mediaUrl || item.img || item.image || '';
+  return normalizeImgurUrl(raw, isVideoMediaUrl(raw, item));
+}
+function productPosterUrl(item = {}) {
+  const poster = item.poster || item.posterImg || item.thumbnail || item.thumb;
+  if (poster) return normalizeImgurUrl(poster, false);
+  const raw = item.img || item.image || item.mediaUrl || '';
+  if (isVideoMediaUrl(raw, item)) {
+    const clean = cleanUrl(raw || '');
+    const imgur = clean.match(/^https?:\/\/i\.imgur\.com\/([a-z0-9]+)(?:\.[a-z0-9]+)?([?#].*)?$/i)
+      || clean.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-z0-9]+)([?#].*)?$/i);
+    if (imgur) return `https://i.imgur.com/${imgur[1]}.jpg`;
+    return 'https://i.imgur.com/cLPulXQ.png';
+  }
+  return normalizeImgurUrl(raw, false);
+}
+function renderMediaHTML(item = {}, context = 'card') {
+  const src = productMediaUrl(item);
+  const name = escapeForHtml(item.name || item.game || 'Media produk');
+  if (!src) return '<div class="media-empty"><i class="fa-solid fa-image"></i></div>';
+  const safeSrc = escapeForHtml(src);
+  const poster = productPosterUrl(item);
+  const posterAttr = poster ? ' poster="' + escapeForHtml(poster) + '"' : '';
+  const video = isVideoMediaUrl(src, item);
+  if (video) {
+    const controls = context === 'modal' ? ' controls' : '';
+    return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + ' autoplay loop muted playsinline preload="metadata"' + controls + ' draggable="false"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
+  }
+  return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
+}
 
 async function loadInv() {
   for (const url of INVENTORY_GIST_URLS) {
@@ -751,6 +801,9 @@ async function loadInv() {
           if (cleanedItem.img) {
             cleanedItem.img = cleanUrl(cleanedItem.img);
           }
+          ['video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
+            if (cleanedItem[key]) cleanedItem[key] = cleanUrl(cleanedItem[key]);
+          });
           // Fix promoterPhone to be string with leading zero
           if (cleanedItem.promoterPhone) {
             cleanedItem.promoterPhone = String(cleanedItem.promoterPhone);
@@ -1043,8 +1096,8 @@ function updateModalCartBtn(item) {
 function renderGames() {
   document.getElementById('game-grid').innerHTML = gamesList.map(g => {
     const badge = g.badge ? '<div class="gc-badge ' + g.badge.toLowerCase() + '">' + g.badge + '</div>' : '';
-    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + '<img src="' + g.img + '" alt="' + g.name + '"><div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
-    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')">' + badge + '<div class="gc-icon-wrap"><img src="' + g.img + '" alt="' + g.name + '"></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')">' + badge + '<div class="gc-icon-wrap">' + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
   initScrollReveal();
 }
@@ -1096,7 +1149,7 @@ function openGame(name) {
       const addBtn = buildAddBtnHTML(item, oos);
       const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
       const quickBar = buildQuickBarHTML(item, oos);
-      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false">' + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
+      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
     }).join('');
   }
   showView('product-view');
@@ -1115,7 +1168,7 @@ function doSearch(q) {
     const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy" disabled style="height:26px;font-size:9px">BUY</button>' : '<button class="pbuy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')">BUY</button>';
-    return '<div class="pc" style="cursor:pointer" onclick="closeSearch();openGame(\'' + item.game.replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}"><img src="' + item.img + '" alt="' + item.name + '" draggable="false"></div><div class="pbody" style="padding:10px"><div class="pname" style="font-size:13px">' + item.name + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + item.game + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
+    return '<div class="pc" style="cursor:pointer" onclick="closeSearch();openGame(\'' + item.game.replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + '</div><div class="pbody" style="padding:10px"><div class="pname" style="font-size:13px">' + item.name + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + item.game + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
 document.addEventListener('keydown', e => {
@@ -1240,7 +1293,7 @@ async function takeScreenshot() {
           return `
             <div class="product-ss-card${oos ? ' is-oos' : ''}">
               <div class="product-ss-img">
-                <img src="${escapeForHtml(cleanUrl(item.img || ''))}" alt="${escapeForHtml(item.name || '')}" crossorigin="anonymous" onerror="this.onerror=null;this.src='${escapeForHtml(getProductScreenshotFallback())}'">
+                <img src="${escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback())}" alt="${escapeForHtml(item.name || '')}" crossorigin="anonymous" onerror="this.onerror=null;this.src='${escapeForHtml(getProductScreenshotFallback())}'">
                 ${oos ? '<span class="product-ss-stock out">Habis</span>' : getStockLabelForScreenshot(item)}
               </div>
               <div class="product-ss-body">
@@ -1452,7 +1505,7 @@ function renderCart() {
     const line = (item.price*ci.qty).toFixed(2); tot += item.price*ci.qty;
     const max = getMaxPurchase(item); const limited = max && ci.qty >= max;
     const plusBtn = limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',1)">+</button>';
-    return '<div class="cart-row"><img class="cr-img" src="' + item.img + '" alt="' + item.name + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + item.name + '</div><div class="cr-p">RM' + Number(item.price).toFixed(2) + ' ? ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',-1)">?</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + ci.id + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
+    return '<div class="cart-row"><img class="cr-img" src="' + productPosterUrl(item) + '" alt="' + item.name + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + item.name + '</div><div class="cr-p">RM' + Number(item.price).toFixed(2) + ' ? ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',-1)">?</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + ci.id + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
   }).join('');
   document.getElementById('cart-total').textContent = 'RM' + tot.toFixed(2);
 }
@@ -1590,8 +1643,8 @@ function openProductImage(id) {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item) return;
   modalItemId = item.id;
-  const img = document.getElementById('product-modal-img');
-  if (img) { img.src = item.img; img.alt = item.name || 'Gambar produk'; }
+  const mediaWrap = document.getElementById('product-modal-media');
+  if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
   const gameEl = document.getElementById('product-modal-game');
   const nameEl = document.getElementById('product-modal-name');
   const metaEl = document.getElementById('product-modal-meta');
@@ -1623,6 +1676,9 @@ function openProductImage(id) {
 }
 function closeProductImage() {
   document.getElementById('product-modal')?.classList.remove('show');
+  const mediaWrap = document.getElementById('product-modal-media');
+  if (mediaWrap) mediaWrap.innerHTML = '';
+  modalItemId = null;
   if (!document.getElementById('cart-overlay')?.classList.contains('show') && !document.getElementById('search-overlay')?.classList.contains('show')) {
     document.body.style.overflow = '';
   }

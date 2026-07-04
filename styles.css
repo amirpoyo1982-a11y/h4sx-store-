@@ -593,12 +593,14 @@ nav {
   border: 2px solid var(--border); background: var(--bg3);
   transition: all 0.3s var(--ease); box-shadow: var(--shadow-sm);
 }
-.gc-icon-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.gc-icon-wrap img,
+.gc-icon-wrap video { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; display: block; }
 .gc:not(.oos):hover .gc-icon-wrap {
   border-color: var(--primary2); transform: translateY(-4px);
   box-shadow: var(--shadow-glow);
 }
-.gc:not(.oos):hover .gc-icon-wrap img { transform: scale(1.06); }
+.gc:not(.oos):hover .gc-icon-wrap img,
+.gc:not(.oos):hover .gc-icon-wrap video { transform: scale(1.06); }
 .gc.active .gc-icon-wrap { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14,165,233,0.2); }
 .gc-name { font-size: 10px; font-weight: 700; text-align: center; color: var(--ink); text-transform: uppercase; letter-spacing: 0.3px; }
 .gc:not(.oos):hover .gc-name { color: var(--primary); }
@@ -670,15 +672,44 @@ nav {
   cursor: zoom-in;
 }
 
-.pimg img {
+.pimg img,
+.pimg video,
+.product-media {
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.35s ease;
+  display: block;
 }
 
-.pc:hover .pimg img {
+.pc:hover .pimg img,
+.pc:hover .pimg video {
   transform: scale(1.05);
+}
+.media-type-pill {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(15,23,42,.72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  backdrop-filter: blur(8px);
+}
+.media-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 24px;
 }
 
 .pquick {
@@ -1370,9 +1401,15 @@ details.faq[open] .faq-ic {
   background: var(--bg3); display: flex; align-items: center; justify-content: center;
   padding: 20px; min-height: 360px;
 }
-.product-modal-content img {
+.product-modal-content img,
+.product-modal-content video,
+.product-modal-image-wrap .product-media {
   width: 100%; max-height: 78vh; object-fit: contain;
   border-radius: 12px; background: #fff; border: 1px solid var(--border);
+}
+.product-modal-image-wrap video {
+  background: #020617;
+  max-height: 78vh;
 }
 .product-modal-info {
   padding: 24px; overflow-y: auto; max-height: 92vh; border-left: 1px solid var(--border);
