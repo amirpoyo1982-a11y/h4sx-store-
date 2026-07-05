@@ -1243,6 +1243,87 @@ function buildQuickBarHTML(item, oos) {
   if (oos) return '';
   return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();addCart(' + item.id + ', this)"><i class="fa-solid fa-cart-plus"></i> Add Cart</button><button class="pquick-btn buy" onclick="event.stopPropagation();buyNowItem(' + item.id + ')"><i class="fa-solid fa-bolt"></i> Buy Now</button></div>';
 }
+let currentProductItems = [];
+let currentProductBanner = '';
+let currentProductFilter = 'all';
+const PRODUCT_FILTERS = [
+  { id:'all', label:'Semua', icon:'fa-border-all', test:() => true },
+  { id:'stock', label:'Stok Ada', icon:'fa-box', test:item => !isOutOfStock(item) },
+  { id:'promo', label:'Promo', icon:'fa-tags', test:item => !!item.promoLabel || (item.originalPrice && item.originalPrice > item.price) },
+  { id:'popular', label:'Popular', icon:'fa-fire', test:item => Number(item.sold || 0) >= 5 },
+  { id:'cheap', label:'Murah', icon:'fa-coins', test:item => Number(item.price || 0) <= 5 },
+  { id:'video', label:'Video', icon:'fa-play', test:item => isVideoMediaUrl(productMediaUrl(item), item) }
+];
+function renderProductSkeleton(count = 6) {
+  return Array.from({ length: count }).map(() => (
+    '<div class="pc product-skeleton">' +
+      '<div class="pimg"></div>' +
+      '<div class="pbody"><span></span><span></span><span></span><div class="skeleton-row"><span></span><span></span></div></div>' +
+    '</div>'
+  )).join('');
+}
+function productCardHTML(item) {
+  const oos = isOutOfStock(item);
+  const promo = item.promoLabel ? '<div class="ptag">' + escapeHtml(item.promoLabel) + '</div>' : '';
+  let promotedByHTML = '';
+  if (storeConfig.promote.enabled && item.promotedBy) {
+    promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
+  }
+  let itemQRHTML = '';
+  const isPromotedItem = storeConfig.promote.enabled && item.promotedBy && item.promoterPhone;
+  if (isPromotedItem) {
+    itemQRHTML = '<div class="product-promoter-box"><small>Hubungi Promoter</small><a href="https://wa.me/' + escapeHtml(item.promoterPhone) + '" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>';
+  } else if (item.qrDuitNow || item.qrTng) {
+    itemQRHTML = '<div class="product-qr-mini">';
+    if (item.qrDuitNow && storeConfig.payment.duitNow.enabled) {
+      itemQRHTML += '<div><small>DuitNow</small><img src="' + escapeHtml(item.qrDuitNow) + '" alt="DuitNow QR"></div>';
+    }
+    if (item.qrTng && storeConfig.payment.tng.enabled) {
+      itemQRHTML += '<div><small>TNG eWallet</small><img src="' + escapeHtml(item.qrTng) + '" alt="TNG QR"></div>';
+    }
+    itemQRHTML += '</div>';
+  }
+  const pHTML = (item.originalPrice && item.originalPrice > item.price)
+    ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + escapeHtml(item.originalPrice) + '</span>'
+    : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
+  const cartQty = getCartQtyForItem(item.id);
+  const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
+  const addBtn = buildAddBtnHTML(item, oos);
+  const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
+  const quickBar = buildQuickBarHTML(item, oos);
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
+}
+function productFilterCount(filter) {
+  return currentProductItems.filter(filter.test).length;
+}
+function renderProductFilters() {
+  const bar = document.getElementById('product-filter-bar');
+  if (!bar) return;
+  const filters = PRODUCT_FILTERS
+    .map(f => ({ ...f, count: productFilterCount(f) }))
+    .filter(f => f.id === 'all' || f.count > 0);
+  bar.innerHTML = filters.map(f =>
+    '<button class="product-filter-chip' + (currentProductFilter === f.id ? ' active' : '') + '" onclick="setProductFilter(\'' + f.id + '\')"><i class="fa-solid ' + f.icon + '"></i><span>' + f.label + '</span><b>' + f.count + '</b></button>'
+  ).join('');
+}
+function setProductFilter(filter) {
+  currentProductFilter = filter || 'all';
+  renderProductGrid();
+}
+function renderProductGrid() {
+  const grid = document.getElementById('inventory-grid');
+  if (!grid) return;
+  const active = PRODUCT_FILTERS.find(f => f.id === currentProductFilter) || PRODUCT_FILTERS[0];
+  const items = currentProductItems.filter(active.test);
+  document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
+  renderProductFilters();
+  if (!items.length) {
+    grid.innerHTML = currentProductBanner + '<p class="product-empty">Tiada item untuk filter ini.</p>';
+    return;
+  }
+  grid.innerHTML = currentProductBanner + items.map(productCardHTML).join('');
+  setTimeout(initScrollReveal, 100);
+}
 function flyToCart(originEl) {
   if (!originEl) return;
   const cartBtn = document.querySelector('.cart-btn') || document.querySelector('.bn-cart');
@@ -1297,49 +1378,19 @@ function openGame(name, options = {}) {
   document.getElementById('pv-title').textContent = name;
   document.getElementById('pv-count').textContent = items.length + ' item tersedia';
   const grid = document.getElementById('inventory-grid');
+  if (grid) grid.innerHTML = renderProductSkeleton(6);
   let banner = '';
   if (name === 'Robux Via Log in') {
     banner = '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-circle-info" style="color:var(--sky);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);margin-bottom:6px">?? Cara Top Up Via Log In</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300">? <strong>Hubungi Admin</strong> via WhatsApp ? hantar username & password Roblox.<br>?? Proses antara <strong>1?25 minit</strong>.<br>?? Akaun dipulangkan segera selepas top up selesai.<br>?? Pastikan tiada <strong>2FA</strong> aktif.</div><a href="https://wa.me/' + WA_NUMBER + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> DM Admin</a></div></div>';
   } else if (name === 'Brookhaven') {
     banner = '<div style="grid-column:1/-1;background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:6px">?? Penting Sebelum Beli!</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300">?? Gamepass hanya boleh dibeli <strong>1x sahaja</strong>.<br>?? Semak username Roblox dengan teliti.<br>? H4SX tidak bertanggungjawab atas kesilapan username.</div></div></div>';
   }
-  if (!items.length) { grid.innerHTML = banner + '<p style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:14px">Tiada item tersedia.</p>'; }
-  else {
-    grid.innerHTML = banner + items.map(item => {
-      const oos = isOutOfStock(item);
-      const promo = item.promoLabel ? '<div class="ptag">' + item.promoLabel + '</div>' : '';
-      // Add Promoted By label
-      let promotedByHTML = '';
-      if (storeConfig.promote.enabled && item.promotedBy) {
-        promotedByHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;color:var(--sky);font-weight:700;"><i class="fa-solid fa-star"></i>Promoted by ' + item.promotedBy + '</div>';
-      }
-      // Add QR codes OR promoter info
-      let itemQRHTML = '';
-      const isPromotedItem = storeConfig.promote.enabled && item.promotedBy && item.promoterPhone;
-      
-      if (isPromotedItem) {
-        itemQRHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2);text-align:center;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;display:block;">Hubungi Promoter</small><div style="display:flex;align-items:center;justify-content:center;gap:6px;"><a href="https://wa.me/' + item.promoterPhone + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 14px;background:#25D366;color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div></div>';
-      } else if (item.qrDuitNow || item.qrTng) {
-        itemQRHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border2);">';
-        if (item.qrDuitNow && storeConfig.payment.duitNow.enabled) {
-          itemQRHTML += '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:8px;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;">DuitNow</small><img src="' + item.qrDuitNow + '" alt="DuitNow QR" style="width:100px;height:100px;border-radius:8px;border:1px solid var(--border2);"></div>';
-        }
-        if (item.qrTng && storeConfig.payment.tng.enabled) {
-          itemQRHTML += '<div style="display:flex;flex-direction:column;align-items:center;"><small style="font-size:10px;color:var(--muted);margin-bottom:4px;">TNG eWallet</small><img src="' + item.qrTng + '" alt="TNG QR" style="width:100px;height:100px;border-radius:8px;border:1px solid var(--border2);"></div>';
-        }
-        itemQRHTML += '</div>';
-      }
-      const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + item.originalPrice + '</span>' : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
-      const cartQty = getCartQtyForItem(item.id);
-      const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
-      const addBtn = buildAddBtnHTML(item, oos);
-      const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
-      const quickBar = buildQuickBarHTML(item, oos);
-      return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + item.name + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + item.sold + ' sold</div><p class="pdesc">' + item.desc + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
-    }).join('');
-  }
+  currentProductItems = items;
+  currentProductBanner = banner;
+  currentProductFilter = 'all';
+  renderProductFilters();
   showView('product-view');
-  setTimeout(initScrollReveal, 100);
+  setTimeout(renderProductGrid, 90);
 }
 function openSearch() { document.getElementById('search-overlay').classList.add('show'); document.body.style.overflow='hidden'; setTimeout(()=>document.getElementById('search-input').focus(),100); }
 function closeSearch() { document.getElementById('search-overlay').classList.remove('show'); document.body.style.overflow=''; document.getElementById('search-input').value=''; document.getElementById('search-results').innerHTML=''; }
@@ -1838,11 +1889,20 @@ function openProductImage(id) {
   const priceEl = document.getElementById('product-modal-price');
   const oldPriceEl = document.getElementById('product-modal-price-old');
   const descEl = document.getElementById('product-modal-desc');
+  const summaryEl = document.getElementById('product-modal-summary');
   if (gameEl) gameEl.textContent = item.game || '';
   if (nameEl) nameEl.textContent = item.name || 'Item';
   if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
   if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   if (descEl) descEl.textContent = item.desc || 'Tiada description.';
+  if (summaryEl) {
+    const saving = item.originalPrice && item.originalPrice > item.price ? Math.max(0, Number(item.originalPrice) - Number(item.price || 0)) : 0;
+    const stockText = isOutOfStock(item) ? 'Habis stok' : (item.stock != null ? item.stock + ' stok' : 'Tersedia');
+    summaryEl.innerHTML =
+      '<div><span>Kategori</span><strong>' + escapeHtml(item.game || '-') + '</strong></div>' +
+      '<div><span>Status</span><strong>' + escapeHtml(stockText) + '</strong></div>' +
+      '<div><span>Jimat</span><strong>' + (saving ? 'RM' + saving.toFixed(2) : 'Harga Net') + '</strong></div>';
+  }
   if (metaEl) {
     const oos = isOutOfStock(item);
     const chips = [
