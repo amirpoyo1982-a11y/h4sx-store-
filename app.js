@@ -220,7 +220,7 @@ async function copyReceiptImage() {
 
 // --- CONFIGURATION ---
 const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pixel-earth-low-poly-139cb0a9b41a4e088dd42ca4871a3125'; 
-// ?? Tukar link kat atas ni je kalau nak tukar model background.
+// Tukar link kat atas ni je kalau nak tukar model background.
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '60193263016';
 const GAMES_GIST_URLS = [
@@ -1103,9 +1103,31 @@ if (firebaseConfig.apiKey) {
   }
 }
 
+function fixMojibakeText(value) {
+  let text = String(value ?? '');
+  if (!text) return '';
+  if (/[ÃÂâð]/.test(text)) {
+    try {
+      const bytes = Uint8Array.from([...text].map(ch => ch.charCodeAt(0) & 255));
+      const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+      const oldBad = (text.match(/[ÃÂâð�]/g) || []).length;
+      const newBad = (decoded.match(/[ÃÂâð�]/g) || []).length;
+      if (decoded && newBad < oldBad) text = decoded;
+    } catch(e) {}
+  }
+  return text
+    .replace(/â€”/g, '-')
+    .replace(/â€“/g, '-')
+    .replace(/â€˜|â€™/g, "'")
+    .replace(/â€œ|â€/g, '"')
+    .replace(/â€¦/g, '...')
+    .replace(/Â /g, ' ')
+    .replace(/Â/g, '')
+    .replace(/ï¿½/g, '');
+}
 function escapeHtml(str) {
   const d = document.createElement('div');
-  d.textContent = str ?? '';
+  d.textContent = fixMojibakeText(str);
   return d.innerHTML;
 }
 function clampRating(value) {
@@ -1491,9 +1513,9 @@ function openGame(name, options = {}) {
   if (grid) grid.innerHTML = renderProductSkeleton(6);
   let banner = '';
   if (name === 'Robux Via Log in') {
-    banner = '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-circle-info" style="color:var(--sky);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);margin-bottom:6px">?? Cara Top Up Via Log In</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300">? <strong>Hubungi Admin</strong> via WhatsApp ? hantar username & password Roblox.<br>?? Proses antara <strong>1?25 minit</strong>.<br>?? Akaun dipulangkan segera selepas top up selesai.<br>?? Pastikan tiada <strong>2FA</strong> aktif.</div><a href="https://wa.me/' + WA_NUMBER + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> DM Admin</a></div></div>';
+    banner = '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-circle-info" style="color:var(--sky);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);margin-bottom:6px"><i class="fa-solid fa-circle-info"></i> Cara Top Up Via Log In</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300"><i class="fa-brands fa-whatsapp"></i> <strong>Hubungi Admin</strong> via WhatsApp dan hantar username & password Roblox.<br><i class="fa-solid fa-clock"></i> Proses antara <strong>1-25 minit</strong>.<br><i class="fa-solid fa-shield-halved"></i> Akaun dipulangkan segera selepas top up selesai.<br><i class="fa-solid fa-lock"></i> Pastikan tiada <strong>2FA</strong> aktif.</div><a href="https://wa.me/' + WA_NUMBER + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> DM Admin</a></div></div>';
   } else if (name === 'Brookhaven') {
-    banner = '<div style="grid-column:1/-1;background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:6px">?? Penting Sebelum Beli!</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300">?? Gamepass hanya boleh dibeli <strong>1x sahaja</strong>.<br>?? Semak username Roblox dengan teliti.<br>? H4SX tidak bertanggungjawab atas kesilapan username.</div></div></div>';
+    banner = '<div style="grid-column:1/-1;background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:6px"><i class="fa-solid fa-triangle-exclamation"></i> Penting Sebelum Beli!</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300"><i class="fa-solid fa-ticket"></i> Gamepass hanya boleh dibeli <strong>1x sahaja</strong>.<br><i class="fa-solid fa-user-check"></i> Semak username Roblox dengan teliti.<br><i class="fa-solid fa-circle-exclamation"></i> H4SX tidak bertanggungjawab atas kesilapan username.</div></div></div>';
   }
   currentProductItems = items;
   currentProductBanner = banner;
