@@ -390,6 +390,8 @@ function backCO() { currentGame ? showView('product-view') : showHome(); }
 let currentStoreConfig = {
   bukakedai: true,
   maintenance: false,
+  review_maintenance: false,
+  review_maintenance_message: 'Sistem ulasan sedang diselenggara. Ulasan pelanggan akan dipaparkan semula sebentar lagi.',
   buka_jam: "09:00", // 9 AM
   tutup_jam: "23:00", // 11 PM
   tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
@@ -544,6 +546,7 @@ async function checkStore() {
     console.log('Data from gist:', d);
     // Update current config with gist data
     currentStoreConfig = { ...currentStoreConfig, ...d };
+    refreshReviewMaintenanceUi();
   }
   
   if (!overlay) {
@@ -983,9 +986,41 @@ function toReviewTime(value) {
   return date.toLocaleString('ms-MY', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
 }
 let unsubscribeReviews = null;
+function isReviewMaintenanceActive(config = currentStoreConfig) {
+  return flagOn(config.review_maintenance)
+    || flagOn(config.maintenance_review)
+    || flagOn(config.ulasan_maintenance)
+    || flagOn(config.reviews_maintenance);
+}
+function showReviewMaintenanceNotice() {
+  const grid = document.getElementById('testi-grid');
+  if (!grid) return;
+  if (unsubscribeReviews) {
+    unsubscribeReviews();
+    unsubscribeReviews = null;
+  }
+  const message = currentStoreConfig.review_maintenance_message
+    || currentStoreConfig.review_maintenance_msg
+    || 'Sistem ulasan sedang diselenggara. Ulasan pelanggan akan dipaparkan semula sebentar lagi.';
+  grid.innerHTML = '<div class="testi-loading review-maintenance-box"><i class="fa-solid fa-screwdriver-wrench" style="margin-right:8px"></i>' + escapeHtml(message) + '</div>';
+}
+function refreshReviewMaintenanceUi() {
+  if (isReviewMaintenanceActive()) {
+    showReviewMaintenanceNotice();
+    return;
+  }
+  const grid = document.getElementById('testi-grid');
+  if (grid?.querySelector('.review-maintenance-box') && !unsubscribeReviews) {
+    loadReviews();
+  }
+}
 async function loadReviews() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
+  if (isReviewMaintenanceActive()) {
+    showReviewMaintenanceNotice();
+    return;
+  }
   if (!db) {
     grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
     return;
@@ -997,6 +1032,10 @@ async function loadReviews() {
       .orderBy('diciptaPada', 'desc')
       .limit(6)
       .onSnapshot(snapshot => {
+        if (isReviewMaintenanceActive()) {
+          showReviewMaintenanceNotice();
+          return;
+        }
         const data = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
           .filter(item => {

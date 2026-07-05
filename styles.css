@@ -105,6 +105,16 @@ body {
 .gc { contain-intrinsic-size: 1px 190px; }
 .testi-card { contain-intrinsic-size: 1px 190px; }
 
+.review-maintenance-box {
+  grid-column: 1 / -1;
+  border: 1px dashed rgba(14, 165, 233, 0.35);
+  background: rgba(240, 249, 255, 0.82);
+  color: var(--muted);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+}
+
 body::before {
   content: '';
   position: fixed;
