@@ -362,7 +362,14 @@ function openAnnDetails() {
   });
   document.body.style.overflow = 'hidden';
 }
-function toggleMenu() { const m = document.getElementById('mob-menu'); m.style.display = (!m.style.display || m.style.display === 'none') ? 'block' : 'none'; }
+function toggleMenu() {
+  const m = document.getElementById('mob-menu');
+  const h = document.querySelector('.nav-ham');
+  if (!m) return;
+  const open = !m.classList.contains('show');
+  m.classList.toggle('show', open);
+  h?.classList.toggle('is-open', open);
+}
 const VIEWS = ['home-view','product-view','checkout-view'];
 function showView(id) {
   VIEWS.forEach(v => {
