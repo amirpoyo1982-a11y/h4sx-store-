@@ -253,7 +253,10 @@
       <div class="ph">
         <button class="bk" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i></button>
         <div><div class="ph-title" id="pv-title"></div><div class="ph-count" id="pv-count"></div></div>
-        <button class="pss" id="pv-ss-btn" onclick="takeScreenshot()"><i class="fa-solid fa-camera"></i></button>
+        <div class="ph-actions">
+          <button class="pss link-copy-btn" id="pv-link-btn" onclick="copyCurrentGameLink()" title="Copy link kategori"><i class="fa-solid fa-link"></i></button>
+          <button class="pss" id="pv-ss-btn" onclick="takeScreenshot()" title="Copy screenshot produk"><i class="fa-solid fa-camera"></i></button>
+        </div>
       </div>
       <div class="detail-note"><i class="fa-solid fa-magnifying-glass-plus"></i> Nak tengok gambar jelas? Klik mana-mana gambar item untuk buka paparan detail.</div>
       <div id="inventory-grid"></div>

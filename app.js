@@ -379,7 +379,67 @@ function showView(id) {
   });
   window.scrollTo({ top:0, behavior:'smooth' });
 }
-function showHome() { showView('home-view'); }
+function showHome() {
+  currentGame = '';
+  updateGameUrl('');
+  showView('home-view');
+}
+function gameSlug(name) {
+  return String(name || '').trim().toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+function updateGameUrl(name) {
+  try {
+    const url = new URL(window.location.href);
+    if (name) {
+      url.searchParams.set('game', gameSlug(name));
+    } else {
+      url.searchParams.delete('game');
+    }
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch(e) {}
+}
+function getGameFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return (url.searchParams.get('game') || '').trim();
+  } catch(e) {
+    return '';
+  }
+}
+function findGameByRoute(value) {
+  const target = String(value || '').trim().toLowerCase();
+  if (!target) return '';
+  return (gamesList.find(g =>
+    String(g.name || '').toLowerCase() === target ||
+    gameSlug(g.name) === target
+  )?.name) || '';
+}
+function openGameFromUrl() {
+  const route = getGameFromUrl();
+  if (!route) return false;
+  const name = findGameByRoute(route);
+  if (!name) return false;
+  openGame(name, { fromUrl: true });
+  return true;
+}
+function currentGameLink() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('game', gameSlug(currentGame));
+  return url.toString();
+}
+async function copyCurrentGameLink() {
+  if (!currentGame) { toast('Pilih kategori dulu', true); return; }
+  const link = currentGameLink();
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('Link kategori disalin!');
+  } catch(e) {
+    window.prompt('Copy link kategori:', link);
+  }
+}
 function getStickyOffset() {
   return 16;
 }
@@ -881,6 +941,7 @@ async function loadInv() {
           try { localStorage.setItem('h4sx_inventory_cache', JSON.stringify(inventory)); } catch(e) {}
           syncInventoryGames();
           renderGames();
+          openGameFromUrl();
           break; 
         }
       }
@@ -893,6 +954,7 @@ async function loadInv() {
   }
   syncInventoryGames();
   renderGames();
+  openGameFromUrl();
 }
 
 // Update payment UI based on config
@@ -1224,8 +1286,9 @@ function renderGames() {
   }).join('');
   initScrollReveal();
 }
-function openGame(name) {
+function openGame(name, options = {}) {
   currentGame = name;
+  if (!options.fromUrl) updateGameUrl(name);
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
   let items = inventory.filter(i => i.game === name);

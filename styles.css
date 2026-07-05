@@ -693,6 +693,14 @@ nav {
 
 /* Page header */
 .ph { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.ph > div:not(.ph-actions) { min-width: 0; }
+.ph-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
 .bk {
   width: 44px; height: 44px; border-radius: 12px;
   background: #fff; border: 1px solid var(--border);
@@ -1065,9 +1073,13 @@ nav {
   background: var(--secondary); color: #fff; border: none;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
-  margin-left: auto;
 }
 .pss:hover { transform: scale(1.08); background: var(--secondary2); }
+.link-copy-btn {
+  background: linear-gradient(135deg, #0ea5e9, #10b981);
+  box-shadow: 0 8px 22px rgba(14,165,233,.18);
+}
+.link-copy-btn:hover { background: linear-gradient(135deg, #0284c7, #059669); }
 
 /* Steps */
 .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -1823,6 +1835,8 @@ footer {
   #inventory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
   .section-panel { border-radius: 18px; padding: 18px; }
   .ph { gap: 12px; align-items: center; }
+  .ph-actions { gap: 6px; }
+  .ph-actions .pss { width: 40px; height: 40px; border-radius: 12px; }
   .ph-title { font-size: clamp(22px, 7vw, 32px); line-height: 1.05; }
   .ph-count { font-size: 12px; }
   .product-modal-content { grid-template-columns: 1fr; }
@@ -1836,6 +1850,7 @@ footer {
   #inventory-grid { grid-template-columns: 1fr; gap: 14px; }
   #product-view { padding-top: 8px !important; }
   #product-view .section-panel { padding: 14px; margin-inline: -2px; }
+  .ph-actions .pss { width: 38px; height: 38px; }
   .detail-note { font-size: 11px; line-height: 1.45; padding: 10px 12px; }
   .pc {
     padding: 0;
