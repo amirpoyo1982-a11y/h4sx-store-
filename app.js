@@ -1367,14 +1367,17 @@ function productCardHTML(item) {
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
 }
+function orderedProductSubcategories(items = currentProductItems) {
+  const subcats = [...new Set(items.map(productSubcategory).filter(Boolean))];
+  return subcats.sort((a, b) => {
+    const score = s => /akun|joki/i.test(s) ? 0 : (/buah|fruit/i.test(s) ? 1 : 2);
+    return score(a) - score(b) || a.localeCompare(b);
+  });
+}
 function activeProductFilters() {
   const base = [...PRODUCT_FILTERS];
-  const subcats = [...new Set(currentProductItems.map(productSubcategory).filter(Boolean))];
+  const subcats = orderedProductSubcategories();
   if (subcats.length > 1) {
-    subcats.sort((a, b) => {
-      const score = s => /akun|joki/i.test(s) ? 0 : (/buah|fruit/i.test(s) ? 1 : 2);
-      return score(a) - score(b) || a.localeCompare(b);
-    });
     const subFilters = subcats.map(sub => ({
         id: 'sub:' + normalizeKey(sub),
         label: sub,
@@ -1399,6 +1402,13 @@ function setProductFilter(filter) {
   currentProductFilter = filter || 'all';
   renderProductGrid();
 }
+function renderProductSubsection(label, items) {
+  const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
+  return '<section class="product-subsection reveal">' +
+    '<div class="product-subhead"><div><i class="fa-solid ' + icon + '"></i><span>' + escapeHtml(label) + '</span></div><b>' + items.length + ' item</b></div>' +
+    '<div class="product-subgrid">' + items.map(productCardHTML).join('') + '</div>' +
+  '</section>';
+}
 function renderProductGrid() {
   const grid = document.getElementById('inventory-grid');
   if (!grid) return;
@@ -1411,7 +1421,15 @@ function renderProductGrid() {
     grid.innerHTML = currentProductBanner + '<p class="product-empty">Tiada item untuk filter ini.</p>';
     return;
   }
-  grid.innerHTML = currentProductBanner + items.map(productCardHTML).join('');
+  const subcats = orderedProductSubcategories(items);
+  if (currentProductFilter === 'all' && subcats.length > 1) {
+    grid.innerHTML = currentProductBanner + subcats.map(sub => {
+      const groupItems = items.filter(item => productSubcategory(item) === sub);
+      return renderProductSubsection(sub, groupItems);
+    }).join('');
+  } else {
+    grid.innerHTML = currentProductBanner + items.map(productCardHTML).join('');
+  }
   setTimeout(initScrollReveal, 100);
 }
 function flyToCart(originEl) {
