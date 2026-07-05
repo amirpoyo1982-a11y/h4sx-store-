@@ -660,13 +660,35 @@ nav {
 .gc.active .gc-icon-wrap { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14,165,233,0.2); }
 .gc-name { font-size: 10px; font-weight: 700; text-align: center; color: var(--ink); text-transform: uppercase; letter-spacing: 0.3px; }
 .gc:not(.oos):hover .gc-name { color: var(--primary); }
-.gc-badge { position: absolute; top: 6px; right: 6px; z-index: 2; padding: 3px 8px; border-radius: 99px; font-size: 8px; font-weight: 700; text-transform: uppercase; }
+.gc-badge {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  max-width: calc(100% - 12px);
+  padding: 4px 8px; border-radius: 99px;
+  font-size: clamp(7px, 1.6vw, 9px);
+  line-height: 1.1;
+  font-weight: 900; text-transform: uppercase;
+  letter-spacing: .25px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(135deg, var(--primary), var(--primary3));
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(14,165,233,.25);
+}
 .gc-icon-wrap { position: relative; }
 .gc-badge.hot { background: var(--red); color: #fff; }
 .gc-badge.new { background: var(--primary); color: #fff; }
 .gc-badge.sale { background: var(--orange); color: #fff; }
 .gc-badge.ready { background: var(--green); color: #fff; }
 .gc-badge.soon { background: var(--muted2); color: #fff; }
+.gc-badge.akan-dihapus,
+.gc-badge.delete-soon,
+.gc-badge.removing,
+.gc-badge.limited { background: linear-gradient(135deg, #111827, #f59e0b); color: #fff; }
+.gc-badge.last-stock,
+.gc-badge.last { background: linear-gradient(135deg, #ef4444, #f97316); color: #fff; }
+.gc-badge.update,
+.gc-badge.updated { background: linear-gradient(135deg, #7c3aed, #0ea5e9); color: #fff; }
 .oos-pill { position: absolute; top: 6px; right: 6px; background: rgba(15,23,42,0.8); color: #fff; font-size: 8px; padding: 3px 8px; border-radius: 99px; }
 
 /* Page header */

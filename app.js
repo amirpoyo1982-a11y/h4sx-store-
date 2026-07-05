@@ -709,7 +709,8 @@ async function loadGames() {
       const data = await r.json();
       if (Array.isArray(data) && data.length) {
         gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => {
-          const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:g.badge||null };
+          const customBadge = g.badgeTitle || g.badgeText || g.titleBadge || g.label || g.badge || null;
+          const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:customBadge };
           ['img', 'video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
             if (game[key]) game[key] = cleanUrl(game[key]);
           });
@@ -771,6 +772,10 @@ function renderMediaHTML(item = {}, context = 'card') {
   const posterAttr = poster ? ' poster="' + escapeForHtml(poster) + '"' : '';
   const video = isVideoMediaUrl(src, item);
   if (video) {
+    if (context !== 'modal') {
+      const posterSrc = escapeForHtml(poster || getProductScreenshotFallback());
+      return '<img class="product-media product-media-img product-media-video-poster" src="' + posterSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
+    }
     const controls = context === 'modal' ? ' controls' : '';
     const eagerAttrs = context === 'modal'
       ? ' autoplay loop muted playsinline preload="metadata"'
@@ -1204,9 +1209,16 @@ function updateModalCartBtn(item) {
     ? '<i class="fa-solid fa-ban"></i> Habis Stok'
     : '<i class="fa-solid fa-cart-plus"></i> Add to Cart' + (qty > 0 ? '<span class="pm-qty">' + qty + '</span>' : '');
 }
+function getGameBadgeMeta(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+  const key = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom';
+  return { text, key };
+}
 function renderGames() {
   document.getElementById('game-grid').innerHTML = gamesList.map(g => {
-    const badge = g.badge ? '<div class="gc-badge ' + g.badge.toLowerCase() + '">' + g.badge + '</div>' : '';
+    const badgeMeta = getGameBadgeMeta(g.badge || g.badgeTitle || g.badgeText || g.titleBadge || g.label);
+    const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + escapeHtml(badgeMeta.text) + '</div>' : '';
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')">' + badge + '<div class="gc-icon-wrap">' + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
