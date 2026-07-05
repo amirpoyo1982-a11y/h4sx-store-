@@ -16,6 +16,19 @@
     if (dateEl) dateEl.textContent = now.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
+  function changelogIconClass(icon, fallback) {
+    const value = String(icon || fallback || 'fa-circle-info').trim();
+    if (/^fa-(solid|regular|brands)\s/.test(value)) return value;
+    return 'fa-solid ' + value;
+  }
+
+  function changelogSectionMeta(type) {
+    if (type === 'added') return { icon: 'fa-plus-circle', label: 'Baru', className: 'added' };
+    if (type === 'fixed') return { icon: 'fa-wrench', label: 'Fix', className: 'fixed' };
+    if (type === 'removed') return { icon: 'fa-trash', label: 'Buang', className: 'removed' };
+    return { icon: 'fa-circle-info', label: 'Info', className: 'info' };
+  }
+
   // Fetch and render changelog from Gist
   async function loadChangelogFromGist() {
     const changelogBody = document.getElementById('changelog-body');
@@ -46,18 +59,22 @@
         timeEl.textContent = timeString;
       }
       
-      let html = '';
-      for (const section of data.sections) {
-        let iconClass;
-        if (section.type === 'added') iconClass = 'fa-plus-circle';
-        else if (section.type === 'fixed') iconClass = 'fa-wrench';
-        else if (section.type === 'removed') iconClass = 'fa-trash';
-        
-        html += '<div>';
-        html += `<div class="changelog-section-title ${section.type}"><i class="fa-solid ${iconClass}"></i> ${section.title}</div>`;
+      const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
+      let html = '<div class="changelog-summary">';
+      html += '<div><span>Release</span><strong>' + (data.version || data.date || 'Latest') + '</strong></div>';
+      html += '<div><span>Kemaskini</span><strong>' + totalItems + ' item</strong></div>';
+      html += '<div><span>Status</span><strong>Live</strong></div>';
+      html += '</div>';
+
+      for (const section of (data.sections || [])) {
+        const meta = changelogSectionMeta(section.type);
+        const items = Array.isArray(section.items) ? section.items : [];
+
+        html += `<div class="changelog-section-card ${meta.className}">`;
+        html += `<div class="changelog-section-title ${meta.className}"><span class="changelog-section-icon"><i class="fa-solid ${meta.icon}"></i></span><span>${section.title || meta.label}</span><b>${items.length}</b></div>`;
         html += '<ul class="changelog-list">';
-        for (const item of section.items) {
-          html += `<li class="${section.type}"><i class="fa-solid ${item.icon}"></i><span>${item.text}</span></li>`;
+        for (const item of items) {
+          html += `<li class="${meta.className}"><span class="changelog-item-icon"><i class="${changelogIconClass(item.icon, meta.icon)}"></i></span><span>${item.text || ''}</span></li>`;
         }
         html += '</ul>';
         html += '</div>';
@@ -68,17 +85,18 @@
       console.error('Error loading changelog from Gist:', error);
       // Fallback to default changelog if Gist fails
       let fallbackHtml = '';
-      fallbackHtml += '<div>';
-      fallbackHtml += '<div class="changelog-section-title added"><i class="fa-solid fa-plus-circle"></i> Ditambah</div>';
+      fallbackHtml += '<div class="changelog-summary"><div><span>Release</span><strong>Latest</strong></div><div><span>Kemaskini</span><strong>3 item</strong></div><div><span>Status</span><strong>Live</strong></div></div>';
+      fallbackHtml += '<div class="changelog-section-card added">';
+      fallbackHtml += '<div class="changelog-section-title added"><span class="changelog-section-icon"><i class="fa-solid fa-plus-circle"></i></span><span>Ditambah</span><b>1</b></div>';
       fallbackHtml += '<ul class="changelog-list">';
-      fallbackHtml += '<li class="added"><i class="fa-solid fa-gauge-high"></i><span><strong>Performance Optimizations</strong> â€” smooth scrolling &amp; less lag!</span></li>';
+      fallbackHtml += '<li class="added"><span class="changelog-item-icon"><i class="fa-solid fa-gauge-high"></i></span><span><strong>Performance Optimizations</strong> - smooth scrolling &amp; less lag!</span></li>';
       fallbackHtml += '</ul>';
       fallbackHtml += '</div>';
-      fallbackHtml += '<div>';
-      fallbackHtml += '<div class="changelog-section-title fixed"><i class="fa-solid fa-wrench"></i> Diperbaiki</div>';
+      fallbackHtml += '<div class="changelog-section-card fixed">';
+      fallbackHtml += '<div class="changelog-section-title fixed"><span class="changelog-section-icon"><i class="fa-solid fa-wrench"></i></span><span>Diperbaiki</span><b>2</b></div>';
       fallbackHtml += '<ul class="changelog-list">';
-      fallbackHtml += '<li class="fixed"><i class="fa-solid fa-mobile-screen-button"></i><span><strong>Saiz item Mobile</strong> â€” kad produk lebih kecil &amp; kemas!</span></li>';
-      fallbackHtml += '<li class="fixed"><i class="fa-solid fa-scroll"></i><span><strong>Changelog Modal</strong> â€” modal changelog lebih mudah untuk PC &amp; Phone!</span></li>';
+      fallbackHtml += '<li class="fixed"><span class="changelog-item-icon"><i class="fa-solid fa-mobile-screen-button"></i></span><span><strong>Saiz item Mobile</strong> - kad produk lebih kecil &amp; kemas!</span></li>';
+      fallbackHtml += '<li class="fixed"><span class="changelog-item-icon"><i class="fa-solid fa-scroll"></i></span><span><strong>Changelog Modal</strong> - modal changelog lebih mudah untuk PC &amp; Phone!</span></li>';
       fallbackHtml += '</ul>';
       fallbackHtml += '</div>';
       changelogBody.innerHTML = fallbackHtml;

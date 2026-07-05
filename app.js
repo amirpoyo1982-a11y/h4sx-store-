@@ -395,8 +395,10 @@ function updateGameUrl(name) {
     const url = new URL(window.location.href);
     if (name) {
       url.searchParams.set('game', gameSlug(name));
+      url.searchParams.set('part', normalizeKey(activePlatform));
     } else {
       url.searchParams.delete('game');
+      url.searchParams.delete('part');
     }
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -404,6 +406,8 @@ function updateGameUrl(name) {
 function getGameFromUrl() {
   try {
     const url = new URL(window.location.href);
+    const part = (url.searchParams.get('part') || '').trim();
+    if (part) activePlatform = /free-fire|ff/i.test(part) ? 'Free Fire' : 'Roblox';
     return (url.searchParams.get('game') || '').trim();
   } catch(e) {
     return '';
@@ -412,7 +416,7 @@ function getGameFromUrl() {
 function findGameByRoute(value) {
   const target = String(value || '').trim().toLowerCase();
   if (!target) return '';
-  return (gamesList.find(g =>
+  return (catalogGames(true).find(g =>
     String(g.name || '').toLowerCase() === target ||
     gameSlug(g.name) === target
   )?.name) || '';
@@ -428,6 +432,7 @@ function openGameFromUrl() {
 function currentGameLink() {
   const url = new URL(window.location.href);
   url.searchParams.set('game', gameSlug(currentGame));
+  url.searchParams.set('part', normalizeKey(activePlatform));
   return url.toString();
 }
 async function copyCurrentGameLink() {
@@ -755,6 +760,72 @@ const DEFAULT_GAMES = [
   { name:'Sailor piece',          img:'https://i.imgur.com/W2LgeV2.png',                            oos:false, badge:'ready' },
 ];
 let gamesList = [...DEFAULT_GAMES];
+let activePlatform = 'Roblox';
+function normalizeKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+function inferPlatform(value = {}, fallbackName = '') {
+  const raw = typeof value === 'object' ? (value.platform || value.part || value.jenis || value.categoryType || '') : '';
+  if (raw) return /free\s*fire|ff/i.test(raw) ? 'Free Fire' : 'Roblox';
+  const name = String((typeof value === 'object' ? (value.game || value.name) : value) || fallbackName || '');
+  return /free\s*fire|\bff\b/i.test(name) ? 'Free Fire' : 'Roblox';
+}
+function gameGroupName(value = {}) {
+  const custom = value.gameGroup || value.group || value.categoryGroup || value.parentGame;
+  if (custom) return String(custom).trim();
+  const name = String(value.game || value.name || value || '').trim();
+  if (/blox\s*fruit/i.test(name)) return 'Blox Fruits';
+  if (/free\s*fire|\bff\b/i.test(name)) return 'Free Fire';
+  return name;
+}
+function productSubcategory(item = {}) {
+  const custom = item.subcategory || item.subCategory || item.list || item.typeList || item.section;
+  if (custom) return String(custom).trim();
+  const name = String(item.game || item.name || '').toLowerCase();
+  if (/blox\s*fruit/.test(name) && /(buah|fruit)/.test(name)) return 'Buah/Fruit';
+  if (/blox\s*fruit/.test(name)) return 'Akun/Joki';
+  if (/free\s*fire|ff/.test(name)) return item.ffType || item.type || 'Akun/Item';
+  return item.type || item.category || 'Lain-lain';
+}
+function catalogGames(showAllPlatforms = false) {
+  const map = new Map();
+  const addGame = (entry, sourceItem = null) => {
+    const name = gameGroupName(entry);
+    if (!name) return;
+    const key = normalizeKey(name);
+    const platform = inferPlatform(entry, name);
+    const existing = map.get(key) || {
+      ...entry,
+      name,
+      platform,
+      img: entry.img || entry.image || entry.poster || productPosterUrl(sourceItem || entry) || 'https://i.imgur.com/A9W8r4g.png',
+      badge: entry.badge || entry.badgeTitle || entry.badgeText || entry.label || null,
+      count: 0
+    };
+    existing.count += sourceItem ? 1 : 0;
+    if (!existing.img && sourceItem) existing.img = productPosterUrl(sourceItem);
+    if (!existing.badge && entry.badge) existing.badge = entry.badge;
+    existing.platform = existing.platform || platform;
+    map.set(key, existing);
+  };
+  gamesList.forEach(g => addGame(g));
+  inventory.forEach(item => addGame({ name: gameGroupName(item), platform: inferPlatform(item), img: productPosterUrl(item), badge: item.gameBadge || item.badge }, item));
+  return [...map.values()].filter(g => showAllPlatforms || g.platform === activePlatform || (!activePlatform && g.platform));
+}
+function renderPlatformFilters() {
+  const bar = document.getElementById('platform-filter-bar');
+  if (!bar) return;
+  const counts = { Roblox: 0, 'Free Fire': 0 };
+  catalogGames(true).forEach(g => { counts[g.platform] = (counts[g.platform] || 0) + (g.count || 0); });
+  const platforms = ['Roblox', 'Free Fire'];
+  bar.innerHTML = platforms.map(p =>
+    '<button class="platform-chip' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p + '\')"><i class="fa-solid ' + (p === 'Roblox' ? 'fa-cube' : 'fa-crosshairs') + '"></i><span>' + p + '</span><b>' + (counts[p] || 0) + '</b></button>'
+  ).join('');
+}
+function setPlatform(platform) {
+  activePlatform = platform || 'Roblox';
+  renderGames();
+}
 async function loadGames() {
   try {
     const cachedGames = JSON.parse(localStorage.getItem('h4sx_games_cache') || '[]');
@@ -1296,10 +1367,28 @@ function productCardHTML(item) {
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
 }
+function activeProductFilters() {
+  const base = [...PRODUCT_FILTERS];
+  const subcats = [...new Set(currentProductItems.map(productSubcategory).filter(Boolean))];
+  if (subcats.length > 1) {
+    subcats.sort((a, b) => {
+      const score = s => /akun|joki/i.test(s) ? 0 : (/buah|fruit/i.test(s) ? 1 : 2);
+      return score(a) - score(b) || a.localeCompare(b);
+    });
+    const subFilters = subcats.map(sub => ({
+        id: 'sub:' + normalizeKey(sub),
+        label: sub,
+        icon: /buah|fruit/i.test(sub) ? 'fa-apple-whole' : 'fa-list',
+        test: item => productSubcategory(item) === sub
+    }));
+    return [base[0], ...subFilters, ...base.slice(1)];
+  }
+  return base;
+}
 function renderProductFilters() {
   const bar = document.getElementById('product-filter-bar');
   if (!bar) return;
-  const filters = PRODUCT_FILTERS
+  const filters = activeProductFilters()
     .map(f => ({ ...f, count: productFilterCount(f) }))
     .filter(f => f.id === 'all' || f.count > 0);
   bar.innerHTML = filters.map(f =>
@@ -1313,7 +1402,8 @@ function setProductFilter(filter) {
 function renderProductGrid() {
   const grid = document.getElementById('inventory-grid');
   if (!grid) return;
-  const active = PRODUCT_FILTERS.find(f => f.id === currentProductFilter) || PRODUCT_FILTERS[0];
+  const filters = activeProductFilters();
+  const active = filters.find(f => f.id === currentProductFilter) || filters[0];
   const items = currentProductItems.filter(active.test);
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
   renderProductFilters();
@@ -1359,11 +1449,13 @@ function getGameBadgeMeta(value) {
   return { text, key };
 }
 function renderGames() {
-  document.getElementById('game-grid').innerHTML = gamesList.map(g => {
+  renderPlatformFilters();
+  const visibleGames = catalogGames();
+  document.getElementById('game-grid').innerHTML = visibleGames.map(g => {
     const badgeMeta = getGameBadgeMeta(g.badge || g.badgeTitle || g.badgeText || g.titleBadge || g.label);
     const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + escapeHtml(badgeMeta.text) + '</div>' : '';
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
-    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')">' + badge + '<div class="gc-icon-wrap">' + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
   initScrollReveal();
 }
@@ -1372,7 +1464,7 @@ function openGame(name, options = {}) {
   if (!options.fromUrl) updateGameUrl(name);
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
-  let items = inventory.filter(i => i.game === name);
+  let items = inventory.filter(i => gameGroupName(i) === name);
   // Sort items: in-stock first, out-of-stock last
   items.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
   document.getElementById('pv-title').textContent = name;
@@ -1492,7 +1584,7 @@ async function takeScreenshot() {
     toast('Screenshot produk sedang dibuat...', false);
 
     const items = inventory
-      .filter(i => i.game === currentGame)
+      .filter(i => gameGroupName(i) === currentGame)
       .sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
     if (!items.length) {
       toast('Tiada produk untuk screenshot', true);
@@ -1605,7 +1697,7 @@ function getStockLabelForScreenshot(item) {
   return '<span class="product-ss-stock ok">Ready</span>';
 }
 function getProductScreenshotFallback() {
-  const game = gamesList.find(g => g.name === currentGame);
+  const game = catalogGames(true).find(g => g.name === currentGame);
   return cleanUrl(game?.img || 'https://i.imgur.com/cLPulXQ.png');
 }
 function waitForBoardImages(root) {
