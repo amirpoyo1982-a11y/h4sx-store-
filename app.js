@@ -1348,7 +1348,37 @@ if (document.readyState === 'loading') {
 } else {
   bootStoreApp();
 }
-function getStockBadge(item) { const s = item.stock; if (s == null) return ''; if (s === 0) return '<span class="stock-badge out">Out of Stock</span>'; if (s <= 5) return '<span class="stock-badge low">Tinggal ' + s + '</span>'; return ''; }
+function stockState(item) {
+  const s = Number(item.stock);
+  if (item.stock == null || !Number.isFinite(s)) return { type:'unknown', label:'Ready' };
+  if (s <= 0) return { type:'out', label:'Out of Stock' };
+  if (s === 1) return { type:'last', label:'Last Unit' };
+  if (s <= 3) return { type:'critical', label:'Tinggal ' + s };
+  if (s <= 5) return { type:'low', label:'Limited ' + s };
+  return { type:'ready', label:'Ready Stock' };
+}
+function getStockBadge(item) {
+  const state = stockState(item);
+  if (state.type === 'unknown') return '';
+  return '<span class="stock-badge ' + state.type + '">' + escapeHtml(state.label) + '</span>';
+}
+function getUpdatedText(item) {
+  const raw = item.updatedAt || item.lastUpdated || item.updateDate || item.updated || item.dikemaskini;
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return String(raw).slice(0, 28);
+  return d.toLocaleDateString('ms-MY', { day:'numeric', month:'short' });
+}
+function productMiniStatusHTML(item) {
+  const chips = [];
+  const state = stockState(item);
+  if (state.type !== 'unknown') chips.push('<span class="pstatus-chip ' + state.type + '"><i class="fa-solid fa-box"></i>' + escapeHtml(state.label) + '</span>');
+  if (item.promoLabel || (item.originalPrice && item.originalPrice > item.price)) chips.push('<span class="pstatus-chip promo"><i class="fa-solid fa-tag"></i>Promo</span>');
+  if (isVideoMediaUrl(productMediaUrl(item), item)) chips.push('<span class="pstatus-chip video"><i class="fa-solid fa-play"></i>Video</span>');
+  const updated = getUpdatedText(item);
+  if (updated || item.recentlyUpdated) chips.push('<span class="pstatus-chip updated"><i class="fa-solid fa-clock-rotate-left"></i>' + escapeHtml(updated || 'Updated') + '</span>');
+  return chips.length ? '<div class="pstatus-row">' + chips.slice(0, 3).join('') + '</div>' : '';
+}
 function isOutOfStock(item) { 
   if (item.stock == null) return false;
   const cartItem = cartItems.find(ci => ci.id === item.id);
@@ -1418,7 +1448,7 @@ function productCardHTML(item) {
   const addBtn = buildAddBtnHTML(item, oos);
   const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
   const quickBar = buildQuickBarHTML(item, oos);
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -1560,23 +1590,138 @@ function openGame(name, options = {}) {
 }
 function openSearch() { document.getElementById('search-overlay').classList.add('show'); document.body.style.overflow='hidden'; setTimeout(()=>document.getElementById('search-input').focus(),100); }
 function closeSearch() { document.getElementById('search-overlay').classList.remove('show'); document.body.style.overflow=''; document.getElementById('search-input').value=''; document.getElementById('search-results').innerHTML=''; }
+function quickSearch(text) {
+  const input = document.getElementById('search-input');
+  if (!input) return;
+  input.value = text;
+  doSearch(text);
+  input.focus();
+}
+function searchTextForItem(item) {
+  return [
+    item.name, item.game, gameGroupName(item), item.desc, item.promoLabel,
+    item.platform, item.subcategory, item.gameGroup, item.category,
+    item.badge, item.badgeTitle, Number(item.price || 0).toFixed(2)
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+function parseSearchIntent(q) {
+  const text = q.toLowerCase().trim();
+  const maxMatch = text.match(/(?:bawah|under|<=|max)\s*(?:rm)?\s*(\d+(?:\.\d+)?)/i) || text.match(/rm\s*(\d+(?:\.\d+)?)\s*(?:bawah|under)/i);
+  return {
+    text,
+    wantsStock: /\b(stok|stock|ready|ada|available)\b/.test(text),
+    wantsPromo: /\b(promo|sale|discount|offer)\b/.test(text),
+    wantsCheap: /\b(murah|cheap|budget)\b/.test(text),
+    wantsVideo: /\b(video|vid)\b/.test(text),
+    maxPrice: maxMatch ? Number(maxMatch[1]) : null
+  };
+}
 function doSearch(q) {
   const res = document.getElementById('search-results');
   if (!q.trim()) { res.innerHTML=''; return; }
-  let hits = inventory.filter(i => i.name.toLowerCase().includes(q.toLowerCase()) || i.game.toLowerCase().includes(q.toLowerCase()) || i.desc.toLowerCase().includes(q.toLowerCase()));
-  // Sort search results too: in-stock first
-  hits.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
-  if (!hits.length) { res.innerHTML='<p class="sr-empty">Tiada produk untuk "' + q + '"</p>'; return; }
-  res.innerHTML = hits.slice(0,6).map(item => {
+  const intent = parseSearchIntent(q);
+  const plainTerms = intent.text
+    .replace(/\b(stok|stock|ready|ada|available|promo|sale|discount|offer|murah|cheap|budget|video|vid|bawah|under|max|rm)\b/g, ' ')
+    .replace(/[<=>]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t && !/^\d+(\.\d+)?$/.test(t));
+  let hits = inventory.filter(item => {
+    const hay = searchTextForItem(item);
+    const textMatch = !plainTerms.length || plainTerms.every(t => hay.includes(t));
+    if (!textMatch) return false;
+    if (intent.wantsStock && isOutOfStock(item)) return false;
+    if (intent.wantsPromo && !(item.promoLabel || (item.originalPrice && item.originalPrice > item.price))) return false;
+    if (intent.wantsCheap && Number(item.price || 0) > 5) return false;
+    if (intent.wantsVideo && !isVideoMediaUrl(productMediaUrl(item), item)) return false;
+    if (intent.maxPrice != null && Number(item.price || 0) > intent.maxPrice) return false;
+    return true;
+  });
+  hits.sort((a, b) => {
+    const stockDiff = isOutOfStock(a) - isOutOfStock(b);
+    if (stockDiff) return stockDiff;
+    return Number(b.sold || 0) - Number(a.sold || 0);
+  });
+  if (!hits.length) { res.innerHTML='<p class="sr-empty">Tiada produk untuk "' + escapeHtml(q) + '". Cuba cari nama game, "stok ada", "promo", "murah", atau "under rm10".</p>'; return; }
+  res.innerHTML = '<div class="search-summary"><b>' + hits.length + '</b> result untuk "' + escapeHtml(q) + '"</div>' + hits.slice(0,8).map(item => {
     const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy" disabled style="height:26px;font-size:9px">BUY</button>' : '<button class="pbuy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')">BUY</button>';
-    return '<div class="pc" style="cursor:pointer" onclick="closeSearch();openGame(\'' + item.game.replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + '</div><div class="pbody" style="padding:10px"><div class="pname" style="font-size:13px">' + item.name + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + item.game + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
+    return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
+}
+function openJsonHelper() {
+  const modal = document.getElementById('json-helper-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('jh-name')?.focus(), 80);
+}
+function closeJsonHelper() {
+  const modal = document.getElementById('json-helper-modal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+function jhValue(id) {
+  return (document.getElementById(id)?.value || '').trim();
+}
+function fillJsonHelperExample() {
+  const values = {
+    'jh-name': 'Tiger Fruit',
+    'jh-game': 'Blox Fruit Buah/Fruit',
+    'jh-sub': 'Buah/Fruit',
+    'jh-platform': 'Roblox',
+    'jh-price': '7',
+    'jh-stock': '3',
+    'jh-sold': '0',
+    'jh-badge': 'New',
+    'jh-img': 'https://i.imgur.com/QJefiGX.png',
+    'jh-desc': 'Via trade. Ready stock.'
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  });
+  generateProductJson();
+}
+function generateProductJson() {
+  const price = Number(jhValue('jh-price'));
+  const stock = Number(jhValue('jh-stock'));
+  const sold = Number(jhValue('jh-sold'));
+  const obj = {
+    name: jhValue('jh-name') || 'Nama Produk',
+    game: jhValue('jh-game') || 'Nama Game',
+    platform: jhValue('jh-platform') || 'Roblox',
+    subcategory: jhValue('jh-sub') || undefined,
+    img: jhValue('jh-img') || 'https://i.imgur.com/xxxx.png',
+    price: Number.isFinite(price) ? price : 0,
+    stock: Number.isFinite(stock) ? stock : 0,
+    sold: Number.isFinite(sold) ? sold : 0,
+    badge: jhValue('jh-badge') || undefined,
+    desc: jhValue('jh-desc') || '',
+    updatedAt: new Date().toISOString().slice(0, 10)
+  };
+  Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
+  const out = document.getElementById('jh-output');
+  if (out) out.value = JSON.stringify(obj, null, 2);
+}
+async function copyJsonHelperOutput() {
+  const out = document.getElementById('jh-output');
+  if (!out) return;
+  if (!out.value.trim()) generateProductJson();
+  try {
+    await navigator.clipboard.writeText(out.value);
+    toast('JSON produk sudah copy', false);
+  } catch (err) {
+    out.select();
+    document.execCommand('copy');
+    toast('JSON produk sudah copy', false);
+  }
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeSearch(); closeQR(); closeProductImage();
+    closeJsonHelper();
     if (document.getElementById('changelog-modal')?.classList.contains('show')) dismissChangelog();
   }
 });

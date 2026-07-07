@@ -156,8 +156,14 @@
   <div class="search-box-wrap">
     <div class="search-input-row">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="search-input" placeholder="Cari produk..." oninput="doSearch(this.value)">
+      <input type="text" id="search-input" placeholder="Cari produk, game, harga, stok..." oninput="doSearch(this.value)">
       <button class="search-close" onclick="closeSearch()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="search-hints" aria-label="Cadangan carian">
+      <button onclick="quickSearch('stok ada')"><i class="fa-solid fa-box"></i> Stok ada</button>
+      <button onclick="quickSearch('promo')"><i class="fa-solid fa-tags"></i> Promo</button>
+      <button onclick="quickSearch('murah')"><i class="fa-solid fa-coins"></i> Murah</button>
+      <button onclick="quickSearch('video')"><i class="fa-solid fa-play"></i> Video</button>
     </div>
   </div>
   <div id="search-results"></div>
@@ -240,7 +246,7 @@
       </div>
     </section>
     <footer>
-      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. ? <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a></div>
+      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a> <span class="foot-dot">/</span> <a href="javascript:void(0)" onclick="openJsonHelper()" style="color:var(--primary);font-weight:700;text-decoration:none;">JSON Helper</a></div>
       <div class="foot-social">
         <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
         <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
@@ -304,6 +310,21 @@
             </ul>
           </div>
         </div>
+        <div class="checkout-mini-faq">
+          <div class="mini-faq-title"><i class="fa-solid fa-circle-question"></i> FAQ ringkas checkout</div>
+          <details open>
+            <summary>Username salah macam mana?</summary>
+            <p>Hubungi admin cepat sebelum proses bermula. Jika sudah diproses, order mungkin tidak boleh ditukar.</p>
+          </details>
+          <details>
+            <summary>Perlu hantar resit?</summary>
+            <p>Ya. Selepas bayar, tekan butang WhatsApp dan hantar resit bersama maklumat order.</p>
+          </details>
+          <details>
+            <summary>Berapa lama tunggu?</summary>
+            <p>Kebiasaan 5-25 minit ikut giliran dan jenis item.</p>
+          </details>
+        </div>
         <div class="co-block">
           <div class="co-title"><span class="co-n">2</span> Payment Method</div>
           <div class="pay-methods">
@@ -344,6 +365,36 @@
         <p class="sec-note"><i class="fa-solid fa-shield-halved"></i> Secure via WhatsApp</p>
       </div>
     </div>
+  </div>
+</div>
+<!-- JSON HELPER -->
+<div id="json-helper-modal" class="json-helper-modal" onclick="if(event.target===this)closeJsonHelper()">
+  <div class="json-helper-card">
+    <div class="json-helper-head">
+      <div>
+        <div class="json-helper-kicker">Admin helper</div>
+        <h3>Generate JSON Produk</h3>
+      </div>
+      <button onclick="closeJsonHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="json-helper-grid">
+      <label>Nama produk<input id="jh-name" class="finput" placeholder="Tiger Fruit"></label>
+      <label>Game<input id="jh-game" class="finput" placeholder="Blox Fruit Buah/Fruit"></label>
+      <label>Subcategory<input id="jh-sub" class="finput" placeholder="Buah/Fruit"></label>
+      <label>Platform<input id="jh-platform" class="finput" placeholder="Roblox"></label>
+      <label>Harga RM<input id="jh-price" class="finput" type="number" step="0.01" placeholder="7"></label>
+      <label>Stok<input id="jh-stock" class="finput" type="number" placeholder="3"></label>
+      <label>Sold<input id="jh-sold" class="finput" type="number" placeholder="0"></label>
+      <label>Badge<input id="jh-badge" class="finput" placeholder="New"></label>
+      <label class="json-helper-wide">Gambar / Video URL<input id="jh-img" class="finput" placeholder="https://i.imgur.com/..."></label>
+      <label class="json-helper-wide">Desc<textarea id="jh-desc" class="finput" rows="3" placeholder="Tulis description ringkas"></textarea></label>
+    </div>
+    <div class="json-helper-actions">
+      <button class="btn-ghost" onclick="fillJsonHelperExample()"><i class="fa-solid fa-wand-magic-sparkles"></i> Contoh</button>
+      <button class="btn-primary" onclick="generateProductJson()"><i class="fa-solid fa-code"></i> Generate</button>
+      <button class="btn-ghost" onclick="copyJsonHelperOutput()"><i class="fa-solid fa-copy"></i> Copy</button>
+    </div>
+    <textarea id="jh-output" class="json-output" rows="9" readonly placeholder="Output JSON akan keluar di sini..."></textarea>
   </div>
 </div>
 <!-- BOTTOM NAV -->
