@@ -287,6 +287,18 @@ async function fetchKedaiJson() {
   }
   return null;
 }
+function normalizeKedaiConfig(data) {
+  if (!data) return null;
+  if (Array.isArray(data)) {
+    const cfgItem = data.find(item => item && typeof item === 'object' && (item.storeConfig || item.review_maintenance !== undefined || item.maintenance !== undefined));
+    if (!cfgItem) return null;
+    return cfgItem.storeConfig ? { ...cfgItem.storeConfig } : { ...cfgItem };
+  }
+  if (data.storeConfig && typeof data.storeConfig === 'object') {
+    return { ...data.storeConfig, ...data };
+  }
+  return data;
+}
 function flagOn(value) {
   return value === true || String(value).toLowerCase() === 'true' || String(value).toLowerCase() === 'on';
 }
@@ -616,8 +628,9 @@ async function checkStore() {
     console.log('No data received from gist! Using default config.');
   } else {
     console.log('Data from gist:', d);
+    const normalizedConfig = normalizeKedaiConfig(d);
     // Update current config with gist data
-    currentStoreConfig = { ...currentStoreConfig, ...d };
+    if (normalizedConfig) currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
     refreshReviewMaintenanceUi();
   }
   
