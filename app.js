@@ -815,15 +815,26 @@ function catalogGames(showAllPlatforms = false) {
 function renderPlatformFilters() {
   const bar = document.getElementById('platform-filter-bar');
   if (!bar) return;
-  const counts = { Roblox: 0, 'Free Fire': 0 };
-  catalogGames(true).forEach(g => { counts[g.platform] = (counts[g.platform] || 0) + (g.count || 0); });
-  const platforms = ['Roblox', 'Free Fire'];
+  const allGames = catalogGames(true);
+  const gistPlatforms = [...new Set(gamesList.map(g => inferPlatform(g)).filter(Boolean))];
+  const platforms = gistPlatforms.length ? gistPlatforms : [...new Set(allGames.map(g => g.platform).filter(Boolean))];
+  if (!platforms.length) {
+    bar.innerHTML = '';
+    return;
+  }
+  if (!platforms.includes(activePlatform)) activePlatform = platforms[0];
+  const counts = {};
+  allGames.forEach(g => {
+    if (!platforms.includes(g.platform)) return;
+    counts[g.platform] = (counts[g.platform] || 0) + (g.count || 0);
+  });
   bar.innerHTML = platforms.map(p =>
     '<button class="platform-chip' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p + '\')"><i class="fa-solid ' + (p === 'Roblox' ? 'fa-cube' : 'fa-crosshairs') + '"></i><span>' + p + '</span><b>' + (counts[p] || 0) + '</b></button>'
   ).join('');
 }
 function setPlatform(platform) {
-  activePlatform = platform || 'Roblox';
+  const allowed = [...new Set(gamesList.map(g => inferPlatform(g)).filter(Boolean))];
+  activePlatform = allowed.includes(platform) ? platform : (allowed[0] || platform || 'Roblox');
   renderGames();
 }
 async function loadGames() {
