@@ -269,6 +269,7 @@ const PAY_QR = {
 };
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
+let kedaiConfigLoaded = false;
 async function fetchKedaiJson() {
   const url = KEDAI_GIST_URL;
   try { 
@@ -614,14 +615,6 @@ async function checkStore() {
   const overlay = document.getElementById('closure-overlay');
   const closureIconEl = document.getElementById('closure-icon');
 
-  if (isPreviewBypass()) {
-    if (overlay) overlay.style.display = 'none';
-    document.body.style.overflow = '';
-    updateBusinessHoursDisplay(currentStoreConfig, true);
-    checkAndShowAnnouncement();
-    return;
-  }
-
   const d = await fetchKedaiJson();
   
   if (!d) {
@@ -632,6 +625,15 @@ async function checkStore() {
     // Update current config with gist data
     if (normalizedConfig) currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
     refreshReviewMaintenanceUi();
+  }
+  kedaiConfigLoaded = true;
+
+  if (isPreviewBypass()) {
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    updateBusinessHoursDisplay(currentStoreConfig, true);
+    checkAndShowAnnouncement();
+    return;
   }
   
   if (!overlay) {
@@ -1208,6 +1210,10 @@ function refreshReviewMaintenanceUi() {
 async function loadReviews() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
+  if (!kedaiConfigLoaded) {
+    grid.innerHTML = '<div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Checking review status...</div>';
+    await checkStore();
+  }
   if (isReviewMaintenanceActive()) {
     showReviewMaintenanceNotice();
     return;
@@ -1246,6 +1252,10 @@ async function loadReviews() {
 }
 function renderReviews(list) {
   const grid = document.getElementById('testi-grid'); if (!grid) return;
+  if (isReviewMaintenanceActive()) {
+    showReviewMaintenanceNotice();
+    return;
+  }
   if (!list.length) {
     grid.innerHTML = '<div class="testi-loading">Belum ada ulasan terbaru.</div>';
     return;
