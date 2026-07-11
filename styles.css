@@ -3855,3 +3855,155 @@ nav,
     animation-play-state: running !important;
   }
 }
+
+/* Stronger closed-hours modal */
+#closure-overlay {
+  background:
+    radial-gradient(circle at 50% 32%, rgba(14,165,233,.3), transparent 34%),
+    linear-gradient(135deg, rgba(7,47,75,.84), rgba(2,6,23,.78)) !important;
+  backdrop-filter: blur(10px) saturate(1.12) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.12) !important;
+}
+#closure-overlay::before {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(56,189,248,.24), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(14,165,233,.2), transparent 30%),
+    linear-gradient(135deg, rgba(224,242,254,.2), rgba(255,255,255,.06)) !important;
+}
+.closure-container {
+  max-width: 520px !important;
+  min-height: 255px;
+  padding: clamp(24px, 4.5vw, 38px) !important;
+  border-radius: 30px !important;
+  background:
+    linear-gradient(180deg, rgba(240,249,255,.82), rgba(219,234,244,.72)),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,.58), transparent 44%) !important;
+  border: 1px solid rgba(255,255,255,.62) !important;
+  box-shadow: 0 28px 80px rgba(2,6,23,.28), inset 0 1px 0 rgba(255,255,255,.82) !important;
+}
+.closure-container::before {
+  height: 0 !important;
+}
+.closure-container::after {
+  content: "H4SX STORE";
+  position: absolute;
+  left: 50%;
+  bottom: -16px;
+  transform: translateX(-50%);
+  z-index: 0;
+  color: rgba(255,255,255,.48);
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+  font-size: clamp(58px, 14vw, 116px);
+  font-weight: 950;
+  line-height: .78;
+  letter-spacing: -5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.closure-container > * {
+  position: relative;
+  z-index: 1;
+}
+.closure-icon {
+  width: 58px !important;
+  height: 58px !important;
+  margin-bottom: 10px !important;
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle at 35% 24%, #fff, #dbeafe 35%, #64748b 76%) !important;
+  color: #e11d48 !important;
+  border: 5px solid rgba(15,23,42,.45);
+  font-size: 24px !important;
+  box-shadow: 0 14px 28px rgba(15,23,42,.22) !important;
+}
+.closure-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: rgba(255,255,255,.92);
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.22);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.closure-datetime-pill {
+  display: none !important;
+}
+.closure-title {
+  margin: 10px 0 10px !important;
+  color: #082f49 !important;
+  font-size: clamp(24px, 5vw, 34px) !important;
+  letter-spacing: -.04em !important;
+  text-transform: none !important;
+}
+.closure-status {
+  display: none !important;
+}
+.closure-message {
+  max-width: 390px;
+  margin: 0 auto 16px !important;
+  color: #31506b !important;
+  font-size: 15px !important;
+  line-height: 1.65 !important;
+}
+.closure-hours-pill {
+  align-items: center;
+  gap: 8px;
+  padding: 10px 17px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #082f49, #0f172a);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.28);
+  box-shadow: 0 12px 28px rgba(15,23,42,.2);
+  font-size: 13px;
+  font-weight: 900;
+}
+.closure-contact {
+  margin-top: 16px !important;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  border-radius: 999px !important;
+}
+#closure-overlay[data-closure-type="hours"] .closure-kicker::after {
+  content: " Rasmi";
+}
+
+@media (max-width: 520px) {
+  .closure-container {
+    width: min(92vw, 420px) !important;
+    border-radius: 24px !important;
+  }
+  .closure-container::after {
+    font-size: 62px;
+    letter-spacing: -3px;
+  }
+  .closure-kicker,
+  .closure-hours-pill {
+    font-size: 11px;
+  }
+}
+
+/* Maintenance mode: hide everything behind the popup completely. */
+#closure-overlay[data-closure-type="maintenance"] {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(14,165,233,.18), transparent 34%),
+    radial-gradient(circle at 20% 88%, rgba(56,189,248,.13), transparent 32%),
+    linear-gradient(145deg, #020617 0%, #061827 48%, #082f49 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#closure-overlay[data-closure-type="maintenance"]::before {
+  background:
+    linear-gradient(135deg, rgba(14,165,233,.08) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(56,189,248,.06) 25%, transparent 25%) !important;
+  background-size: 34px 34px !important;
+  opacity: .55;
+}
+#closure-overlay[data-closure-type="maintenance"] .closure-container {
+  background:
+    linear-gradient(180deg, rgba(240,249,255,.92), rgba(219,234,244,.86)),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,.68), transparent 44%) !important;
+}

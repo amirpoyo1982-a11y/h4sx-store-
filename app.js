@@ -648,10 +648,10 @@ async function checkStore() {
     const autoCheck = shouldStoreCloseAutomatically(currentStoreConfig);
     if (autoCheck.closed) {
       shouldClose = true;
-      closureType = 'closed';
-      title = 'KEDAI TUTUP';
-      status = autoCheck.reason;
-      message = currentStoreConfig.mesej_tutup || 'Kedai kami hanya buka pada waktu operasi.<br>Sila datang semula nanti!';
+      closureType = 'hours';
+      title = 'Di Luar Waktu Operasi';
+      status = 'WAKTU OPERASI';
+      message = currentStoreConfig.mesej_tutup || 'Kami sedang tutup buat masa ini. Sila kembali semasa waktu operasi kami.';
     }
   }
   
@@ -677,11 +677,16 @@ function showClosure(title, status, message, type = 'closed') {
   const closureIconEl = document.getElementById('closure-icon');
   const statusDotEl = document.querySelector('.closure-status .status-dot');
   const statusWrapEl = document.querySelector('.closure-status');
+  const hoursPillEl = document.getElementById('closure-hours-pill');
+  const hoursTextEl = document.getElementById('closure-hours-text');
+  if (overlay) overlay.setAttribute('data-closure-type', type);
   
   // Update icon based on type
   if (closureIconEl) {
     if (type === 'maintenance') {
       closureIconEl.innerHTML = '<i class="fas fa-tools"></i>';
+    } else if (type === 'hours') {
+      closureIconEl.innerHTML = '<i class="fa-solid fa-clock"></i>';
     } else {
       closureIconEl.innerHTML = '<i class="fas fa-lock"></i>';
     }
@@ -694,6 +699,11 @@ function showClosure(title, status, message, type = 'closed') {
       statusWrapEl.style.borderColor = '#fed7aa';
       statusWrapEl.style.color = '#c2410c';
       statusDotEl.style.background = '#f97316';
+    } else if (type === 'hours') {
+      statusWrapEl.style.background = 'rgba(14,165,233,.12)';
+      statusWrapEl.style.borderColor = 'rgba(14,165,233,.28)';
+      statusWrapEl.style.color = '#075985';
+      statusDotEl.style.background = '#0ea5e9';
     } else {
       statusWrapEl.style.background = '#fff1f2';
       statusWrapEl.style.borderColor = '#fecdd3';
@@ -705,6 +715,11 @@ function showClosure(title, status, message, type = 'closed') {
   if (titleEl) titleEl.textContent = title;
   if (statusEl) statusEl.textContent = status;
   if (messageEl) messageEl.innerHTML = message;
+  if (hoursPillEl && hoursTextEl) {
+    const hoursText = currentStoreConfig.business_hours_text || 'Isnin - Ahad: 9AM - 12AM';
+    hoursTextEl.textContent = hoursText.replace(/\s*\|\s*$/, '');
+    hoursPillEl.style.display = 'inline-flex';
+  }
   
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
