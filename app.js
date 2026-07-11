@@ -418,7 +418,14 @@ function renderPromoBanner(config = currentStoreConfig) {
   const dots = document.getElementById('promo-hero-dots');
   const prev = document.getElementById('promo-hero-prev');
   const next = document.getElementById('promo-hero-next');
-  if (!root || !track || !dots) return;
+  if (!root || !track || !dots) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => renderPromoBanner(config), { once: true });
+    } else {
+      setTimeout(() => renderPromoBanner(config), 250);
+    }
+    return;
+  }
 
   stopPromoBannerTimer();
   promoBannerSlides = getPromoBannerSlides(config);
