@@ -4010,7 +4010,8 @@ nav,
 
 /* Gist powered promo banner */
 .promo-hero {
-  margin: 4px 0 28px;
+  margin: 0 auto 22px;
+  max-width: 1120px;
 }
 .promo-hero.is-hidden {
   display: none !important;
@@ -4018,16 +4019,16 @@ nav,
 .promo-hero-shell {
   position: relative;
   overflow: hidden;
-  border-radius: 26px;
-  aspect-ratio: 16 / 5;
+  border-radius: 20px;
+  aspect-ratio: 16 / 4.25;
   height: auto;
   min-height: 0;
-  max-height: 420px;
+  max-height: 320px;
   background:
     radial-gradient(circle at 20% 20%, rgba(14,165,233,.18), transparent 34%),
     linear-gradient(135deg, #061827, #020617);
   border: 1px solid rgba(14,165,233,.18);
-  box-shadow: 0 26px 80px rgba(2,6,23,.18);
+  box-shadow: 0 18px 52px rgba(2,6,23,.14);
   cursor: grab;
   touch-action: pan-y;
   user-select: none;
@@ -4129,7 +4130,7 @@ nav,
 .promo-hero-dots {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  bottom: 9px;
   z-index: 4;
   display: flex;
   align-items: center;
@@ -4137,8 +4138,8 @@ nav,
   transform: translateX(-50%);
 }
 .promo-hero-dots button {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   padding: 0;
   border: 0;
   border-radius: 99px;
@@ -4147,16 +4148,16 @@ nav,
   transition: width .18s ease, background .18s ease;
 }
 .promo-hero-dots button.active {
-  width: 28px;
+  width: 26px;
   background: #0ea5e9;
 }
 
 @media (max-width: 760px) {
   .promo-hero {
-    margin: 0 0 22px;
+    margin: 0 0 18px;
   }
   .promo-hero-shell {
-    border-radius: 20px;
+    border-radius: 18px;
     aspect-ratio: 1 / 1;
     max-height: none;
   }
