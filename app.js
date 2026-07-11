@@ -352,6 +352,124 @@ function isPreviewBypass() {
   const params = new URLSearchParams(window.location.search);
   return params.get('preview') === '1' || params.get('preview') === 'true';
 }
+let promoBannerIndex = 0;
+let promoBannerSlides = [];
+let promoBannerTimer = null;
+function getPromoBannerSlides(config = currentStoreConfig) {
+  const active = flagOn(config.promo_banner_active)
+    || flagOn(config.promoBannerActive)
+    || flagOn(config.banner_promo_active);
+  if (!active) return [];
+
+  let slides = config.promo_banners
+    || config.promoBanners
+    || config.promo_banner_slides
+    || config.promoBannerSlides
+    || [];
+
+  if (!Array.isArray(slides) && slides && typeof slides === 'object') slides = [slides];
+  if (!slides.length && (config.promo_banner_image || config.promo_banner_img || config.promoBannerImage)) {
+    slides = [{
+      img: config.promo_banner_image || config.promo_banner_img || config.promoBannerImage,
+      mobileImg: config.promo_banner_mobile_image || config.promoBannerMobileImage || '',
+      title: config.promo_banner_title || '',
+      subtitle: config.promo_banner_subtitle || '',
+      buttonText: config.promo_banner_button_text || '',
+      link: config.promo_banner_link || ''
+    }];
+  }
+
+  return slides
+    .map((slide, index) => {
+      if (!slide || typeof slide !== 'object') return null;
+      const img = slide.img || slide.image || slide.imageUrl || slide.url || slide.desktopImg || '';
+      if (!img) return null;
+      return {
+        id: slide.id || `promo-${index}`,
+        img,
+        mobileImg: slide.mobileImg || slide.mobileImage || slide.mobile_image || '',
+        title: slide.title || '',
+        subtitle: slide.subtitle || slide.desc || slide.description || '',
+        buttonText: slide.buttonText || slide.button_text || slide.cta || '',
+        link: slide.link || slide.href || slide.urlLink || '',
+        alt: slide.alt || slide.title || 'Promosi H4SX STORE',
+        position: slide.position || slide.objectPosition || 'center',
+        fit: slide.fit || slide.objectFit || 'cover'
+      };
+    })
+    .filter(Boolean);
+}
+function stopPromoBannerTimer() {
+  if (promoBannerTimer) clearInterval(promoBannerTimer);
+  promoBannerTimer = null;
+}
+function showPromoBannerSlide(index) {
+  const root = document.getElementById('promo-hero');
+  const track = document.getElementById('promo-hero-track');
+  const dots = document.getElementById('promo-hero-dots');
+  if (!root || !track || !promoBannerSlides.length) return;
+  promoBannerIndex = (index + promoBannerSlides.length) % promoBannerSlides.length;
+  track.style.transform = `translate3d(${-promoBannerIndex * 100}%,0,0)`;
+  dots?.querySelectorAll('button').forEach((dot, i) => dot.classList.toggle('active', i === promoBannerIndex));
+}
+function renderPromoBanner(config = currentStoreConfig) {
+  const root = document.getElementById('promo-hero');
+  const track = document.getElementById('promo-hero-track');
+  const dots = document.getElementById('promo-hero-dots');
+  const prev = document.getElementById('promo-hero-prev');
+  const next = document.getElementById('promo-hero-next');
+  if (!root || !track || !dots) return;
+
+  stopPromoBannerTimer();
+  promoBannerSlides = getPromoBannerSlides(config);
+  promoBannerIndex = 0;
+
+  if (!promoBannerSlides.length) {
+    root.classList.add('is-hidden');
+    track.innerHTML = '';
+    dots.innerHTML = '';
+    return;
+  }
+
+  root.classList.remove('is-hidden');
+  track.innerHTML = promoBannerSlides.map(slide => {
+    const mobileSource = slide.mobileImg
+      ? '<source media="(max-width: 640px)" srcset="' + escapeHtml(slide.mobileImg) + '">'
+      : '';
+    const copy = (slide.title || slide.subtitle || slide.buttonText)
+      ? '<div class="promo-hero-copy">'
+        + (slide.title ? '<strong>' + escapeHtml(slide.title) + '</strong>' : '')
+        + (slide.subtitle ? '<span>' + escapeHtml(slide.subtitle) + '</span>' : '')
+        + (slide.buttonText ? '<em>' + escapeHtml(slide.buttonText) + '</em>' : '')
+        + '</div>'
+      : '';
+    const inner = '<picture>' + mobileSource
+      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(slide.fit) + '">'
+      + '</picture>' + copy;
+    return slide.link
+      ? '<a class="promo-hero-slide" href="' + escapeHtml(slide.link) + '" target="_blank" rel="noopener">' + inner + '</a>'
+      : '<div class="promo-hero-slide">' + inner + '</div>';
+  }).join('');
+  dots.innerHTML = promoBannerSlides.map((slide, i) =>
+    '<button type="button" aria-label="Promosi ' + (i + 1) + '" data-promo-dot="' + i + '"></button>'
+  ).join('');
+
+  const multiple = promoBannerSlides.length > 1;
+  prev.style.display = multiple ? '' : 'none';
+  next.style.display = multiple ? '' : 'none';
+  dots.style.display = multiple ? '' : 'none';
+  dots.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => showPromoBannerSlide(Number(btn.dataset.promoDot || 0)));
+  });
+  prev.onclick = () => showPromoBannerSlide(promoBannerIndex - 1);
+  next.onclick = () => showPromoBannerSlide(promoBannerIndex + 1);
+
+  showPromoBannerSlide(0);
+  if (multiple) {
+    const delay = Math.max(2500, Number(config.promo_banner_interval || config.promoBannerInterval || 5500));
+    promoBannerTimer = setInterval(() => showPromoBannerSlide(promoBannerIndex + 1), delay);
+  }
+}
 const CHANGELOG_VERSION = 'v1.4';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() { return new Date(); }
@@ -497,6 +615,9 @@ let currentStoreConfig = {
   maintenance: false,
   review_maintenance: false,
   review_maintenance_message: 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
+  promo_banner_active: false,
+  promo_banner_interval: 5500,
+  promo_banners: [],
   buka_jam: "09:00", // 9 AM
   tutup_jam: "23:00", // 11 PM
   tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
@@ -607,9 +728,11 @@ async function checkStore() {
     const normalizedConfig = normalizeKedaiConfig(d);
     // Update current config with gist data
     if (normalizedConfig) currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
+    renderPromoBanner(currentStoreConfig);
     refreshReviewMaintenanceUi();
   }
   kedaiConfigLoaded = true;
+  renderPromoBanner(currentStoreConfig);
 
   if (isPreviewBypass()) {
     if (overlay) overlay.style.display = 'none';
