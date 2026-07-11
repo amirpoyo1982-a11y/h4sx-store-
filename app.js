@@ -355,6 +355,8 @@ function isPreviewBypass() {
 let promoBannerIndex = 0;
 let promoBannerSlides = [];
 let promoBannerTimer = null;
+let promoBannerIntervalDelay = 5500;
+let promoDragState = null;
 function getPromoBannerSlides(config = currentStoreConfig) {
   const active = flagOn(config.promo_banner_active)
     || flagOn(config.promoBannerActive)
@@ -403,6 +405,12 @@ function stopPromoBannerTimer() {
   if (promoBannerTimer) clearInterval(promoBannerTimer);
   promoBannerTimer = null;
 }
+function startPromoBannerTimer(delay = promoBannerIntervalDelay) {
+  stopPromoBannerTimer();
+  if (promoBannerSlides.length > 1) {
+    promoBannerTimer = setInterval(() => showPromoBannerSlide(promoBannerIndex + 1), delay);
+  }
+}
 function showPromoBannerSlide(index) {
   const root = document.getElementById('promo-hero');
   const track = document.getElementById('promo-hero-track');
@@ -411,6 +419,68 @@ function showPromoBannerSlide(index) {
   promoBannerIndex = (index + promoBannerSlides.length) % promoBannerSlides.length;
   track.style.transform = `translate3d(${-promoBannerIndex * 100}%,0,0)`;
   dots?.querySelectorAll('button').forEach((dot, i) => dot.classList.toggle('active', i === promoBannerIndex));
+}
+function initPromoBannerDrag() {
+  const root = document.getElementById('promo-hero');
+  const track = document.getElementById('promo-hero-track');
+  if (!root || !track || root.dataset.dragReady === '1') return;
+  root.dataset.dragReady = '1';
+
+  function pointX(event) {
+    return event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX ?? event.clientX ?? 0;
+  }
+  function dragStart(event) {
+    if (promoBannerSlides.length <= 1) return;
+    promoDragState = {
+      startX: pointX(event),
+      currentX: pointX(event),
+      width: root.getBoundingClientRect().width || 1,
+      moved: false
+    };
+    stopPromoBannerTimer();
+    root.classList.add('is-dragging');
+    track.style.transition = 'none';
+  }
+  function dragMove(event) {
+    if (!promoDragState) return;
+    promoDragState.currentX = pointX(event);
+    const delta = promoDragState.currentX - promoDragState.startX;
+    if (Math.abs(delta) > 6) promoDragState.moved = true;
+    const percent = (-promoBannerIndex * 100) + ((delta / promoDragState.width) * 100);
+    track.style.transform = `translate3d(${percent}%,0,0)`;
+    if (promoDragState.moved && event.cancelable) event.preventDefault();
+  }
+  function dragEnd() {
+    if (!promoDragState) return;
+    const delta = promoDragState.currentX - promoDragState.startX;
+    const threshold = Math.max(45, promoDragState.width * 0.12);
+    track.style.transition = '';
+    root.classList.remove('is-dragging');
+    if (Math.abs(delta) > threshold) {
+      showPromoBannerSlide(promoBannerIndex + (delta < 0 ? 1 : -1));
+    } else {
+      showPromoBannerSlide(promoBannerIndex);
+    }
+    promoDragState = null;
+    startPromoBannerTimer();
+  }
+  function blockClickAfterDrag(event) {
+    if (promoDragState?.moved) event.preventDefault();
+  }
+
+  root.addEventListener('mousedown', dragStart);
+  window.addEventListener('mousemove', dragMove);
+  window.addEventListener('mouseup', dragEnd);
+  root.addEventListener('mouseleave', dragEnd);
+  root.addEventListener('touchstart', dragStart, { passive: true });
+  root.addEventListener('touchmove', dragMove, { passive: false });
+  root.addEventListener('touchend', dragEnd);
+  root.addEventListener('touchcancel', dragEnd);
+  root.addEventListener('click', blockClickAfterDrag, true);
+  root.addEventListener('mouseenter', stopPromoBannerTimer);
+  root.addEventListener('mouseleave', () => {
+    if (!promoDragState) startPromoBannerTimer();
+  });
 }
 function renderPromoBanner(config = currentStoreConfig) {
   const root = document.getElementById('promo-hero');
@@ -473,9 +543,10 @@ function renderPromoBanner(config = currentStoreConfig) {
 
   showPromoBannerSlide(0);
   if (multiple) {
-    const delay = Math.max(2500, Number(config.promo_banner_interval || config.promoBannerInterval || 5500));
-    promoBannerTimer = setInterval(() => showPromoBannerSlide(promoBannerIndex + 1), delay);
+    promoBannerIntervalDelay = Math.max(2500, Number(config.promo_banner_interval || config.promoBannerInterval || 5500));
+    startPromoBannerTimer();
   }
+  initPromoBannerDrag();
 }
 const CHANGELOG_VERSION = 'v1.4';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
