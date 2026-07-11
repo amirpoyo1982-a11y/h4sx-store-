@@ -17,6 +17,30 @@
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
+<!-- REVIEW SYSTEM NOTICE POPUP -->
+<div id="review-system-popup" class="review-system-popup" aria-hidden="true">
+  <div class="review-system-card" role="dialog" aria-modal="true" aria-labelledby="review-system-title">
+    <button class="review-system-close" type="button" onclick="closeReviewSystemPopup(false)" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>
+    <div class="review-system-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="review-system-kicker">Makluman Sistem Ulasan</div>
+    <h2 id="review-system-title">Sistem Ulasan Sedang Mengalami Gangguan</h2>
+    <p>
+      Buat masa ini, halaman ulasan pelanggan mungkin lambat dibuka, tidak memaparkan data dengan sempurna, atau mengambil masa lebih lama daripada biasa untuk pulih sepenuhnya.
+    </p>
+    <p>
+      Kami sedang pantau keadaan ini dan akan cuba pulihkan semula secepat mungkin. Sementara itu, pembelian di H4SX STORE masih berjalan seperti biasa. Terima kasih kerana bersabar dan terus menyokong kami.
+    </p>
+    <a class="review-system-link" href="https://review-customer-six.vercel.app/" target="_blank" rel="noopener">
+      <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka halaman ulasan
+    </a>
+    <label class="review-system-snooze">
+      <input type="checkbox" id="reviewSystemHideCheck">
+      <span>Jangan tunjuk lagi selama 1 jam 30 minit</span>
+    </label>
+    <button class="review-system-ok" type="button" onclick="closeReviewSystemPopup(true)">Saya faham</button>
+  </div>
+</div>
+
 <!-- 3D EARTH BACKGROUND (hidden on white v2) -->
 <div id="earth-bg" aria-hidden="true">
   <div id="earth-3d-container" style="width:100%; height:100%;"></div>
@@ -53,24 +77,6 @@
   </a>
 </div>
 
-<!-- ANNOUNCEMENT DETAILS MODAL -->
-<div id="ann-details-modal">
-  <div class="closure-container" style="max-width: 700px; transform: scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" id="ann-modal-content">
-    <div class="closure-icon"><i class="fa-solid fa-lock"></i></div>
-    <div class="closure-title" id="announcement-title">PENGUMUMAN PENTING</div>
-    <div class="closure-title" style="font-size: clamp(20px, 4vw, 32px); margin-top: 10px;" id="announcement-subtitle">Barang baru ditambah!</div>
-    
-    <div class="closure-message" style="margin: 30px 0; text-align: left; line-height: 1.8;" id="announcement-message">
-      <p style="margin-bottom: 15px;"><strong>Makluman kepada semua pelanggan dan pengguna,</strong></p>
-      
-      <p style="margin-bottom: 15px;">Kami telah menambah item-item baru! Sila semak katalog kami.</p>
-      
-      <p style="text-align: center; font-style: italic; color: var(--sky);">Terima kasih!</p>
-    </div>
-    
-    <button class="popup-cta" onclick="closeAnnDetails()" style="margin-top: 20px;" id="announcement-button">Saya faham</button>
-  </div>
-</div>
 <div id="changelog-modal" onclick="changelogBackdrop(event)">
   <div class="changelog-box" role="dialog" aria-labelledby="changelog-title" aria-modal="true">
     <div class="changelog-head">
@@ -101,13 +107,13 @@
 <div class="marquee-wrap">
   <div class="marquee-track">
     <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
-    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 5-25 minit</span>
+    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
     <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
     <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
     <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
     <span class="marquee-item"><i class="fa-solid fa-gamepad"></i> Item Roblox terpilih</span>
     <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
-    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 5-25 minit</span>
+    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
     <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
     <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
     <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
@@ -178,9 +184,9 @@
         <h1 class="hero-h1">Beli item <em>Roblox</em><br>dengan lebih<br>yakin.</h1>
         <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, dan bantuan admin yang responsif.</p>
         <div class="hero-stats">
-          <div class="hstat"><div class="hstat-n" data-target="300" data-suffix="+">0+</div><div class="hstat-l">Customers</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="400" data-suffix="+">0+</div><div class="hstat-l">Customers</div></div>
           <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">0%</div><div class="hstat-l">Secure</div></div>
-          <div class="hstat"><div class="hstat-n" data-target="25" data-prefix="<" data-suffix="m">0m</div><div class="hstat-l">Delivery</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="15" data-prefix="<" data-suffix="m">0m</div><div class="hstat-l">Delivery</div></div>
         </div>
         <div class="hero-cta-row">
           <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Browse Collection <i class="fa-solid fa-arrow-right"></i></a>
@@ -203,20 +209,20 @@
             <video src="https://files.catbox.moe/xy85y5.mp4" autoplay loop muted playsinline></video>
             <div class="vid-tag"><span class="vdot"></span> H4SX Official</div>
           </div>
-          <div class="hero-float-2"><div class="float-ic">?</div>Respon admin 5-25 minit</div>
+          <div class="hero-float-2"><div class="float-ic">?</div>Respon admin 1-30 minit</div>
         </div>
       </div>
     </section>
     <section class="trust-grid reveal" aria-label="Kepercayaan kedai">
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-file-invoice"></i></div><div><div class="trust-title">Resit Boleh Disemak</div><div class="trust-sub">Hantar bukti bayaran terus ke admin.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-brands fa-whatsapp"></i></div><div><div class="trust-title">Support WhatsApp</div><div class="trust-sub">Respon pantas ikut giliran semasa.</div></div></div>
-      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 5-25 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
+      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
     </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
       <div class="sh"><div><div class="sh-tag">Collections</div><div class="sh-title">Pilih game anda</div></div></div>
-      <div class="detail-note"><i class="fa-solid fa-image"></i> Klik gambar item untuk lihat dengan lebih jelas (detail penuh).</div>
+      <div class="detail-note"><i class="fa-solid fa-layer-group"></i> Pilih Roblox atau Free Fire dulu, kemudian pilih game, item atau akaun yang tersedia di bawah.</div>
       <div id="platform-filter-bar" class="platform-filter-bar" aria-label="Pilih part game"></div>
       <div id="game-grid"></div>
     </section>
@@ -238,7 +244,7 @@
     <section id="faq" class="section-panel" style="margin-bottom:48px">
       <div class="sh reveal"><div><div class="sh-tag">Support</div><div class="sh-title">Soalan lazim</div></div></div>
       <div class="faq-list">
-        <details class="faq reveal"><summary>Berapa lama masa penghantaran? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Biasanya antara 5 hingga 25 minit selepas pembayaran disahkan.</div></details>
+        <details class="faq reveal"><summary>Berapa lama masa penghantaran? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Biasanya antara 1 hingga 30 minit jika ramai boleh lebih lama selepas pembayaran disahkan.</div></details>
         <details class="faq reveal"><summary>Adakah akaun selamat daripada hackback? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami utamakan proses yang telus. Semak maklumat pesanan dan hubungi admin jika perlukan pengesahan tambahan.</div></details>
         <details class="faq reveal"><summary>Apa kaedah pembayaran yang diterima? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami menerima DuitNow QR dan TNG eWallet. Scan kod QR semasa checkout untuk bayar.</div></details>
         <details class="faq reveal"><summary>Boleh beli beberapa item sekali gus? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Boleh! Tambah pelbagai item ke cart dan bayar sekali. Nota: Tier Gamepass hanya boleh dibeli 1x dalam satu akaun.</div></details>
@@ -322,7 +328,7 @@
           </details>
           <details>
             <summary>Berapa lama tunggu?</summary>
-            <p>Kebiasaan 5-25 minit ikut giliran dan jenis item.</p>
+            <p>Kebiasaan 1-30 minit ikut giliran dan jenis item.</p>
           </details>
         </div>
         <div class="co-block">

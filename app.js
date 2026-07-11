@@ -1,3 +1,45 @@
+
+// --- REVIEW SYSTEM NOTICE POPUP ---
+const REVIEW_SYSTEM_POPUP_KEY = 'h4sx_review_system_notice_hidden_until';
+const REVIEW_SYSTEM_HIDE_MS = 90 * 60 * 1000;
+
+function shouldShowReviewSystemPopup() {
+  try {
+    const hiddenUntil = Number(localStorage.getItem(REVIEW_SYSTEM_POPUP_KEY) || 0);
+    return !hiddenUntil || Date.now() >= hiddenUntil;
+  } catch (e) {
+    return true;
+  }
+}
+
+function openReviewSystemPopup() {
+  const popup = document.getElementById('review-system-popup');
+  if (!popup || !shouldShowReviewSystemPopup()) return;
+  popup.classList.add('show');
+  popup.setAttribute('aria-hidden', 'false');
+}
+
+function closeReviewSystemPopup(fromButton) {
+  const popup = document.getElementById('review-system-popup');
+  const hideCheck = document.getElementById('reviewSystemHideCheck');
+  if (hideCheck?.checked) {
+    try {
+      localStorage.setItem(REVIEW_SYSTEM_POPUP_KEY, String(Date.now() + REVIEW_SYSTEM_HIDE_MS));
+    } catch (e) {}
+  }
+  if (popup) {
+    popup.classList.remove('show');
+    popup.setAttribute('aria-hidden', 'true');
+  }
+  if (fromButton && typeof toast === 'function') {
+    toast(hideCheck?.checked ? 'Notis disembunyikan selama 1 jam 30 minit.' : 'Notis ditutup.');
+  }
+}
+
+function initReviewSystemPopup() {
+  setTimeout(openReviewSystemPopup, 650);
+}
+
 ﻿// --- ANTI-INSPECT / ANTI-COPY ---
 document.addEventListener('contextmenu', function(e) {
   e.preventDefault();
@@ -310,17 +352,7 @@ function isPreviewBypass() {
   const params = new URLSearchParams(window.location.search);
   return params.get('preview') === '1' || params.get('preview') === 'true';
 }
-function closeAnnDetails() {
-  const m = document.getElementById('ann-details-modal');
-  const c = document.getElementById('ann-modal-content');
-  if (c) { c.style.transform = 'scale(0.92)'; c.style.opacity = '0'; }
-  if (m) {
-    m.classList.remove('show-modal');
-    setTimeout(() => { m.style.display = 'none'; }, 350);
-  }
-  document.body.style.overflow = '';
-}
-const CHANGELOG_VERSION = 'v1.2';
+const CHANGELOG_VERSION = 'v1.4';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() { return new Date(); }
 function openChangelog(manual) {
@@ -343,8 +375,7 @@ function closeChangelog() {
   modal.classList.remove('show');
   if (!document.getElementById('cart-overlay')?.classList.contains('show') &&
       !document.getElementById('search-overlay')?.classList.contains('show') &&
-      !document.getElementById('product-modal')?.classList.contains('show') &&
-      !document.getElementById('ann-details-modal')?.classList.contains('show-modal')) {
+      !document.getElementById('product-modal')?.classList.contains('show')) {
     document.body.style.overflow = '';
   }
 }
@@ -363,17 +394,6 @@ function initChangelog() {
   } catch (e) {
     setTimeout(() => openChangelog(false), 1000);
   }
-}
-function openAnnDetails() {
-  const m = document.getElementById('ann-details-modal');
-  const c = document.getElementById('ann-modal-content');
-  if (!m) return;
-  m.style.display = 'flex';
-  requestAnimationFrame(() => {
-    m.classList.add('show-modal');
-    if (c) { c.style.transform = 'scale(1)'; c.style.opacity = '1'; }
-  });
-  document.body.style.overflow = 'hidden';
 }
 function toggleMenu() {
   const m = document.getElementById('mob-menu');
@@ -490,50 +510,13 @@ let currentStoreConfig = {
   announcement_button_text: "Saya faham"
 };
 
-// Announcement popup handler
+// Announcement lama dimatikan. Field announcement_* dalam kedai.json tidak lagi membuka popup.
 function checkAndShowAnnouncement() {
-  if (!currentStoreConfig.announcement_active) return;
-  
-  const storedId = localStorage.getItem('h4sx_last_announcement_id');
-  
-  if (storedId !== currentStoreConfig.announcement_id) {
-    // Show the announcement
-    const modal = document.getElementById('ann-details-modal');
-    const titleEl = document.getElementById('announcement-title');
-    const subtitleEl = document.getElementById('announcement-subtitle');
-    const messageEl = document.getElementById('announcement-message');
-    const buttonEl = document.getElementById('announcement-button');
-    
-    // Update content
-    if (titleEl) titleEl.textContent = currentStoreConfig.announcement_title;
-    if (subtitleEl) subtitleEl.textContent = currentStoreConfig.announcement_subtitle;
-    if (messageEl) messageEl.innerHTML = currentStoreConfig.announcement_message;
-    if (buttonEl) buttonEl.textContent = currentStoreConfig.announcement_button_text;
-    
-    if (modal) {
-      modal.classList.add('show-modal');
-      modal.style.display = 'flex';
-      const content = document.getElementById('ann-modal-content');
-      if (content) {
-        content.style.transform = 'scale(1)';
-        content.style.opacity = '1';
-      }
-    }
-  }
+  return;
 }
-
 function closeAnnDetails() {
-  const modal = document.getElementById('ann-details-modal');
-  if (modal) {
-    modal.classList.remove('show-modal');
-    modal.style.display = 'none';
-  }
-  // Store the current announcement ID so it won't show again
-  if (currentStoreConfig.announcement_id) {
-    localStorage.setItem('h4sx_last_announcement_id', currentStoreConfig.announcement_id);
-  }
+  return;
 }
-
 function isTimeWithinRange(currentTime, startTime, endTime) {
   const [startHour, startMin] = startTime.split(':').map(Number);
   const [endHour, endMin] = endTime.split(':').map(Number);
@@ -831,24 +814,34 @@ function renderPlatformFilters() {
   const bar = document.getElementById('platform-filter-bar');
   if (!bar) return;
   const allGames = catalogGames(true);
-  const gistPlatforms = [...new Set(gamesList.map(g => inferPlatform(g)).filter(Boolean))];
-  const platforms = gistPlatforms.length ? gistPlatforms : [...new Set(allGames.map(g => g.platform).filter(Boolean))];
+  const platforms = [...new Set(allGames.map(g => g.platform).filter(Boolean))];
   if (!platforms.length) {
     bar.innerHTML = '';
     return;
   }
   if (!platforms.includes(activePlatform)) activePlatform = platforms[0];
   const counts = {};
+  const covers = {};
   allGames.forEach(g => {
     if (!platforms.includes(g.platform)) return;
     counts[g.platform] = (counts[g.platform] || 0) + (g.count || 0);
+    if (!covers[g.platform]) covers[g.platform] = productPosterUrl(g) || g.img || g.image || '';
   });
+  const labels = {
+    Roblox: { title: 'Roblox', sub: 'Game, item, akun', icon: 'fa-cube' },
+    'Free Fire': { title: 'Free Fire', sub: 'Item dan akun FF sahaja', icon: 'fa-crosshairs' }
+  };
   bar.innerHTML = platforms.map(p =>
-    '<button class="platform-chip' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p + '\')"><i class="fa-solid ' + (p === 'Roblox' ? 'fa-cube' : 'fa-crosshairs') + '"></i><span>' + p + '</span><b>' + (counts[p] || 0) + '</b></button>'
+    '<button class="platform-chip platform-card' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p.replace(/'/g,"\\'") + '\')">' +
+      '<span class="platform-card-bg" style="background-image:url(\'' + escapeCssUrl(covers[p] || getProductScreenshotFallback()) + '\')"></span>' +
+      '<span class="platform-card-icon"><i class="fa-solid ' + ((labels[p] && labels[p].icon) || 'fa-gamepad') + '"></i></span>' +
+      '<span class="platform-card-copy"><strong>' + escapeHtml((labels[p] && labels[p].title) || p) + '</strong><small>' + escapeHtml((labels[p] && labels[p].sub) || 'Pilihan tersedia') + '</small></span>' +
+      '<b>' + (counts[p] || 0) + '</b>' +
+    '</button>'
   ).join('');
 }
 function setPlatform(platform) {
-  const allowed = [...new Set(gamesList.map(g => inferPlatform(g)).filter(Boolean))];
+  const allowed = [...new Set(catalogGames(true).map(g => g.platform).filter(Boolean))];
   activePlatform = allowed.includes(platform) ? platform : (allowed[0] || platform || 'Roblox');
   renderGames();
 }
@@ -1908,6 +1901,9 @@ function escapeForHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+function escapeCssUrl(value) {
+  return escapeForHtml(String(value ?? '').replace(/['"\\\n\r]/g, ''));
+}
 function getStockLabelForScreenshot(item) {
   const stock = Number(item.stock);
   if (Number.isFinite(stock) && stock > 0 && stock <= 3) {
@@ -2367,4 +2363,4 @@ function toast(msg, err, name, count) {
   updateButton();
 })();
 initChangelog();
-
+initReviewSystemPopup();
