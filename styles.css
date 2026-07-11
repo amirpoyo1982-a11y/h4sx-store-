@@ -1611,6 +1611,70 @@ nav {
 }
 
 /* Testimonials */
+.review-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 18px 0 6px;
+}
+.review-summary-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 116px;
+  padding: 20px 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(14,165,233,.16);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,250,252,.84)),
+    radial-gradient(circle at 100% 0%, rgba(14,165,233,.12), transparent 42%);
+  box-shadow: 0 12px 30px rgba(15,23,42,.06);
+}
+.review-summary-card::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--refresh-cyan, #0ea5e9), var(--refresh-green, #22c55e));
+}
+.review-summary-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #37708f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+.review-summary-card strong {
+  display: block;
+  color: var(--refresh-cyan, #0ea5e9);
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: .9;
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+.review-summary-stars,
+.review-summary-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: #375569;
+  font-size: 13px;
+  font-weight: 800;
+}
+.review-summary-stars {
+  color: #fbbf24;
+}
+.review-summary-stars i {
+  font-size: 12px;
+}
+.review-summary-grid + .testi-grid {
+  display: none;
+}
 .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .testi-card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -3203,6 +3267,16 @@ nav {
   background: rgba(8,17,29,.72);
   border-color: rgba(125,211,252,.12);
 }
+:root[data-theme="dark"] .review-summary-card {
+  background:
+    linear-gradient(180deg, rgba(16,31,49,.88), rgba(11,23,37,.80)),
+    radial-gradient(circle at 100% 0%, rgba(14,165,233,.13), transparent 42%);
+  border-color: rgba(125,211,252,.14);
+}
+:root[data-theme="dark"] .review-summary-label,
+:root[data-theme="dark"] .review-summary-sub {
+  color: #b9d4e5;
+}
 
 @media (max-width: 1024px) {
   .hero {
@@ -3227,6 +3301,9 @@ nav {
   }
   .section-panel {
     border-radius: 22px;
+  }
+  .review-summary-grid {
+    grid-template-columns: 1fr;
   }
   .trust-grid {
     grid-template-columns: 1fr;
@@ -3603,5 +3680,178 @@ nav {
   #shop-section .gc-name {
     min-height: 38px;
     font-size: 10px;
+  }
+}
+
+/* =========================================================
+   PERFORMANCE POLISH
+   Keep the new look, reduce GPU-heavy blur/filter/shadow work.
+   ========================================================= */
+.platform-card-bg,
+#shop-section .platform-card-bg {
+  filter: none;
+}
+.business-hours-bar,
+nav,
+.bottom-nav,
+#shop-section .platform-filter-bar,
+.section-panel,
+.pc,
+.gc,
+.trust-item,
+.step,
+.faq,
+.testi-card,
+.order-box {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#shop-section,
+.section-panel,
+.pc,
+.gc,
+.trust-item,
+.step,
+.faq,
+.testi-card,
+.order-box,
+.product-modal-content,
+.cart-box {
+  box-shadow: 0 12px 32px rgba(15,23,42,.07) !important;
+}
+.platform-card,
+#shop-section .platform-card,
+#shop-section .gc:not(.oos):hover,
+.pc:hover {
+  box-shadow: 0 16px 34px rgba(15,23,42,.10) !important;
+}
+.music-btn.playing,
+.bh-dot.open,
+.bh-dot.closed,
+.ey-dot,
+.vdot,
+.status-dot {
+  animation-duration: 2.4s !important;
+}
+.hero-float-1,
+.hero-float-2 {
+  animation: none !important;
+}
+
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee-track {
+    animation: none !important;
+  }
+  .pc:hover,
+  .gc:not(.oos):hover,
+  #shop-section .gc:not(.oos):hover,
+  #shop-section .platform-card.active {
+    transform: none !important;
+  }
+  body::before,
+  #shop-section::before,
+  .hero::before,
+  .hero::after {
+    display: none !important;
+  }
+}
+
+/* =========================================================
+   SKYBLUE THEME ALIGNMENT
+   Keep the refresh style, remove green/yellow drift.
+   ========================================================= */
+:root {
+  --refresh-green: #06b6d4;
+  --refresh-amber: #38bdf8;
+}
+.marquee-wrap {
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4, #38bdf8) !important;
+}
+.marquee-item {
+  color: rgba(255,255,255,.98);
+}
+.hero-h1 em {
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4, #38bdf8) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+}
+#reviews .sh-tag,
+#reviews .sh-title,
+.review-summary-label {
+  color: #0369a1 !important;
+}
+#reviews .sh-title {
+  color: var(--refresh-ink) !important;
+}
+.review-summary-card {
+  border-color: rgba(14,165,233,.20);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(240,249,255,.88)),
+    radial-gradient(circle at 100% 0%, rgba(56,189,248,.15), transparent 42%);
+}
+.review-summary-card::after {
+  background: linear-gradient(90deg, #0ea5e9, #06b6d4, #7dd3fc) !important;
+}
+.review-summary-card strong {
+  color: #0ea5e9 !important;
+}
+.review-summary-stars i {
+  color: #38bdf8 !important;
+}
+.review-summary-sub {
+  color: #25637d;
+}
+.trust-item:nth-child(2) .trust-ic,
+.trust-item:nth-child(3) .trust-ic,
+.hstat:nth-child(2) .hstat-n,
+.hstat:nth-child(3) .hstat-n {
+  color: #0ea5e9 !important;
+}
+:root[data-theme="dark"] .review-summary-card {
+  background:
+    linear-gradient(180deg, rgba(16,31,49,.9), rgba(8,23,37,.82)),
+    radial-gradient(circle at 100% 0%, rgba(56,189,248,.16), transparent 42%);
+}
+:root[data-theme="dark"] #reviews .sh-tag,
+:root[data-theme="dark"] .review-summary-label,
+:root[data-theme="dark"] .review-summary-sub {
+  color: #7dd3fc !important;
+}
+
+/* Hard fix: keep top notice strip moving even in lightweight performance mode. */
+@keyframes h4sxMarqueeHardMove {
+  from { transform: translate3d(0,0,0); }
+  to { transform: translate3d(-50%,0,0); }
+}
+.marquee-track {
+  width: max-content !important;
+  min-width: max-content !important;
+  flex-wrap: nowrap !important;
+  animation-name: h4sxMarqueeHardMove !important;
+  animation-duration: 34s !important;
+  animation-timing-function: linear !important;
+  animation-iteration-count: infinite !important;
+  animation-play-state: running !important;
+}
+.marquee-track:hover {
+  animation-play-state: running !important;
+}
+.marquee-item {
+  flex: 0 0 auto !important;
+}
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation-name: h4sxMarqueeHardMove !important;
+    animation-duration: 42s !important;
+    animation-timing-function: linear !important;
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
   }
 }

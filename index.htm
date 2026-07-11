@@ -25,10 +25,10 @@
     <div class="review-system-kicker">Makluman Sistem Ulasan</div>
     <h2 id="review-system-title">Sistem Ulasan Sedang Mengalami Gangguan</h2>
     <p>
-      Buat masa ini, halaman ulasan pelanggan mungkin lambat dibuka, tidak memaparkan data dengan sempurna, atau mengambil masa lebih lama daripada biasa untuk pulih sepenuhnya.
+      Buat masa ini, feature ulasan pelanggan sedang diproses dan dikemas semula. Halaman ulasan mungkin lambat dibuka, tidak memaparkan data dengan sempurna, atau beberapa fungsi review belum stabil.
     </p>
     <p>
-      Kami sedang pantau keadaan ini dan akan cuba pulihkan semula secepat mungkin. Sementara itu, pembelian di H4SX STORE masih berjalan seperti biasa. Terima kasih kerana bersabar dan terus menyokong kami.
+      Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi. Sementara itu, pembelian di H4SX STORE masih berjalan seperti biasa. Terima kasih kerana bersabar dan terus menyokong kami.
     </p>
     <a class="review-system-link" href="https://review-customer-six.vercel.app/" target="_blank" rel="noopener">
       <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka halaman ulasan
@@ -238,6 +238,18 @@
     <div class="div"></div>
     <section id="reviews" class="section-panel" style="margin-bottom:32px">
       <div class="sh reveal"><div><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div style="margin-top:16px"><a href="https://review-customer-six.vercel.app/" target="_blank" class="btn-ghost" style="padding:8px 16px;font-size:12px;"><i class="fa-solid fa-comment"></i> Lihat Semua Review</a></div></div>
+      <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
+        <div class="review-summary-card">
+          <span class="review-summary-label">Purata Rating</span>
+          <strong id="mainReviewAverage">—</strong>
+          <span class="review-summary-stars" id="mainReviewStars">☆☆☆☆☆</span>
+        </div>
+        <div class="review-summary-card">
+          <span class="review-summary-label">Jumlah Ulasan</span>
+          <strong id="mainReviewCount">0</strong>
+          <span class="review-summary-sub">Ulasan pembeli sah</span>
+        </div>
+      </div>
       <div class="testi-grid" id="testi-grid"><div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Loading reviews...</div></div>
     </section>
     <div class="div"></div>

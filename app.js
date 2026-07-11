@@ -496,7 +496,7 @@ let currentStoreConfig = {
   bukakedai: true,
   maintenance: false,
   review_maintenance: false,
-  review_maintenance_message: 'Sistem ulasan sedang diselenggara. Ulasan pelanggan akan dipaparkan semula sebentar lagi.',
+  review_maintenance_message: 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
   buka_jam: "09:00", // 9 AM
   tutup_jam: "23:00", // 11 PM
   tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
@@ -1187,11 +1187,31 @@ function showReviewMaintenanceNotice() {
   }
   const message = currentStoreConfig.review_maintenance_message
     || currentStoreConfig.review_maintenance_msg
-    || 'Sistem ulasan sedang diselenggara. Ulasan pelanggan akan dipaparkan semula sebentar lagi.';
+    || 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.';
   grid.innerHTML = '<div class="testi-loading review-maintenance-box"><i class="fa-solid fa-screwdriver-wrench" style="margin-right:8px"></i>' + escapeHtml(message) + '</div>';
+}
+function updateMainReviewStats(list = []) {
+  const avgEl = document.getElementById('mainReviewAverage');
+  const countEl = document.getElementById('mainReviewCount');
+  const starsEl = document.getElementById('mainReviewStars');
+  if (!avgEl || !countEl || !starsEl) return;
+
+  const ratings = list
+    .map(item => Number.parseInt(item.bintang ?? item.rating, 10))
+    .filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
+  const count = ratings.length;
+  const avg = count ? ratings.reduce((sum, value) => sum + value, 0) / count : 0;
+  const roundedStars = Math.round(avg);
+
+  avgEl.textContent = count ? avg.toFixed(1) : '—';
+  countEl.textContent = String(count);
+  starsEl.innerHTML = Array(5).fill(0).map((_, i) =>
+    '<i class="fa-solid fa-star" style="color:' + (i < roundedStars ? '#fbbf24' : 'rgba(148,163,184,.42)') + '"></i>'
+  ).join('');
 }
 function refreshReviewMaintenanceUi() {
   if (isReviewMaintenanceActive()) {
+    updateMainReviewStats([]);
     showReviewMaintenanceNotice();
     return;
   }
@@ -1212,6 +1232,7 @@ async function loadReviews() {
     return;
   }
   if (!db) {
+    updateMainReviewStats([]);
     grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
     return;
   }
@@ -1220,31 +1241,30 @@ async function loadReviews() {
   try {
     unsubscribeReviews = db.collection('ratings')
       .orderBy('diciptaPada', 'desc')
-      .limit(6)
       .onSnapshot(snapshot => {
         if (isReviewMaintenanceActive()) {
           showReviewMaintenanceNotice();
           return;
         }
-        const data = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(item => {
-            const text = (item.ulasan || item.komen || item.comment || item.feedback || '').trim();
-            return text && text !== 'Tiada ulasan ditinggalkan.';
-          });
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderReviews(data);
         setTimeout(initScrollReveal, 100);
       }, error => {
         console.error("Firebase review listener error:", error);
+        updateMainReviewStats([]);
         grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
       });
   } catch(e) {
     console.error("Firebase review setup error:", e);
+    updateMainReviewStats([]);
     grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
   }
 }
 function renderReviews(list) {
   const grid = document.getElementById('testi-grid'); if (!grid) return;
+  updateMainReviewStats(list);
+  grid.innerHTML = '';
+  return;
   if (isReviewMaintenanceActive()) {
     showReviewMaintenanceNotice();
     return;
@@ -2308,23 +2328,28 @@ function toast(msg, err, name, count) {
 (() => {
   const bg = document.getElementById('earth-bg');
   if (!bg) return;
+  const canUseParallax = window.matchMedia('(min-width: 900px) and (pointer: fine) and (prefers-reduced-motion: no-preference)').matches;
+  if (!canUseParallax) return;
   
-  let tx = 0, ty = 0, cx = 0, cy = 0;
+  let tx = 0, ty = 0, cx = 0, cy = 0, rafId = 0;
   const intensity = 40; 
   window.addEventListener('mousemove', e => {
     tx = (e.clientX / window.innerWidth - 0.5) * intensity;
     ty = (e.clientY / window.innerHeight - 0.5) * intensity;
+    if (!rafId) rafId = requestAnimationFrame(tick);
   }, { passive: true });
   function tick() {
+    rafId = 0;
+    if (document.hidden) return;
     const iframe = bg.querySelector('iframe');
-    if (iframe) {
-      cx += (tx - cx) * 0.05;
-      cy += (ty - cy) * 0.05;
-      iframe.style.transform = `scale(1.15) translate(${cx}px, ${cy}px)`;
+    if (!iframe) return;
+    cx += (tx - cx) * 0.08;
+    cy += (ty - cy) * 0.08;
+    iframe.style.transform = `scale(1.12) translate(${cx}px, ${cy}px)`;
+    if (Math.abs(tx - cx) > 0.4 || Math.abs(ty - cy) > 0.4) {
+      rafId = requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
   }
-  tick();
 })();
 // Music Player Control
 (() => {
