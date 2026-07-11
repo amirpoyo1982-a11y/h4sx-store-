@@ -1172,6 +1172,7 @@ function toReviewTime(value) {
   return date.toLocaleString('ms-MY', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
 }
 let unsubscribeReviews = null;
+let latestReviewStatsData = [];
 function isReviewMaintenanceActive(config = currentStoreConfig) {
   return flagOn(config.review_maintenance)
     || flagOn(config.maintenance_review)
@@ -1181,10 +1182,6 @@ function isReviewMaintenanceActive(config = currentStoreConfig) {
 function showReviewMaintenanceNotice() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
-  if (unsubscribeReviews) {
-    unsubscribeReviews();
-    unsubscribeReviews = null;
-  }
   const message = currentStoreConfig.review_maintenance_message
     || currentStoreConfig.review_maintenance_msg
     || 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.';
@@ -1211,12 +1208,13 @@ function updateMainReviewStats(list = []) {
 }
 function refreshReviewMaintenanceUi() {
   if (isReviewMaintenanceActive()) {
-    updateMainReviewStats([]);
     showReviewMaintenanceNotice();
     return;
   }
   const grid = document.getElementById('testi-grid');
-  if (grid?.querySelector('.review-maintenance-box') && !unsubscribeReviews) {
+  if (grid?.querySelector('.review-maintenance-box') && latestReviewStatsData.length) {
+    renderReviews(latestReviewStatsData);
+  } else if (grid?.querySelector('.review-maintenance-box') && !unsubscribeReviews) {
     loadReviews();
   }
 }
@@ -1226,10 +1224,6 @@ async function loadReviews() {
   if (!kedaiConfigLoaded) {
     grid.innerHTML = '<div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Checking review status...</div>';
     await checkStore();
-  }
-  if (isReviewMaintenanceActive()) {
-    showReviewMaintenanceNotice();
-    return;
   }
   if (!db) {
     updateMainReviewStats([]);
@@ -1242,11 +1236,13 @@ async function loadReviews() {
     unsubscribeReviews = db.collection('ratings')
       .orderBy('diciptaPada', 'desc')
       .onSnapshot(snapshot => {
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        latestReviewStatsData = data;
+        updateMainReviewStats(data);
         if (isReviewMaintenanceActive()) {
           showReviewMaintenanceNotice();
           return;
         }
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderReviews(data);
         setTimeout(initScrollReveal, 100);
       }, error => {
