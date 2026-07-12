@@ -4008,6 +4008,82 @@ nav,
     radial-gradient(circle at 50% 0%, rgba(255,255,255,.68), transparent 44%) !important;
 }
 
+/* Cleaner closed-hours modal */
+#closure-overlay {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(56,189,248,.2), transparent 32%),
+    linear-gradient(145deg, #061827 0%, #0b3552 45%, #06111f 100%) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#closure-overlay::before {
+  background:
+    linear-gradient(135deg, rgba(14,165,233,.08) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(255,255,255,.05) 25%, transparent 25%) !important;
+  background-size: 36px 36px !important;
+  opacity: .46 !important;
+}
+.closure-container {
+  width: min(92vw, 460px) !important;
+  max-width: 460px !important;
+  min-height: 0 !important;
+  padding: clamp(22px, 4vw, 30px) !important;
+  border-radius: 24px !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.96), rgba(231,246,255,.92)) !important;
+  border: 1px solid rgba(186,230,253,.92) !important;
+  box-shadow: 0 24px 70px rgba(2,6,23,.34), inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+.closure-container::after {
+  content: "" !important;
+}
+.closure-icon {
+  width: 52px !important;
+  height: 52px !important;
+  margin: 0 auto 12px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #e0f2fe, #38bdf8) !important;
+  color: #083344 !important;
+  border: 1px solid rgba(14,165,233,.35) !important;
+  font-size: 22px !important;
+  box-shadow: 0 14px 34px rgba(14,165,233,.25) !important;
+}
+.closure-kicker {
+  color: #0369a1 !important;
+  background: rgba(14,165,233,.1) !important;
+  border: 1px solid rgba(14,165,233,.22) !important;
+  font-size: 11px !important;
+  letter-spacing: .07em !important;
+}
+.closure-title {
+  margin: 12px 0 8px !important;
+  color: #06263d !important;
+  font-size: clamp(25px, 5vw, 32px) !important;
+  letter-spacing: -.035em !important;
+}
+.closure-message {
+  color: #38566f !important;
+  margin-bottom: 15px !important;
+}
+.closure-hours-pill {
+  padding: 9px 16px !important;
+  background: linear-gradient(135deg, #0ea5e9, #0369a1) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.5) !important;
+  box-shadow: 0 14px 28px rgba(14,165,233,.24) !important;
+}
+.closure-contact {
+  box-shadow: 0 14px 28px rgba(14,165,233,.22) !important;
+}
+#closure-overlay[data-closure-type="maintenance"] {
+  background:
+    radial-gradient(circle at 50% 14%, rgba(56,189,248,.2), transparent 30%),
+    linear-gradient(145deg, #020617 0%, #082f49 58%, #06111f 100%) !important;
+}
+#closure-overlay[data-closure-type="maintenance"] .closure-container {
+  background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(232,247,255,.94)) !important;
+}
+
 /* Gist powered promo banner */
 .promo-hero {
   margin: 0 auto 22px;
@@ -4358,5 +4434,83 @@ nav,
     height: 36px !important;
     min-width: 36px !important;
     flex-basis: 36px;
+  }
+}
+
+/* Hide Tawk.to quick replies/widget on phone so it does not block the shop UI. */
+@media (max-width: 768px) {
+  iframe[title*="Tawk"],
+  iframe[title*="tawk"],
+  iframe[src*="tawk.to"],
+  #tawkchat-iframe-container,
+  #tawkchat-container,
+  .tawk-to-chat-widget,
+  .tawk-min-container,
+  .tawk-button,
+  [class*="tawk"],
+  [id*="tawk"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Horizontal game picker: cards slide sideways instead of stacking down. */
+#shop-section #game-grid,
+#game-grid {
+  display: flex !important;
+  grid-template-columns: none !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: 14px !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 4px 14px;
+  margin-inline: -4px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+#shop-section #game-grid::-webkit-scrollbar,
+#game-grid::-webkit-scrollbar {
+  height: 7px;
+}
+#shop-section #game-grid::-webkit-scrollbar-thumb,
+#game-grid::-webkit-scrollbar-thumb {
+  background: rgba(14,165,233,.35);
+  border-radius: 999px;
+}
+#shop-section .gc,
+.gc {
+  flex: 0 0 clamp(136px, 18vw, 176px) !important;
+  width: clamp(136px, 18vw, 176px) !important;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  #shop-section #game-grid,
+  #game-grid {
+    gap: 12px !important;
+    padding: 2px 2px 12px;
+    margin-inline: -2px;
+    scrollbar-width: none;
+  }
+  #shop-section #game-grid::-webkit-scrollbar,
+  #game-grid::-webkit-scrollbar {
+    display: none;
+  }
+  #shop-section .gc,
+  .gc {
+    flex-basis: 142px !important;
+    width: 142px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  #shop-section .gc,
+  .gc {
+    flex-basis: 132px !important;
+    width: 132px !important;
   }
 }

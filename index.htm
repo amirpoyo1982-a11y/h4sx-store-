@@ -13,7 +13,7 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=mobile-polish-5">
+  <link rel="stylesheet" href="styles.css?v=closed-clean-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -569,18 +569,31 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=mobile-polish-5"></script>
+<script defer src="app.js?v=game-row-7"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+function h4sxIsMobileChatHidden(){
+  return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+}
+function h4sxSyncTawkMobile(){
+  if (!window.Tawk_API) return;
+  try {
+    if (h4sxIsMobileChatHidden() && Tawk_API.hideWidget) Tawk_API.hideWidget();
+    if (!h4sxIsMobileChatHidden() && Tawk_API.showWidget) Tawk_API.showWidget();
+  } catch(e) {}
+}
 Tawk_API.onLoad = function(){
   // Adjust widget position
   Tawk_API.setAttributes({
     'zIndex': 99999,
     'position': 'right'
   }, function(error){});
+  h4sxSyncTawkMobile();
 };
+window.addEventListener('resize', h4sxSyncTawkMobile);
+document.addEventListener('visibilitychange', h4sxSyncTawkMobile);
 </script>
 
 <!--Start of Tawk.to Script-->
