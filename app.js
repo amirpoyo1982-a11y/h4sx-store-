@@ -523,12 +523,15 @@ function renderPromoBanner(config = currentStoreConfig) {
     const imgLoadAttrs = i === 0
       ? ' loading="eager" decoding="async" fetchpriority="high"'
       : ' loading="lazy" decoding="async" fetchpriority="low"';
+    const cleanFit = String(slide.fit || 'cover').toLowerCase() === 'contain' ? 'contain' : 'cover';
+    const slideClass = cleanFit === 'contain' ? ' promo-contain' : '';
+    const slideStyle = cleanFit === 'contain' ? ' style="--promo-img:url(\'' + escapeHtml(slide.img) + '\')"' : '';
     const inner = '<picture>' + mobileSource
-      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(slide.fit) + '">'
+      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
-      ? '<a class="promo-hero-slide" href="' + escapeHtml(slide.link) + '" target="_blank" rel="noopener">' + inner + '</a>'
-      : '<div class="promo-hero-slide">' + inner + '</div>';
+      ? '<a class="promo-hero-slide' + slideClass + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '" target="_blank" rel="noopener">' + inner + '</a>'
+      : '<div class="promo-hero-slide' + slideClass + '"' + slideStyle + '>' + inner + '</div>';
   }).join('');
   dots.innerHTML = promoBannerSlides.map((slide, i) =>
     '<button type="button" aria-label="Promosi ' + (i + 1) + '" data-promo-dot="' + i + '"></button>'
@@ -1237,9 +1240,14 @@ function renderMediaHTML(item = {}, context = 'card') {
     const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl || item.img, true));
     const posterSrc = escapeForHtml(displayImageUrl(productPosterUrl(item) || productStillImageUrl(item) || getProductScreenshotFallback(), context));
     const name = escapeForHtml(item.name || item.game || 'Media produk');
-    return '<div class="product-media-split product-modal-media-split">' +
-      '<div class="split-media-panel split-media-image"><img src="' + stillSrc + '" alt="' + name + '" loading="eager" decoding="async" fetchpriority="high" draggable="false" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span>Gambar</span></div>' +
-      '<div class="split-media-panel split-media-video"><video src="' + videoSrc + '" poster="' + posterSrc + '" controls autoplay loop muted playsinline preload="metadata" draggable="false"></video><span><i class="fa-solid fa-play"></i> Video</span></div>' +
+    return '<div class="product-media-carousel">' +
+      '<button class="product-media-arrow product-media-prev" type="button" onclick="scrollProductModalMedia(-1)" aria-label="Media sebelum"><i class="fa-solid fa-chevron-left"></i></button>' +
+      '<div class="product-media-track" id="product-modal-media-track">' +
+      '<div class="product-media-slide split-media-image"><img src="' + stillSrc + '" alt="' + name + '" loading="eager" decoding="async" fetchpriority="high" draggable="false" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span>Gambar</span></div>' +
+      '<div class="product-media-slide split-media-video"><video src="' + videoSrc + '" poster="' + posterSrc + '" controls autoplay loop muted playsinline preload="metadata" draggable="false"></video><span><i class="fa-solid fa-play"></i> Video</span></div>' +
+      '</div>' +
+      '<button class="product-media-arrow product-media-next" type="button" onclick="scrollProductModalMedia(1)" aria-label="Media seterusnya"><i class="fa-solid fa-chevron-right"></i></button>' +
+      '<div class="product-media-hint"><i class="fa-solid fa-hand-pointer"></i> Serek kiri kanan</div>' +
       '</div>';
   }
   const src = productMediaUrl(item);
@@ -1265,6 +1273,13 @@ function renderMediaHTML(item = {}, context = 'card') {
     ? ' loading="eager" decoding="async" fetchpriority="high"'
     : ' loading="lazy" decoding="async" fetchpriority="low"';
   return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false"' + imgAttrs + ' onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
+}
+
+function scrollProductModalMedia(direction = 1) {
+  const track = document.getElementById('product-modal-media-track');
+  if (!track) return;
+  const amount = track.clientWidth || 1;
+  track.scrollBy({ left: amount * direction, behavior: 'smooth' });
 }
 
 function syncInventoryGames() {
