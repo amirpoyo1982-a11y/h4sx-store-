@@ -509,7 +509,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
 
   root.classList.remove('is-hidden');
-  track.innerHTML = promoBannerSlides.map(slide => {
+  track.innerHTML = promoBannerSlides.map((slide, i) => {
     const mobileSource = slide.mobileImg
       ? '<source media="(max-width: 640px)" srcset="' + escapeHtml(slide.mobileImg) + '">'
       : '';
@@ -520,8 +520,11 @@ function renderPromoBanner(config = currentStoreConfig) {
         + (slide.buttonText ? '<em>' + escapeHtml(slide.buttonText) + '</em>' : '')
         + '</div>'
       : '';
+    const imgLoadAttrs = i === 0
+      ? ' loading="eager" decoding="async" fetchpriority="high"'
+      : ' loading="lazy" decoding="async" fetchpriority="low"';
     const inner = '<picture>' + mobileSource
-      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(slide.fit) + '">'
+      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(slide.fit) + '">'
       + '</picture>' + copy;
     return slide.link
       ? '<a class="promo-hero-slide" href="' + escapeHtml(slide.link) + '" target="_blank" rel="noopener">' + inner + '</a>'
@@ -1170,6 +1173,18 @@ function normalizeImgurUrl(url, forceVideo = false) {
   }
   return clean;
 }
+function imgurSizedUrl(url, size = 'l') {
+  const clean = cleanUrl(url || '');
+  const match = clean.match(/^(https?:\/\/i\.imgur\.com\/)([a-z0-9]+)([a-z])?(\.(?:jpg|jpeg|png|webp))([?#].*)?$/i);
+  if (!match || !size) return clean;
+  return match[1] + match[2] + size + match[4] + (match[5] || '');
+}
+function displayImageUrl(url, context = 'card') {
+  const clean = cleanUrl(url || '');
+  if (!clean || context === 'modal') return clean;
+  if (context === 'game' || context === 'search') return imgurSizedUrl(clean, 'm');
+  return imgurSizedUrl(clean, 'l');
+}
 function isVideoMediaUrl(url, item = {}) {
   const type = String(item.mediaType || item.mediatype || item.media || item.type || '').toLowerCase();
   if (type.includes('video')) return true;
@@ -1196,14 +1211,14 @@ function renderMediaHTML(item = {}, context = 'card') {
   const src = productMediaUrl(item);
   const name = escapeForHtml(item.name || item.game || 'Media produk');
   if (!src) return '<div class="media-empty"><i class="fa-solid fa-image"></i></div>';
-  const safeSrc = escapeForHtml(src);
+  const safeSrc = escapeForHtml(displayImageUrl(src, context));
   const poster = productPosterUrl(item);
   const posterAttr = poster ? ' poster="' + escapeForHtml(poster) + '"' : '';
   const video = isVideoMediaUrl(src, item);
   if (video) {
     if (context !== 'modal') {
-      const posterSrc = escapeForHtml(poster || getProductScreenshotFallback());
-      return '<img class="product-media product-media-img product-media-video-poster" src="' + posterSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
+      const posterSrc = escapeForHtml(displayImageUrl(poster || getProductScreenshotFallback(), context));
+      return '<img class="product-media product-media-img product-media-video-poster" src="' + posterSrc + '" alt="' + name + '" draggable="false" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
     }
     const controls = context === 'modal' ? ' controls' : '';
     const eagerAttrs = context === 'modal'
@@ -1212,7 +1227,10 @@ function renderMediaHTML(item = {}, context = 'card') {
     const fallback = escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback());
     return '<video class="product-media product-media-video" src="' + safeSrc + '"' + posterAttr + eagerAttrs + controls + ' draggable="false" onerror="this.outerHTML=\'<img class=&quot;product-media product-media-img&quot; src=&quot;' + fallback + '&quot; alt=&quot;' + name + '&quot; draggable=&quot;false&quot;>\'"></video><span class="media-type-pill"><i class="fa-solid fa-play"></i> Video</span>';
   }
-  return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false" loading="lazy" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
+  const imgAttrs = context === 'modal'
+    ? ' loading="eager" decoding="async" fetchpriority="high"'
+    : ' loading="lazy" decoding="async" fetchpriority="low"';
+  return '<img class="product-media product-media-img" src="' + safeSrc + '" alt="' + name + '" draggable="false"' + imgAttrs + ' onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'">';
 }
 
 function syncInventoryGames() {

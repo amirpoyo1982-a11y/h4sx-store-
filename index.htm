@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
   <link rel="preconnect" href="https://i.imgur.com">
+  <link rel="preconnect" href="https://i.ibb.co">
   <link rel="preconnect" href="https://gist.githubusercontent.com">
   <link rel="preconnect" href="https://firestore.googleapis.com">
   <!-- Firebase SDK -->
@@ -107,7 +108,7 @@
 <nav id="main-nav">
   <div class="nav-inner">
     <button class="nav-brand" onclick="showHome()">
-      <div class="nav-logo"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX"></div>
+      <div class="nav-logo"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX" decoding="async" fetchpriority="high"></div>
       <span class="nav-wordmark">H4SX STORE</span>
     </button>
     <div class="nav-links">
@@ -342,19 +343,19 @@
           <div class="pay-methods">
             <button class="pay-method-btn active" onclick="selectPay('duitnow')" id="pay-btn-duitnow">
               <span class="pay-check"><i class="fa-solid fa-check"></i></span>
-              <div class="pay-logo-wrap"><img src="https://i.imgur.com/iehKR3z.png" alt="DuitNow" class="pay-logo-img"></div>
+              <div class="pay-logo-wrap"><img src="https://i.imgur.com/iehKR3z.png" alt="DuitNow" class="pay-logo-img" loading="lazy" decoding="async"></div>
               <div class="pay-name">DuitNow QR</div><div class="pay-tag">Scan &amp; Pay</div>
             </button>
             <button class="pay-method-btn" onclick="selectPay('tng')" id="pay-btn-tng">
               <span class="pay-check"><i class="fa-solid fa-check"></i></span>
-              <div class="pay-logo-wrap"><img src="https://i.imgur.com/qQMvnPo.png" alt="TNG" class="pay-logo-img"></div>
+              <div class="pay-logo-wrap"><img src="https://i.imgur.com/qQMvnPo.png" alt="TNG" class="pay-logo-img" loading="lazy" decoding="async"></div>
               <div class="pay-name">TNG eWallet</div><div class="pay-tag">Touch n Go</div>
             </button>
           </div>
           <div class="pay-panel active" id="panel-duitnow">
             <div class="qr-area">
               <div class="qr-lbl">DuitNow QR ? Tap untuk besarkan</div>
-              <div class="qr-frame" onclick="openQR('duitnow')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR DuitNow" class="qr-blurred"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
+              <div class="qr-frame" onclick="openQR('duitnow')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR DuitNow" class="qr-blurred" loading="lazy" decoding="async"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
               <div class="qr-name">Nurwazni</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px;">DuitNow QR</div>
             </div>
@@ -362,7 +363,7 @@
           <div class="pay-panel" id="panel-tng">
             <div class="qr-area">
               <div class="qr-lbl">TNG eWallet QR ? Tap untuk besarkan</div>
-              <div class="qr-frame" onclick="openQR('tng')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR TNG" class="qr-blurred"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
+              <div class="qr-frame" onclick="openQR('tng')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR TNG" class="qr-blurred" loading="lazy" decoding="async"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
               <div class="qr-name">Nurwazni</div>
               <div style="font-size:11px;color:var(--muted);margin-top:4px;">Touch 'n Go eWallet</div>
             </div>
@@ -458,7 +459,7 @@
   <div class="qr-modal-bg" onclick="closeQR()"></div>
   <div class="qr-modal-content">
     <button class="qr-modal-close" onclick="closeQR()"><i class="fa-solid fa-xmark"></i></button>
-    <img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR" id="qr-modal-img">
+    <img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR" id="qr-modal-img" loading="lazy" decoding="async">
     <div class="qr-name-large" id="qr-modal-name">Nurwazni</div>
     <div class="qr-modal-sub" id="qr-modal-sub">DuitNow QR</div>
   </div>
@@ -547,7 +548,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=product-link-1"></script>
+<script defer src="app.js?v=image-fast-1"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
