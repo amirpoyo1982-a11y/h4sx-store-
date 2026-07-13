@@ -10,7 +10,7 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-link',
-          text: '<strong>Direct link produk</strong> - setiap barang kini boleh dibuka terus melalui link khas, jadi senang share item tertentu kepada pelanggan.'
+          text: '<strong>DireCt link produk</strong> - setiap barang kini boleh dibuka terus melalui link khas, jadi senang share item tertentu kepada pelanggan.'
         },
         {
           icon: 'fa-copy',
