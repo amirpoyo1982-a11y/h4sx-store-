@@ -1190,6 +1190,11 @@ function isVideoMediaUrl(url, item = {}) {
   if (type.includes('video')) return true;
   return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
 }
+function productStillImageUrl(item = {}) {
+  const raw = item.img || item.image || item.poster || item.posterImg || item.thumbnail || item.thumb || '';
+  if (!raw || isVideoMediaUrl(raw, item)) return '';
+  return normalizeImgurUrl(raw, false);
+}
 function productMediaUrl(item = {}) {
   const raw = item.video || item.videoUrl || item.mediaUrl || item.img || item.image || '';
   return normalizeImgurUrl(raw, isVideoMediaUrl(raw, item));
@@ -1207,7 +1212,26 @@ function productPosterUrl(item = {}) {
   }
   return normalizeImgurUrl(raw, false);
 }
+function isFreeFireItem(item = {}) {
+  return inferPlatform(item, gameGroupName(item)) === 'Free Fire' || /free\s*fire|\bff\b/i.test(gameGroupName(item));
+}
+function shouldSplitFreeFireMedia(item = {}, context = 'card') {
+  if (context === 'modal' || !isFreeFireItem(item)) return false;
+  const still = productStillImageUrl(item);
+  const videoRaw = item.video || item.videoUrl || item.mediaUrl || '';
+  return !!(still && videoRaw && isVideoMediaUrl(videoRaw, item));
+}
 function renderMediaHTML(item = {}, context = 'card') {
+  if (shouldSplitFreeFireMedia(item, context)) {
+    const stillSrc = escapeForHtml(displayImageUrl(productStillImageUrl(item), context));
+    const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl, true));
+    const posterSrc = escapeForHtml(displayImageUrl(productPosterUrl(item) || productStillImageUrl(item) || getProductScreenshotFallback(), context));
+    const name = escapeForHtml(item.name || item.game || 'Media produk');
+    return '<div class="product-media-split">' +
+      '<div class="split-media-panel split-media-image"><img src="' + stillSrc + '" alt="' + name + '" loading="lazy" decoding="async" fetchpriority="low" draggable="false" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span>Gambar</span></div>' +
+      '<div class="split-media-panel split-media-video"><video src="' + videoSrc + '" poster="' + posterSrc + '" muted playsinline preload="none" draggable="false" onmouseenter="this.play().catch(function(){})" onmouseleave="this.pause()"></video><span><i class="fa-solid fa-play"></i> Video</span></div>' +
+      '</div>';
+  }
   const src = productMediaUrl(item);
   const name = escapeForHtml(item.name || item.game || 'Media produk');
   if (!src) return '<div class="media-empty"><i class="fa-solid fa-image"></i></div>';
