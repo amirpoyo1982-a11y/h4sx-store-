@@ -585,6 +585,33 @@ function dismissChangelog() {
   try { localStorage.setItem(CHANGELOG_STORAGE_KEY, '1'); } catch (e) {}
   closeChangelog();
 }
+async function hardRefreshSite() {
+  const btns = document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh');
+  btns.forEach(btn => {
+    btn.classList.add('is-loading');
+    btn.setAttribute('disabled', 'disabled');
+  });
+  try {
+    localStorage.removeItem('h4sx_games_cache');
+    localStorage.removeItem('h4sx_inventory_cache');
+    localStorage.removeItem('h4sx_inv_hash');
+  } catch (e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+  } catch (e) {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+  } catch (e) {}
+  const url = new URL(window.location.href);
+  url.searchParams.set('refresh', Date.now().toString());
+  window.location.replace(url.toString());
+}
 function changelogBackdrop(e) {
   if (e.target === document.getElementById('changelog-modal')) dismissChangelog();
 }

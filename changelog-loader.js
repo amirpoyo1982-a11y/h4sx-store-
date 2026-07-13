@@ -35,6 +35,10 @@ const CHANGELOG_DATA = {
         {
           icon: 'fa-mobile-screen-button',
           text: '<strong>Support gambar PC dan phone</strong> - banner promosi masih boleh guna gambar berasingan untuk desktop dan mobile melalui setting Gist.'
+        },
+        {
+          icon: 'fa-rotate',
+          text: '<strong>Hard Refresh Update</strong> - butang refresh khas ditambah supaya pelanggan boleh muat semula website jika masih nampak versi lama.'
         }
       ]
     },

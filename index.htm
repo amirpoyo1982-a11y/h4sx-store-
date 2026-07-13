@@ -14,7 +14,7 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=modal-media-slider-1">
+  <link rel="stylesheet" href="styles.css?v=hard-refresh-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -80,12 +80,13 @@
     </div>
     
     <div class="changelog-foot">
+      <button class="changelog-hard-refresh" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i><span><strong>Hard Refresh Update</strong><small>Tekan kalau website masih nampak versi lama</small></span></button>
       <button class="changelog-ok" onclick="dismissChangelog()"><i class="fa-solid fa-check"></i> Faham, terima kasih!</button>
     </div>
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=v1.5-20260713"></script>
+<script defer src="changelog-loader.js?v=v1.5-hard-refresh-1"></script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
   <div class="marquee-track">
@@ -118,6 +119,7 @@
     </div>
     <div class="nav-right">
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
+      <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
       <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
       <button class="cart-btn" onclick="toggleCart()">
         <i class="fa-solid fa-bag-shopping"></i>
@@ -136,6 +138,7 @@
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
+  <a onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
   <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
 </div>
 </div>
@@ -548,7 +551,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=promo-same-tab-1"></script>
+<script defer src="app.js?v=hard-refresh-1"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
