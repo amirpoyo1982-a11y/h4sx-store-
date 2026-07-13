@@ -2133,6 +2133,16 @@ details.faq[open] .faq-ic {
 .pm-btn.cart:hover { border-color: var(--primary); color: var(--primary); background: #fff; }
 .pm-btn.cart:active { background: var(--border); }
 .pm-btn.cart.in-cart { border-color: var(--primary); color: var(--primary); background: rgba(14,165,233,0.08); }
+.pm-btn.link {
+  flex: .8;
+  background: rgba(14,165,233,.09);
+  color: var(--primary);
+  border: 1px solid rgba(14,165,233,.22);
+}
+.pm-btn.link:hover {
+  background: rgba(14,165,233,.14);
+  border-color: rgba(14,165,233,.38);
+}
 .pm-btn .pm-qty {
   min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px;
   background: var(--primary); color: #fff; font-size: 10px; font-weight: 800;

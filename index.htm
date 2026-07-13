@@ -13,7 +13,7 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=closed-clean-1">
+  <link rel="stylesheet" href="styles.css?v=product-link-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -486,6 +486,7 @@
         <div class="pm-trust-item"><i class="fa-brands fa-whatsapp"></i>Support 24/7</div>
       </div>
       <div class="product-modal-actions">
+        <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
         <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Add to Cart</button>
         <button class="pm-btn buy" onclick="modalBuyNow()"><i class="fa-solid fa-bolt"></i> Buy Now</button>
       </div>
@@ -546,7 +547,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=review-done-1"></script>
+<script defer src="app.js?v=product-link-1"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">

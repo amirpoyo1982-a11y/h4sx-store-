@@ -625,9 +625,11 @@ function updateGameUrl(name) {
     if (name) {
       url.searchParams.set('game', gameSlug(name));
       url.searchParams.set('part', normalizeKey(activePlatform));
+      url.searchParams.delete('item');
     } else {
       url.searchParams.delete('game');
       url.searchParams.delete('part');
+      url.searchParams.delete('item');
     }
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -642,6 +644,14 @@ function getGameFromUrl() {
     return '';
   }
 }
+function getItemFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return (url.searchParams.get('item') || '').trim();
+  } catch(e) {
+    return '';
+  }
+}
 function findGameByRoute(value) {
   const target = String(value || '').trim().toLowerCase();
   if (!target) return '';
@@ -650,19 +660,57 @@ function findGameByRoute(value) {
     gameSlug(g.name) === target
   )?.name) || '';
 }
+function findProductByRoute(value) {
+  const target = String(value || '').trim().toLowerCase();
+  if (!target) return null;
+  return inventory.find(item =>
+    String(item.id || '').toLowerCase() === target ||
+    gameSlug(item.name) === target ||
+    normalizeKey(item.slug || item.productSlug || '') === target
+  ) || null;
+}
 function openGameFromUrl() {
   const route = getGameFromUrl();
+  const itemRoute = getItemFromUrl();
+  const item = findProductByRoute(itemRoute);
+  if (!route && item) {
+    activePlatform = inferPlatform(item, gameGroupName(item));
+    openGame(gameGroupName(item), { fromUrl: true, itemId: item.id });
+    return true;
+  }
   if (!route) return false;
-  const name = findGameByRoute(route);
+  const name = findGameByRoute(route) || (item ? gameGroupName(item) : '');
   if (!name) return false;
-  openGame(name, { fromUrl: true });
+  openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute });
   return true;
 }
 function currentGameLink() {
   const url = new URL(window.location.href);
   url.searchParams.set('game', gameSlug(currentGame));
   url.searchParams.set('part', normalizeKey(activePlatform));
+  url.searchParams.delete('item');
   return url.toString();
+}
+function productLink(item) {
+  const url = new URL(window.location.href);
+  const gameName = gameGroupName(item) || currentGame;
+  url.searchParams.set('game', gameSlug(gameName));
+  url.searchParams.set('part', normalizeKey(inferPlatform(item, gameName)));
+  url.searchParams.set('item', String(item.id));
+  return url.toString();
+}
+function updateProductUrl(item) {
+  try {
+    const url = new URL(productLink(item));
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch(e) {}
+}
+function clearProductUrlItem() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('item');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch(e) {}
 }
 async function copyCurrentGameLink() {
   if (!currentGame) { toast('Pilih kategori dulu', true); return; }
@@ -673,6 +721,21 @@ async function copyCurrentGameLink() {
   } catch(e) {
     window.prompt('Copy link kategori:', link);
   }
+}
+async function copyProductLinkById(id) {
+  const item = inventory.find(i => String(i.id) === String(id));
+  if (!item) { toast('Barang tidak jumpa', true); return; }
+  const link = productLink(item);
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('Link barang disalin!');
+  } catch(e) {
+    window.prompt('Copy link barang:', link);
+  }
+}
+function copyModalProductLink() {
+  if (!modalItemId) { toast('Buka barang dulu', true); return; }
+  copyProductLinkById(modalItemId);
 }
 function getStickyOffset() {
   return 16;
@@ -1811,7 +1874,12 @@ function openGame(name, options = {}) {
   currentProductFilter = 'all';
   renderProductFilters();
   showView('product-view');
-  setTimeout(renderProductGrid, 90);
+  setTimeout(() => {
+    renderProductGrid();
+    if (options.itemId != null && options.itemId !== '') {
+      setTimeout(() => openProductImage(options.itemId, { fromUrl: true }), 80);
+    }
+  }, 90);
 }
 function openSearch() { document.getElementById('search-overlay').classList.add('show'); document.body.style.overflow='hidden'; setTimeout(()=>document.getElementById('search-input').focus(),100); }
 function closeSearch() { document.getElementById('search-overlay').classList.remove('show'); document.body.style.overflow=''; document.getElementById('search-input').value=''; document.getElementById('search-results').innerHTML=''; }
@@ -2416,10 +2484,11 @@ function openQR(method) {
   document.getElementById('qr-modal')?.classList.add('show');
 }
 function closeQR() { document.getElementById('qr-modal')?.classList.remove('show'); }
-function openProductImage(id) {
+function openProductImage(id, options = {}) {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item) return;
   modalItemId = item.id;
+  if (!options.fromUrl) updateProductUrl(item);
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
   const gameEl = document.getElementById('product-modal-game');
@@ -2465,6 +2534,7 @@ function closeProductImage() {
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = '';
   modalItemId = null;
+  clearProductUrlItem();
   if (!document.getElementById('cart-overlay')?.classList.contains('show') && !document.getElementById('search-overlay')?.classList.contains('show')) {
     document.body.style.overflow = '';
   }
