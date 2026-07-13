@@ -1185,10 +1185,13 @@ function displayImageUrl(url, context = 'card') {
   if (context === 'game' || context === 'search') return imgurSizedUrl(clean, 'm');
   return imgurSizedUrl(clean, 'l');
 }
+function isVideoFileUrl(url) {
+  return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
+}
 function isVideoMediaUrl(url, item = {}) {
   const type = String(item.mediaType || item.mediatype || item.media || item.type || '').toLowerCase();
   if (type.includes('video')) return true;
-  return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
+  return isVideoFileUrl(url);
 }
 function productStillImageUrl(item = {}) {
   const candidates = [
@@ -1199,7 +1202,7 @@ function productStillImageUrl(item = {}) {
     item.thumb,
     item.img
   ];
-  const raw = candidates.find(src => src && !isVideoMediaUrl(src, item)) || '';
+  const raw = candidates.find(src => src && !isVideoFileUrl(src)) || '';
   return raw ? normalizeImgurUrl(raw, false) : '';
 }
 function productMediaUrl(item = {}) {
