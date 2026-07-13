@@ -1,40 +1,40 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '11 July 2026',
-  time: '17:30 PM',
-  version: 'v1.4',
+  date: '13 July 2026',
+  time: 'Latest',
+  version: 'v1.5',
   sections: [
     {
       type: 'added',
       title: 'Ditambah',
       items: [
         {
-          icon: 'fa-palette',
-          text: '<strong>Redesign website utama</strong> - reka bentuk website jualan dikemas semula supaya nampak lebih fresh, modern dan tak membosankan.'
+          icon: 'fa-link',
+          text: '<strong>Direct link produk</strong> - setiap barang kini boleh dibuka terus melalui link khas, jadi senang share item tertentu kepada pelanggan.'
         },
         {
-          icon: 'fa-layer-group',
-          text: '<strong>Selection Roblox & Free Fire baru</strong> - pelanggan kini pilih platform besar dahulu sebelum melihat game, item atau akaun yang tersedia.'
+          icon: 'fa-copy',
+          text: '<strong>Copy Link dalam detail produk</strong> - butang Copy Link ditambah supaya link barang boleh disalin terus dari popup produk.'
         },
         {
-          icon: 'fa-cube',
-          text: '<strong>Roblox lebih tersusun</strong> - semua game dan item Roblox dikumpulkan dalam bahagian Roblox sahaja supaya tidak bercampur dengan platform lain.'
+          icon: 'fa-play',
+          text: '<strong>Slider gambar & video Free Fire</strong> - detail produk Free Fire kini ada gallery yang boleh diseret kiri kanan untuk lihat gambar dan video.'
         },
         {
-          icon: 'fa-crosshairs',
-          text: '<strong>Free Fire diasingkan</strong> - item dan akaun Free Fire kini berada dalam pilihan Free Fire sahaja, lebih mudah dicari.'
+          icon: 'fa-chevron-left',
+          text: '<strong>Anak panah media produk</strong> - popup produk kini ada butang kiri dan kanan untuk tukar media dengan lebih mudah di PC dan phone.'
         },
         {
-          icon: 'fa-sparkles',
-          text: '<strong>Game picker dinaik taraf</strong> - bahagian Pilih Game Anda kini ada card platform bergambar, efek glow, badge kemas dan hover yang lebih cantik.'
+          icon: 'fa-image',
+          text: '<strong>Mode banner promo baru</strong> - banner promosi kini boleh guna fit cover atau contain melalui Gist supaya gambar biasa tetap nampak kemas.'
         },
         {
-          icon: 'fa-circle-half-stroke',
-          text: '<strong>Dark mode & light mode dipolish</strong> - warna, border dan background section baru diselaraskan supaya sedap dilihat di dua-dua mode.'
+          icon: 'fa-wand-magic-sparkles',
+          text: '<strong>Background blur untuk banner</strong> - jika gambar bukan saiz banner panjang, website akan isi ruang kosong dengan blur background yang lebih cantik.'
         },
         {
-          icon: 'fa-bullhorn',
-          text: '<strong>Notis sistem ulasan</strong> - popup makluman masalah ulasan ditambah dengan pilihan hide selama 1 jam 30 minit.'
+          icon: 'fa-mobile-screen-button',
+          text: '<strong>Support gambar PC dan phone</strong> - banner promosi masih boleh guna gambar berasingan untuk desktop dan mobile melalui setting Gist.'
         }
       ]
     },
@@ -43,28 +43,28 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki',
       items: [
         {
-          icon: 'fa-up-right-and-down-left-from-center',
-          text: '<strong>Card game terlalu besar</strong> - masalah gambar game membesar bila item sedikit telah diperbaiki.'
+          icon: 'fa-gauge-high',
+          text: '<strong>Load gambar dipercepatkan</strong> - gambar produk dan banner dioptimumkan supaya website tidak terlalu lama tunggu media penuh.'
         },
         {
-          icon: 'fa-filter-circle-check',
-          text: '<strong>Filter platform lebih tepat</strong> - Free Fire kini boleh dikesan daripada inventory juga, bukan bergantung pada senarai game lama sahaja.'
+          icon: 'fa-photo-film',
+          text: '<strong>Poster video lebih tepat</strong> - item video kini boleh tunjuk gambar poster biasa pada card, bukan paparan video kosong atau pelik.'
         },
         {
-          icon: 'fa-mobile-screen-button',
-          text: '<strong>Paparan phone lebih kemas</strong> - grid game dan platform card dilaraskan supaya tidak sempit atau terlalu besar di mobile.'
+          icon: 'fa-crosshairs',
+          text: '<strong>Media Free Fire lebih kemas</strong> - gambar dan video tidak lagi dipaksa kecil dalam satu kotak; media kini dipaparkan satu persatu dalam slider.'
         },
         {
-          icon: 'fa-tags',
-          text: '<strong>Badge game lebih stabil</strong> - label seperti NEW dan AKAN DIHAPUS kini duduk lebih kemas pada gambar game.'
+          icon: 'fa-expand',
+          text: '<strong>Popup detail produk diperbaiki</strong> - paparan full produk kini lebih sesuai untuk melihat gambar dan video dengan jelas.'
         },
         {
-          icon: 'fa-shield-halved',
-          text: '<strong>Cover image platform lebih selamat</strong> - gambar latar platform kini dibersihkan dahulu supaya tidak mudah rosak jika data luar ada simbol pelik.'
+          icon: 'fa-window-restore',
+          text: '<strong>Banner PC lebih fleksibel</strong> - banner tidak lagi wajib gambar landscape sempurna; mode contain boleh bantu gambar biasa nampak elok.'
         },
         {
           icon: 'fa-code',
-          text: '<strong>Script disemak</strong> - perubahan JavaScript telah diperiksa supaya tiada syntax error sebelum publish.'
+          text: '<strong>Script disemak semula</strong> - perubahan JavaScript telah diperiksa supaya tiada syntax error sebelum publish.'
         }
       ]
     },
@@ -74,11 +74,11 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-trash',
-          text: '<strong>Selection lama yang bercampur</strong> - gaya pilihan kategori lama yang kurang menarik telah diganti dengan flow platform baru.'
+          text: '<strong>Popup masalah ulasan lama</strong> - notis gangguan ulasan yang sudah selesai telah dibuang daripada website utama.'
         },
         {
           icon: 'fa-eraser',
-          text: '<strong>Isi changelog lama</strong> - senarai update lama dibuang dan digantikan dengan changelog terbaru untuk release ini.'
+          text: '<strong>Isi changelog lama</strong> - senarai release lama digantikan dengan changelog terbaru supaya pelanggan nampak update semasa sahaja.'
         }
       ]
     }

@@ -554,7 +554,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v1.4';
+const CHANGELOG_VERSION = 'v1.5';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() { return new Date(); }
 function openChangelog(manual) {
