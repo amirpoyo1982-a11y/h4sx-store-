@@ -609,8 +609,19 @@ async function hardRefreshSite() {
     }
   } catch (e) {}
   const url = new URL(window.location.href);
+  try { sessionStorage.setItem('h4sx_clean_refresh_param', '1'); } catch (e) {}
   url.searchParams.set('refresh', Date.now().toString());
   window.location.replace(url.toString());
+}
+function cleanHardRefreshParam() {
+  try {
+    const url = new URL(window.location.href);
+    const shouldClean = sessionStorage.getItem('h4sx_clean_refresh_param') === '1' || url.searchParams.has('refresh');
+    if (!shouldClean || !url.searchParams.has('refresh')) return;
+    sessionStorage.removeItem('h4sx_clean_refresh_param');
+    url.searchParams.delete('refresh');
+    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+  } catch (e) {}
 }
 function getLoadedAssetSignature() {
   const style = document.querySelector('link[href*="styles.css"]')?.getAttribute('href') || '';
@@ -1744,6 +1755,7 @@ function runWhenIdle(fn, timeout = 1800) {
 }
 
 function bootStoreApp() {
+  cleanHardRefreshParam();
   loadGames().then(renderGames);
   loadInv();
   startCountdown();
