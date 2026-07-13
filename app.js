@@ -1226,7 +1226,7 @@ function isFreeFireItem(item = {}) {
   return inferPlatform(item, gameGroupName(item)) === 'Free Fire' || /free\s*fire|\bff\b/i.test(gameGroupName(item));
 }
 function shouldSplitFreeFireMedia(item = {}, context = 'card') {
-  if (context === 'modal' || !isFreeFireItem(item)) return false;
+  if (context !== 'modal' || !isFreeFireItem(item)) return false;
   const still = productStillImageUrl(item);
   const videoRaw = item.video || item.videoUrl || item.mediaUrl || item.img || '';
   return !!(still && videoRaw && isVideoMediaUrl(videoRaw, item));
@@ -1237,9 +1237,9 @@ function renderMediaHTML(item = {}, context = 'card') {
     const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl || item.img, true));
     const posterSrc = escapeForHtml(displayImageUrl(productPosterUrl(item) || productStillImageUrl(item) || getProductScreenshotFallback(), context));
     const name = escapeForHtml(item.name || item.game || 'Media produk');
-    return '<div class="product-media-split">' +
-      '<div class="split-media-panel split-media-image"><img src="' + stillSrc + '" alt="' + name + '" loading="lazy" decoding="async" fetchpriority="low" draggable="false" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span>Gambar</span></div>' +
-      '<div class="split-media-panel split-media-video"><video src="' + videoSrc + '" poster="' + posterSrc + '" muted playsinline preload="none" draggable="false" onmouseenter="this.play().catch(function(){})" onmouseleave="this.pause()"></video><span><i class="fa-solid fa-play"></i> Video</span></div>' +
+    return '<div class="product-media-split product-modal-media-split">' +
+      '<div class="split-media-panel split-media-image"><img src="' + stillSrc + '" alt="' + name + '" loading="eager" decoding="async" fetchpriority="high" draggable="false" onerror="this.onerror=null;this.src=\'' + escapeForHtml(getProductScreenshotFallback()) + '\'"><span>Gambar</span></div>' +
+      '<div class="split-media-panel split-media-video"><video src="' + videoSrc + '" poster="' + posterSrc + '" controls autoplay loop muted playsinline preload="metadata" draggable="false"></video><span><i class="fa-solid fa-play"></i> Video</span></div>' +
       '</div>';
   }
   const src = productMediaUrl(item);
