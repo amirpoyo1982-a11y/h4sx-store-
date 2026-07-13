@@ -612,6 +612,37 @@ async function hardRefreshSite() {
   url.searchParams.set('refresh', Date.now().toString());
   window.location.replace(url.toString());
 }
+function getLoadedAssetSignature() {
+  const style = document.querySelector('link[href*="styles.css"]')?.getAttribute('href') || '';
+  const app = document.querySelector('script[src*="app.js"]')?.getAttribute('src') || '';
+  const changelog = document.querySelector('script[src*="changelog-loader.js"]')?.getAttribute('src') || '';
+  return [style, app, changelog].join('|');
+}
+function getHtmlAssetSignature(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const style = doc.querySelector('link[href*="styles.css"]')?.getAttribute('href') || '';
+  const app = doc.querySelector('script[src*="app.js"]')?.getAttribute('src') || '';
+  const changelog = doc.querySelector('script[src*="changelog-loader.js"]')?.getAttribute('src') || '';
+  return [style, app, changelog].join('|');
+}
+function markSiteUpdateAvailable() {
+  document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh, .hard-refresh-menu').forEach(el => {
+    el.classList.add('has-update');
+    el.setAttribute('title', 'Update baru tersedia - tekan Hard Refresh');
+  });
+}
+async function checkSiteUpdateAvailable() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('_check_update', Date.now().toString());
+    const res = await fetch(url.toString(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const html = await res.text();
+    const latest = getHtmlAssetSignature(html);
+    const current = getLoadedAssetSignature();
+    if (latest && current && latest !== current) markSiteUpdateAvailable();
+  } catch (e) {}
+}
 function changelogBackdrop(e) {
   if (e.target === document.getElementById('changelog-modal')) dismissChangelog();
 }
@@ -1720,6 +1751,7 @@ function bootStoreApp() {
   runWhenIdle(loadReviews, 1200);
   runWhenIdle(animateCounters, 1600);
   runWhenIdle(initChangelog, 2200);
+  runWhenIdle(checkSiteUpdateAvailable, 2600);
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
