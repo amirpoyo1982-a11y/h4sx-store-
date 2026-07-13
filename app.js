@@ -1191,9 +1191,16 @@ function isVideoMediaUrl(url, item = {}) {
   return /\.(mp4|webm|mov|m4v|gifv)(\?|#|$)/i.test(cleanUrl(url || ''));
 }
 function productStillImageUrl(item = {}) {
-  const raw = item.img || item.image || item.poster || item.posterImg || item.thumbnail || item.thumb || '';
-  if (!raw || isVideoMediaUrl(raw, item)) return '';
-  return normalizeImgurUrl(raw, false);
+  const candidates = [
+    item.image,
+    item.poster,
+    item.posterImg,
+    item.thumbnail,
+    item.thumb,
+    item.img
+  ];
+  const raw = candidates.find(src => src && !isVideoMediaUrl(src, item)) || '';
+  return raw ? normalizeImgurUrl(raw, false) : '';
 }
 function productMediaUrl(item = {}) {
   const raw = item.video || item.videoUrl || item.mediaUrl || item.img || item.image || '';
@@ -1218,13 +1225,13 @@ function isFreeFireItem(item = {}) {
 function shouldSplitFreeFireMedia(item = {}, context = 'card') {
   if (context === 'modal' || !isFreeFireItem(item)) return false;
   const still = productStillImageUrl(item);
-  const videoRaw = item.video || item.videoUrl || item.mediaUrl || '';
+  const videoRaw = item.video || item.videoUrl || item.mediaUrl || item.img || '';
   return !!(still && videoRaw && isVideoMediaUrl(videoRaw, item));
 }
 function renderMediaHTML(item = {}, context = 'card') {
   if (shouldSplitFreeFireMedia(item, context)) {
     const stillSrc = escapeForHtml(displayImageUrl(productStillImageUrl(item), context));
-    const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl, true));
+    const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl || item.img, true));
     const posterSrc = escapeForHtml(displayImageUrl(productPosterUrl(item) || productStillImageUrl(item) || getProductScreenshotFallback(), context));
     const name = escapeForHtml(item.name || item.game || 'Media produk');
     return '<div class="product-media-split">' +
