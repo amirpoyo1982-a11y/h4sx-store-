@@ -624,17 +624,19 @@ function cleanHardRefreshParam() {
   } catch (e) {}
 }
 function getLoadedAssetSignature() {
+  const build = document.querySelector('meta[name="h4sx-build"]')?.getAttribute('content') || '';
   const style = document.querySelector('link[href*="styles.css"]')?.getAttribute('href') || '';
   const app = document.querySelector('script[src*="app.js"]')?.getAttribute('src') || '';
   const changelog = document.querySelector('script[src*="changelog-loader.js"]')?.getAttribute('src') || '';
-  return [style, app, changelog].join('|');
+  return [build, style, app, changelog].join('|');
 }
 function getHtmlAssetSignature(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
+  const build = doc.querySelector('meta[name="h4sx-build"]')?.getAttribute('content') || '';
   const style = doc.querySelector('link[href*="styles.css"]')?.getAttribute('href') || '';
   const app = doc.querySelector('script[src*="app.js"]')?.getAttribute('src') || '';
   const changelog = doc.querySelector('script[src*="changelog-loader.js"]')?.getAttribute('src') || '';
-  return [style, app, changelog].join('|');
+  return [build, style, app, changelog].join('|');
 }
 function markSiteUpdateAvailable() {
   document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh, .hard-refresh-menu').forEach(el => {
@@ -644,9 +646,15 @@ function markSiteUpdateAvailable() {
 }
 async function checkSiteUpdateAvailable() {
   try {
-    const url = new URL(window.location.href);
+    const url = new URL(window.location.origin + window.location.pathname);
     url.searchParams.set('_check_update', Date.now().toString());
-    const res = await fetch(url.toString(), { cache: 'no-store' });
+    const res = await fetch(url.toString(), {
+      cache: 'reload',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
     if (!res.ok) return;
     const html = await res.text();
     const latest = getHtmlAssetSignature(html);
