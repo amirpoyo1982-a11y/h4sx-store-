@@ -530,7 +530,7 @@ function renderPromoBanner(config = currentStoreConfig) {
       + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
-      ? '<a class="promo-hero-slide' + slideClass + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '" target="_blank" rel="noopener">' + inner + '</a>'
+      ? '<a class="promo-hero-slide' + slideClass + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
       : '<div class="promo-hero-slide' + slideClass + '"' + slideStyle + '>' + inner + '</div>';
   }).join('');
   dots.innerHTML = promoBannerSlides.map((slide, i) =>
