@@ -1287,12 +1287,18 @@ function productStillImageUrl(item = {}) {
 }
 function productMediaUrl(item = {}) {
   const raw = item.video || item.videoUrl || item.mediaUrl || item.img || item.image || '';
+  if (productSubcategory(item) === 'Permanent Fruit' && /blox-fruits\.fandom\.com/i.test(String(raw))) {
+    return 'assets/permanent-fruits/permanent-fruits-cover.png';
+  }
   return normalizeImgurUrl(raw, isVideoMediaUrl(raw, item));
 }
 function productPosterUrl(item = {}) {
   const poster = item.poster || item.posterImg || item.thumbnail || item.thumb;
   if (poster) return normalizeImgurUrl(poster, false);
   const raw = item.img || item.image || item.mediaUrl || '';
+  if (productSubcategory(item) === 'Permanent Fruit' && /blox-fruits\.fandom\.com/i.test(String(raw))) {
+    return 'assets/permanent-fruits/permanent-fruits-cover.png';
+  }
   if (isVideoMediaUrl(raw, item)) {
     const clean = cleanUrl(raw || '');
     const imgur = clean.match(/^https?:\/\/i\.imgur\.com\/([a-z0-9]+)(?:\.[a-z0-9]+)?([?#].*)?$/i)
