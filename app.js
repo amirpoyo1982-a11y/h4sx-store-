@@ -2241,8 +2241,10 @@ async function takeScreenshot() {
     
     toast('Screenshot produk sedang dibuat...', false);
 
-    const items = inventory
-      .filter(i => gameGroupName(i) === currentGame)
+    const filters = activeProductFilters();
+    const activeFilter = filters.find(f => f.id === currentProductFilter) || filters[0];
+    const items = currentProductItems
+      .filter(activeFilter.test)
       .sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
     if (!items.length) {
       toast('Tiada produk untuk screenshot', true);
@@ -2266,7 +2268,7 @@ async function takeScreenshot() {
         <img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX">
         <div>
           <div class="product-ss-brand">H4SX STORE</div>
-          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}</div>
+          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}${currentProductFilter !== 'all' ? ' — ' + escapeForHtml(activeFilter.label) : ''}</div>
         </div>
         <div class="product-ss-count">${items.length} item</div>
       </div>
