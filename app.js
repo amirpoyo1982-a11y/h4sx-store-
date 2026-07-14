@@ -2281,6 +2281,7 @@ async function takeScreenshot() {
       <div class="product-ss-grid">
         ${items.map(item => {
           const oos = isOutOfStock(item);
+          const posterClass = productSubcategory(item) === 'Permanent Fruit' ? ' permanent-fruit-cover' : '';
           const price = Number(item.price || 0).toFixed(2);
           const oldPrice = item.originalPrice && item.originalPrice > item.price
             ? `<span class="product-ss-old">RM${escapeForHtml(item.originalPrice)}</span>`
@@ -2288,7 +2289,7 @@ async function takeScreenshot() {
           return `
             <div class="product-ss-card${oos ? ' is-oos' : ''}">
               <div class="product-ss-img">
-                <img src="${escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback())}" alt="${escapeForHtml(item.name || '')}" crossorigin="anonymous" onerror="this.onerror=null;this.src='${escapeForHtml(getProductScreenshotFallback())}'">
+                <img class="${posterClass.trim()}" src="${escapeForHtml(productPosterUrl(item) || getProductScreenshotFallback())}" alt="${escapeForHtml(item.name || '')}" crossorigin="anonymous" onerror="this.onerror=null;this.src='${escapeForHtml(getProductScreenshotFallback())}'">
                 ${oos ? '<span class="product-ss-stock out">Habis</span>' : getStockLabelForScreenshot(item)}
               </div>
               <div class="product-ss-body">
