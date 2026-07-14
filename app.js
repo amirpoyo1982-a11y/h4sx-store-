@@ -1843,6 +1843,7 @@ function buildQuickBarHTML(item, oos) {
 let currentProductItems = [];
 let currentProductBanner = '';
 let currentProductFilter = 'all';
+let selectedPermanentFruitId = null;
 const PRODUCT_FILTERS = [
   { id:'all', label:'Semua', icon:'fa-border-all', test:() => true },
   { id:'stock', label:'Stok Ada', icon:'fa-box', test:item => !isOutOfStock(item) },
@@ -1928,6 +1929,25 @@ function setProductFilter(filter) {
   currentProductFilter = filter || 'all';
   renderProductGrid();
 }
+function isPermanentFruitFilter(filterId = currentProductFilter) {
+  return filterId === 'sub:' + normalizeKey('Permanent Fruit');
+}
+function selectPermanentFruit(itemId) {
+  selectedPermanentFruitId = String(itemId || '');
+  renderProductGrid();
+}
+function permanentFruitPickerHTML(items, selected) {
+  const options = items.map(item => {
+    const isSelected = String(item.id) === String(selected.id);
+    return '<option value="' + escapeHtml(item.id) + '"' + (isSelected ? ' selected' : '') + '>' +
+      escapeHtml(item.name) + ' — RM' + Number(item.price || 0).toFixed(2) + '</option>';
+  }).join('');
+  return '<section class="permanent-fruit-picker reveal">' +
+    '<div class="permanent-fruit-picker-icon"><i class="fa-solid fa-basket-shopping"></i></div>' +
+    '<div class="permanent-fruit-picker-copy"><b>Pilih Permanent Fruit</b><span>Pilih satu buah di bawah. Harga dan stok akan ikut pilihan anda.</span></div>' +
+    '<label class="permanent-fruit-select-wrap"><span>Permanent Fruit</span><select onchange="selectPermanentFruit(this.value)">' + options + '</select></label>' +
+  '</section>';
+}
 function renderProductSubsection(label, items) {
   const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
   return '<section class="product-subsection reveal">' +
@@ -1945,6 +1965,15 @@ function renderProductGrid() {
   renderProductFilters();
   if (!items.length) {
     grid.innerHTML = currentProductBanner + '<p class="product-empty">Tiada item untuk filter ini.</p>';
+    return;
+  }
+  if (isPermanentFruitFilter()) {
+    const selected = items.find(item => String(item.id) === String(selectedPermanentFruitId)) || items[0];
+    selectedPermanentFruitId = String(selected.id);
+    document.getElementById('pv-count').textContent = items.length + ' pilihan Permanent Fruit';
+    grid.innerHTML = currentProductBanner + permanentFruitPickerHTML(items, selected) +
+      productCardHTML(selected).replace('pc reveal"', 'pc reveal permanent-selected-card"');
+    setTimeout(initScrollReveal, 100);
     return;
   }
   const subcats = orderedProductSubcategories(items);
@@ -2249,9 +2278,13 @@ async function takeScreenshot() {
 
     const filters = activeProductFilters();
     const activeFilter = filters.find(f => f.id === currentProductFilter) || filters[0];
-    const items = currentProductItems
+    let items = currentProductItems
       .filter(activeFilter.test)
       .sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
+    if (isPermanentFruitFilter()) {
+      const selected = items.find(item => String(item.id) === String(selectedPermanentFruitId)) || items[0];
+      items = selected ? [selected] : [];
+    }
     if (!items.length) {
       toast('Tiada produk untuk screenshot', true);
       return;
