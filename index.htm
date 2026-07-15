@@ -15,6 +15,7 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <link rel="stylesheet" href="styles.css?v=permanent-picker-1">
 </head>
 <body>
@@ -117,6 +118,7 @@
       <a onclick="goSection('guide')">Guide</a>
       <a onclick="goSection('faq')">FAQ</a>
       <a onclick="goSection('reviews')">Reviews</a>
+      <a onclick="openOrderHistory()">Histori</a>
     </div>
     <div class="nav-right">
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
@@ -138,6 +140,7 @@
   <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
+  <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
   <a class="hard-refresh-menu" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
   <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
@@ -420,6 +423,7 @@
     <button class="bn-item active" onclick="showHome()"><i class="fa-solid fa-house"></i>Home</button>
     <button class="bn-item" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
     <button class="bn-item bn-cart" onclick="toggleCart()"><i class="fa-solid fa-bag-shopping"></i>Cart<span id="bn-badge" class="bn-badge"></span></button>
+    <button class="bn-item" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i>Histori</button>
     <a href="https://wa.me/60193263016" target="_blank" class="bn-item"><i class="fa-brands fa-whatsapp"></i>Support</a>
   </div>
 </div>
@@ -551,8 +555,66 @@
     </div>
   </div>
 </div>
+<!-- TRANSACTION HISTORY -->
+<div id="order-history-modal" class="order-modal" onclick="if(event.target===this)closeOrderHistory()">
+  <div class="order-modal-card">
+    <button class="order-modal-close" onclick="closeOrderHistory()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-receipt"></i> H4SX STORE</div>
+    <h2>Histori Transaksi</h2>
+    <p>Masukkan nombor transaksi yang diberi oleh admin.</p>
+    <form class="order-search-form" onsubmit="findOrder(event)">
+      <input id="order-search-code" autocomplete="off" placeholder="Contoh: H4SX-AB12CD" aria-label="Nombor transaksi">
+      <button type="submit">Cari</button>
+    </form>
+    <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
+    <button class="order-admin-link" onclick="openOrderAdmin()"><i class="fa-solid fa-lock"></i> Admin: masukkan transaksi</button>
+  </div>
+</div>
+
+<!-- MANUAL ORDER ADMIN -->
+<div id="order-admin-modal" class="order-modal" onclick="if(event.target===this)closeOrderAdmin()">
+  <div class="order-modal-card order-admin-card">
+    <button class="order-modal-close" onclick="closeOrderAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-shield-halved"></i> Admin sahaja</div>
+    <h2>Tambah Transaksi</h2>
+    <div id="order-admin-login">
+      <p>Log masuk akaun Firebase admin untuk simpan order.</p>
+      <form class="order-form" onsubmit="adminOrderLogin(event)">
+        <input id="order-admin-email" type="email" placeholder="Email admin" required>
+        <input id="order-admin-password" type="password" placeholder="Password" required>
+        <button type="submit" class="btn-primary">Log masuk</button>
+      </form>
+    </div>
+    <div id="order-admin-form-wrap" hidden>
+      <div class="order-admin-user"><span id="order-admin-email-display"></span><button onclick="adminOrderLogout()">Log keluar</button></div>
+      <div class="visitor-dashboard">
+        <div class="visitor-dashboard-head"><strong><i class="fa-solid fa-chart-line"></i> Pelawat Website</strong><button onclick="loadVisitorDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">—</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">—</strong></div></div>
+        <div id="visitor-history" class="visitor-history">Loading sejarah pelawat...</div>
+      </div>
+      <form class="order-form" onsubmit="saveManualOrder(event)">
+        <div class="order-form-grid">
+          <label>No. transaksi<input id="manual-order-code" placeholder="H4SX-AB12CD" required></label>
+          <label>No. WhatsApp<input id="manual-order-phone" inputmode="tel" placeholder="0123456789" required></label>
+          <label>Nama produk<input id="manual-order-product" placeholder="Permanent Dragon" required></label>
+          <label>Harga (RM)<input id="manual-order-price" type="number" min="0" step="0.01" placeholder="130" required></label>
+          <label class="order-wide">Link gambar produk <small>(atau paste gambar di bawah)</small><input id="manual-order-image" type="url" placeholder="https://.../gambar.png"></label>
+          <label>Status<select id="manual-order-status"><option value="Dalam proses">Dalam proses</option><option value="Siap">Siap</option><option value="Dibatalkan">Dibatalkan</option></select></label>
+        </div>
+        <div id="order-image-paste" class="order-image-paste" tabindex="0" onpaste="handleOrderImagePaste(event)">
+          <i class="fa-solid fa-paste"></i><strong>Paste gambar / screenshot di sini</strong><small>Tekan kotak ini, kemudian Ctrl + V. Atau pilih fail.</small>
+          <input id="manual-order-image-file" type="file" accept="image/*" onchange="handleOrderImageFile(this.files[0])">
+        </div>
+        <div id="order-image-preview" class="order-image-preview" hidden></div>
+        <div class="order-form-actions"><button type="submit" class="btn-primary" id="manual-order-save"><i class="fa-solid fa-floppy-disk"></i> Simpan transaksi</button><button type="button" class="btn-ghost" id="manual-order-cancel" onclick="resetManualOrderForm()" hidden>Batal edit</button></div>
+      </form>
+      <div class="order-admin-list-head"><strong>Transaksi terkini</strong><button onclick="loadAdminOrders()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+      <div id="order-admin-list" class="order-admin-list">Log masuk untuk lihat transaksi.</div>
+    </div>
+  </div>
+</div>
 <div id="toasts"></div>
-<script defer src="app.js?v=permanent-picker-1"></script>
+<script defer src="app.js?v=order-history-4"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">

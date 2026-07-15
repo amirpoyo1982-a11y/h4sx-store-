@@ -1541,15 +1541,204 @@ const firebaseConfig = {
 
 // Inisialisasi Firebase (jika config ada)
 let db = null;
+let orderAuth = null;
+let pendingOrderImageFile = null;
+let editingOrderCode = null;
+const STORE_VISITOR_KEY = 'h4sx_store_visitor_id';
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    orderAuth = firebase.auth();
     console.log("Firebase initialized successfully!");
   } catch (e) {
     console.error("Firebase init error:", e);
   }
 }
+
+// --- MANUAL TRANSACTION HISTORY (Firebase Firestore) ---
+function normaliseOrderCode(value) {
+  return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+function openOrderHistory() {
+  document.getElementById('order-history-modal')?.classList.add('show');
+  setTimeout(() => document.getElementById('order-search-code')?.focus(), 80);
+}
+function closeOrderHistory() { document.getElementById('order-history-modal')?.classList.remove('show'); }
+function openOrderAdmin() {
+  closeOrderHistory();
+  document.getElementById('order-admin-modal')?.classList.add('show');
+  syncOrderAdminUI();
+}
+function closeOrderAdmin() { document.getElementById('order-admin-modal')?.classList.remove('show'); }
+function syncOrderAdminUI() {
+  const user = orderAuth?.currentUser;
+  const login = document.getElementById('order-admin-login');
+  const form = document.getElementById('order-admin-form-wrap');
+  if (login) login.hidden = !!user;
+  if (form) form.hidden = !user;
+  const display = document.getElementById('order-admin-email-display');
+  if (display) display.textContent = user?.email || '';
+  if (user) { loadAdminOrders(); loadVisitorDashboard(); }
+}
+async function adminOrderLogin(event) {
+  event.preventDefault();
+  if (!orderAuth) return toast('Firebase belum dapat dihubungkan.', true);
+  try {
+    await orderAuth.signInWithEmailAndPassword(document.getElementById('order-admin-email').value.trim(), document.getElementById('order-admin-password').value);
+    document.getElementById('order-admin-password').value = '';
+    syncOrderAdminUI(); toast('Admin berjaya log masuk.');
+  } catch (error) { toast('Login gagal. Semak email atau password Firebase.', true); }
+}
+async function adminOrderLogout() { if (orderAuth) await orderAuth.signOut(); syncOrderAdminUI(); }
+function handleOrderImageFile(file) {
+  if (!file || !file.type?.startsWith('image/')) return toast('Sila pilih fail gambar.', true);
+  pendingOrderImageFile = file;
+  const preview = document.getElementById('order-image-preview');
+  if (preview) { preview.hidden = false; preview.innerHTML = '<img src="' + URL.createObjectURL(file) + '" alt="Preview gambar produk">'; }
+}
+function handleOrderImagePaste(event) {
+  const item = [...(event.clipboardData?.items || [])].find(entry => entry.type.startsWith('image/'));
+  if (!item) return toast('Clipboard tak ada gambar. Copy screenshot dulu.', true);
+  event.preventDefault(); handleOrderImageFile(item.getAsFile());
+}
+async function uploadOrderImage(code) {
+  if (!pendingOrderImageFile) return String(document.getElementById('manual-order-image').value || '').trim();
+  // Storage Firebase boleh perlukan billing. Untuk kekal free, gambar clipboard
+  // dikecilkan dan disimpan sebagai data URL dalam dokumen Firestore.
+  const bitmap = await createImageBitmap(pendingOrderImageFile);
+  const maxSide = 900;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.72));
+  if (!blob) throw new Error('Gagal proses gambar');
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(blob);
+  });
+  if (dataUrl.length > 700000) throw new Error('Gambar terlalu besar. Crop screenshot atau guna link gambar.');
+  return dataUrl;
+}
+function resetManualOrderForm() {
+  editingOrderCode = null; pendingOrderImageFile = null;
+  const form = document.querySelector('#order-admin-form-wrap form'); if (form) form.reset();
+  const preview = document.getElementById('order-image-preview'); if (preview) { preview.hidden = true; preview.innerHTML = ''; }
+  const code = document.getElementById('manual-order-code'); if (code) { code.readOnly = false; code.style.opacity = ''; }
+  const cancel = document.getElementById('manual-order-cancel'); if (cancel) cancel.hidden = true;
+  const save = document.getElementById('manual-order-save'); if (save) save.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan transaksi';
+}
+async function saveManualOrder(event) {
+  event.preventDefault();
+  if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const code = editingOrderCode || normaliseOrderCode(document.getElementById('manual-order-code').value);
+  if (!/^H4SX-[A-Z0-9]{4,}$/.test(code)) return toast('Gunakan format nombor transaksi: H4SX-AB12CD', true);
+  try {
+    const image = await uploadOrderImage(code);
+    if (!image) return toast('Letak link gambar atau paste screenshot produk.', true);
+    const data = {
+      code,
+      product: String(document.getElementById('manual-order-product').value || '').trim(),
+      price: Number(document.getElementById('manual-order-price').value || 0),
+      image,
+      status: String(document.getElementById('manual-order-status').value || 'Dalam proses'),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const privateData = { phone: String(document.getElementById('manual-order-phone').value || '').trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    await Promise.all([
+      db.collection('orders').doc(code).set(data, { merge:true }),
+      db.collection('order_private').doc(code).set(privateData, { merge:true })
+    ]);
+    resetManualOrderForm(); await loadAdminOrders(); toast('Transaksi ' + code + ' telah disimpan.');
+  } catch (error) { console.error(error); toast(error.message || 'Tak dapat simpan transaksi. Semak Firestore Rules.', true); }
+}
+async function loadAdminOrders() {
+  const box = document.getElementById('order-admin-list');
+  if (!box || !db || !orderAuth?.currentUser) return;
+  box.textContent = 'Loading transaksi...';
+  try {
+    const snap = await db.collection('orders').orderBy('updatedAt', 'desc').limit(30).get();
+    if (snap.empty) { box.textContent = 'Belum ada transaksi.'; return; }
+    box.innerHTML = snap.docs.map(doc => {
+      const item = doc.data(); const picture = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="">' : '<img alt="">';
+      return '<div class="order-admin-row">' + picture + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>' + escapeHtml(doc.id) + ' · ' + escapeHtml(item.status || '') + '</small><small>RM' + Number(item.price || 0).toFixed(2) + '</small></div><div class="order-admin-row-actions"><button onclick="editManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-pen"></i></button><button onclick="deleteManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-trash"></i></button></div></div>';
+    }).join('');
+  } catch (error) { console.error(error); box.textContent = 'Tak dapat load. Pastikan Firestore Rules benarkan admin list orders.'; }
+}
+async function editManualOrder(code) {
+  try {
+    const [snap, privateSnap] = await Promise.all([db.collection('orders').doc(code).get(), db.collection('order_private').doc(code).get()]); if (!snap.exists) return toast('Transaksi tak dijumpai.', true);
+    const item = snap.data(); editingOrderCode = code;
+    document.getElementById('manual-order-code').value = code; document.getElementById('manual-order-code').readOnly = true; document.getElementById('manual-order-code').style.opacity = '.65';
+    document.getElementById('manual-order-phone').value = privateSnap.exists ? (privateSnap.data().phone || '') : ''; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
+    const preview = document.getElementById('order-image-preview'); if (preview && item.image) { preview.hidden = false; preview.innerHTML = '<img src="' + escapeHtml(item.image) + '" alt="Gambar semasa">'; }
+    document.getElementById('manual-order-cancel').hidden = false; document.getElementById('manual-order-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update transaksi';
+    document.querySelector('.order-form-grid')?.scrollIntoView({ behavior:'smooth', block:'center' });
+  } catch(error) { toast('Tak dapat buka transaksi.', true); }
+}
+async function deleteManualOrder(code) {
+  if (!confirm('Padam transaksi ' + code + '?')) return;
+  try { await Promise.all([db.collection('orders').doc(code).delete(), db.collection('order_private').doc(code).delete()]); await loadAdminOrders(); toast('Transaksi dipadam.'); } catch(error) { toast('Tak dapat padam transaksi.', true); }
+}
+function getStoreVisitorId() {
+  try {
+    let id = localStorage.getItem(STORE_VISITOR_KEY);
+    if (!id) { id = 'store-' + crypto.randomUUID(); localStorage.setItem(STORE_VISITOR_KEY, id); }
+    return id;
+  } catch (error) { return 'store-' + Math.random().toString(36).slice(2) + Date.now(); }
+}
+async function recordStoreVisit() {
+  if (!db) return;
+  const id = getStoreVisitorId();
+  const now = new Date().toISOString();
+  const ref = db.collection('store_visits').doc(id);
+  try {
+    const existing = await ref.get();
+    await ref.set({ page:'store', online:true, firstSeen: existing.exists ? (existing.data().firstSeen || now) : now, lastSeen:now, userAgent:String(navigator.userAgent || '').slice(0, 140) }, { merge:true });
+  } catch (error) { console.warn('Visitor record skipped', error); }
+}
+async function loadVisitorDashboard() {
+  const history = document.getElementById('visitor-history');
+  if (!history || !db || !orderAuth?.currentUser) return;
+  history.textContent = 'Loading sejarah pelawat...';
+  try {
+    const snap = await db.collection('store_visits').orderBy('lastSeen', 'desc').get();
+    const visitors = snap.docs.map(doc => ({ id:doc.id, ...doc.data() }));
+    const cutoff = Date.now() - 5 * 60 * 1000;
+    const active = visitors.filter(item => new Date(item.lastSeen || 0).getTime() >= cutoff).length;
+    document.getElementById('visitor-total').textContent = visitors.length;
+    document.getElementById('visitor-active').textContent = active;
+    if (!visitors.length) { history.textContent = 'Belum ada rekod pelawat.'; return; }
+    history.innerHTML = visitors.slice(0, 40).map((item, index) => {
+      const isLive = new Date(item.lastSeen || 0).getTime() >= cutoff;
+      const date = new Date(item.lastSeen || item.firstSeen || 0);
+      const time = Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ms-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      return '<div class="visitor-row"><div><strong>Pelawat #' + escapeHtml(item.id.slice(-6).toUpperCase()) + '</strong><small>Lawatan terakhir: ' + escapeHtml(time) + '</small></div><span class="' + (isLive ? 'visitor-live' : 'visitor-offline') + '">' + (isLive ? '● AKTIF' : 'OFFLINE') + '</span></div>';
+    }).join('');
+  } catch (error) { console.error(error); history.textContent = 'Tak dapat load. Pastikan Firestore Rules untuk store_visits telah ditambah.'; }
+}
+recordStoreVisit();
+window.addEventListener('pagehide', () => {
+  if (!db) return;
+  try { db.collection('store_visits').doc(getStoreVisitorId()).set({ online:false, lastSeen:new Date().toISOString() }, { merge:true }); } catch (error) {}
+});
+async function findOrder(event) {
+  event.preventDefault();
+  const box = document.getElementById('order-search-result');
+  const code = normaliseOrderCode(document.getElementById('order-search-code').value);
+  if (!code) return;
+  if (!db) { box.textContent = 'Sistem transaksi belum dapat dihubungkan.'; return; }
+  box.textContent = 'Mencari transaksi...';
+  try {
+    const snap = await db.collection('orders').doc(code).get();
+    if (!snap.exists) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi dengan admin.'; return; }
+    const item = snap.data();
+    const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : '';
+    box.innerHTML = '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || code) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
+  } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
+}
+if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);
 
 function fixMojibakeText(value) {
   let text = String(value ?? '');
