@@ -1615,6 +1615,16 @@ function formatOrderTimestamp(value) {
   const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
   return Number.isNaN(date.getTime()) ? 'Baru sahaja' : date.toLocaleString('ms-MY', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
 }
+function toDateTimeLocalValue(value = new Date()) {
+  const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = number => String(number).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+}
+function setDefaultManualOrderDate() {
+  const input = document.getElementById('manual-order-datetime');
+  if (input && !input.value) input.value = toDateTimeLocalValue();
+}
 function openOrderHistory() {
   document.getElementById('order-history-modal')?.classList.add('show');
   setTimeout(() => document.getElementById('order-search-code')?.focus(), 80);
@@ -1624,6 +1634,7 @@ function openOrderAdmin() {
   closeOrderHistory();
   document.getElementById('order-admin-modal')?.classList.add('show');
   syncOrderAdminUI();
+  setDefaultManualOrderDate();
 }
 function closeOrderAdmin() { document.getElementById('order-admin-modal')?.classList.remove('show'); }
 function syncOrderAdminUI() {
@@ -1679,6 +1690,7 @@ async function uploadOrderImage(code) {
 function resetManualOrderForm() {
   editingOrderCode = null; editingOriginalPhone = ''; pendingOrderImageFile = null;
   const form = document.querySelector('#order-admin-form-wrap form'); if (form) form.reset();
+  setDefaultManualOrderDate();
   const preview = document.getElementById('order-image-preview'); if (preview) { preview.hidden = true; preview.innerHTML = ''; }
   const code = document.getElementById('manual-order-code'); if (code) { code.readOnly = false; code.style.opacity = ''; }
   const cancel = document.getElementById('manual-order-cancel'); if (cancel) cancel.hidden = true;
@@ -1699,6 +1711,7 @@ async function saveManualOrder(event) {
       price: Number(document.getElementById('manual-order-price').value || 0),
       image,
       status: String(document.getElementById('manual-order-status').value || 'Dalam proses'),
+      orderedAt: new Date(document.getElementById('manual-order-datetime').value).toISOString(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     const privateData = { phone: String(document.getElementById('manual-order-phone').value || '').trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
@@ -1730,7 +1743,7 @@ async function editManualOrder(code) {
     const item = snap.data(); editingOrderCode = code;
     document.getElementById('manual-order-code').value = code; document.getElementById('manual-order-code').readOnly = true; document.getElementById('manual-order-code').style.opacity = '.65';
     editingOriginalPhone = privateSnap.exists ? (privateSnap.data().phone || '') : '';
-    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
+    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-datetime').value = toDateTimeLocalValue(item.orderedAt || item.updatedAt); document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
     const preview = document.getElementById('order-image-preview'); if (preview && item.image) { preview.hidden = false; preview.innerHTML = '<img src="' + escapeHtml(item.image) + '" alt="Gambar semasa">'; }
     document.getElementById('manual-order-cancel').hidden = false; document.getElementById('manual-order-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update transaksi';
     document.querySelector('.order-form-grid')?.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -1810,7 +1823,7 @@ async function findOrder(event) {
       }
     }
     if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi atau WhatsApp dengan admin.'; return; }
-    box.innerHTML = records.map(item => { const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : ''; return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || '') + '</small><small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>'; }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
+    box.innerHTML = records.map(item => { const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : ''; return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || '') + '</small><small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>'; }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
 }
 if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);

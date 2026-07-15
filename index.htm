@@ -598,6 +598,7 @@
           <label>No. WhatsApp<input id="manual-order-phone" inputmode="tel" placeholder="0123456789" required></label>
           <label>Nama produk<input id="manual-order-product" placeholder="Permanent Dragon" required></label>
           <label>Harga (RM)<input id="manual-order-price" type="number" min="0" step="0.01" placeholder="130" required></label>
+          <label>Tarikh & masa transaksi<input id="manual-order-datetime" type="datetime-local" required></label>
           <label class="order-wide">Link gambar produk <small>(atau paste gambar di bawah)</small><input id="manual-order-image" type="url" placeholder="https://.../gambar.png"></label>
           <label>Status<select id="manual-order-status"><option value="Dalam proses">Dalam proses</option><option value="Siap">Siap</option><option value="Dibatalkan">Dibatalkan</option></select></label>
         </div>
@@ -614,7 +615,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=order-history-8"></script>
+<script defer src="app.js?v=order-history-9"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
