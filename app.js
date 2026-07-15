@@ -1730,7 +1730,13 @@ async function editManualOrder(code) {
 }
 async function deleteManualOrder(code) {
   if (!confirm('Padam transaksi ' + code + '?')) return;
-  try { const privateSnap = await db.collection('order_private').doc(code).get(); await Promise.all([db.collection('orders').doc(code).delete(), db.collection('order_private').doc(code).delete()]); await removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code); await loadAdminOrders(); toast('Transaksi dipadam.'); } catch(error) { toast('Tak dapat padam transaksi.', true); }
+  try {
+    const privateSnap = await db.collection('order_private').doc(code).get();
+    await Promise.all([db.collection('orders').doc(code).delete(), db.collection('order_private').doc(code).delete()]);
+    // Lookup hanya indeks carian; jangan biar ia menghalang transaksi utama dipadam.
+    try { await removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code); } catch (lookupError) { console.warn('Lookup cleanup skipped', lookupError); }
+    await loadAdminOrders(); toast('Transaksi dipadam.');
+  } catch(error) { console.error(error); toast('Tak dapat padam transaksi. Semak login admin dan Firestore Rules.', true); }
 }
 function getStoreVisitorId() {
   try {
