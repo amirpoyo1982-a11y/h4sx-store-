@@ -554,20 +554,21 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v1.5';
+const CHANGELOG_VERSION = 'v1.7';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
-function getChangelogReleaseDate() { return new Date(); }
+function getChangelogReleaseDate() {
+  const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
+  const value = release?.date ? new Date(release.date) : null;
+  return value && !Number.isNaN(value.getTime()) ? value : null;
+}
 function openChangelog(manual) {
   const modal = document.getElementById('changelog-modal');
   if (!modal) return;
   const dateEl = document.getElementById('changelog-date-text');
   const timeEl = document.getElementById('changelog-time-text');
-  if (dateEl) {
-    dateEl.textContent = getChangelogReleaseDate().toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-  if (timeEl) {
-    timeEl.textContent = getChangelogReleaseDate().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
-  }
+  const releaseDate = getChangelogReleaseDate();
+  if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (timeEl && typeof CHANGELOG_DATA !== 'undefined') timeEl.textContent = CHANGELOG_DATA.time || '';
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }

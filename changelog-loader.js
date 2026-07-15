@@ -1,44 +1,36 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '13 July 2026',
+  date: '16 July 2026',
   time: 'Latest',
-  version: 'v1.5',
+  version: 'v1.7',
   sections: [
     {
       type: 'added',
       title: 'Ditambah',
       items: [
         {
-          icon: 'fa-link',
-          text: '<strong>DireCt link produk</strong> - setiap barang kini boleh dibuka terus melalui link khas, jadi senang share item tertentu kepada pelanggan.'
+          icon: 'fa-receipt',
+          text: '<strong>Histori Transaksi</strong> - pelanggan kini boleh semak pembelian menggunakan nombor transaksi atau nombor WhatsApp.'
         },
         {
-          icon: 'fa-copy',
-          text: '<strong>Copy Link dalam detail produk</strong> - butang Copy Link ditambah supaya link barang boleh disalin terus dari popup produk.'
-        },
-        {
-          icon: 'fa-play',
-          text: '<strong>Slider gambar & video Free Fire</strong> - detail produk Free Fire kini ada gallery yang boleh diseret kiri kanan untuk lihat gambar dan video.'
-        },
-        {
-          icon: 'fa-chevron-left',
-          text: '<strong>Anak panah media produk</strong> - popup produk kini ada butang kiri dan kanan untuk tukar media dengan lebih mudah di PC dan phone.'
-        },
-        {
-          icon: 'fa-image',
-          text: '<strong>Mode banner promo baru</strong> - banner promosi kini boleh guna fit cover atau contain melalui Gist supaya gambar biasa tetap nampak kemas.'
+          icon: 'fa-user-shield',
+          text: '<strong>Panel transaksi admin</strong> - admin boleh tambah, edit, padam dan lihat transaksi terkini terus dari website.'
         },
         {
           icon: 'fa-wand-magic-sparkles',
-          text: '<strong>Background blur untuk banner</strong> - jika gambar bukan saiz banner panjang, website akan isi ruang kosong dengan blur background yang lebih cantik.'
+          text: '<strong>Generate nombor transaksi</strong> - code H4SX rawak boleh dijana terus semasa membuat transaksi baru.'
         },
         {
-          icon: 'fa-mobile-screen-button',
-          text: '<strong>Support gambar PC dan phone</strong> - banner promosi masih boleh guna gambar berasingan untuk desktop dan mobile melalui setting Gist.'
+          icon: 'fa-image',
+          text: '<strong>Paste gambar produk</strong> - screenshot boleh dipaste terus dalam transaksi tanpa perlu upload satu-satu.'
         },
         {
-          icon: 'fa-rotate',
-          text: '<strong>Hard Refresh Update</strong> - butang refresh khas ditambah supaya pelanggan boleh muat semula website jika masih nampak versi lama.'
+          icon: 'fa-chart-line',
+          text: '<strong>Statistik pelawat admin</strong> - jumlah dan sejarah pelawat website kini boleh dilihat oleh admin sahaja.'
+        },
+        {
+          icon: 'fa-calendar-clock',
+          text: '<strong>Tarikh transaksi custom</strong> - admin boleh set tarikh dan masa asal untuk transaksi lama.'
         }
       ]
     },
@@ -47,42 +39,12 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki',
       items: [
         {
-          icon: 'fa-gauge-high',
-          text: '<strong>Load gambar dipercepatkan</strong> - gambar produk dan banner dioptimumkan supaya website tidak terlalu lama tunggu media penuh.'
+          icon: 'fa-eye-slash',
+          text: '<strong>Privasi nombor WhatsApp</strong> - nombor customer dipaparkan dalam bentuk disembunyikan seperti 601*******32.'
         },
         {
-          icon: 'fa-photo-film',
-          text: '<strong>Poster video lebih tepat</strong> - item video kini boleh tunjuk gambar poster biasa pada card, bukan paparan video kosong atau pelik.'
-        },
-        {
-          icon: 'fa-crosshairs',
-          text: '<strong>Media Free Fire lebih kemas</strong> - gambar dan video tidak lagi dipaksa kecil dalam satu kotak; media kini dipaparkan satu persatu dalam slider.'
-        },
-        {
-          icon: 'fa-expand',
-          text: '<strong>Popup detail produk diperbaiki</strong> - paparan full produk kini lebih sesuai untuk melihat gambar dan video dengan jelas.'
-        },
-        {
-          icon: 'fa-window-restore',
-          text: '<strong>Banner PC lebih fleksibel</strong> - banner tidak lagi wajib gambar landscape sempurna; mode contain boleh bantu gambar biasa nampak elok.'
-        },
-        {
-          icon: 'fa-code',
-          text: '<strong>Script disemak semula</strong> - perubahan JavaScript telah diperiksa supaya tiada syntax error sebelum publish.'
-        }
-      ]
-    },
-    {
-      type: 'removed',
-      title: 'Dibuang',
-      items: [
-        {
-          icon: 'fa-trash',
-          text: '<strong>Popup masalah ulasan lama</strong> - notis gangguan ulasan yang sudah selesai telah dibuang daripada website utama.'
-        },
-        {
-          icon: 'fa-eraser',
-          text: '<strong>Isi changelog lama</strong> - senarai release lama digantikan dengan changelog terbaru supaya pelanggan nampak update semasa sahaja.'
+          icon: 'fa-trash-can',
+          text: '<strong>Padam transaksi</strong> - masalah admin tidak dapat memadam transaksi telah diperbaiki.'
         }
       ]
     }
