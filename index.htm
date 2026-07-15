@@ -561,9 +561,9 @@
     <button class="order-modal-close" onclick="closeOrderHistory()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-receipt"></i> H4SX STORE</div>
     <h2>Histori Transaksi</h2>
-    <p>Masukkan nombor transaksi yang diberi oleh admin.</p>
+    <p>Masukkan nombor transaksi atau nombor WhatsApp semasa membuat order.</p>
     <form class="order-search-form" onsubmit="findOrder(event)">
-      <input id="order-search-code" autocomplete="off" placeholder="Contoh: H4SX-AB12CD" aria-label="Nombor transaksi">
+      <input id="order-search-code" autocomplete="off" placeholder="No. transaksi atau WhatsApp" aria-label="Nombor transaksi atau WhatsApp">
       <button type="submit">Cari</button>
     </form>
     <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
@@ -614,7 +614,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=order-history-5"></script>
+<script defer src="app.js?v=order-history-6"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
