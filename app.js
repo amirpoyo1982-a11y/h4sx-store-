@@ -1561,6 +1561,14 @@ if (firebaseConfig.apiKey) {
 function normaliseOrderCode(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 }
+function generateManualOrderCode() {
+  if (editingOrderCode) return toast('Tak boleh tukar nombor untuk transaksi yang sedang diedit.', true);
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const random = crypto.getRandomValues(new Uint32Array(6));
+  const code = 'H4SX-' + [...random].map(value => chars[value % chars.length]).join('');
+  const input = document.getElementById('manual-order-code');
+  if (input) { input.value = code; input.focus(); }
+}
 function normaliseOrderPhone(value) {
   let phone = String(value || '').replace(/\D/g, '');
   if (phone.startsWith('0')) phone = '60' + phone.slice(1);

@@ -2534,6 +2534,7 @@ details.faq[open] .faq-ic {
 .order-admin-link { display:block; width:100%; border:0; background:none; color:var(--muted); font-size:11px; font-weight:800; margin-top:18px; cursor:pointer; }
 .order-form { display:grid; gap:12px; }
 .order-form input,.order-form select { width:100%; border:1px solid var(--border2); border-radius:10px; padding:11px 12px; font:inherit; color:var(--ink); background:#fff; outline-color:var(--primary); }
+.order-code-input { display:flex; gap:6px; }.order-code-input input { min-width:0; }.order-code-input button { flex:0 0 auto; border:0; border-radius:10px; padding:0 10px; background:var(--primary3); color:#fff; cursor:pointer; font:inherit; font-size:10px; font-weight:800; }
 .order-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .order-form label { color:var(--muted); font-size:10px; font-weight:900; letter-spacing:.5px; text-transform:uppercase; display:grid; gap:5px; }
 .order-wide { grid-column:1/-1; }

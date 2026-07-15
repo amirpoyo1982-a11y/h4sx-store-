@@ -594,7 +594,7 @@
       </div>
       <form class="order-form" onsubmit="saveManualOrder(event)">
         <div class="order-form-grid">
-          <label>No. transaksi<input id="manual-order-code" placeholder="H4SX-AB12CD" required></label>
+          <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
           <label>No. WhatsApp<input id="manual-order-phone" inputmode="tel" placeholder="0123456789" required></label>
           <label>Nama produk<input id="manual-order-product" placeholder="Permanent Dragon" required></label>
           <label>Harga (RM)<input id="manual-order-price" type="number" min="0" step="0.01" placeholder="130" required></label>
@@ -614,7 +614,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=order-history-7"></script>
+<script defer src="app.js?v=order-history-8"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
