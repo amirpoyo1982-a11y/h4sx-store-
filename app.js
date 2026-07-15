@@ -1560,6 +1560,16 @@ if (firebaseConfig.apiKey) {
 function normaliseOrderCode(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
 }
+function maskOrderPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length < 6) return '••••••';
+  return digits.slice(0, 3) + '*'.repeat(Math.max(4, digits.length - 5)) + digits.slice(-2);
+}
+function formatOrderTimestamp(value) {
+  if (!value) return 'Baru sahaja';
+  const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Baru sahaja' : date.toLocaleString('ms-MY', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
+}
 function openOrderHistory() {
   document.getElementById('order-history-modal')?.classList.add('show');
   setTimeout(() => document.getElementById('order-search-code')?.focus(), 80);
@@ -1639,6 +1649,7 @@ async function saveManualOrder(event) {
     if (!image) return toast('Letak link gambar atau paste screenshot produk.', true);
     const data = {
       code,
+      phoneMasked: maskOrderPhone(document.getElementById('manual-order-phone').value),
       product: String(document.getElementById('manual-order-product').value || '').trim(),
       price: Number(document.getElementById('manual-order-price').value || 0),
       image,
@@ -1735,7 +1746,7 @@ async function findOrder(event) {
     if (!snap.exists) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi dengan admin.'; return; }
     const item = snap.data();
     const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : '';
-    box.innerHTML = '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || code) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
+    box.innerHTML = '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || code) + '</small><small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
   } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
 }
 if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);
