@@ -75,6 +75,24 @@ export default async function handler(req, res) {
       });
       return `${title}\n${lines.join('\n')}\n\nNak saya bantu terus, boleh chat admin: https://wa.me/60193263016`;
     }
+    function buildH4sxFallback() {
+      const q = cleanQuestion.toLowerCase();
+      const wantsAdmin = includesAny(q, ['agent', 'admin', 'nombor', 'number', 'phone', 'whatsapp', 'link', 'chat', 'tanya lanjut', 'maklumat lanjut']);
+      const asksBuy = includesAny(q, ['cara beli', 'nak beli', 'checkout', 'lepas bayar', 'resit', 'bayar', 'payment']);
+      const asksBrookhaven = includesAny(q, ['brookhaven', 'gamepass', 'game pass', 'vip', 'premium', 'music unlocked', 'vehicle', 'estate']);
+      const brookhavenItems = findCatalogItems(['brookhaven', 'vip gamepass', 'premium gamepass', 'music unlocked', 'vehicle customization', 'vehicle pack', 'estate unlocked', 'speed vehicle']);
+
+      if (asksBrookhaven && brookhavenItems.length) {
+        return buildCatalogAnswer('Ada boss. Untuk Brookhaven, antara item yang ada:', brookhavenItems);
+      }
+      if (asksBuy) {
+        return 'Cara beli dekat H4SX mudah saja:\n1. Pilih item yang nak beli.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info/username yang diminta.\n4. Bayar melalui QR DuitNow/TNG.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+      }
+      if (wantsAdmin) {
+        return 'Boleh boss. Kalau nak tanya lebih lanjut, terus chat admin H4SX di sini:\nhttps://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
+      }
+      return 'Boleh boss. Saya boleh bantu tentang item H4SX, harga, stok, cara beli, checkout dan resit.\n\nKalau nak admin terus: https://wa.me/60193263016\nWebsite utama: https://h4sx-store.vercel.app/';
+    }
     function finaliseAnswer(answer) {
       const q = cleanQuestion.toLowerCase();
       let finalAnswer = cleanAiAnswer(answer);
@@ -93,9 +111,8 @@ export default async function handler(req, res) {
     if (geminiKey) {
       const models = Array.from(new Set([
         process.env.GEMINI_MODEL,
-        'gemini-2.5-flash',
         'gemini-3.5-flash',
-        'gemini-1.5-flash'
+        'gemini-2.5-flash'
       ].filter(Boolean)));
       let lastError = 'Gemini request failed.';
 
@@ -132,7 +149,8 @@ export default async function handler(req, res) {
         lastError = data.error?.message || `${model} failed with status ${response.status}.`;
       }
 
-      return res.status(502).json({ error: lastError });
+      console.warn('Gemini helper fallback:', lastError);
+      return res.status(200).json({ answer: finaliseAnswer(buildH4sxFallback()), provider: 'fallback', model: 'h4sx-local' });
     }
 
     const response = await fetch('https://api.openai.com/v1/responses', {

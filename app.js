@@ -343,7 +343,8 @@ async function askAiHelper() {
   } catch (err) {
     console.warn('AI helper fallback:', err);
     const errMsg = String(err?.message || '').trim();
-    const fallback = errMsg && errMsg !== 'AI belum aktif'
+    const isTechnicalAiError = /models\/|generateContent|ModelService|API version|not found|not supported|GEMINI|OPENAI/i.test(errMsg);
+    const fallback = errMsg && errMsg !== 'AI belum aktif' && !isTechnicalAiError
       ? 'AI belum aktif sebab: ' + errMsg
       : 'AI belum aktif sepenuhnya. Buat masa ni, cara beli H4SX: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
     typeAiMessage(thinking, fallback);
