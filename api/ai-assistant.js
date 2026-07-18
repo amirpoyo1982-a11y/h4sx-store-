@@ -99,6 +99,7 @@ export default async function handler(req, res) {
       const wantsAdmin = includesAny(q, ['agent', 'admin', 'nombor', 'number', 'phone', 'whatsapp', 'link', 'chat', 'tanya lanjut', 'maklumat lanjut']);
       const asksBuy = includesAny(q, ['cara beli', 'nak beli', 'checkout', 'lepas bayar', 'resit', 'bayar', 'payment']);
       const asksSafety = includesAny(q, ['safe', 'selamat', 'trusted', 'trust', 'scam', 'legit', 'tipu', 'percaya']);
+      const accusesScam = /^(tipu|nipu|scam|tak percaya|menipu)\b/i.test(q) || /\b(tipu ni|nipu ni|scam ni|menipu ni)\b/i.test(q);
       const asksProcessTime = includesAny(q, ['berapa lama', 'lama proses', 'proses', 'delivery', 'deliver', 'siap bila', 'ambil masa', 'tunggu', 'berapa minit', 'berapa jam']);
       const asksBrookhaven = includesAny(q, ['brookhaven', 'gamepass', 'game pass', 'vip', 'premium', 'music unlocked', 'vehicle', 'estate']);
       const asksGreeting = /^(hai|hi|hello|helo|weh|yo|assalam|salam)\b/i.test(q);
@@ -125,6 +126,9 @@ export default async function handler(req, res) {
       }
       if (asksBuy) {
         return 'Cara beli dekat H4SX mudah saja:\n1. Pilih item yang nak beli.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info/username yang diminta.\n4. Bayar melalui QR DuitNow/TNG.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+      }
+      if (accusesScam) {
+        return 'Faham boss, memang patut hati-hati sebelum beli online. Kalau ragu, boleh semak review pelanggan dulu dan tanya admin direct sebelum bayar.\n\nReview: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
       }
       if (asksSafety) {
         return 'Ya boss, pembelian dekat H4SX dibuat melalui proses yang jelas. Semak item dulu, bayar ikut QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke WhatsApp admin untuk proses order.\n\nNak tengok keyakinan customer lain boleh buka review: https://review-customer-six.vercel.app/\nKalau nak tanya admin terus: https://wa.me/60193263016';
