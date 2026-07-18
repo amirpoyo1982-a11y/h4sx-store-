@@ -6,19 +6,18 @@ Tempat selamat:
 
 1. Buka Vercel project H4SX STORE.
 2. Pergi `Settings` -> `Environment Variables`.
-3. Kalau guna Gemini, tambah:
+3. Untuk guna Gemini, tambah:
+   - `AI_PROVIDER` = `gemini`
    - `GEMINI_API_KEY` = API key Gemini dari Google AI Studio.
-   - `GEMINI_MODEL` = model pilihan, contoh `gemini-2.5-flash`. Jika kosong, server akan cuba beberapa model Gemini yang biasa.
-4. Kalau guna OpenAI sebagai fallback, tambah:
-   - `OPENAI_API_KEY` = API key OpenAI anda.
-   - `OPENAI_MODEL` = model pilihan, contoh `gpt-4.1-mini`.
-5. Redeploy website.
+   - `GEMINI_MODEL` = optional, contoh `gemini-2.5-flash`. Jika kosong, server akan cuba model Gemini biasa.
+4. Redeploy website.
 
 Penting di Vercel:
 
 - Pastikan variable diletak untuk environment yang betul: `Production` untuk website live.
 - Lepas tambah/edit variable, tekan `Redeploy`. Deployment lama tidak automatik baca variable baru.
-- Nama variable mesti tepat: `GEMINI_API_KEY` atau `GOOGLE_API_KEY`.
+- Nama variable mesti tepat: `AI_PROVIDER`, `GEMINI_API_KEY` atau `GOOGLE_API_KEY`.
+- Kalau mahu pakai Gemini sahaja, jangan letak `OPENAI_API_KEY`, atau biarkan `AI_PROVIDER=gemini`.
 
 Frontend akan panggil endpoint:
 
@@ -34,6 +33,7 @@ api/ai-assistant.js
 
 Keutamaan endpoint:
 
-1. Jika `GEMINI_API_KEY` ada, AI Helper guna Gemini.
-2. Jika Gemini tiada tetapi `OPENAI_API_KEY` ada, AI Helper guna OpenAI.
-3. Jika dua-dua tiada, website tidak rosak. Ia akan paparkan mesej fallback sahaja.
+1. Default ialah Gemini.
+2. Jika `AI_PROVIDER=gemini`, AI Helper guna Gemini sahaja.
+3. Jika Gemini gagal, website tidak rosak. Ia akan paparkan bantuan ringkas H4SX.
+4. OpenAI hanya digunakan kalau `AI_PROVIDER=openai` atau Gemini tiada dan OpenAI key tersedia.

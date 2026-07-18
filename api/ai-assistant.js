@@ -4,10 +4,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const aiProvider = String(process.env.AI_PROVIDER || 'gemini').toLowerCase();
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
-  if (!geminiKey && !openaiKey) {
-    return res.status(503).json({ error: 'AI helper belum aktif. Set GEMINI_API_KEY atau OPENAI_API_KEY di Vercel Environment Variables.' });
+  if (!geminiKey && aiProvider !== 'openai') {
+    return res.status(503).json({ error: 'AI helper belum aktif. Set GEMINI_API_KEY di Vercel Environment Variables.' });
+  }
+  if (aiProvider === 'openai' && !openaiKey) {
+    return res.status(503).json({ error: 'AI helper belum aktif. Set OPENAI_API_KEY di Vercel Environment Variables.' });
   }
 
   try {
@@ -124,11 +128,11 @@ export default async function handler(req, res) {
       return finalAnswer.slice(0, 1200);
     }
 
-    if (geminiKey) {
+    if (geminiKey && aiProvider !== 'openai') {
       const models = Array.from(new Set([
         process.env.GEMINI_MODEL,
-        'gemini-3.5-flash',
-        'gemini-2.5-flash'
+        'gemini-2.5-flash',
+        'gemini-3.5-flash'
       ].filter(Boolean)));
       let lastError = 'Gemini request failed.';
 
@@ -166,7 +170,7 @@ export default async function handler(req, res) {
       }
 
       console.warn('Gemini helper failed:', lastError);
-      if (!openaiKey) {
+      if (aiProvider === 'gemini' || !openaiKey) {
         return res.status(200).json({ answer: finaliseAnswer(buildH4sxFallback()), provider: 'fallback', model: 'h4sx-local' });
       }
     }
