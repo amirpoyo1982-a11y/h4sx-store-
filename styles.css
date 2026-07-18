@@ -2132,14 +2132,14 @@ details.faq[open] .faq-ic {
   position: relative;
   width: 62px;
   height: 62px;
-  border: 1px solid rgba(186,230,253,.72);
-  border-radius: 22px;
+  border: 1px solid rgba(220,252,231,.86);
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4 58%, #22c55e);
+  background: linear-gradient(135deg, #25d366, #128c7e);
   color: #fff;
-  font-size: 24px;
-  box-shadow: 0 20px 42px rgba(14,165,233,.36);
+  font-size: 28px;
+  box-shadow: 0 20px 42px rgba(37,211,102,.34);
   transition: transform .22s var(--ease), opacity .22s var(--ease);
 }
 .ai-float-bubble:hover { transform: translateY(-4px) scale(1.03); }
@@ -2165,10 +2165,10 @@ details.faq[open] .faq-ic {
   flex-direction: column;
   overflow: hidden;
   border-radius: 24px;
-  border: 1px solid rgba(125,211,252,.42);
+  border: 1px solid rgba(34,197,94,.28);
   background:
-    radial-gradient(circle at 90% 0%, rgba(56,189,248,.2), transparent 34%),
-    linear-gradient(180deg, rgba(255,255,255,.98), rgba(232,247,255,.96));
+    radial-gradient(circle at 94% 8%, rgba(37,211,102,.16), transparent 34%),
+    linear-gradient(180deg, rgba(246,255,249,.98), rgba(229,246,223,.98));
   box-shadow: 0 28px 80px rgba(2, 6, 23, .34);
   opacity: 0;
   visibility: hidden;
@@ -2181,26 +2181,29 @@ details.faq[open] .faq-ic {
   align-items: center;
   gap: 12px;
   padding: 16px 16px 12px;
-  border-bottom: 1px solid rgba(14,165,233,.14);
+  border-bottom: 1px solid rgba(34,197,94,.18);
+  background: linear-gradient(135deg, #075e54, #128c7e 58%, #25d366);
+  color: #fff;
 }
 .ai-avatar {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #0ea5e9, #22c55e);
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
   color: #fff;
-  box-shadow: 0 14px 28px rgba(14,165,233,.24);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.24), 0 14px 28px rgba(0,0,0,.18);
+  font-size: 22px;
 }
 .ai-helper-close {
   margin-left: auto;
   width: 38px;
   height: 38px;
-  border: 1px solid rgba(14,165,233,.18);
-  border-radius: 14px;
-  background: #fff;
-  color: var(--ink2);
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  color: #fff;
 }
 .ai-helper-kicker {
   display: inline-flex;
@@ -2209,7 +2212,7 @@ details.faq[open] .faq-ic {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #0369a1;
+  color: rgba(255,255,255,.78);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .08em;
@@ -2217,7 +2220,7 @@ details.faq[open] .faq-ic {
 }
 .ai-chat-panel h2 {
   margin: 3px 0 0;
-  color: var(--ink2);
+  color: #fff;
   font-size: 18px;
   font-weight: 950;
   letter-spacing: -.02em;
@@ -2226,9 +2229,9 @@ details.faq[open] .faq-ic {
   margin: 12px 14px 8px;
   padding: 9px 11px;
   border-radius: 14px;
-  border: 1px solid rgba(14,165,233,.14);
-  background: rgba(240,249,255,.82);
-  color: #38566f;
+  border: 1px solid rgba(34,197,94,.18);
+  background: rgba(255,255,255,.72);
+  color: #075e54;
   font-size: 12px;
   font-weight: 700;
 }
@@ -2248,9 +2251,9 @@ details.faq[open] .faq-ic {
   margin: 0;
 }
 .ai-helper-suggestions button {
-  border: 1px solid rgba(14,165,233,.2);
-  background: rgba(240,249,255,.9);
-  color: #075985;
+  border: 1px solid rgba(18,140,126,.2);
+  background: rgba(255,255,255,.82);
+  color: #075e54;
   border-radius: 999px;
   padding: 8px 11px;
   font-size: 12px;
@@ -2263,6 +2266,10 @@ details.faq[open] .faq-ic {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.34) 25%, transparent 25%) 0 0/28px 28px,
+    linear-gradient(225deg, rgba(255,255,255,.25) 25%, transparent 25%) 0 0/28px 28px,
+    #e5f6df;
 }
 .ai-msg {
   max-width: 88%;
@@ -2272,18 +2279,25 @@ details.faq[open] .faq-ic {
   line-height: 1.58;
   white-space: pre-wrap;
   box-shadow: 0 10px 24px rgba(2, 6, 23, .06);
+  overflow-wrap: anywhere;
+}
+.ai-msg a {
+  color: #0284c7;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .ai-msg-bot {
   align-self: flex-start;
   background: #fff;
-  color: #25445f;
-  border: 1px solid rgba(14,165,233,.14);
+  color: #14342f;
+  border: 1px solid rgba(7,94,84,.08);
   border-bottom-left-radius: 6px;
 }
 .ai-msg-user {
   align-self: flex-end;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
-  color: #fff;
+  background: #dcf8c6;
+  color: #12372e;
   border-bottom-right-radius: 6px;
 }
 .ai-chat-compose {
@@ -2291,16 +2305,16 @@ details.faq[open] .faq-ic {
   grid-template-columns: 1fr 46px;
   gap: 9px;
   padding: 12px;
-  border-top: 1px solid rgba(14,165,233,.14);
-  background: rgba(240,249,255,.72);
+  border-top: 1px solid rgba(34,197,94,.18);
+  background: rgba(240,253,244,.82);
 }
 .ai-chat-compose textarea {
   width: 100%;
   height: 46px;
   max-height: 120px;
   resize: none;
-  border: 1px solid rgba(14,165,233,.25);
-  border-radius: 16px;
+  border: 1px solid rgba(18,140,126,.22);
+  border-radius: 999px;
   padding: 12px 13px;
   color: var(--ink);
   background: #fff;
@@ -2313,30 +2327,30 @@ details.faq[open] .faq-ic {
   height: 46px;
   margin-top: 0;
   border: 0;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
   color: #fff;
   font-weight: 950;
-  box-shadow: 0 18px 36px rgba(14,165,233,.24);
+  box-shadow: 0 18px 36px rgba(37,211,102,.24);
 }
 .ai-helper-send:disabled { opacity: .72; cursor: wait; }
 .ai-helper-answer {
   display: none;
 }
 .ai-helper-btn {
-  background: linear-gradient(135deg, rgba(14,165,233,.12), rgba(34,197,94,.1));
-  color: #0369a1;
+  background: linear-gradient(135deg, rgba(220,252,231,.9), rgba(240,253,244,.82));
+  color: #075e54;
 }
 .btn-ai-hero {
-  border-color: rgba(14,165,233,.28);
-  background: linear-gradient(135deg, rgba(240,249,255,.95), rgba(224,242,254,.82));
-  color: #075985;
-  box-shadow: 0 12px 28px rgba(14,165,233,.12);
+  border-color: rgba(37,211,102,.32);
+  background: linear-gradient(135deg, rgba(240,253,244,.96), rgba(220,252,231,.88));
+  color: #075e54;
+  box-shadow: 0 12px 28px rgba(37,211,102,.14);
 }
 .btn-ai-hero:hover {
-  border-color: rgba(14,165,233,.46);
-  color: #0284c7;
-  background: linear-gradient(135deg, #f0f9ff, #dff6ff);
+  border-color: rgba(37,211,102,.52);
+  color: #047857;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
 }
 @media (max-width: 520px) {
   .ai-side-assistant { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); }

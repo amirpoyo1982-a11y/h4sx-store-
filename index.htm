@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=ai-debug-1">
+  <link rel="stylesheet" href="styles.css?v=ai-whatsapp-assistant-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -121,7 +121,7 @@
       <a onclick="openOrderHistory()">Histori</a>
     </div>
     <div class="nav-right">
-      <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="AI Helper"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI</span></button>
+      <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="WhatsApp AI"><i class="fa-brands fa-whatsapp"></i><span>AI</span></button>
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
       <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
       <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -142,7 +142,7 @@
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
   <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
-  <a onclick="openAiHelper();toggleMenu()"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Helper</a>
+  <a onclick="openAiHelper();toggleMenu()"><i class="fa-brands fa-whatsapp"></i> WhatsApp AI</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
   <a class="hard-refresh-menu" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
   <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
@@ -186,7 +186,7 @@
       <div>
         <div class="hero-eyebrow"><span class="ey-dot"></span> Kedai Dipercayai</div>
         <h1 class="hero-h1">Beli item <em>Roblox</em><br>dengan lebih<br>yakin.</h1>
-        <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, bantuan admin responsif, dan AI Helper untuk pilih item paling ngam ikut bajet anda.</p>
+        <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, bantuan admin responsif, dan WhatsApp AI untuk bantu pilih item paling ngam ikut bajet anda.</p>
         <div class="hero-stats">
           <div class="hstat"><div class="hstat-n" data-target="400" data-suffix="+">0+</div><div class="hstat-l">Customers</div></div>
           <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">0%</div><div class="hstat-l">Secure</div></div>
@@ -194,7 +194,7 @@
         </div>
         <div class="hero-cta-row">
           <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Browse Collection <i class="fa-solid fa-arrow-right"></i></a>
-          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-solid fa-wand-magic-sparkles"></i> Tanya AI</a>
+          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-brands fa-whatsapp"></i> Tanya AI</a>
           <a href="https://wa.me/60193263016" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> Chat Admin</a>
         </div>
         <div class="hero-proof-strip">
@@ -453,30 +453,30 @@
 </button>
 <!-- AI SIDE ASSISTANT -->
 <div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
-  <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX AI Assistant">
-    <i class="fa-solid fa-wand-magic-sparkles"></i>
+  <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka WhatsApp AI H4SX">
+    <i class="fa-brands fa-whatsapp"></i>
     <span class="ai-float-dot"></span>
   </button>
   <aside class="ai-chat-panel" id="ai-helper-modal" role="dialog" aria-modal="false" aria-labelledby="ai-helper-title">
     <div class="ai-chat-head">
-      <div class="ai-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <div class="ai-avatar"><i class="fa-brands fa-whatsapp"></i></div>
       <div>
-        <div class="ai-helper-kicker">H4SX AI Assistant</div>
-        <h2 id="ai-helper-title">Tanya apa sahaja</h2>
+        <div class="ai-helper-kicker">WhatsApp AI H4SX</div>
+        <h2 id="ai-helper-title">Tanya tentang H4SX</h2>
       </div>
       <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="ai-chat-status"><span></span> Online untuk bantu pilih item, harga, stok, checkout & support.</div>
+    <div class="ai-chat-status"><span></span> Online bantu cara beli, stok, harga, resit & support H4SX.</div>
     <div class="ai-helper-suggestions">
-      <button onclick="askAiPreset('Bajet saya RM10, cadangkan item Roblox yang berbaloi.')">Bajet RM10</button>
-      <button onclick="askAiPreset('Saya nak item Free Fire yang hot dan trusted, cadangkan.')">Free Fire hot</button>
-      <button onclick="askAiPreset('Macam mana cara checkout dan hantar resit?')">Cara checkout</button>
+      <button onclick="askAiPreset('Macam mana cara beli dekat H4SX?')">Cara beli</button>
+      <button onclick="askAiPreset('Lepas bayar saya kena buat apa?')">Lepas bayar?</button>
+      <button onclick="askAiPreset('Saya nak tanya admin untuk maklumat lanjut.')">Tanya admin</button>
     </div>
     <div class="ai-chat-messages" id="ai-chat-messages">
-      <div class="ai-msg ai-msg-bot">Hai, saya AI H4SX. Tanya apa sahaja tentang produk, bajet, stok, cara beli, atau item yang sesuai. Saya akan jawab berdasarkan katalog H4SX STORE.</div>
+      <div class="ai-msg ai-msg-bot">Hai, saya WhatsApp AI H4SX. Tanya pasal cara beli, stok, harga, resit, checkout, atau link website H4SX. Kalau nak admin terus pun saya boleh bagi link WhatsApp.</div>
     </div>
     <div class="ai-chat-compose">
-      <textarea id="ai-helper-input" maxlength="500" placeholder="Tanya AI... contoh: item apa sesuai bawah RM20?"></textarea>
+      <textarea id="ai-helper-input" maxlength="500" placeholder="Tanya H4SX... contoh: lepas bayar kena buat apa?"></textarea>
       <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()" aria-label="Hantar soalan"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
     <div class="ai-helper-answer" id="ai-helper-answer" hidden></div>
@@ -649,50 +649,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=ai-debug-1"></script>
-
-<!-- Tawk.to Configuration -->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-function h4sxIsMobileChatHidden(){
-  return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-}
-function h4sxSyncTawkMobile(){
-  if (!window.Tawk_API) return;
-  try {
-    if (h4sxIsMobileChatHidden() && Tawk_API.hideWidget) Tawk_API.hideWidget();
-    if (!h4sxIsMobileChatHidden() && Tawk_API.showWidget) Tawk_API.showWidget();
-  } catch(e) {}
-}
-Tawk_API.onLoad = function(){
-  // Adjust widget position
-  Tawk_API.setAttributes({
-    'zIndex': 99999,
-    'position': 'right'
-  }, function(error){});
-  h4sxSyncTawkMobile();
-};
-window.addEventListener('resize', h4sxSyncTawkMobile);
-document.addEventListener('visibilitychange', h4sxSyncTawkMobile);
-</script>
-
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-function loadTawk(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/69f1077a0463871c3746a259/1jr3dr95a';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-}
-if ('requestIdleCallback' in window) requestIdleCallback(loadTawk, { timeout: 5000 });
-else setTimeout(loadTawk, 3500);
-})();
-</script>
-<!--End of Tawk.to Script-->
+<script defer src="app.js?v=ai-whatsapp-assistant-1"></script>
 
 </body>
 </html>

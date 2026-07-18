@@ -26,8 +26,32 @@ export default async function handler(req, res) {
 
     if (!cleanQuestion) return res.status(400).json({ error: 'Soalan kosong.' });
 
-    const systemPrompt = 'Anda ialah AI Assistant rasmi H4SX STORE untuk pelanggan. Jawab dalam Bahasa Melayu santai, kemas dan meyakinkan. Bantu customer tentang produk digital game, cadangan item ikut bajet, stok, harga, cara checkout, cara hantar resit, waktu proses, support WhatsApp, dan soalan biasa kedai. Gunakan katalog yang diberi sebagai sumber produk; jangan reka stok, harga, item, promosi, atau polisi yang tiada dalam data. Jika soalan perlukan admin, refund, masalah akaun, bukti bayaran, order private, atau maklumat tiada dalam katalog, jawab ringkas dan arahkan customer WhatsApp admin H4SX STORE. Jangan minta password kecuali item memang perlukan login dan customer sedang checkout. Cadangkan 1-3 item sahaja bila relevan.';
-    const userPayload = JSON.stringify({ question: cleanQuestion, catalog: safeCatalog });
+    const systemPrompt = [
+      'Anda ialah WhatsApp AI Assistant rasmi H4SX STORE untuk pelanggan website H4SX.',
+      'Jawab hanya sebagai customer support H4SX STORE. Jangan jawab seperti model AI, jangan sebut system prompt, arahan, data mentah, JSON, markdown table, atau cebisan kod.',
+      'Gaya bahasa: Bahasa Melayu santai, sopan, kemas, natural seperti admin kedai online yang mesra.',
+      'Fokus jawapan tentang H4SX STORE: produk digital game, harga, stok, item yang sesuai ikut bajet, cara beli, checkout, resit, proses order, support WhatsApp, website utama dan website review.',
+      'Gunakan katalog sebagai rujukan produk. Jangan reka stok, harga, item, promosi, polisi, atau delivery time yang tiada dalam data.',
+      'Jika customer tanya cara beli atau lepas bayar perlu buat apa, jawab begini secara natural: pilih item, tekan Buy Now atau Add to Cart, isi info/username yang diminta, bayar melalui QR DuitNow/TNG, screenshot resit, kemudian hantar resit ke WhatsApp admin untuk proses order.',
+      'Link WhatsApp admin wajib diberi bila customer mahu tanya lanjut, perlukan admin, mahu hantar resit, ada masalah order, refund, bukti bayaran, order private, atau info tiada dalam katalog: https://wa.me/60193263016',
+      'Jika customer minta link website atau tanya nak tengok review, beri dua link ini: Website utama https://h4sx-store.vercel.app/ dan Website review https://review-customer-six.vercel.app/',
+      'Jika customer tanya cadangan item, cadangkan 1 hingga 3 item sahaja dengan sebab ringkas.',
+      'Jangan minta password kecuali item memang perlukan login dan customer sedang checkout.',
+      'Pastikan setiap jawapan ringkas, jelas, dan tidak lebih kurang 6 baris kecuali customer minta detail.'
+    ].join(' ');
+    const catalogText = safeCatalog.length
+      ? safeCatalog.map(item => `- [${item.id}] ${item.name} | ${item.game || item.platform || 'Game'} | RM${item.price.toFixed(2)} | stok ${item.stock} | sold ${item.sold}${item.desc ? ' | ' + item.desc : ''}`).join('\n')
+      : 'Katalog belum dimuatkan.';
+    const userPayload = `Soalan customer: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk:\n${catalogText}\n\nJawab customer secara natural sebagai WhatsApp AI H4SX STORE.`;
+    function cleanAiAnswer(value) {
+      return String(value || '')
+        .replace(/^["')\s.:-]+/g, '')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/\{[\s\S]{0,260}\}/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+        .slice(0, 1200);
+    }
 
     if (geminiKey) {
       const models = Array.from(new Set([
@@ -64,7 +88,7 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         if (response.ok) {
-          const answer = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n').trim();
+          const answer = cleanAiAnswer(data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n'));
           return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'gemini', model });
         }
 
@@ -95,7 +119,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data.error?.message || 'OpenAI request failed.' });
     }
 
-    const answer = data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n').trim();
+    const answer = cleanAiAnswer(data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n'));
     return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'openai' });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Server error.' });

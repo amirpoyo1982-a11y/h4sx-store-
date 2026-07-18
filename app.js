@@ -241,10 +241,25 @@ function appendAiMessage(type, text) {
   if (!box) return null;
   const msg = document.createElement('div');
   msg.className = 'ai-msg ' + (type === 'user' ? 'ai-msg-user' : 'ai-msg-bot');
-  msg.textContent = text;
+  msg.innerHTML = formatAiMessage(text);
   box.appendChild(msg);
   box.scrollTop = box.scrollHeight;
   return msg;
+}
+function formatAiMessage(text) {
+  const escaped = escapeHtml(String(text || ''));
+  return escaped
+    .split(/(https?:\/\/[^\s<]+)/g)
+    .map(part => {
+      if (/^https?:\/\//i.test(part)) {
+        const cleanUrl = part.replace(/[.,!?)]$/g, '');
+        const tail = part.slice(cleanUrl.length);
+        return '<a href="' + cleanUrl + '" target="_blank" rel="noopener">' + cleanUrl + '</a>' + tail;
+      }
+      return part.replace(/\b(60\d{8,12})\b/g, '<a href="https://wa.me/$1" target="_blank" rel="noopener">+$1</a>');
+    })
+    .join('')
+    .replace(/\n/g, '<br>');
 }
 function aiCatalogSnapshot() {
   return inventory.slice(0, 40).map(item => ({
@@ -266,7 +281,7 @@ async function askAiHelper() {
   if (!question) { toast('Tulis soalan dulu', true); return; }
   appendAiMessage('user', question);
   input.value = '';
-  const thinking = appendAiMessage('bot', 'Sedang fikir jawapan terbaik...');
+  const thinking = appendAiMessage('bot', 'Sekejap ya, saya semak info H4SX dulu...');
   if (answer) answer.textContent = 'Sedang fikir jawapan terbaik...';
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
   try {
@@ -277,18 +292,21 @@ async function askAiHelper() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'AI belum aktif');
-    const finalAnswer = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
-    if (thinking) thinking.textContent = finalAnswer;
-    if (answer) answer.textContent = finalAnswer;
+    let finalAnswer = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
+    if (/^["')\s.:-]+$/.test(finalAnswer.slice(0, 4)) || /delivery method|private|system instruction|prompt/i.test(finalAnswer.slice(0, 160))) {
+      finalAnswer = 'Boleh. Cara beli dekat H4SX mudah saja: pilih item, tekan Buy Now, isi info yang diminta, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016';
+    }
+    if (thinking) thinking.innerHTML = formatAiMessage(finalAnswer);
+    if (answer) answer.innerHTML = formatAiMessage(finalAnswer);
   } catch (err) {
     console.warn('AI helper fallback:', err);
     const errMsg = String(err?.message || '').trim();
     const fallback = errMsg && errMsg !== 'AI belum aktif'
       ? 'AI belum aktif sebab: ' + errMsg
-      : 'AI belum aktif sepenuhnya. Buat masa ni, saya cadangkan pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, kemudian tekan Buy Now untuk checkout manual melalui WhatsApp.';
-    if (thinking) thinking.textContent = fallback;
+      : 'AI belum aktif sepenuhnya. Buat masa ni, cara beli H4SX: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
+    if (thinking) thinking.innerHTML = formatAiMessage(fallback);
     if (answer) {
-      answer.textContent = fallback;
+      answer.innerHTML = formatAiMessage(fallback);
     }
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>'; }
