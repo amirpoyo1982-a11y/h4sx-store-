@@ -6,10 +6,13 @@ Tempat selamat:
 
 1. Buka Vercel project H4SX STORE.
 2. Pergi `Settings` -> `Environment Variables`.
-3. Tambah:
+3. Kalau guna Gemini, tambah:
+   - `GEMINI_API_KEY` = API key Gemini dari Google AI Studio.
+   - `GEMINI_MODEL` = model pilihan, contoh `gemini-2.5-flash`.
+4. Kalau guna OpenAI sebagai fallback, tambah:
    - `OPENAI_API_KEY` = API key OpenAI anda.
-   - `OPENAI_MODEL` = model pilihan, contoh `gpt-4.1-mini` atau model baru yang anda pilih.
-4. Redeploy website.
+   - `OPENAI_MODEL` = model pilihan, contoh `gpt-4.1-mini`.
+5. Redeploy website.
 
 Frontend akan panggil endpoint:
 
@@ -23,4 +26,8 @@ Endpoint ini berada di:
 api/ai-assistant.js
 ```
 
-Kalau `OPENAI_API_KEY` belum diset, AI Helper tidak akan rosakkan website. Ia akan paparkan mesej fallback sahaja.
+Keutamaan endpoint:
+
+1. Jika `GEMINI_API_KEY` ada, AI Helper guna Gemini.
+2. Jika Gemini tiada tetapi `OPENAI_API_KEY` ada, AI Helper guna OpenAI.
+3. Jika dua-dua tiada, website tidak rosak. Ia akan paparkan mesej fallback sahaja.
