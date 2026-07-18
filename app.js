@@ -236,6 +236,7 @@ function askAiPreset(text) {
   if (input) input.value = text;
   askAiHelper();
 }
+const aiChatHistory = [];
 function appendAiMessage(type, text) {
   const box = document.getElementById('ai-chat-messages');
   if (!box) return null;
@@ -321,6 +322,8 @@ async function askAiHelper() {
   const question = (input?.value || '').trim();
   if (!question) { toast('Tulis soalan dulu', true); return; }
   appendAiMessage('user', question);
+  aiChatHistory.push({ role: 'customer', text: question });
+  while (aiChatHistory.length > 8) aiChatHistory.shift();
   input.value = '';
   const thinking = appendAiMessage('bot', 'Sekejap ya, saya semak info H4SX dulu...');
   setAiTypingBubble(thinking);
@@ -330,7 +333,7 @@ async function askAiHelper() {
     const res = await fetch('/api/ai-assistant', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, catalog: aiCatalogSnapshot() })
+      body: JSON.stringify({ question, catalog: aiCatalogSnapshot(), history: aiChatHistory.slice(-8) })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'AI belum aktif');
@@ -339,6 +342,8 @@ async function askAiHelper() {
       finalAnswer = 'Boleh. Cara beli dekat H4SX mudah saja: pilih item, tekan Buy Now, isi info yang diminta, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016';
     }
     typeAiMessage(thinking, finalAnswer);
+    aiChatHistory.push({ role: 'assistant', text: finalAnswer });
+    while (aiChatHistory.length > 8) aiChatHistory.shift();
     if (answer) answer.innerHTML = formatAiMessage(finalAnswer);
   } catch (err) {
     console.warn('AI helper fallback:', err);
@@ -348,6 +353,8 @@ async function askAiHelper() {
       ? 'AI belum aktif sebab: ' + errMsg
       : 'AI belum aktif sepenuhnya. Buat masa ni, cara beli H4SX: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
     typeAiMessage(thinking, fallback);
+    aiChatHistory.push({ role: 'assistant', text: fallback });
+    while (aiChatHistory.length > 8) aiChatHistory.shift();
     if (answer) {
       answer.innerHTML = formatAiMessage(fallback);
     }
