@@ -256,14 +256,18 @@ function typeAiMessage(msg, text) {
   const box = document.getElementById('ai-chat-messages');
   const fullText = String(text || '');
   let index = 0;
+  if (msg._aiTypeTimer) window.clearTimeout(msg._aiTypeTimer);
   msg.classList.remove('ai-msg-typing');
-  msg.innerHTML = '';
+  msg.textContent = '';
   const step = () => {
-    index = Math.min(fullText.length, index + 3);
-    msg.innerHTML = formatAiMessage(fullText.slice(0, index));
+    index = Math.min(fullText.length, index + 10);
+    msg.textContent = fullText.slice(0, index);
     if (box) box.scrollTop = box.scrollHeight;
     if (index < fullText.length) {
-      window.setTimeout(step, 13);
+      msg._aiTypeTimer = window.setTimeout(step, 7);
+    } else {
+      msg.innerHTML = formatAiMessage(fullText);
+      msg._aiTypeTimer = null;
     }
   };
   step();
