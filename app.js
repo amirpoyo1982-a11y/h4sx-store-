@@ -246,6 +246,28 @@ function appendAiMessage(type, text) {
   box.scrollTop = box.scrollHeight;
   return msg;
 }
+function setAiTypingBubble(msg) {
+  if (!msg) return;
+  msg.classList.add('ai-msg-typing');
+  msg.innerHTML = '<span></span><span></span><span></span>';
+}
+function typeAiMessage(msg, text) {
+  if (!msg) return;
+  const box = document.getElementById('ai-chat-messages');
+  const fullText = String(text || '');
+  let index = 0;
+  msg.classList.remove('ai-msg-typing');
+  msg.innerHTML = '';
+  const step = () => {
+    index = Math.min(fullText.length, index + 3);
+    msg.innerHTML = formatAiMessage(fullText.slice(0, index));
+    if (box) box.scrollTop = box.scrollHeight;
+    if (index < fullText.length) {
+      window.setTimeout(step, 13);
+    }
+  };
+  step();
+}
 function formatAiMessage(text) {
   const escaped = escapeHtml(String(text || ''));
   return escaped
@@ -282,6 +304,7 @@ async function askAiHelper() {
   appendAiMessage('user', question);
   input.value = '';
   const thinking = appendAiMessage('bot', 'Sekejap ya, saya semak info H4SX dulu...');
+  setAiTypingBubble(thinking);
   if (answer) answer.textContent = 'Sedang fikir jawapan terbaik...';
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
   try {
@@ -296,7 +319,7 @@ async function askAiHelper() {
     if (/^["')\s.:-]+$/.test(finalAnswer.slice(0, 4)) || /delivery method|private|system instruction|prompt/i.test(finalAnswer.slice(0, 160))) {
       finalAnswer = 'Boleh. Cara beli dekat H4SX mudah saja: pilih item, tekan Buy Now, isi info yang diminta, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016';
     }
-    if (thinking) thinking.innerHTML = formatAiMessage(finalAnswer);
+    typeAiMessage(thinking, finalAnswer);
     if (answer) answer.innerHTML = formatAiMessage(finalAnswer);
   } catch (err) {
     console.warn('AI helper fallback:', err);
@@ -304,7 +327,7 @@ async function askAiHelper() {
     const fallback = errMsg && errMsg !== 'AI belum aktif'
       ? 'AI belum aktif sebab: ' + errMsg
       : 'AI belum aktif sepenuhnya. Buat masa ni, cara beli H4SX: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
-    if (thinking) thinking.innerHTML = formatAiMessage(fallback);
+    typeAiMessage(thinking, fallback);
     if (answer) {
       answer.innerHTML = formatAiMessage(fallback);
     }
