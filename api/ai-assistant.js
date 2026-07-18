@@ -165,8 +165,10 @@ export default async function handler(req, res) {
         lastError = data.error?.message || `${model} failed with status ${response.status}.`;
       }
 
-      console.warn('Gemini helper fallback:', lastError);
-      return res.status(200).json({ answer: finaliseAnswer(buildH4sxFallback()), provider: 'fallback', model: 'h4sx-local' });
+      console.warn('Gemini helper failed:', lastError);
+      if (!openaiKey) {
+        return res.status(200).json({ answer: finaliseAnswer(buildH4sxFallback()), provider: 'fallback', model: 'h4sx-local' });
+      }
     }
 
     const response = await fetch('https://api.openai.com/v1/responses', {
