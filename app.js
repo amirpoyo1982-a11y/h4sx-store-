@@ -218,6 +218,67 @@ function copyReceipt() {
   });
 }
 
+function openAiHelper() {
+  const modal = document.getElementById('ai-helper-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('ai-helper-input')?.focus(), 80);
+}
+function closeAiHelper() {
+  const modal = document.getElementById('ai-helper-modal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  if (!document.getElementById('cart-overlay')?.classList.contains('show') &&
+      !document.getElementById('product-modal')?.classList.contains('show') &&
+      !document.getElementById('changelog-modal')?.classList.contains('show')) {
+    document.body.style.overflow = '';
+  }
+}
+function askAiPreset(text) {
+  const input = document.getElementById('ai-helper-input');
+  if (input) input.value = text;
+  askAiHelper();
+}
+function aiCatalogSnapshot() {
+  return inventory.slice(0, 40).map(item => ({
+    id: item.id,
+    name: item.name,
+    game: item.game,
+    platform: item.platform || inferPlatform(item),
+    price: Number(item.price || 0),
+    stock: Number(item.stock || 0),
+    sold: Number(item.sold || 0),
+    desc: String(item.desc || '').slice(0, 140)
+  }));
+}
+async function askAiHelper() {
+  const input = document.getElementById('ai-helper-input');
+  const answer = document.getElementById('ai-helper-answer');
+  const btn = document.getElementById('ai-helper-send');
+  const question = (input?.value || '').trim();
+  if (!question) { toast('Tulis soalan dulu', true); return; }
+  if (answer) answer.textContent = 'AI sedang fikir cadangan terbaik...';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses'; }
+  try {
+    const res = await fetch('/api/ai-assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, catalog: aiCatalogSnapshot() })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'AI belum aktif');
+    if (answer) answer.textContent = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
+  } catch (err) {
+    console.warn('AI helper fallback:', err);
+    if (answer) {
+      answer.textContent = 'AI belum aktif sepenuhnya. Buat masa ni, pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, dan tekan Buy Now untuk checkout manual melalui WhatsApp.';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tanya AI'; }
+  }
+}
+
 async function getReceiptCanvas() {
   await ensureHtml2Canvas();
   const receiptContent = document.getElementById('receipt-content');
@@ -952,7 +1013,21 @@ async function checkStore() {
     console.log('Data from gist:', d);
     const normalizedConfig = normalizeKedaiConfig(d);
     // Update current config with gist data
-    if (normalizedConfig) currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
+    if (normalizedConfig) {
+      currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
+      if (normalizedConfig.payment) {
+        storeConfig = {
+          ...storeConfig,
+          payment: {
+            ...(storeConfig.payment || {}),
+            ...(normalizedConfig.payment || {}),
+            duitNow: { ...(storeConfig.payment?.duitNow || {}), ...(normalizedConfig.payment?.duitNow || {}) },
+            tng: { ...(storeConfig.payment?.tng || {}), ...(normalizedConfig.payment?.tng || {}) }
+          }
+        };
+        updatePaymentUI();
+      }
+    }
     renderPromoBanner(currentStoreConfig);
     refreshReviewMaintenanceUi();
   }
@@ -1421,7 +1496,18 @@ async function loadInv() {
         
         // Apply and clean config
         if (tempConfig) {
-          storeConfig = { ...storeConfig, ...tempConfig };
+          storeConfig = {
+            ...storeConfig,
+            ...tempConfig,
+            payment: {
+              ...(storeConfig.payment || {}),
+              ...(tempConfig.payment || {}),
+              duitNow: { ...(storeConfig.payment?.duitNow || {}), ...(tempConfig.payment?.duitNow || {}) },
+              tng: { ...(storeConfig.payment?.tng || {}), ...(tempConfig.payment?.tng || {}) }
+            },
+            checkout: { ...(storeConfig.checkout || {}), ...(tempConfig.checkout || {}) },
+            warnBox: { ...(storeConfig.warnBox || {}), ...(tempConfig.warnBox || {}) }
+          };
           if (storeConfig.payment?.duitNow) {
             PAY_QR.duitnow.url = cleanUrl(storeConfig.payment.duitNow.qrUrl) || PAY_QR.duitnow.url;
             PAY_QR.duitnow.name = storeConfig.payment.duitNow.accountName || PAY_QR.duitnow.name;
@@ -2473,6 +2559,7 @@ async function copyJsonHelperOutput() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeSearch(); closeQR(); closeProductImage();
+    closeAiHelper();
     closeJsonHelper();
     if (document.getElementById('changelog-modal')?.classList.contains('show')) dismissChangelog();
   }

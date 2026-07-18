@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=permanent-picker-1">
+  <link rel="stylesheet" href="styles.css?v=ai-helper-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -121,6 +121,7 @@
       <a onclick="openOrderHistory()">Histori</a>
     </div>
     <div class="nav-right">
+      <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="AI Helper"><i class="fa-solid fa-wand-magic-sparkles"></i><span>AI</span></button>
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
       <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
       <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -141,6 +142,7 @@
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
   <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
+  <a onclick="openAiHelper();toggleMenu()"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Helper</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
   <a class="hard-refresh-menu" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
   <a href="https://wa.me/60193263016" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
@@ -184,7 +186,7 @@
       <div>
         <div class="hero-eyebrow"><span class="ey-dot"></span> Kedai Dipercayai</div>
         <h1 class="hero-h1">Beli item <em>Roblox</em><br>dengan lebih<br>yakin.</h1>
-        <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, dan bantuan admin yang responsif.</p>
+        <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, bantuan admin responsif, dan AI Helper untuk pilih item paling ngam ikut bajet anda.</p>
         <div class="hero-stats">
           <div class="hstat"><div class="hstat-n" data-target="400" data-suffix="+">0+</div><div class="hstat-l">Customers</div></div>
           <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">0%</div><div class="hstat-l">Secure</div></div>
@@ -192,6 +194,7 @@
         </div>
         <div class="hero-cta-row">
           <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Browse Collection <i class="fa-solid fa-arrow-right"></i></a>
+          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-solid fa-wand-magic-sparkles"></i> Tanya AI</a>
           <a href="https://wa.me/60193263016" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> Chat Admin</a>
         </div>
         <div class="hero-proof-strip">
@@ -448,6 +451,23 @@
 <button class="music-btn" id="musicBtn" title="Toggle Music">
   <i class="fas fa-music"></i>
 </button>
+<!-- AI HELPER MODAL -->
+<div class="ai-helper-modal" id="ai-helper-modal" onclick="if(event.target===this)closeAiHelper()">
+  <div class="ai-helper-card" role="dialog" aria-modal="true" aria-labelledby="ai-helper-title">
+    <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="ai-helper-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> H4SX AI Helper</div>
+    <h2 id="ai-helper-title">Cari item yang paling ngam</h2>
+    <p>Beritahu bajet, game, atau item yang anda cari. AI akan cadangkan pilihan yang sesuai berdasarkan katalog H4SX STORE.</p>
+    <div class="ai-helper-suggestions">
+      <button onclick="askAiPreset('Bajet saya RM10, cadangkan item Roblox yang berbaloi.')">Bajet RM10</button>
+      <button onclick="askAiPreset('Saya nak item Free Fire yang hot dan trusted, cadangkan.')">Free Fire hot</button>
+      <button onclick="askAiPreset('Saya baru first time beli, apa item yang sesuai untuk mula?')">First time beli</button>
+    </div>
+    <textarea id="ai-helper-input" maxlength="500" placeholder="Contoh: Saya nak beli item Roblox bawah RM20, yang proses cepat dan stok ada."></textarea>
+    <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()"><i class="fa-solid fa-paper-plane"></i> Tanya AI</button>
+    <div class="ai-helper-answer" id="ai-helper-answer">AI belum dijawab. Tulis soalan dulu atau pilih cadangan di atas.</div>
+  </div>
+</div>
 <!-- CART -->
 <div class="overlay" id="cart-overlay" onclick="ocClose(event)">
   <div class="cart-box">
@@ -615,7 +635,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=order-history-11"></script>
+<script defer src="app.js?v=ai-helper-1"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">
