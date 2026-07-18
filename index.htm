@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-helper-name-1">
+  <link rel="stylesheet" href="styles.css?v=h4sx-helper-prompts-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -468,9 +468,13 @@
     </div>
     <div class="ai-chat-status"><span></span> Online bantu cara beli, stok, harga, resit & support H4SX.</div>
     <div class="ai-helper-suggestions">
+      <button onclick="askAiPreset('Harga paling murah apa?')">Murah</button>
       <button onclick="askAiPreset('Macam mana cara beli dekat H4SX?')">Cara beli</button>
-      <button onclick="askAiPreset('Lepas bayar saya kena buat apa?')">Lepas bayar?</button>
-      <button onclick="askAiPreset('Saya nak tanya admin untuk maklumat lanjut.')">Tanya admin</button>
+      <button onclick="askAiPreset('Berapa lama proses order?')">Proses</button>
+      <button onclick="askAiPreset('Lepas bayar saya kena buat apa?')">Resit</button>
+      <button onclick="askAiPreset('Beli dekat H4SX safe tak?')">Safe</button>
+      <button onclick="askAiPreset('Boleh bagi link review pelanggan?')">Review</button>
+      <button onclick="askAiPreset('Saya nak tanya admin untuk maklumat lanjut.')">Admin</button>
     </div>
     <div class="ai-chat-messages" id="ai-chat-messages">
       <div class="ai-msg ai-msg-bot">Hai, saya H4SX Helper. Tanya pasal cara beli, stok, harga, resit, checkout, atau link website H4SX. Kalau nak admin terus pun saya boleh bagi link WhatsApp.</div>
@@ -649,7 +653,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-helper-name-1"></script>
+<script defer src="app.js?v=h4sx-helper-prompts-1"></script>
 
 </body>
 </html>

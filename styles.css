@@ -2245,12 +2245,17 @@ details.faq[open] .faq-ic {
 }
 .ai-helper-suggestions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   padding: 0 14px 10px;
   margin: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.ai-helper-suggestions::-webkit-scrollbar { display: none; }
 .ai-helper-suggestions button {
+  flex: 0 0 auto;
   border: 1px solid rgba(18,140,126,.2);
   background: rgba(255,255,255,.82);
   color: #075e54;
@@ -2384,7 +2389,7 @@ details.faq[open] .faq-ic {
     height: min(620px, calc(100vh - 96px));
     border-radius: 22px;
   }
-  .ai-helper-suggestions { display: grid; grid-template-columns: 1fr; }
+  .ai-helper-suggestions { display: flex; }
 }
 
 /* Product modal ? full image gist */
