@@ -288,15 +288,30 @@ function formatAiMessage(text) {
     .replace(/\n/g, '<br>');
 }
 function aiCatalogSnapshot() {
-  return inventory.slice(0, 40).map(item => ({
+  const input = document.getElementById('ai-helper-input');
+  const query = String(input?.value || '').toLowerCase();
+  const words = query.split(/[^a-z0-9]+/i).filter(word => word.length > 2);
+  const scored = inventory.map((item, index) => {
+    const haystack = [item.name, item.game, item.platform, item.gameGroup, item.subcategory, item.desc]
+      .map(value => String(value || '').toLowerCase())
+      .join(' ');
+    const score = words.reduce((total, word) => total + (haystack.includes(word) ? 1 : 0), 0);
+    return { item, index, score };
+  });
+  return scored
+    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .slice(0, 120)
+    .map(({ item }) => ({
     id: item.id,
     name: item.name,
     game: item.game,
     platform: item.platform || inferPlatform(item),
+    gameGroup: item.gameGroup,
+    subcategory: item.subcategory,
     price: Number(item.price || 0),
     stock: Number(item.stock || 0),
     sold: Number(item.sold || 0),
-    desc: String(item.desc || '').slice(0, 140)
+    desc: String(item.desc || '').slice(0, 220)
   }));
 }
 async function askAiHelper() {

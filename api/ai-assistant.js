@@ -13,15 +13,17 @@ export default async function handler(req, res) {
   try {
     const { question = '', catalog = [] } = req.body || {};
     const cleanQuestion = String(question).trim().slice(0, 500);
-    const safeCatalog = Array.isArray(catalog) ? catalog.slice(0, 40).map(item => ({
+    const safeCatalog = Array.isArray(catalog) ? catalog.slice(0, 120).map(item => ({
       id: item.id,
       name: String(item.name || '').slice(0, 80),
       game: String(item.game || '').slice(0, 60),
       platform: String(item.platform || '').slice(0, 30),
+      gameGroup: String(item.gameGroup || '').slice(0, 60),
+      subcategory: String(item.subcategory || '').slice(0, 60),
       price: Number(item.price || 0),
       stock: Number(item.stock || 0),
       sold: Number(item.sold || 0),
-      desc: String(item.desc || '').slice(0, 140)
+      desc: String(item.desc || '').slice(0, 220)
     })) : [];
 
     if (!cleanQuestion) return res.status(400).json({ error: 'Soalan kosong.' });
@@ -34,13 +36,15 @@ export default async function handler(req, res) {
       'Gunakan katalog sebagai rujukan produk. Jangan reka stok, harga, item, promosi, polisi, atau delivery time yang tiada dalam data.',
       'Jika customer tanya cara beli atau lepas bayar perlu buat apa, jawab begini secara natural: pilih item, tekan Buy Now atau Add to Cart, isi info/username yang diminta, bayar melalui QR DuitNow/TNG, screenshot resit, kemudian hantar resit ke WhatsApp admin untuk proses order.',
       'Link WhatsApp admin wajib diberi bila customer mahu tanya lanjut, perlukan admin, mahu hantar resit, ada masalah order, refund, bukti bayaran, order private, atau info tiada dalam katalog: https://wa.me/60193263016',
+      'Jika customer minta agent, nombor, link admin, atau chat admin, tulis link penuh https://wa.me/60193263016 dalam jawapan. Jangan tulis "di bawah" jika tiada link.',
+      'Untuk Brookhaven, istilah gamepass, game pass, pass, VIP, Premium, Music, Vehicle, Estate dan Speed Vehicle merujuk kepada item Brookhaven jika ada dalam katalog.',
       'Jika customer minta link website atau tanya nak tengok review, beri dua link ini: Website utama https://h4sx-store.vercel.app/ dan Website review https://review-customer-six.vercel.app/',
       'Jika customer tanya cadangan item, cadangkan 1 hingga 3 item sahaja dengan sebab ringkas.',
       'Jangan minta password kecuali item memang perlukan login dan customer sedang checkout.',
       'Pastikan setiap jawapan ringkas, jelas, dan tidak lebih kurang 6 baris kecuali customer minta detail.'
     ].join(' ');
     const catalogText = safeCatalog.length
-      ? safeCatalog.map(item => `- [${item.id}] ${item.name} | ${item.game || item.platform || 'Game'} | RM${item.price.toFixed(2)} | stok ${item.stock} | sold ${item.sold}${item.desc ? ' | ' + item.desc : ''}`).join('\n')
+      ? safeCatalog.map(item => `- [${item.id}] ${item.name} | ${item.game || item.gameGroup || item.platform || 'Game'}${item.subcategory ? ' | ' + item.subcategory : ''} | RM${item.price.toFixed(2)} | stok ${item.stock} | sold ${item.sold}${item.desc ? ' | ' + item.desc : ''}`).join('\n')
       : 'Katalog belum dimuatkan.';
     const userPayload = `Soalan customer: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk:\n${catalogText}\n\nJawab customer secara natural sebagai WhatsApp AI H4SX STORE.`;
     function cleanAiAnswer(value) {
@@ -51,6 +55,39 @@ export default async function handler(req, res) {
         .replace(/\n{3,}/g, '\n\n')
         .trim()
         .slice(0, 1200);
+    }
+    function includesAny(text, words) {
+      const lower = String(text || '').toLowerCase();
+      return words.some(word => lower.includes(word));
+    }
+    function findCatalogItems(words) {
+      return safeCatalog.filter(item => {
+        const haystack = [item.name, item.game, item.platform, item.gameGroup, item.subcategory, item.desc]
+          .map(value => String(value || '').toLowerCase())
+          .join(' ');
+        return words.some(word => haystack.includes(word));
+      });
+    }
+    function buildCatalogAnswer(title, items) {
+      const lines = items.slice(0, 4).map(item => {
+        const stockText = Number(item.stock || 0) > 0 ? `stok ${item.stock}` : 'stok kena semak';
+        return `- ${item.name} RM${item.price.toFixed(2)} (${stockText})`;
+      });
+      return `${title}\n${lines.join('\n')}\n\nNak saya bantu terus, boleh chat admin: https://wa.me/60193263016`;
+    }
+    function finaliseAnswer(answer) {
+      const q = cleanQuestion.toLowerCase();
+      let finalAnswer = cleanAiAnswer(answer);
+      const wantsAdmin = includesAny(q, ['agent', 'admin', 'nombor', 'number', 'phone', 'whatsapp', 'link', 'chat', 'tanya lanjut', 'maklumat lanjut']);
+      const asksBrookhaven = includesAny(q, ['brookhaven', 'gamepass', 'game pass', 'vip', 'premium', 'music unlocked', 'vehicle', 'estate']);
+      const brookhavenItems = findCatalogItems(['brookhaven', 'vip gamepass', 'premium gamepass', 'music unlocked', 'vehicle customization', 'vehicle pack', 'estate unlocked', 'speed vehicle']);
+      if (asksBrookhaven && /tiada|tak ada|tidak ada|belum ada|bukan dalam katalog/i.test(finalAnswer) && brookhavenItems.length) {
+        finalAnswer = buildCatalogAnswer('Ada boss. Untuk Brookhaven, antara item yang ada:', brookhavenItems);
+      }
+      if ((wantsAdmin || /whatsapp|admin|di bawah/i.test(finalAnswer)) && !/https:\/\/wa\.me\/60193263016/i.test(finalAnswer)) {
+        finalAnswer += '\n\nWhatsApp admin H4SX: https://wa.me/60193263016';
+      }
+      return finalAnswer.slice(0, 1200);
     }
 
     if (geminiKey) {
@@ -88,7 +125,7 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         if (response.ok) {
-          const answer = cleanAiAnswer(data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n'));
+          const answer = finaliseAnswer(data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n'));
           return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'gemini', model });
         }
 
@@ -119,7 +156,7 @@ export default async function handler(req, res) {
       return res.status(response.status).json({ error: data.error?.message || 'OpenAI request failed.' });
     }
 
-    const answer = cleanAiAnswer(data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n'));
+    const answer = finaliseAnswer(data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n'));
     return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'openai' });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Server error.' });
