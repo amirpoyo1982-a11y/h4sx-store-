@@ -282,7 +282,10 @@ async function askAiHelper() {
     if (answer) answer.textContent = finalAnswer;
   } catch (err) {
     console.warn('AI helper fallback:', err);
-    const fallback = 'AI belum aktif sepenuhnya. Buat masa ni, saya cadangkan pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, kemudian tekan Buy Now untuk checkout manual melalui WhatsApp.';
+    const errMsg = String(err?.message || '').trim();
+    const fallback = errMsg && errMsg !== 'AI belum aktif'
+      ? 'AI belum aktif sebab: ' + errMsg
+      : 'AI belum aktif sepenuhnya. Buat masa ni, saya cadangkan pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, kemudian tekan Buy Now untuk checkout manual melalui WhatsApp.';
     if (thinking) thinking.textContent = fallback;
     if (answer) {
       answer.textContent = fallback;

@@ -30,37 +30,48 @@ export default async function handler(req, res) {
     const userPayload = JSON.stringify({ question: cleanQuestion, catalog: safeCatalog });
 
     if (geminiKey) {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: {
-          'x-goog-api-key': geminiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: userPayload }]
-            }
-          ],
-          generationConfig: {
-            maxOutputTokens: 420,
-            temperature: 0.45
-          }
-        })
-      });
+      const models = Array.from(new Set([
+        process.env.GEMINI_MODEL,
+        'gemini-2.5-flash',
+        'gemini-3.5-flash',
+        'gemini-1.5-flash'
+      ].filter(Boolean)));
+      let lastError = 'Gemini request failed.';
 
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json({ error: data.error?.message || 'Gemini request failed.' });
+      for (const model of models) {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+          method: 'POST',
+          headers: {
+            'x-goog-api-key': geminiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: systemPrompt }]
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: userPayload }]
+              }
+            ],
+            generationConfig: {
+              maxOutputTokens: 420,
+              temperature: 0.45
+            }
+          })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          const answer = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n').trim();
+          return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'gemini', model });
+        }
+
+        lastError = data.error?.message || `${model} failed with status ${response.status}.`;
       }
 
-      const answer = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n').trim();
-      return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'gemini' });
+      return res.status(502).json({ error: lastError });
     }
 
     const response = await fetch('https://api.openai.com/v1/responses', {
