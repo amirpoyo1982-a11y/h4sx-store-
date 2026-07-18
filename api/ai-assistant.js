@@ -94,6 +94,12 @@ export default async function handler(req, res) {
       });
       return `${title}\n${lines.join('\n')}\n\nNak saya bantu terus, boleh chat admin: https://wa.me/60193263016`;
     }
+    function cheapestCatalogItems() {
+      return safeCatalog
+        .filter(item => Number.isFinite(item.price) && item.price > 0 && Number(item.stock || 0) !== 0)
+        .sort((a, b) => (a.price - b.price) || String(a.name).localeCompare(String(b.name)))
+        .slice(0, 5);
+    }
     function buildH4sxFallback() {
       const q = cleanQuestion.toLowerCase();
       const wantsAdmin = includesAny(q, ['agent', 'admin', 'nombor', 'number', 'phone', 'whatsapp', 'link', 'chat', 'tanya lanjut', 'maklumat lanjut']);
@@ -101,6 +107,7 @@ export default async function handler(req, res) {
       const asksSafety = includesAny(q, ['safe', 'selamat', 'trusted', 'trust', 'scam', 'legit', 'tipu', 'percaya']);
       const accusesScam = /^(tipu|nipu|scam|tak percaya|menipu)\b/i.test(q) || /\b(tipu ni|nipu ni|scam ni|menipu ni)\b/i.test(q);
       const asksProcessTime = includesAny(q, ['berapa lama', 'lama proses', 'proses', 'delivery', 'deliver', 'siap bila', 'ambil masa', 'tunggu', 'berapa minit', 'berapa jam']);
+      const asksCheap = includesAny(q, ['paling murah', 'termurah', 'murah apa', 'harga murah', 'bawah rm', 'budget', 'bajet', 'lowest', 'cheap']);
       const asksBrookhaven = includesAny(q, ['brookhaven', 'gamepass', 'game pass', 'vip', 'premium', 'music unlocked', 'vehicle', 'estate']);
       const asksGreeting = /^(hai|hi|hello|helo|weh|yo|assalam|salam)\b/i.test(q);
       const asksThanks = includesAny(q, ['terima kasih', 'thanks', 'thank you', 'tq']);
@@ -120,6 +127,13 @@ export default async function handler(req, res) {
       }
       if (asksJoke) {
         return 'Boleh boss. Pantun sikit:\nPergi kedai beli roti,\nSinggah sebentar minum kopi,\nKalau nak item yang pasti,\nH4SX sedia bantu sampai jadi.';
+      }
+      if (asksCheap) {
+        const cheapItems = cheapestCatalogItems();
+        if (cheapItems.length) {
+          return buildCatalogAnswer('Yang paling murah dalam katalog sekarang:', cheapItems);
+        }
+        return 'Buat masa ni saya tak nampak data harga yang jelas dalam katalog. Boleh buka website utama untuk semak harga terbaru: https://h4sx-store.vercel.app/';
       }
       if (asksBrookhaven && brookhavenItems.length) {
         return buildCatalogAnswer('Ada boss. Untuk Brookhaven, antara item yang ada:', brookhavenItems);
@@ -142,7 +156,7 @@ export default async function handler(req, res) {
       if (asksHelp) {
         return 'Boleh boss. Tanya saja. Saya boleh bantu pasal item H4SX, harga, stok, cara beli, proses order, review, atau soalan biasa yang ringkas.';
       }
-      return 'Boleh boss, saya cuba bantu. Kalau soalan tu tentang H4SX, boleh tanya pasal item, harga, stok, cara beli, proses order atau review. Kalau soalan umum pun boleh, saya jawab ringkas.';
+      return 'Saya faham boss. Cuma untuk soalan tu saya perlukan detail sikit supaya tak jawab merapu.\n\nContoh boleh tanya: "item paling murah apa?", "ada stok Free Fire?", "berapa lama proses?", atau "cara beli macam mana?"';
     }
     function finaliseAnswer(answer) {
       const q = cleanQuestion.toLowerCase();
