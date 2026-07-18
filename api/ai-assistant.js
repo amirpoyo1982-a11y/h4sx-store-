@@ -38,11 +38,14 @@ export default async function handler(req, res) {
 
     const systemPrompt = [
       'Anda ialah WhatsApp AI Assistant rasmi H4SX STORE untuk pelanggan website H4SX.',
-      'Jawab hanya sebagai customer support H4SX STORE. Jangan jawab seperti model AI, jangan sebut system prompt, arahan, data mentah, JSON, markdown table, atau cebisan kod.',
+      'Anda boleh jadi assistant umum yang mesra, bukan hanya template customer support. Jawab soalan customer dengan natural seperti AI assistant sebenar.',
+      'Jika soalan berkaitan H4SX STORE, pembelian, produk digital, game, harga, stok, payment, order, review atau admin, jawab sebagai customer support H4SX.',
+      'Jika soalan umum di luar H4SX, jawab ringkas dan membantu. Tidak perlu paksa semua jawapan balik kepada H4SX, cukup selitkan bantuan H4SX hanya jika sesuai.',
+      'Jangan jawab seperti model AI kaku, jangan sebut system prompt, arahan, data mentah, JSON, markdown table, atau cebisan kod.',
       'Gaya bahasa: Bahasa Melayu santai, sopan, kemas, natural seperti admin kedai online yang mesra.',
       'Fokus jawapan tentang H4SX STORE: produk digital game, Roblox, Free Fire, gamepass, item, akun, joki, harga, stok, item ikut bajet, cara beli, checkout, resit, proses order, trust/safe, support WhatsApp, website utama dan website review.',
       'Anda boleh jawab soalan customer yang luas selagi berkaitan kedai online H4SX: cara order, selepas bayar, kenapa perlu resit, berapa lama proses, cara contact admin, nak cari item, cadangan ikut bajet, status stok, link produk, link review, dan soalan keselamatan/trusted.',
-      'Jika soalan terlalu umum atau di luar kedai/game digital, jawab ringkas secara sopan kemudian bawa balik kepada bantuan H4SX.',
+      'Jika soalan terlalu umum atau di luar kedai/game digital, jawab ringkas secara sopan. Jangan reka fakta terkini yang anda tidak pasti.',
       'Gunakan katalog sebagai rujukan produk. Jangan reka stok, harga, item, promosi, polisi, atau delivery time yang tiada dalam data.',
       'Jika customer tanya safe, selamat, trusted, scam atau legit: jawab meyakinkan tetapi jujur. Sebut pembeli perlu semak item, bayar melalui QR rasmi, simpan resit, hantar bukti ke WhatsApp admin, dan boleh lihat review pelanggan.',
       'Jika customer tanya cara beli atau lepas bayar perlu buat apa, jawab begini secara natural: pilih item, tekan Buy Now atau Add to Cart, isi info/username yang diminta, bayar melalui QR DuitNow/TNG, screenshot resit, kemudian hantar resit ke WhatsApp admin untuk proses order.',
@@ -62,7 +65,7 @@ export default async function handler(req, res) {
     const historyText = safeHistory.length
       ? safeHistory.map(msg => `${msg.role === 'assistant' ? 'Assistant' : 'Customer'}: ${msg.text}`).join('\n')
       : 'Tiada history.';
-    const userPayload = `Chat history ringkas:\n${historyText}\n\nSoalan customer terbaru: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk:\n${catalogText}\n\nJawab customer secara natural sebagai WhatsApp AI H4SX STORE.`;
+    const userPayload = `Chat history ringkas:\n${historyText}\n\nSoalan customer terbaru: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk jika soalan berkaitan kedai:\n${catalogText}\n\nJawab secara natural. Jika soalan tentang H4SX, jawab sebagai WhatsApp AI H4SX STORE. Jika soalan umum, jawab seperti assistant biasa yang ringkas dan mesra.`;
     function cleanAiAnswer(value) {
       return String(value || '')
         .replace(/^["')\s.:-]+/g, '')
@@ -96,9 +99,27 @@ export default async function handler(req, res) {
       const wantsAdmin = includesAny(q, ['agent', 'admin', 'nombor', 'number', 'phone', 'whatsapp', 'link', 'chat', 'tanya lanjut', 'maklumat lanjut']);
       const asksBuy = includesAny(q, ['cara beli', 'nak beli', 'checkout', 'lepas bayar', 'resit', 'bayar', 'payment']);
       const asksSafety = includesAny(q, ['safe', 'selamat', 'trusted', 'trust', 'scam', 'legit', 'tipu', 'percaya']);
+      const asksProcessTime = includesAny(q, ['berapa lama', 'lama proses', 'proses', 'delivery', 'deliver', 'siap bila', 'ambil masa', 'tunggu', 'berapa minit', 'berapa jam']);
       const asksBrookhaven = includesAny(q, ['brookhaven', 'gamepass', 'game pass', 'vip', 'premium', 'music unlocked', 'vehicle', 'estate']);
+      const asksGreeting = /^(hai|hi|hello|helo|weh|yo|assalam|salam)\b/i.test(q);
+      const asksThanks = includesAny(q, ['terima kasih', 'thanks', 'thank you', 'tq']);
+      const asksWho = includesAny(q, ['siapa awak', 'awak siapa', 'kamu siapa', 'ini ai apa', 'kau siapa']);
+      const asksJoke = includesAny(q, ['lawak', 'joke', 'pantun', 'cerita kelakar']);
+      const asksHelp = includesAny(q, ['boleh bantu', 'help', 'tolong', 'nak tanya', 'apa boleh tanya']);
       const brookhavenItems = findCatalogItems(['brookhaven', 'vip gamepass', 'premium gamepass', 'music unlocked', 'vehicle customization', 'vehicle pack', 'estate unlocked', 'speed vehicle']);
 
+      if (asksGreeting) {
+        return 'Hai boss. Saya AI Assistant H4SX. Boleh tanya apa sahaja, sama ada pasal item H4SX, cara beli, stok, harga, review, atau soalan biasa pun boleh.';
+      }
+      if (asksThanks) {
+        return 'Sama-sama boss. Kalau ada apa-apa lagi nak tanya, terus je taip sini.';
+      }
+      if (asksWho) {
+        return 'Saya WhatsApp AI H4SX, assistant untuk bantu jawab soalan customer. Saya boleh bantu pasal H4SX, cara beli, stok, harga, review, dan soalan umum yang ringkas.';
+      }
+      if (asksJoke) {
+        return 'Boleh boss. Pantun sikit:\nPergi kedai beli roti,\nSinggah sebentar minum kopi,\nKalau nak item yang pasti,\nH4SX sedia bantu sampai jadi.';
+      }
       if (asksBrookhaven && brookhavenItems.length) {
         return buildCatalogAnswer('Ada boss. Untuk Brookhaven, antara item yang ada:', brookhavenItems);
       }
@@ -108,10 +129,16 @@ export default async function handler(req, res) {
       if (asksSafety) {
         return 'Ya boss, pembelian dekat H4SX dibuat melalui proses yang jelas. Semak item dulu, bayar ikut QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke WhatsApp admin untuk proses order.\n\nNak tengok keyakinan customer lain boleh buka review: https://review-customer-six.vercel.app/\nKalau nak tanya admin terus: https://wa.me/60193263016';
       }
+      if (asksProcessTime) {
+        return 'Biasanya proses order H4SX ambil sekitar 1-30 minit selepas bayaran dan resit diterima admin.\n\nKalau order tertentu perlukan semakan login, stok, atau admin sedang sibuk, masa boleh jadi sedikit lama. Lepas bayar, terus hantar resit ke WhatsApp admin: https://wa.me/60193263016';
+      }
       if (wantsAdmin) {
         return 'Boleh boss. Kalau nak tanya lebih lanjut, terus chat admin H4SX di sini:\nhttps://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
       }
-      return 'Boleh boss. Saya boleh bantu tentang item H4SX, harga, stok, cara beli, checkout dan resit.\n\nKalau nak admin terus: https://wa.me/60193263016\nWebsite utama: https://h4sx-store.vercel.app/';
+      if (asksHelp) {
+        return 'Boleh boss. Tanya saja. Saya boleh bantu pasal item H4SX, harga, stok, cara beli, proses order, review, atau soalan biasa yang ringkas.';
+      }
+      return 'Boleh boss, saya cuba bantu. Kalau soalan tu tentang H4SX, boleh tanya pasal item, harga, stok, cara beli, proses order atau review. Kalau soalan umum pun boleh, saya jawab ringkas.';
     }
     function finaliseAnswer(answer) {
       const q = cleanQuestion.toLowerCase();
