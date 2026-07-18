@@ -222,23 +222,29 @@ function openAiHelper() {
   const modal = document.getElementById('ai-helper-modal');
   if (!modal) return;
   modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
+  document.getElementById('ai-float-bubble')?.classList.add('is-hidden');
   setTimeout(() => document.getElementById('ai-helper-input')?.focus(), 80);
 }
 function closeAiHelper() {
   const modal = document.getElementById('ai-helper-modal');
   if (!modal) return;
   modal.classList.remove('show');
-  if (!document.getElementById('cart-overlay')?.classList.contains('show') &&
-      !document.getElementById('product-modal')?.classList.contains('show') &&
-      !document.getElementById('changelog-modal')?.classList.contains('show')) {
-    document.body.style.overflow = '';
-  }
+  document.getElementById('ai-float-bubble')?.classList.remove('is-hidden');
 }
 function askAiPreset(text) {
   const input = document.getElementById('ai-helper-input');
   if (input) input.value = text;
   askAiHelper();
+}
+function appendAiMessage(type, text) {
+  const box = document.getElementById('ai-chat-messages');
+  if (!box) return null;
+  const msg = document.createElement('div');
+  msg.className = 'ai-msg ' + (type === 'user' ? 'ai-msg-user' : 'ai-msg-bot');
+  msg.textContent = text;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+  return msg;
 }
 function aiCatalogSnapshot() {
   return inventory.slice(0, 40).map(item => ({
@@ -258,8 +264,11 @@ async function askAiHelper() {
   const btn = document.getElementById('ai-helper-send');
   const question = (input?.value || '').trim();
   if (!question) { toast('Tulis soalan dulu', true); return; }
-  if (answer) answer.textContent = 'AI sedang fikir cadangan terbaik...';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses'; }
+  appendAiMessage('user', question);
+  input.value = '';
+  const thinking = appendAiMessage('bot', 'Sedang fikir jawapan terbaik...');
+  if (answer) answer.textContent = 'Sedang fikir jawapan terbaik...';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
   try {
     const res = await fetch('/api/ai-assistant', {
       method: 'POST',
@@ -268,16 +277,29 @@ async function askAiHelper() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'AI belum aktif');
-    if (answer) answer.textContent = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
+    const finalAnswer = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
+    if (thinking) thinking.textContent = finalAnswer;
+    if (answer) answer.textContent = finalAnswer;
   } catch (err) {
     console.warn('AI helper fallback:', err);
+    const fallback = 'AI belum aktif sepenuhnya. Buat masa ni, saya cadangkan pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, kemudian tekan Buy Now untuk checkout manual melalui WhatsApp.';
+    if (thinking) thinking.textContent = fallback;
     if (answer) {
-      answer.textContent = 'AI belum aktif sepenuhnya. Buat masa ni, pilih item ikut bajet dan stok: cari produk yang ada stok, harga sesuai, dan tekan Buy Now untuk checkout manual melalui WhatsApp.';
+      answer.textContent = fallback;
     }
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Tanya AI'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>'; }
   }
 }
+document.addEventListener('DOMContentLoaded', () => {
+  const aiInput = document.getElementById('ai-helper-input');
+  aiInput?.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      askAiHelper();
+    }
+  });
+});
 
 async function getReceiptCanvas() {
   await ensureHtml2Canvas();

@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <link rel="stylesheet" href="styles.css?v=ai-helper-1">
+  <link rel="stylesheet" href="styles.css?v=ai-side-assistant-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -451,22 +451,36 @@
 <button class="music-btn" id="musicBtn" title="Toggle Music">
   <i class="fas fa-music"></i>
 </button>
-<!-- AI HELPER MODAL -->
-<div class="ai-helper-modal" id="ai-helper-modal" onclick="if(event.target===this)closeAiHelper()">
-  <div class="ai-helper-card" role="dialog" aria-modal="true" aria-labelledby="ai-helper-title">
-    <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
-    <div class="ai-helper-kicker"><i class="fa-solid fa-wand-magic-sparkles"></i> H4SX AI Helper</div>
-    <h2 id="ai-helper-title">Cari item yang paling ngam</h2>
-    <p>Beritahu bajet, game, atau item yang anda cari. AI akan cadangkan pilihan yang sesuai berdasarkan katalog H4SX STORE.</p>
+<!-- AI SIDE ASSISTANT -->
+<div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
+  <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX AI Assistant">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <span class="ai-float-dot"></span>
+  </button>
+  <aside class="ai-chat-panel" id="ai-helper-modal" role="dialog" aria-modal="false" aria-labelledby="ai-helper-title">
+    <div class="ai-chat-head">
+      <div class="ai-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <div>
+        <div class="ai-helper-kicker">H4SX AI Assistant</div>
+        <h2 id="ai-helper-title">Tanya apa sahaja</h2>
+      </div>
+      <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="ai-chat-status"><span></span> Online untuk bantu pilih item, harga, stok, checkout & support.</div>
     <div class="ai-helper-suggestions">
       <button onclick="askAiPreset('Bajet saya RM10, cadangkan item Roblox yang berbaloi.')">Bajet RM10</button>
       <button onclick="askAiPreset('Saya nak item Free Fire yang hot dan trusted, cadangkan.')">Free Fire hot</button>
-      <button onclick="askAiPreset('Saya baru first time beli, apa item yang sesuai untuk mula?')">First time beli</button>
+      <button onclick="askAiPreset('Macam mana cara checkout dan hantar resit?')">Cara checkout</button>
     </div>
-    <textarea id="ai-helper-input" maxlength="500" placeholder="Contoh: Saya nak beli item Roblox bawah RM20, yang proses cepat dan stok ada."></textarea>
-    <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()"><i class="fa-solid fa-paper-plane"></i> Tanya AI</button>
-    <div class="ai-helper-answer" id="ai-helper-answer">AI belum dijawab. Tulis soalan dulu atau pilih cadangan di atas.</div>
-  </div>
+    <div class="ai-chat-messages" id="ai-chat-messages">
+      <div class="ai-msg ai-msg-bot">Hai, saya AI H4SX. Tanya apa sahaja tentang produk, bajet, stok, cara beli, atau item yang sesuai. Saya akan jawab berdasarkan katalog H4SX STORE.</div>
+    </div>
+    <div class="ai-chat-compose">
+      <textarea id="ai-helper-input" maxlength="500" placeholder="Tanya AI... contoh: item apa sesuai bawah RM20?"></textarea>
+      <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()" aria-label="Hantar soalan"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+    <div class="ai-helper-answer" id="ai-helper-answer" hidden></div>
+  </aside>
 </div>
 <!-- CART -->
 <div class="overlay" id="cart-overlay" onclick="ocClose(event)">
@@ -635,7 +649,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=ai-helper-1"></script>
+<script defer src="app.js?v=ai-side-assistant-1"></script>
 
 <!-- Tawk.to Configuration -->
 <script type="text/javascript">

@@ -4,9 +4,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({ error: 'AI helper belum aktif. Set OPENAI_API_KEY di Vercel Environment Variables.' });
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!geminiKey && !openaiKey) {
+    return res.status(503).json({ error: 'AI helper belum aktif. Set GEMINI_API_KEY atau OPENAI_API_KEY di Vercel Environment Variables.' });
   }
 
   try {
@@ -25,23 +26,54 @@ export default async function handler(req, res) {
 
     if (!cleanQuestion) return res.status(400).json({ error: 'Soalan kosong.' });
 
+    const systemPrompt = 'Anda ialah AI Assistant rasmi H4SX STORE untuk pelanggan. Jawab dalam Bahasa Melayu santai, kemas dan meyakinkan. Bantu customer tentang produk digital game, cadangan item ikut bajet, stok, harga, cara checkout, cara hantar resit, waktu proses, support WhatsApp, dan soalan biasa kedai. Gunakan katalog yang diberi sebagai sumber produk; jangan reka stok, harga, item, promosi, atau polisi yang tiada dalam data. Jika soalan perlukan admin, refund, masalah akaun, bukti bayaran, order private, atau maklumat tiada dalam katalog, jawab ringkas dan arahkan customer WhatsApp admin H4SX STORE. Jangan minta password kecuali item memang perlukan login dan customer sedang checkout. Cadangkan 1-3 item sahaja bila relevan.';
+    const userPayload = JSON.stringify({ question: cleanQuestion, catalog: safeCatalog });
+
+    if (geminiKey) {
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': geminiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: userPayload }]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 420,
+            temperature: 0.45
+          }
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json({ error: data.error?.message || 'Gemini request failed.' });
+      }
+
+      const answer = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('\n').trim();
+      return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'gemini' });
+    }
+
     const response = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
         input: [
-          {
-            role: 'system',
-            content: 'Anda ialah pembantu jualan H4SX STORE. Jawab dalam Bahasa Melayu santai, ringkas, jujur, dan fokus kepada produk digital game. Jangan reka stok atau harga luar katalog. Cadangkan 1-3 item sahaja dan suruh pelanggan checkout/WhatsApp jika sesuai.'
-          },
-          {
-            role: 'user',
-            content: JSON.stringify({ question: cleanQuestion, catalog: safeCatalog })
-          }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPayload }
         ],
         max_output_tokens: 420
       })
@@ -53,7 +85,7 @@ export default async function handler(req, res) {
     }
 
     const answer = data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n').trim();
-    return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.' });
+    return res.status(200).json({ answer: answer || 'Maaf, AI tak dapat beri cadangan buat masa ini.', provider: 'openai' });
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Server error.' });
   }
