@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     if (!cleanQuestion) return res.status(400).json({ error: 'Soalan kosong.' });
 
     const systemPrompt = [
-      'Anda ialah WhatsApp AI Assistant rasmi H4SX STORE untuk pelanggan website H4SX.',
+      'Anda ialah H4SX Helper, pembantu rasmi H4SX STORE untuk pelanggan website H4SX.',
       'Anda boleh jadi assistant umum yang mesra, bukan hanya template customer support. Jawab soalan customer dengan natural seperti AI assistant sebenar.',
       'Jika soalan berkaitan H4SX STORE, pembelian, produk digital, game, harga, stok, payment, order, review atau admin, jawab sebagai customer support H4SX.',
       'Jika soalan umum di luar H4SX, jawab ringkas dan membantu. Tidak perlu paksa semua jawapan balik kepada H4SX, cukup selitkan bantuan H4SX hanya jika sesuai.',
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     const historyText = safeHistory.length
       ? safeHistory.map(msg => `${msg.role === 'assistant' ? 'Assistant' : 'Customer'}: ${msg.text}`).join('\n')
       : 'Tiada history.';
-    const userPayload = `Chat history ringkas:\n${historyText}\n\nSoalan customer terbaru: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk jika soalan berkaitan kedai:\n${catalogText}\n\nJawab secara natural. Jika soalan tentang H4SX, jawab sebagai WhatsApp AI H4SX STORE. Jika soalan umum, jawab seperti assistant biasa yang ringkas dan mesra.`;
+    const userPayload = `Chat history ringkas:\n${historyText}\n\nSoalan customer terbaru: ${cleanQuestion}\n\nKatalog H4SX yang boleh dirujuk jika soalan berkaitan kedai:\n${catalogText}\n\nJawab secara natural. Jika soalan tentang H4SX, jawab sebagai H4SX Helper. Jika soalan umum, jawab seperti assistant biasa yang ringkas dan mesra.`;
     function cleanAiAnswer(value) {
       return String(value || '')
         .replace(/^["')\s.:-]+/g, '')
@@ -117,13 +117,13 @@ export default async function handler(req, res) {
       const brookhavenItems = findCatalogItems(['brookhaven', 'vip gamepass', 'premium gamepass', 'music unlocked', 'vehicle customization', 'vehicle pack', 'estate unlocked', 'speed vehicle']);
 
       if (asksGreeting) {
-        return 'Hai boss. Saya AI Assistant H4SX. Boleh tanya apa sahaja, sama ada pasal item H4SX, cara beli, stok, harga, review, atau soalan biasa pun boleh.';
+        return 'Hai boss. Saya H4SX Helper. Boleh tanya apa sahaja, sama ada pasal item H4SX, cara beli, stok, harga, review, atau soalan biasa pun boleh.';
       }
       if (asksThanks) {
         return 'Sama-sama boss. Kalau ada apa-apa lagi nak tanya, terus je taip sini.';
       }
       if (asksWho) {
-        return 'Saya WhatsApp AI H4SX, assistant untuk bantu jawab soalan customer. Saya boleh bantu pasal H4SX, cara beli, stok, harga, review, dan soalan umum yang ringkas.';
+        return 'Saya H4SX Helper, pembantu untuk jawab soalan customer. Saya boleh bantu pasal H4SX, cara beli, stok, harga, review, dan soalan umum yang ringkas.';
       }
       if (asksJoke) {
         return 'Boleh boss. Pantun sikit:\nPergi kedai beli roti,\nSinggah sebentar minum kopi,\nKalau nak item yang pasti,\nH4SX sedia bantu sampai jadi.';
