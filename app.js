@@ -350,8 +350,8 @@ async function askAiHelper() {
     const errMsg = String(err?.message || '').trim();
     const isTechnicalAiError = /models\/|generateContent|ModelService|API version|not found|not supported|GEMINI|OPENAI/i.test(errMsg);
     const fallback = errMsg && errMsg !== 'AI belum aktif' && !isTechnicalAiError
-      ? 'AI belum aktif sebab: ' + errMsg
-      : 'AI belum aktif sepenuhnya. Buat masa ni, cara beli H4SX: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
+      ? 'Maaf boss, assistant tengah ada gangguan sementara. Boleh terus chat admin H4SX untuk bantuan cepat: https://wa.me/60193263016'
+      : 'Assistant H4SX tengah mode bantuan ringkas. Cara beli: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
     typeAiMessage(thinking, fallback);
     aiChatHistory.push({ role: 'assistant', text: fallback });
     while (aiChatHistory.length > 8) aiChatHistory.shift();

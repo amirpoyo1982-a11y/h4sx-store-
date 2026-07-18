@@ -178,7 +178,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+        model: process.env.OPENAI_MODEL || 'gpt-5-mini',
         input: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPayload }
@@ -189,7 +189,14 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     if (!response.ok) {
-      return res.status(response.status).json({ error: data.error?.message || 'OpenAI request failed.' });
+      const openaiError = data.error?.message || `OpenAI request failed with status ${response.status}.`;
+      console.warn('OpenAI helper failed:', openaiError);
+      return res.status(200).json({
+        answer: finaliseAnswer(buildH4sxFallback()),
+        provider: 'fallback',
+        model: 'h4sx-local',
+        reason: 'openai_failed'
+      });
     }
 
     const answer = finaliseAnswer(data.output_text || data.output?.flatMap(part => part.content || []).map(part => part.text || '').join('\n'));
