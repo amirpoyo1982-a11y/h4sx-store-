@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       'Link WhatsApp admin wajib diberi bila customer mahu tanya lanjut, perlukan admin, mahu hantar resit, ada masalah order, refund, bukti bayaran, order private, atau info tiada dalam katalog: https://wa.me/60193263016',
       'Jika customer minta agent, nombor, link admin, atau chat admin, tulis link penuh https://wa.me/60193263016 dalam jawapan. Jangan tulis "di bawah" jika tiada link.',
       'Untuk Brookhaven, istilah gamepass, game pass, pass, VIP, Premium, Music, Vehicle, Estate dan Speed Vehicle merujuk kepada item Brookhaven jika ada dalam katalog.',
-      'Jika customer minta link website atau tanya nak tengok review, beri dua link ini: Website utama https://h4sx-store.vercel.app/ dan Website review https://review-customer-six.vercel.app/',
+      'Jika customer minta link website atau tanya nak tengok review, beri dua link ini: Website utama https://h4sxmy.vercel.app/ dan Website review https://h4sxreview.vercel.app/',
       'Jika customer tanya cadangan item, cadangkan 1 hingga 3 item sahaja dengan sebab ringkas.',
       'Jika customer tanya follow-up seperti "yang tu", "item tu", "ada stok?", guna chat history untuk faham konteks.',
       'Jangan minta password kecuali item memang perlukan login dan customer sedang checkout.',
@@ -134,7 +134,7 @@ export default async function handler(req, res) {
         if (cheapItems.length) {
           return buildCatalogAnswer('Yang paling murah dalam katalog sekarang:', cheapItems);
         }
-        return 'Buat masa ni saya tak nampak data harga yang jelas dalam katalog. Boleh buka website utama untuk semak harga terbaru: https://h4sx-store.vercel.app/';
+        return 'Buat masa ni saya tak nampak data harga yang jelas dalam katalog. Boleh buka website utama untuk semak harga terbaru: https://h4sxmy.vercel.app/';
       }
       if (asksBrookhaven && brookhavenItems.length) {
         return buildCatalogAnswer('Ada boss. Untuk Brookhaven, antara item yang ada:', brookhavenItems);
@@ -143,16 +143,16 @@ export default async function handler(req, res) {
         return 'Cara beli dekat H4SX mudah saja:\n1. Pilih item yang nak beli.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info/username yang diminta.\n4. Bayar melalui QR DuitNow/TNG.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
       }
       if (accusesScam) {
-        return 'Faham boss, memang patut hati-hati sebelum beli online. Kalau ragu, boleh semak review pelanggan dulu dan tanya admin direct sebelum bayar.\n\nReview: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+        return 'Faham boss, memang patut hati-hati sebelum beli online. Kalau ragu, boleh semak review pelanggan dulu dan tanya admin direct sebelum bayar.\n\nReview: https://h4sxreview.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
       }
       if (asksSafety) {
-        return 'Ya boss, pembelian dekat H4SX dibuat melalui proses yang jelas. Semak item dulu, bayar ikut QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke WhatsApp admin untuk proses order.\n\nNak tengok keyakinan customer lain boleh buka review: https://review-customer-six.vercel.app/\nKalau nak tanya admin terus: https://wa.me/60193263016';
+        return 'Ya boss, pembelian dekat H4SX dibuat melalui proses yang jelas. Semak item dulu, bayar ikut QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke WhatsApp admin untuk proses order.\n\nNak tengok keyakinan customer lain boleh buka review: https://h4sxreview.vercel.app/\nKalau nak tanya admin terus: https://wa.me/60193263016';
       }
       if (asksProcessTime) {
         return 'Biasanya proses order H4SX ambil sekitar 1-30 minit selepas bayaran dan resit diterima admin.\n\nKalau order tertentu perlukan semakan login, stok, atau admin sedang sibuk, masa boleh jadi sedikit lama. Lepas bayar, terus hantar resit ke WhatsApp admin: https://wa.me/60193263016';
       }
       if (wantsAdmin) {
-        return 'Boleh boss. Kalau nak tanya lebih lanjut, terus chat admin H4SX di sini:\nhttps://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
+        return 'Boleh boss. Kalau nak tanya lebih lanjut, terus chat admin H4SX di sini:\nhttps://wa.me/60193263016\n\nWebsite utama: https://h4sxmy.vercel.app/\nWebsite review: https://h4sxreview.vercel.app/';
       }
       if (asksHelp) {
         return 'Boleh boss. Tanya saja. Saya boleh bantu pasal item H4SX, harga, stok, cara beli, proses order, review, atau soalan biasa yang ringkas.';
@@ -255,3 +255,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message || 'Server error.' });
   }
 }
+

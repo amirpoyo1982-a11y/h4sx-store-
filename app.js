@@ -40,7 +40,7 @@ function initReviewSystemPopup() {
   setTimeout(openReviewSystemPopup, 650);
 }
 
-﻿// --- ANTI-INSPECT / ANTI-COPY ---
+// --- ANTI-INSPECT / ANTI-COPY ---
 document.addEventListener('contextmenu', function(e) {
   e.preventDefault();
 });
@@ -370,7 +370,7 @@ function getLocalHelperAnswer(question) {
   if (who) return 'Saya H4SX Helper, pembantu ringkas untuk bantu customer H4SX tentang item, harga, stok, cara beli, resit, review dan support admin.';
   if (asksCheap) {
     const cheap = helperCheapestItems();
-    return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://h4sx-store.vercel.app/';
+    return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://h4sxmy.vercel.app/';
   }
   const foundItems = helperFindItems(question);
   if (foundItems.length && helperIncludes(q, ['ada', 'stok', 'harga', 'berapa', 'item', 'akun', 'account', 'gamepass', 'buah', 'fruit', 'ff', 'free fire', 'roblox', 'brookhaven'])) {
@@ -380,16 +380,16 @@ function getLocalHelperAnswer(question) {
     return 'Cara beli dekat H4SX:\n1. Pilih item dekat website.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info yang diminta.\n4. Bayar melalui QR DuitNow/TNG rasmi.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
   }
   if (asksSafe) {
-    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://h4sxreview.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
   }
   if (asksTime) {
     return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/60193263016';
   }
   if (asksReview) {
-    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review-customer-six.vercel.app/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://h4sxreview.vercel.app/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Link penting H4SX:\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Alamat baru H4SX:\nWebsite utama: https://h4sxmy.vercel.app/\nWebsite review: https://h4sxreview.vercel.app/\n\nWhatsApp admin: https://wa.me/60193263016';
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
@@ -1841,7 +1841,7 @@ async function removePhoneLookup(phone, code) {
 }
 function maskOrderPhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
-  if (digits.length < 6) return '••••••';
+  if (digits.length < 6) return 'â€¢â€¢â€¢â€¢â€¢â€¢';
   return digits.slice(0, 3) + '*'.repeat(Math.max(4, digits.length - 5)) + digits.slice(-2);
 }
 function formatOrderTimestamp(value) {
@@ -1967,7 +1967,7 @@ async function loadAdminOrders() {
     if (snap.empty) { box.textContent = 'Belum ada transaksi.'; return; }
     box.innerHTML = snap.docs.map(doc => {
       const item = doc.data(); const picture = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="">' : '<img alt="">';
-      return '<div class="order-admin-row">' + picture + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>' + escapeHtml(doc.id) + ' · ' + escapeHtml(item.status || '') + '</small><small>RM' + Number(item.price || 0).toFixed(2) + '</small></div><div class="order-admin-row-actions"><button onclick="editManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-pen"></i></button><button onclick="deleteManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-trash"></i></button></div></div>';
+      return '<div class="order-admin-row">' + picture + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>' + escapeHtml(doc.id) + ' Â· ' + escapeHtml(item.status || '') + '</small><small>RM' + Number(item.price || 0).toFixed(2) + '</small></div><div class="order-admin-row-actions"><button onclick="editManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-pen"></i></button><button onclick="deleteManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-trash"></i></button></div></div>';
     }).join('');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat load. Pastikan Firestore Rules benarkan admin list orders.'; }
 }
@@ -2025,8 +2025,8 @@ async function loadVisitorDashboard() {
     history.innerHTML = visitors.slice(0, 40).map((item, index) => {
       const isLive = new Date(item.lastSeen || 0).getTime() >= cutoff;
       const date = new Date(item.lastSeen || item.firstSeen || 0);
-      const time = Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ms-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-      return '<div class="visitor-row"><div><strong>Pelawat #' + escapeHtml(item.id.slice(-6).toUpperCase()) + '</strong><small>Lawatan terakhir: ' + escapeHtml(time) + '</small></div><span class="' + (isLive ? 'visitor-live' : 'visitor-offline') + '">' + (isLive ? '● AKTIF' : 'OFFLINE') + '</span></div>';
+      const time = Number.isNaN(date.getTime()) ? 'â€”' : date.toLocaleString('ms-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      return '<div class="visitor-row"><div><strong>Pelawat #' + escapeHtml(item.id.slice(-6).toUpperCase()) + '</strong><small>Lawatan terakhir: ' + escapeHtml(time) + '</small></div><span class="' + (isLive ? 'visitor-live' : 'visitor-offline') + '">' + (isLive ? 'â— AKTIF' : 'OFFLINE') + '</span></div>';
     }).join('');
   } catch (error) { console.error(error); history.textContent = 'Tak dapat load. Pastikan Firestore Rules untuk store_visits telah ditambah.'; }
 }
@@ -2065,24 +2065,24 @@ if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);
 function fixMojibakeText(value) {
   let text = String(value ?? '');
   if (!text) return '';
-  if (/[ÃÂâð]/.test(text)) {
+  if (/[ÃƒÃ‚Ã¢Ã°]/.test(text)) {
     try {
       const bytes = Uint8Array.from([...text].map(ch => ch.charCodeAt(0) & 255));
       const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-      const oldBad = (text.match(/[ÃÂâð�]/g) || []).length;
-      const newBad = (decoded.match(/[ÃÂâð�]/g) || []).length;
+      const oldBad = (text.match(/[ÃƒÃ‚Ã¢Ã°ï¿½]/g) || []).length;
+      const newBad = (decoded.match(/[ÃƒÃ‚Ã¢Ã°ï¿½]/g) || []).length;
       if (decoded && newBad < oldBad) text = decoded;
     } catch(e) {}
   }
   return text
-    .replace(/â€”/g, '-')
-    .replace(/â€“/g, '-')
-    .replace(/â€˜|â€™/g, "'")
-    .replace(/â€œ|â€/g, '"')
-    .replace(/â€¦/g, '...')
-    .replace(/Â /g, ' ')
-    .replace(/Â/g, '')
-    .replace(/ï¿½/g, '');
+    .replace(/Ã¢â‚¬â€/g, '-')
+    .replace(/Ã¢â‚¬â€œ/g, '-')
+    .replace(/Ã¢â‚¬Ëœ|Ã¢â‚¬â„¢/g, "'")
+    .replace(/Ã¢â‚¬Å“|Ã¢â‚¬Â/g, '"')
+    .replace(/Ã¢â‚¬Â¦/g, '...')
+    .replace(/Ã‚ /g, ' ')
+    .replace(/Ã‚/g, '')
+    .replace(/Ã¯Â¿Â½/g, '');
 }
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -2140,7 +2140,7 @@ function updateMainReviewStats(list = []) {
   const avg = count ? ratings.reduce((sum, value) => sum + value, 0) / count : 0;
   const roundedStars = Math.round(avg);
 
-  avgEl.textContent = count ? avg.toFixed(1) : '—';
+  avgEl.textContent = count ? avg.toFixed(1) : 'â€”';
   countEl.textContent = String(count);
   starsEl.innerHTML = Array(5).fill(0).map((_, i) =>
     '<i class="fa-solid fa-star" style="color:' + (i < roundedStars ? '#fbbf24' : 'rgba(148,163,184,.42)') + '"></i>'
@@ -2241,7 +2241,7 @@ function openTestimonialImage(src) {
     modal = document.createElement('div');
     modal.id = 'testimonial-image-modal';
     modal.className = 'testimonial-image-modal';
-    modal.innerHTML = '<div class="testimonial-image-box"><div class="testimonial-image-head"><span>Gambar Feedback</span><button type="button" class="testimonial-image-close">×</button></div><img class="testimonial-image-img" alt="Gambar feedback"></div>';
+    modal.innerHTML = '<div class="testimonial-image-box"><div class="testimonial-image-head"><span>Gambar Feedback</span><button type="button" class="testimonial-image-close">Ã—</button></div><img class="testimonial-image-img" alt="Gambar feedback"></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', e => {
       if (e.target === modal || e.target.classList.contains('testimonial-image-close')) {
@@ -2451,7 +2451,7 @@ function permanentFruitPickerHTML(items, selected) {
   const options = items.map(item => {
     const isSelected = String(item.id) === String(selected.id);
     return '<option value="' + escapeHtml(item.id) + '"' + (isSelected ? ' selected' : '') + '>' +
-      escapeHtml(item.name) + ' — RM' + Number(item.price || 0).toFixed(2) + '</option>';
+      escapeHtml(item.name) + ' â€” RM' + Number(item.price || 0).toFixed(2) + '</option>';
   }).join('');
   return '<section class="permanent-fruit-picker reveal">' +
     '<div class="permanent-fruit-picker-icon"><i class="fa-solid fa-basket-shopping"></i></div>' +
@@ -2819,7 +2819,7 @@ async function takeScreenshot() {
         <img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX">
         <div>
           <div class="product-ss-brand">H4SX STORE</div>
-          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}${currentProductFilter !== 'all' ? ' — ' + escapeForHtml(activeFilter.label) : ''}</div>
+          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}${currentProductFilter !== 'all' ? ' â€” ' + escapeForHtml(activeFilter.label) : ''}</div>
         </div>
         <div class="product-ss-count">${items.length} item</div>
       </div>
@@ -2845,7 +2845,7 @@ async function takeScreenshot() {
             </div>`;
         }).join('')}
       </div>
-      <div class="product-ss-foot">h4sx-store.vercel.app</div>`;
+      <div class="product-ss-foot">h4sxmy.vercel.app</div>`;
     document.body.appendChild(board);
     await waitForBoardImages(board);
     await ensureHtml2Canvas();
@@ -3065,7 +3065,7 @@ function goCO(focusPayment) {
   document.getElementById('co-items').innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
     const line = item.price*ci.qty; tot += line;
-    return '<div class="order-row"><span class="or-name">' + item.name + (ci.qty>1?' ×'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
+    return '<div class="order-row"><span class="or-name">' + item.name + (ci.qty>1?' Ã—'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
   }).join('');
   document.getElementById('co-total').textContent = 'RM' + tot.toFixed(2);
   
@@ -3371,3 +3371,4 @@ function toast(msg, err, name, count) {
 })();
 initChangelog();
 initReviewSystemPopup();
+
