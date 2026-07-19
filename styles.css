@@ -5309,3 +5309,68 @@ nav,
     display: none !important;
   }
 }
+
+/* H4SX Helper blue logo theme */
+.ai-side-assistant {
+  --helper-dark: #06152d;
+  --helper-mid: #0a3e7a;
+  --helper-cyan: #14c8ff;
+  --helper-soft: #e8f8ff;
+}
+.ai-side-assistant .ai-float-bubble {
+  border-color: rgba(20,200,255,.78) !important;
+  background: radial-gradient(circle at 35% 25%, #1fe2ff, #0a3e7a 48%, #06152d 100%) !important;
+  box-shadow: 0 22px 54px rgba(20,200,255,.34), 0 0 0 5px rgba(20,200,255,.1) !important;
+}
+.ai-side-assistant .ai-float-dot,
+.ai-side-assistant .ai-chat-status span {
+  background: #14c8ff !important;
+  box-shadow: 0 0 12px rgba(20,200,255,.9) !important;
+}
+.ai-side-assistant .ai-chat-panel {
+  border-color: rgba(20,200,255,.34) !important;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(20,200,255,.2), transparent 32%),
+    linear-gradient(180deg, rgba(239,249,255,.98), rgba(218,241,255,.98)) !important;
+  box-shadow: 0 30px 86px rgba(3,15,38,.36) !important;
+}
+.ai-side-assistant .ai-chat-head {
+  border-bottom-color: rgba(20,200,255,.28) !important;
+  background: linear-gradient(135deg, #06152d, #0a3e7a 55%, #14c8ff) !important;
+}
+.ai-side-assistant .ai-avatar {
+  background: rgba(255,255,255,.16) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.28), 0 0 26px rgba(20,200,255,.28) !important;
+}
+.ai-side-assistant .ai-chat-status {
+  border-color: rgba(20,200,255,.22) !important;
+  background: rgba(255,255,255,.82) !important;
+  color: #07345f !important;
+}
+.ai-side-assistant .ai-helper-suggestions button {
+  border-color: rgba(20,200,255,.32) !important;
+  background: rgba(255,255,255,.92) !important;
+  color: #07345f !important;
+}
+.ai-side-assistant .ai-helper-suggestions button:hover {
+  background: #e0f6ff !important;
+  border-color: rgba(20,200,255,.62) !important;
+}
+.ai-side-assistant .ai-msg-bot {
+  color: #10233f !important;
+  border-color: rgba(20,200,255,.16) !important;
+}
+.ai-side-assistant .ai-msg-user {
+  background: linear-gradient(135deg, #dff7ff, #bdefff) !important;
+  color: #062044 !important;
+}
+.ai-side-assistant .ai-msg-typing span,
+.ai-side-assistant .ai-helper-send {
+  background: linear-gradient(135deg, #14c8ff, #0a3e7a) !important;
+}
+.ai-side-assistant .ai-chat-compose {
+  border-top-color: rgba(20,200,255,.2) !important;
+  background: rgba(238,248,255,.94) !important;
+}
+.ai-side-assistant .ai-msg a { color: #0284c7 !important; }
+.ai-side-assistant .ai-helper-logo-img { filter: drop-shadow(0 8px 16px rgba(20,200,255,.18)); }

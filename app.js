@@ -261,11 +261,11 @@ function typeAiMessage(msg, text) {
   msg.classList.remove('ai-msg-typing');
   msg.textContent = '';
   const step = () => {
-    index = Math.min(fullText.length, index + 10);
+    index = Math.min(fullText.length, index + 18);
     msg.textContent = fullText.slice(0, index);
     if (box) box.scrollTop = box.scrollHeight;
     if (index < fullText.length) {
-      msg._aiTypeTimer = window.setTimeout(step, 7);
+      msg._aiTypeTimer = window.setTimeout(step, 3);
     } else {
       msg.innerHTML = formatAiMessage(fullText);
       msg._aiTypeTimer = null;
