@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-helper-blue-1">
+<link rel="stylesheet" href="styles.css?v=h4sx-helper-local-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -451,7 +451,7 @@
 <button class="music-btn" id="musicBtn" title="Toggle Music">
   <i class="fas fa-music"></i>
 </button>
-<!-- AI SIDE ASSISTANT -->
+<!-- H4SX HELPER -->
 <div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
   <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX Helper">
     <img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async">
@@ -462,11 +462,11 @@
       <div class="ai-avatar"><img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async"></div>
       <div>
         <div class="ai-helper-kicker">H4SX Helper</div>
-        <h2 id="ai-helper-title">Tanya apa sahaja</h2>
+        <h2 id="ai-helper-title">Tanya tentang H4SX</h2>
       </div>
       <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="ai-chat-status"><span></span> Online bantu cara beli, stok, harga, resit & support H4SX.</div>
+    <div class="ai-chat-status"><span></span> Helper pantas tanpa API: cara beli, stok, harga, resit & support.</div>
     <div class="ai-helper-suggestions">
       <button onclick="askAiPreset('Harga paling murah apa?')">Murah</button>
       <button onclick="askAiPreset('Macam mana cara beli dekat H4SX?')">Cara beli</button>
@@ -653,7 +653,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-helper-blue-1"></script>
+<script defer src="app.js?v=h4sx-helper-local-1"></script>
 
 </body>
 </html>

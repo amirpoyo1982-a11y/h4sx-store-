@@ -315,7 +315,85 @@ function aiCatalogSnapshot() {
     desc: String(item.desc || '').slice(0, 220)
   }));
 }
-async function askAiHelper() {
+function helperIncludes(text, words) {
+  const lower = String(text || '').toLowerCase();
+  return words.some(word => lower.includes(word));
+}
+function helperFindItems(question) {
+  const q = String(question || '').toLowerCase();
+  const words = q.split(/[^a-z0-9]+/i).filter(word => word.length > 2);
+  const extras = [];
+  if (/brookhaven|gamepass|premium|vip|vehicle|estate|music/.test(q)) extras.push('brookhaven');
+  if (/free\s*fire|\bff\b/.test(q)) extras.push('free', 'fire');
+  if (/blox|fruit|buah|roblox/.test(q)) extras.push('blox', 'fruit');
+  const keys = [...new Set([...words, ...extras])];
+  return inventory
+    .map((item, index) => {
+      const haystack = [item.name, item.game, item.platform, item.gameGroup, item.subcategory, item.desc]
+        .map(value => String(value || '').toLowerCase())
+        .join(' ');
+      const score = keys.reduce((total, word) => total + (haystack.includes(word) ? 1 : 0), 0);
+      return { item, index, score };
+    })
+    .filter(row => row.score > 0)
+    .sort((a, b) => (b.score - a.score) || Number(a.item.price || 0) - Number(b.item.price || 0) || a.index - b.index)
+    .map(row => row.item);
+}
+function helperItemLines(items, title = 'Saya jumpa item ni dalam katalog:') {
+  const lines = items.slice(0, 4).map(item => {
+    const stock = Number(item.stock || 0) > 0 ? 'stok ' + item.stock : 'stok kena semak';
+    return '- ' + item.name + ' RM' + Number(item.price || 0).toFixed(2) + ' (' + stock + ')';
+  });
+  return title + '\n' + lines.join('\n') + '\n\nNak confirm stok/order, chat admin: https://wa.me/60193263016';
+}
+function helperCheapestItems() {
+  return inventory
+    .filter(item => Number(item.price || 0) > 0 && Number(item.stock || 0) !== 0)
+    .sort((a, b) => Number(a.price || 0) - Number(b.price || 0))
+    .slice(0, 5);
+}
+function getLocalHelperAnswer(question) {
+  const q = String(question || '').toLowerCase();
+  const wantsAdmin = helperIncludes(q, ['admin', 'agent', 'nombor', 'number', 'phone', 'whatsapp', 'wasap', 'link', 'chat', 'support']);
+  const asksBuy = helperIncludes(q, ['cara beli', 'nak beli', 'checkout', 'buy', 'cart', 'lepas bayar', 'resit', 'bayar', 'payment']);
+  const asksSafe = helperIncludes(q, ['safe', 'selamat', 'trusted', 'trust', 'scam', 'legit', 'tipu', 'nipu']);
+  const asksTime = helperIncludes(q, ['berapa lama', 'lama', 'proses', 'delivery', 'deliver', 'siap bila', 'tunggu', 'minit', 'jam']);
+  const asksCheap = helperIncludes(q, ['paling murah', 'termurah', 'murah apa', 'murah', 'budget', 'bajet', 'lowest', 'cheap']);
+  const asksReview = helperIncludes(q, ['review', 'ulasan', 'rating', 'rate', 'testimoni']);
+  const asksWebsite = helperIncludes(q, ['website', 'web', 'site', 'kedai', 'store']);
+  const greeting = /^(hai|hi|hello|helo|weh|yo|assalam|salam)\b/i.test(q);
+  const thanks = helperIncludes(q, ['terima kasih', 'thanks', 'thank you', 'tq']);
+  const who = helperIncludes(q, ['siapa awak', 'awak siapa', 'kamu siapa', 'kau siapa', 'helper apa']);
+
+  if (greeting) return 'Hai boss. Saya H4SX Helper. Boleh tanya pasal cara beli, harga, stok, proses order, resit, review, atau link admin.';
+  if (thanks) return 'Sama-sama boss. Kalau ada apa-apa lagi nak tanya, terus taip saja sini.';
+  if (who) return 'Saya H4SX Helper, pembantu ringkas untuk bantu customer H4SX tentang item, harga, stok, cara beli, resit, review dan support admin.';
+  if (asksCheap) {
+    const cheap = helperCheapestItems();
+    return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://h4sx-store.vercel.app/';
+  }
+  const foundItems = helperFindItems(question);
+  if (foundItems.length && helperIncludes(q, ['ada', 'stok', 'harga', 'berapa', 'item', 'akun', 'account', 'gamepass', 'buah', 'fruit', 'ff', 'free fire', 'roblox', 'brookhaven'])) {
+    return helperItemLines(foundItems);
+  }
+  if (asksBuy) {
+    return 'Cara beli dekat H4SX:\n1. Pilih item dekat website.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info yang diminta.\n4. Bayar melalui QR DuitNow/TNG rasmi.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+  }
+  if (asksSafe) {
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+  }
+  if (asksTime) {
+    return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/60193263016';
+  }
+  if (asksReview) {
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review-customer-six.vercel.app/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
+  }
+  if (asksWebsite || wantsAdmin) {
+    return 'Link penting H4SX:\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+  }
+  return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
+}
+function askAiHelper() {
   const input = document.getElementById('ai-helper-input');
   const answer = document.getElementById('ai-helper-answer');
   const btn = document.getElementById('ai-helper-send');
@@ -327,40 +405,16 @@ async function askAiHelper() {
   input.value = '';
   const thinking = appendAiMessage('bot', 'Sekejap ya, saya semak info H4SX dulu...');
   setAiTypingBubble(thinking);
-  if (answer) answer.textContent = 'Sedang fikir jawapan terbaik...';
+  if (answer) answer.textContent = 'Helper sedang semak...';
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
-  try {
-    const res = await fetch('/api/ai-assistant', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, catalog: aiCatalogSnapshot(), history: aiChatHistory.slice(-8) })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'AI belum aktif');
-    let finalAnswer = data.answer || 'AI tak dapat beri jawapan buat masa ini.';
-    if (/^["')\s.:-]+$/.test(finalAnswer.slice(0, 4)) || /delivery method|private|system instruction|prompt/i.test(finalAnswer.slice(0, 160))) {
-      finalAnswer = 'Boleh. Cara beli dekat H4SX mudah saja: pilih item, tekan Buy Now, isi info yang diminta, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016';
-    }
+  window.setTimeout(() => {
+    const finalAnswer = getLocalHelperAnswer(question);
     typeAiMessage(thinking, finalAnswer);
     aiChatHistory.push({ role: 'assistant', text: finalAnswer });
     while (aiChatHistory.length > 8) aiChatHistory.shift();
     if (answer) answer.innerHTML = formatAiMessage(finalAnswer);
-  } catch (err) {
-    console.warn('AI helper fallback:', err);
-    const errMsg = String(err?.message || '').trim();
-    const isTechnicalAiError = /models\/|generateContent|ModelService|API version|not found|not supported|GEMINI|OPENAI/i.test(errMsg);
-    const fallback = errMsg && errMsg !== 'AI belum aktif' && !isTechnicalAiError
-      ? 'Maaf boss, assistant tengah ada gangguan sementara. Boleh terus chat admin H4SX untuk bantuan cepat: https://wa.me/60193263016'
-      : 'Assistant H4SX tengah mode bantuan ringkas. Cara beli: pilih item, tekan Buy Now, bayar melalui QR DuitNow/TNG, kemudian hantar resit ke WhatsApp admin: https://wa.me/60193263016\n\nWebsite utama: https://h4sx-store.vercel.app/\nWebsite review: https://review-customer-six.vercel.app/';
-    typeAiMessage(thinking, fallback);
-    aiChatHistory.push({ role: 'assistant', text: fallback });
-    while (aiChatHistory.length > 8) aiChatHistory.shift();
-    if (answer) {
-      answer.innerHTML = formatAiMessage(fallback);
-    }
-  } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>'; }
-  }
+  }, 120);
 }
 document.addEventListener('DOMContentLoaded', () => {
   const aiInput = document.getElementById('ai-helper-input');
