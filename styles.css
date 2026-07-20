@@ -6332,3 +6332,63 @@ nav,
     .receipt-actions { gap: 8px !important; }
     .receipt-action { min-height: 54px !important; padding: 8px !important; font-size: .69rem !important; }
 }
+
+/* Keep every receipt action visible on compact screens. */
+.receipt-modal-card {
+    display: flex !important;
+    flex-direction: column;
+}
+
+.receipt-card {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 680px) {
+    .receipt-modal-card {
+        max-height: calc(100dvh - 10px) !important;
+    }
+
+    .receipt-card {
+        padding: 17px 16px 14px !important;
+    }
+
+    .receipt-brand {
+        margin-bottom: 12px !important;
+    }
+
+    .receipt-info-panel {
+        padding: 4px !important;
+    }
+
+    .receipt-row {
+        min-height: 50px;
+        padding: 8px 9px !important;
+    }
+
+    .receipt-items-wrap {
+        margin-top: 13px !important;
+    }
+
+    .receipt-total-box {
+        margin-top: 11px !important;
+        padding: 12px 14px !important;
+    }
+
+    .receipt-actions {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+        margin-top: 13px !important;
+    }
+
+    .receipt-action {
+        min-height: 49px !important;
+        padding: 7px 3px !important;
+        border-radius: 13px !important;
+        font-size: .63rem !important;
+    }
+
+    .receipt-action i {
+        font-size: .9rem;
+    }
+}
