@@ -159,13 +159,13 @@ function openReceipt() {
     const itemTotal = item.price * ci.qty;
     total += itemTotal;
     const div = document.createElement('div');
-    div.style.cssText = 'display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);';
+    div.className = 'receipt-item-line';
     div.innerHTML = `
       <div>
-        <div style="font-size: 13px; font-weight: 700; color: var(--ink);">${item.name}</div>
-        <div style="font-size: 11px; color: var(--muted);">x${ci.qty}</div>
+        <div class="receipt-item-name">${item.name}</div>
+        <div class="receipt-item-qty">x${ci.qty}</div>
       </div>
-      <div style="font-size: 13px; font-weight: 800; color: var(--primary);">RM${itemTotal.toFixed(2)}</div>
+      <div class="receipt-item-price">RM${itemTotal.toFixed(2)}</div>
     `;
     receiptItemsEl.appendChild(div);
   });
@@ -426,13 +426,151 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function getReceiptItemRows() {
+  const rows = [];
+  document.querySelectorAll('#receipt-items .receipt-item-line, #receipt-items > div').forEach(row => {
+    const name = row.querySelector('.receipt-item-name')?.textContent?.trim() || row.children?.[0]?.children?.[0]?.textContent?.trim() || '';
+    const qty = row.querySelector('.receipt-item-qty')?.textContent?.trim() || row.children?.[0]?.children?.[1]?.textContent?.trim() || '';
+    const price = row.querySelector('.receipt-item-price')?.textContent?.trim() || row.children?.[1]?.textContent?.trim() || '';
+    if (name || price) rows.push({ name, qty, price });
+  });
+  return rows;
+}
+
+function renderReceiptCanvas() {
+  const rows = getReceiptItemRows();
+  const width = 720;
+  const rowHeight = 78;
+  const height = Math.max(760, 610 + rows.length * rowHeight);
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = width;
+  canvas.height = height;
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, '#e8f8ff');
+  bg.addColorStop(.45, '#ffffff');
+  bg.addColorStop(1, '#f1fbff');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  roundRectCanvas(ctx, 34, 28, width - 68, height - 56, 34);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(14,165,233,.22)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  const top = ctx.createLinearGradient(34, 28, width - 34, 28);
+  top.addColorStop(0, '#0ea5e9');
+  top.addColorStop(.62, '#06b6d4');
+  top.addColorStop(1, '#22c55e');
+  ctx.fillStyle = top;
+  roundRectCanvas(ctx, 34, 28, width - 68, 8, 4);
+  ctx.fill();
+
+  const logo = ctx.createLinearGradient(76, 72, 150, 146);
+  logo.addColorStop(0, '#38d5ff');
+  logo.addColorStop(1, '#0a3e7a');
+  roundRectCanvas(ctx, 76, 72, 74, 74, 20);
+  ctx.fillStyle = logo;
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = '1000 23px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('H4', 98, 116);
+
+  ctx.fillStyle = '#0ea5e9';
+  ctx.font = '1000 32px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('H4SX STORE', 170, 105);
+  ctx.fillStyle = '#64748b';
+  ctx.font = '700 16px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('Resit Pembelian Rasmi', 170, 132);
+
+  const code = document.getElementById('receipt-code')?.textContent?.trim() || '-';
+  const datetime = document.getElementById('receipt-datetime')?.textContent?.trim() || '-';
+  const country = document.getElementById('receipt-country')?.textContent?.trim() || 'Malaysia';
+  const username = document.getElementById('receipt-username')?.textContent?.trim() || '-';
+  const total = document.getElementById('receipt-total')?.textContent?.trim() || 'RM0.00';
+  const info = [
+    ['No. Resit', code],
+    ['Tarikh & Masa', datetime],
+    ['Negara', country],
+    ['Username Roblox', username]
+  ];
+
+  roundRectCanvas(ctx, 76, 184, width - 152, 190, 22);
+  ctx.fillStyle = '#f1f8ff';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(14,165,233,.14)';
+  ctx.stroke();
+  info.forEach((pair, index) => {
+    const y = 226 + index * 40;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '800 15px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(pair[0], 104, y);
+    ctx.fillStyle = '#06152d';
+    ctx.font = '900 17px "Plus Jakarta Sans", Arial, sans-serif';
+    const value = pair[1].length > 34 ? pair[1].slice(0, 32) + '..' : pair[1];
+    ctx.textAlign = 'right';
+    ctx.fillText(value, width - 104, y);
+    ctx.textAlign = 'left';
+  });
+
+  ctx.fillStyle = '#06152d';
+  ctx.font = '1000 20px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('Item Dibeli', 76, 420);
+  let y = 446;
+  rows.forEach(row => {
+    roundRectCanvas(ctx, 76, y, width - 152, 62, 18);
+    ctx.fillStyle = '#f8fcff';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(14,165,233,.13)';
+    ctx.stroke();
+    ctx.fillStyle = '#06152d';
+    ctx.font = '900 17px "Plus Jakarta Sans", Arial, sans-serif';
+    const lines = wrapCanvasText(ctx, row.name, 350).slice(0, 2);
+    lines.forEach((line, idx) => ctx.fillText(line, 100, y + 25 + idx * 20));
+    ctx.fillStyle = '#64748b';
+    ctx.font = '800 14px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(row.qty || 'x1', 100, y + 52);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.font = '1000 18px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(row.price, width - 100, y + 38);
+    ctx.textAlign = 'left';
+    y += rowHeight;
+  });
+
+  roundRectCanvas(ctx, 76, y + 18, width - 152, 76, 22);
+  const totalGrad = ctx.createLinearGradient(76, y + 18, width - 76, y + 18);
+  totalGrad.addColorStop(0, '#0ea5e9');
+  totalGrad.addColorStop(1, '#06b6d4');
+  ctx.fillStyle = totalGrad;
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 20px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('Jumlah', 106, y + 64);
+  ctx.font = '1000 30px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(total, width - 106, y + 66);
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = '800 15px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('Simpan resit ini dan hantar ke WhatsApp admin selepas pembayaran.', 76, height - 82);
+  ctx.fillStyle = '#0ea5e9';
+  ctx.font = '1000 16px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('h4sxmy.vercel.app', 76, height - 52);
+  return canvas;
+}
+
 async function getReceiptCanvas() {
-  await ensureHtml2Canvas();
-  const receiptContent = document.getElementById('receipt-content');
-  return await html2canvas(receiptContent, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: '#ffffff'
+  return renderReceiptCanvas();
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas blob kosong')), 'image/png');
   });
 }
 
@@ -441,9 +579,11 @@ async function downloadReceiptImage() {
     toast('Sila tunggu, sedang memuat turun resit...', false);
     const canvas = await getReceiptCanvas();
     const link = document.createElement('a');
-    link.download = `resit-h4sx-${new Date().getTime()}.png`;
+    link.download = `resit-h4sx-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
     link.click();
+    link.remove();
     toast('Resit berjaya dimuat turun!', false);
   } catch (error) {
     console.error('Download failed:', error);
@@ -455,19 +595,24 @@ async function copyReceiptImage() {
   try {
     toast('Sila tunggu, sedang menyalin gambar resit...', false);
     const canvas = await getReceiptCanvas();
-    canvas.toBlob(async (blob) => {
-      if (blob) {
-        const item = new ClipboardItem({ 'image/png': blob });
-        await navigator.clipboard.write([item]);
-        toast('Gambar resit disalin ke papan keratan!', false);
-      }
-    });
+    const blob = await canvasToBlob(canvas);
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      await navigator.clipboard?.writeText(currentReceiptText);
+      toast('Browser tak support copy gambar. Teks resit disalin.', false);
+      return;
+    }
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('Gambar resit disalin ke clipboard!', false);
   } catch (error) {
     console.error('Copy image failed:', error);
-    toast('Gagal menyalin gambar resit', true);
+    try {
+      await navigator.clipboard?.writeText(currentReceiptText);
+      toast('Copy gambar diblock browser. Teks resit disalin sebagai backup.', false);
+    } catch (textError) {
+      toast('Gagal menyalin gambar resit. Cuba Muat Turun.', true);
+    }
   }
 }
-
 // --- CONFIGURATION ---
 const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pixel-earth-low-poly-139cb0a9b41a4e088dd42ca4871a3125'; 
 // Tukar link kat atas ni je kalau nak tukar model background.
