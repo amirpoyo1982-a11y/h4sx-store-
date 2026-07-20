@@ -846,121 +846,148 @@ function downloadChangelogImage() {
   btn?.classList.add('is-loading');
   btn?.setAttribute('disabled', 'disabled');
   try {
-    const width = 1080;
-    const pad = 56;
-    const cardW = width - pad * 2;
-    const sectionGap = 24;
+    const width = 2048;
+    const height = 1200;
+    const pad = 40;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    ctx.font = '500 27px "Plus Jakarta Sans", Arial, sans-serif';
-    let height = 300;
-    for (const section of (data.sections || [])) {
-      height += 86;
-      for (const item of (section.items || [])) {
-        const lines = wrapCanvasText(ctx, stripChangelogHtml(item.text), cardW - 132);
-        height += Math.max(78, 34 + lines.length * 31) + 12;
-      }
-      height += sectionGap;
-    }
-    height += 70;
     canvas.width = width;
     canvas.height = height;
 
     const bg = ctx.createLinearGradient(0, 0, width, height);
     bg.addColorStop(0, '#e8f8ff');
-    bg.addColorStop(.45, '#ffffff');
-    bg.addColorStop(1, '#dff5ff');
+    bg.addColorStop(.48, '#ffffff');
+    bg.addColorStop(1, '#e1f7ff');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'rgba(14,165,233,.10)';
-    for (let i = 0; i < 20; i++) {
+    ctx.fillStyle = 'rgba(14,165,233,.09)';
+    for (let i = 0; i < 22; i++) {
       ctx.beginPath();
-      ctx.arc((i * 173) % width, 70 + (i * 97) % (height - 120), 38 + (i % 4) * 10, 0, Math.PI * 2);
+      ctx.arc((i * 271) % width, 54 + (i * 139) % (height - 110), 34 + (i % 5) * 10, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    roundRectCanvas(ctx, 32, 32, width - 64, height - 64, 36);
-    ctx.fillStyle = 'rgba(255,255,255,.84)';
+    roundRectCanvas(ctx, pad, pad, width - pad * 2, height - pad * 2, 32);
+    ctx.fillStyle = 'rgba(255,255,255,.86)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(14,165,233,.22)';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    const topGrad = ctx.createLinearGradient(32, 32, width - 32, 32);
+    const topGrad = ctx.createLinearGradient(pad, pad, width - pad, pad);
     topGrad.addColorStop(0, '#0ea5e9');
     topGrad.addColorStop(.55, '#06b6d4');
     topGrad.addColorStop(1, '#22c55e');
     ctx.fillStyle = topGrad;
-    roundRectCanvas(ctx, 32, 32, width - 64, 8, 4);
+    roundRectCanvas(ctx, pad + 16, pad + 16, width - pad * 2 - 32, 7, 4);
     ctx.fill();
 
-    ctx.fillStyle = '#082f49';
-    ctx.font = '1000 52px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText(data.title || 'Apa Yang Baru - H4SX STORE', pad, 116);
-    ctx.fillStyle = '#0ea5e9';
-    ctx.font = '900 28px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText('Update hari ini sahaja', pad, 158);
-    ctx.fillStyle = '#64748b';
-    ctx.font = '700 22px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText((data.date || '') + '  |  ' + (data.time || '') + '  |  ' + (data.version || 'Latest'), pad, 198);
-
-    const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
-    drawChangelogPill(ctx, pad, 228, 'Release', data.version || 'Latest', '#0ea5e9');
-    drawChangelogPill(ctx, pad + 282, 228, 'Kemaskini', totalItems + ' item', '#059669');
-    drawChangelogPill(ctx, pad + 564, 228, 'Status', 'Live', '#f59e0b');
-
-    let y = 344;
-    const metaMap = {
-      added: { color: '#10b981', soft: 'rgba(16,185,129,.10)', title: 'Ditambah' },
-      fixed: { color: '#0ea5e9', soft: 'rgba(14,165,233,.11)', title: 'Diperbaiki' },
-      removed: { color: '#ef4444', soft: 'rgba(239,68,68,.09)', title: 'Dibuang' }
-    };
-    for (const section of (data.sections || [])) {
-      const meta = metaMap[section.type] || { color: '#f59e0b', soft: 'rgba(245,158,11,.10)', title: 'Info' };
-      ctx.fillStyle = meta.color;
-      ctx.font = '1000 30px "Plus Jakarta Sans", Arial, sans-serif';
-      ctx.fillText(section.title || meta.title, pad, y);
-      y += 26;
-      for (const item of (section.items || [])) {
-        const text = stripChangelogHtml(item.text);
-        ctx.font = '600 25px "Plus Jakarta Sans", Arial, sans-serif';
-        const lines = wrapCanvasText(ctx, text, cardW - 132);
-        const h = Math.max(78, 34 + lines.length * 31);
-        roundRectCanvas(ctx, pad, y, cardW, h, 24);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(14,165,233,.14)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        roundRectCanvas(ctx, pad + 18, y + 18, 44, 44, 14);
-        ctx.fillStyle = meta.soft;
-        ctx.fill();
-        ctx.fillStyle = meta.color;
-        ctx.font = '1000 27px Arial, sans-serif';
-        ctx.fillText('+', pad + 32, y + 49);
-        ctx.fillStyle = '#10233f';
-        ctx.font = '600 25px "Plus Jakarta Sans", Arial, sans-serif';
-        lines.forEach((line, idx) => ctx.fillText(line, pad + 84, y + 36 + idx * 31));
-        y += h + 12;
-      }
-      y += sectionGap;
+    const logo = document.querySelector('.nav-logo img');
+    if (logo?.complete) {
+      try {
+        roundRectCanvas(ctx, 74, 72, 132, 132, 30);
+        ctx.save();
+        ctx.clip();
+        ctx.drawImage(logo, 74, 72, 132, 132);
+        ctx.restore();
+      } catch (e) {}
     }
 
     ctx.fillStyle = '#0ea5e9';
-    ctx.font = '1000 24px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText('H4SX STORE', pad, height - 70);
+    ctx.font = '1000 31px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('H4SX STORE', 230, 112);
+    ctx.fillStyle = '#06152d';
+    ctx.font = '1000 54px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(data.title || 'Apa Yang Baru - H4SX STORE', 230, 172);
+
+    const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
+    const metaText = (data.date || '') + '  |  ' + (data.time || '') + '  |  ' + (data.version || 'Latest');
     ctx.fillStyle = '#64748b';
-    ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText('https://h4sxmy.vercel.app  |  https://h4sxreview.vercel.app', pad, height - 42);
+    ctx.font = '800 28px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(metaText, 230, 216);
+
+    roundRectCanvas(ctx, width - 330, 91, 220, 76, 38);
+    ctx.fillStyle = '#e0f4ff';
+    ctx.fill();
+    ctx.fillStyle = '#075985';
+    ctx.font = '1000 30px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(totalItems + ' item', width - 280, 140);
+
+    const sections = data.sections || [];
+    const columns = [
+      { x: 74, y: 260, w: 610, h: 800 },
+      { x: 718, y: 260, w: 610, h: 800 },
+      { x: 1362, y: 260, w: 610, h: 800 }
+    ];
+    const metaMap = {
+      added: { color: '#10b981', soft: '#eafff7', symbol: '+' },
+      fixed: { color: '#0ea5e9', soft: '#e9f8ff', symbol: '+' },
+      removed: { color: '#ef4444', soft: '#fff0f1', symbol: '-' }
+    };
+
+    sections.forEach((section, sectionIndex) => {
+      const col = columns[sectionIndex] || columns[columns.length - 1];
+      const meta = metaMap[section.type] || { color: '#f59e0b', soft: '#fff8e8', symbol: '+' };
+      roundRectCanvas(ctx, col.x, col.y, col.w, col.h, 26);
+      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(14,165,233,.16)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = meta.color;
+      ctx.font = '1000 34px "Plus Jakarta Sans", Arial, sans-serif';
+      ctx.fillText(section.title || 'Update', col.x + 28, col.y + 58);
+      roundRectCanvas(ctx, col.x + col.w - 98, col.y + 26, 62, 40, 20);
+      ctx.fillStyle = meta.soft;
+      ctx.fill();
+      ctx.fillStyle = meta.color;
+      ctx.font = '1000 22px "Plus Jakarta Sans", Arial, sans-serif';
+      ctx.fillText(String((section.items || []).length), col.x + col.w - 74, col.y + 53);
+
+      let y = col.y + 90;
+      const maxY = col.y + col.h - 30;
+      for (const item of (section.items || [])) {
+        if (y > maxY - 80) break;
+        ctx.font = '700 21px "Plus Jakarta Sans", Arial, sans-serif';
+        const lines = wrapCanvasText(ctx, stripChangelogHtml(item.text), col.w - 112).slice(0, 3);
+        const itemH = Math.min(118, Math.max(82, 34 + lines.length * 27));
+        roundRectCanvas(ctx, col.x + 22, y, col.w - 44, itemH, 18);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(14,165,233,.13)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        roundRectCanvas(ctx, col.x + 42, y + 20, 42, 42, 13);
+        ctx.fillStyle = meta.soft;
+        ctx.fill();
+        ctx.fillStyle = meta.color;
+        ctx.font = '1000 25px Arial, sans-serif';
+        ctx.fillText(meta.symbol, col.x + 57, y + 49);
+
+        ctx.fillStyle = '#10233f';
+        ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
+        lines.forEach((line, idx) => ctx.fillText(line, col.x + 104, y + 34 + idx * 27));
+        y += itemH + 14;
+      }
+    });
+
+    ctx.fillStyle = '#0ea5e9';
+    ctx.font = '1000 26px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('H4SX STORE', 74, height - 80);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('h4sxmy.vercel.app  |  h4sxreview.vercel.app', 74, height - 46);
 
     const a = document.createElement('a');
-    a.download = 'h4sx-changelog-' + (data.version || 'latest') + '.png';
+    a.download = 'h4sx-changelog-' + (data.version || 'latest') + '-wide.png';
     a.href = canvas.toDataURL('image/png');
     document.body.appendChild(a);
     a.click();
     a.remove();
-    toast('Gambar changelog berjaya download!');
+    toast('Gambar changelog besar berjaya download!');
   } catch (error) {
     console.error(error);
     toast('Tak dapat generate gambar changelog.', true);
