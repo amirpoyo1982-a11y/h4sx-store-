@@ -883,16 +883,21 @@ async function downloadChangelogImage() {
     roundRectCanvas(ctx, pad + 16, pad + 16, width - pad * 2 - 32, 7, 4);
     ctx.fill();
 
-    const logo = document.querySelector('.nav-logo img');
-    if (logo?.complete) {
-      try {
-        roundRectCanvas(ctx, 74, 72, 132, 132, 30);
-        ctx.save();
-        ctx.clip();
-        ctx.drawImage(logo, 74, 72, 132, 132);
-        ctx.restore();
-      } catch (e) {}
-    }
+    const logoGrad = ctx.createLinearGradient(74, 72, 206, 204);
+    logoGrad.addColorStop(0, '#38d5ff');
+    logoGrad.addColorStop(.55, '#0ea5e9');
+    logoGrad.addColorStop(1, '#0a3e7a');
+    roundRectCanvas(ctx, 74, 72, 132, 132, 30);
+    ctx.fillStyle = logoGrad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.75)';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '1000 38px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('H4', 103, 126);
+    ctx.font = '1000 34px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('SX', 101, 166);
 
     ctx.fillStyle = '#0ea5e9';
     ctx.font = '1000 31px "Plus Jakarta Sans", Arial, sans-serif';
@@ -981,19 +986,27 @@ async function downloadChangelogImage() {
     ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText('h4sxmy.vercel.app  |  h4sxreview.vercel.app', 74, height - 46);
 
-    if (!navigator.clipboard || !window.ClipboardItem) {
-      const plainText = [data.title || 'Apa Yang Baru - H4SX STORE']
-        .concat((data.sections || []).flatMap(section => [section.title || 'Update'].concat((section.items || []).map(item => '- ' + stripChangelogHtml(item.text)))))
-        .join('\n');
-      await navigator.clipboard?.writeText(plainText);
-      toast('Browser tak support copy gambar. Teks changelog disalin.');
-      return;
-    }
     const blob = await new Promise((resolve, reject) => {
       canvas.toBlob(result => result ? resolve(result) : reject(new Error('Canvas blob kosong')), 'image/png');
     });
-    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    toast('Gambar changelog disalin ke clipboard! Paste terus dekat WhatsApp/Discord.');
+    const plainText = [data.title || 'Apa Yang Baru - H4SX STORE']
+      .concat((data.sections || []).flatMap(section => [section.title || 'Update'].concat((section.items || []).map(item => '- ' + stripChangelogHtml(item.text)))))
+      .join('\n');
+    if (navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast('Gambar changelog disalin ke clipboard! Paste terus dekat WhatsApp/Discord.');
+        return;
+      } catch (clipError) {
+        console.warn('Clipboard image failed, trying text fallback:', clipError);
+      }
+    }
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(plainText);
+      toast('Browser block copy gambar. Teks changelog disalin sebagai backup.');
+      return;
+    }
+    throw new Error('Clipboard tidak disokong oleh browser ini');
   } catch (error) {
     console.error(error);
     toast('Tak dapat generate gambar changelog.', true);
