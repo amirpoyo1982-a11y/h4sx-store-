@@ -3740,3 +3740,47 @@ function toast(msg, err, name, count) {
 initChangelog();
 initReviewSystemPopup();
 
+// Review form shortcut. The actual review feed remains on h4sxreview.vercel.app.
+const REVIEW_SUBMIT_SHARE_URL = 'https://h4sxmy.vercel.app/?review=submit';
+
+function openReviewSubmit() {
+  const modal = document.getElementById('review-submit-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReviewSubmit() {
+  const modal = document.getElementById('review-submit-modal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+async function copyReviewSubmitLink() {
+  try {
+    await navigator.clipboard.writeText(REVIEW_SUBMIT_SHARE_URL);
+    showToast('Link borang ulasan berjaya disalin.', 'success');
+  } catch (error) {
+    window.prompt('Copy link ulasan ini:', REVIEW_SUBMIT_SHARE_URL);
+  }
+}
+
+window.openReviewSubmit = openReviewSubmit;
+window.closeReviewSubmit = closeReviewSubmit;
+window.copyReviewSubmitLink = copyReviewSubmitLink;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('review-submit-modal');
+  modal?.addEventListener('click', event => {
+    if (event.target === modal) closeReviewSubmit();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && modal?.classList.contains('show')) closeReviewSubmit();
+  });
+  if (new URLSearchParams(window.location.search).get('review') === 'submit') {
+    setTimeout(openReviewSubmit, 350);
+  }
+}, { once: true });
