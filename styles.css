@@ -6394,9 +6394,7 @@ nav,
 }
 
 /* H4SX review submission shortcut. Full rating feed remains on H4SX Review. */
-.review-submit-main-btn,
-.review-submit-tools button,
-.review-submit-tools a {
+.review-submit-main-btn {
     border: 0;
     font: inherit;
     cursor: pointer;
@@ -6430,81 +6428,24 @@ nav,
 .review-submit-main-btn strong { font-size: .8rem; }
 .review-submit-main-btn small { margin-top: 2px; color: #4b7a98; font-size: .67rem; }
 
-.review-submit-modal {
-    position: fixed;
-    z-index: 10050;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: rgba(4, 27, 55, .66);
-    backdrop-filter: blur(9px);
-}
-
-.review-submit-modal.show { display: flex; }
-
-.review-submit-dialog {
-    width: min(790px, 100%);
-    max-height: min(900px, calc(100dvh - 28px));
-    overflow: hidden;
-    border: 1px solid rgba(157, 225, 255, .9);
-    border-radius: 24px;
-    background: #f8fcff;
-    box-shadow: 0 30px 90px rgba(1, 29, 59, .48);
-}
-
-.review-submit-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 21px 24px 16px;
-    color: #fff;
-    background: linear-gradient(105deg, #097fd4, #16b8d6 56%, #18bf77);
-}
-
-.review-submit-head span { font-size: .65rem; font-weight: 900; letter-spacing: .12em; }
-.review-submit-head h2 { margin: 4px 0; font-size: 1.4rem; }
-.review-submit-head p { max-width: 520px; margin: 0; font-size: .8rem; line-height: 1.45; opacity: .92; }
-.review-submit-close { width: 39px; height: 39px; flex: 0 0 auto; border: 1px solid rgba(255,255,255,.5); border-radius: 13px; color: #fff; background: rgba(255,255,255,.14); font-size: 1.55rem; cursor: pointer; }
-
-.review-submit-tools {
-    display: flex;
-    gap: 9px;
-    flex-wrap: wrap;
-    padding: 12px 20px;
-    border-bottom: 1px solid #d8effd;
-    background: #f0faff;
-}
-
-.review-submit-tools button,
-.review-submit-tools a {
+.review-share-btn {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    padding: 9px 12px;
-    border: 1px solid #bde8ff;
-    border-radius: 10px;
-    color: #0779bd;
-    background: #fff;
-    font-size: .76rem;
-    font-weight: 800;
+    align-self: center;
+    padding: 10px 12px;
+    border: 1px solid #bce7ff;
+    border-radius: 12px;
+    color: #087abc;
+    background: #f7fcff;
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 850;
+    cursor: pointer;
 }
-
-.review-submit-tools a { color: #087553; border-color: #b9efd7; }
-.review-submit-frame-wrap { height: min(650px, calc(100dvh - 250px)); overflow-y: auto; background: #fff; }
-.review-submit-frame { display: block; width: 100%; height: 100%; border: 0; }
 
 @media (max-width: 680px) {
     .review-link-wrap { gap: 9px; }
     .review-submit-main-btn { width: 100%; }
-    .review-submit-modal { padding: 8px; align-items: flex-end; }
-    .review-submit-dialog { max-height: calc(100dvh - 10px); border-radius: 21px 21px 14px 14px; }
-    .review-submit-head { padding: 17px 16px 14px; }
-    .review-submit-head h2 { font-size: 1.18rem; }
-    .review-submit-head p { font-size: .72rem; }
-    .review-submit-tools { padding: 10px 13px; }
-    .review-submit-tools button,
-    .review-submit-tools a { flex: 1 1 145px; justify-content: center; }
-    .review-submit-frame-wrap { height: calc(100dvh - 238px); }
+    .review-share-btn { width: 100%; justify-content: center; }
 }
