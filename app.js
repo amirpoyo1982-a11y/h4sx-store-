@@ -2776,7 +2776,7 @@ function productFilterCount(filter) {
 function orderedProductSubcategories(items = currentProductItems) {
   const subcats = [...new Set(items.map(productSubcategory).filter(Boolean))];
   return subcats.sort((a, b) => {
-    const score = s => /akun|joki/i.test(s) ? 0 : (/buah|fruit/i.test(s) ? 1 : 2);
+    const score = s => /akun|joki/i.test(s) ? 0 : (/^(buah|fruit)\/?(buah|fruit)?$/i.test(s) ? 1 : (/permanent|kekal/i.test(s) ? 99 : 2));
     return score(a) - score(b) || a.localeCompare(b);
   });
 }
@@ -2902,7 +2902,7 @@ function getGameBadgeMeta(value) {
 }
 function renderGames() {
   renderPlatformFilters();
-  const visibleGames = catalogGames();
+  const visibleGames = catalogGames().sort((a, b) => Number(Boolean(a.oos)) - Number(Boolean(b.oos)));
   document.getElementById('game-grid').innerHTML = visibleGames.map(g => {
     const badgeMeta = getGameBadgeMeta(g.badge || g.badgeTitle || g.badgeText || g.titleBadge || g.label);
     const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + escapeHtml(badgeMeta.text) + '</div>' : '';
