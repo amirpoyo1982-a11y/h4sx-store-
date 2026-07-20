@@ -3740,15 +3740,262 @@ function toast(msg, err, name, count) {
 initChangelog();
 initReviewSystemPopup();
 
-const REVIEW_FORM_LINK = 'https://h4sxreview.vercel.app/#hantar-ulasan';
+const REVIEW_FORM_LINK = 'https://h4sxmy.vercel.app/?review=submit';
 
 async function copyReviewFormLink() {
   try {
     await navigator.clipboard.writeText(REVIEW_FORM_LINK);
-    showToast('Link hantar ulasan berjaya disalin.', 'success');
+    toast('Link hantar ulasan berjaya disalin.');
   } catch (error) {
     window.prompt('Copy link hantar ulasan ini:', REVIEW_FORM_LINK);
   }
 }
 
 window.copyReviewFormLink = copyReviewFormLink;
+
+function openH4ReviewForm() {
+  const modal = document.getElementById('h4rf-modal');
+  if (!modal) return;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('h4rf-code')?.focus(), 100);
+}
+
+function closeH4ReviewForm() {
+  const modal = document.getElementById('h4rf-modal');
+  if (!modal) return;
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+window.openH4ReviewForm = openH4ReviewForm;
+window.closeH4ReviewForm = closeH4ReviewForm;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('h4rf-modal');
+  const form = document.getElementById('h4rf-form');
+  if (!modal || !form) return;
+
+  const code = document.getElementById('h4rf-code');
+  const name = document.getElementById('h4rf-name');
+  const rating = document.getElementById('h4rf-rating');
+  const review = document.getElementById('h4rf-review');
+  const submit = document.getElementById('h4rf-submit');
+  const avatar = document.getElementById('h4rf-avatar');
+  const avatarText = avatar.querySelector('span');
+  const avatarImg = avatar.querySelector('img');
+  const swatches = document.getElementById('h4rf-swatches');
+  const emojis = document.getElementById('h4rf-emojis');
+  const profileFile = document.getElementById('h4rf-profile-file');
+  const profileUrl = document.getElementById('h4rf-profile-url');
+  const feedbackFile = document.getElementById('h4rf-feedback-file');
+  const feedbackStatus = document.getElementById('h4rf-feedback-status');
+  const charCount = document.getElementById('h4rf-count');
+  const colors = ['#2fa8e0', '#7c5cbf', '#22c47a', '#f0a500', '#e05252', '#1a4470', '#48a89e', '#d96fb0'];
+  const emojiOptions = [':)', 'B)', 'GG', 'V', '*', '+'];
+  const names = ['Aiman', 'Hakim', 'Danish', 'Aqil', 'Farish', 'Arif', 'Nazri', 'Syafiq', 'Ammar', 'Haziq', 'Danial', 'Adam', 'Alya', 'Nadia', 'Sofea', 'Aina', 'Zara', 'Hana'];
+  const suffixes = ['X', 'Pro', 'MY', 'GG', 'ID', 'V2', 'OP', 'YT'];
+  const suggestions = [
+    'Servis laju dan mudah faham. Seller pun bantu sampai selesai, memang puas hati.',
+    'Urusan smooth dari mula sampai siap. Item diterima seperti dijanjikan.',
+    'Harga okay, proses cepat dan customer service sangat membantu.',
+    'First time beli dekat sini dan pengalaman memang baik. Boleh repeat lagi.',
+    'Digital item diterima dengan selamat. Terima kasih H4SX STORE.'
+  ];
+  let selectedColor = null;
+  let selectedEmoji = null;
+  let profileImage = null;
+  let feedbackImage = null;
+  let suggestionUsed = false;
+
+  const message = (text, isError = false) => toast(text, isError);
+  const autoColor = value => colors[(String(value || '').trim().length || 0) % colors.length];
+  const updateAvatar = () => {
+    const color = selectedColor || autoColor(name.value);
+    avatar.style.backgroundColor = color;
+    avatarText.textContent = selectedEmoji || (name.value.trim().charAt(0).toUpperCase() || 'H');
+    avatar.classList.toggle('has-image', Boolean(profileImage));
+    avatarImg.src = profileImage || '';
+  };
+  const setProfileImage = (value, keepEmoji = false) => {
+    profileImage = value || null;
+    if (!keepEmoji) {
+      selectedEmoji = null;
+      emojis.querySelectorAll('.h4rf-emoji').forEach(item => item.classList.remove('active'));
+    }
+    document.getElementById('h4rf-clear-profile').hidden = !profileImage;
+    updateAvatar();
+  };
+  const compressImage = (source, maxSide, quality = .78) => new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      try {
+        const side = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const width = Math.max(1, Math.round(image.naturalWidth * side));
+        const height = Math.max(1, Math.round(image.naturalHeight * side));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } catch (error) { reject(error); }
+    };
+    image.onerror = () => reject(new Error('image-load-failed'));
+    image.src = source;
+  });
+  const readFile = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = event => resolve(event.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  const applyProfileFile = async file => {
+    if (!file || !file.type?.startsWith('image/')) return message('Pilih fail gambar yang sah.', true);
+    if (file.size > 5 * 1024 * 1024) return message('Gambar profil terlalu besar. Maksimum 5MB.', true);
+    try {
+      setProfileImage(await compressImage(await readFile(file), 160, .76));
+      message('Gambar profil dimuatkan.');
+    } catch (error) { message('Gagal proses gambar profil.', true); }
+  };
+  const applyFeedbackFile = async file => {
+    if (!file || !file.type?.startsWith('image/')) return message('Pilih fail gambar yang sah.', true);
+    if (file.size > 5 * 1024 * 1024) return message('Gambar feedback terlalu besar. Maksimum 5MB.', true);
+    try {
+      feedbackImage = await compressImage(await readFile(file), 900, .72);
+      feedbackStatus.textContent = 'Gambar feedback sudah dipilih.';
+      document.getElementById('h4rf-feedback-clear').hidden = false;
+      message('Gambar feedback dimuatkan.');
+    } catch (error) { message('Gagal proses gambar feedback.', true); }
+  };
+
+  colors.forEach(color => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'h4rf-swatch';
+    button.dataset.color = color;
+    button.style.backgroundColor = color;
+    button.addEventListener('click', () => {
+      selectedColor = color;
+      swatches.querySelectorAll('.h4rf-swatch').forEach(item => item.classList.toggle('active', item === button));
+      updateAvatar();
+    });
+    swatches.appendChild(button);
+  });
+  emojiOptions.forEach(value => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'h4rf-emoji';
+    button.textContent = value;
+    button.addEventListener('click', () => {
+      selectedEmoji = selectedEmoji === value ? null : value;
+      emojis.querySelectorAll('.h4rf-emoji').forEach(item => item.classList.toggle('active', item === button && Boolean(selectedEmoji)));
+      if (selectedEmoji) setProfileImage(null, true);
+      updateAvatar();
+    });
+    emojis.appendChild(button);
+  });
+
+  name.addEventListener('input', updateAvatar);
+  document.getElementById('h4rf-generate').addEventListener('click', () => {
+    name.value = names[Math.floor(Math.random() * names.length)] + suffixes[Math.floor(Math.random() * suffixes.length)];
+    selectedColor = colors[Math.floor(Math.random() * colors.length)];
+    selectedEmoji = null;
+    setProfileImage(null);
+    swatches.querySelectorAll('.h4rf-swatch').forEach(item => item.classList.toggle('active', item.dataset.color === selectedColor));
+    updateAvatar();
+  });
+  document.getElementById('h4rf-file-pick').addEventListener('click', () => profileFile.click());
+  avatar.addEventListener('click', () => profileFile.click());
+  profileFile.addEventListener('change', () => applyProfileFile(profileFile.files[0]));
+  document.getElementById('h4rf-clear-profile').addEventListener('click', () => { profileFile.value = ''; profileUrl.value = ''; setProfileImage(null); });
+  document.getElementById('h4rf-url-load').addEventListener('click', async () => {
+    const url = profileUrl.value.trim();
+    if (!/^https?:\/\//i.test(url)) return message('Masukkan URL gambar yang betul.', true);
+    try { setProfileImage(await compressImage(url, 160, .76)); message('Gambar profil dimuatkan.'); }
+    catch (error) { message('URL gambar gagal dimuatkan. Cuba i.imgur.com atau upload fail.', true); }
+  });
+  document.getElementById('h4rf-paste').addEventListener('click', async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const type = item.types.find(value => value.startsWith('image/'));
+        if (type) return applyProfileFile(new File([await item.getType(type)], 'clipboard.png', { type }));
+      }
+      message('Clipboard tiada gambar.', true);
+    } catch (error) { message('Tak dapat baca clipboard. Cuba Ctrl+V dalam tab Clipboard.', true); }
+  });
+  document.querySelectorAll('[data-h4rf-tab]').forEach(button => button.addEventListener('click', () => {
+    document.querySelectorAll('[data-h4rf-tab]').forEach(item => item.classList.toggle('active', item === button));
+    document.querySelectorAll('[data-h4rf-panel]').forEach(item => item.classList.toggle('active', item.dataset.h4rfPanel === button.dataset.h4rfTab));
+  }));
+  modal.addEventListener('paste', event => {
+    const panel = modal.querySelector('[data-h4rf-panel="clipboard"]');
+    if (!panel.classList.contains('active')) return;
+    const item = [...(event.clipboardData?.items || [])].find(value => value.type.startsWith('image/'));
+    if (item) { event.preventDefault(); applyProfileFile(item.getAsFile()); }
+  });
+  document.getElementById('h4rf-feedback-pick').addEventListener('click', () => feedbackFile.click());
+  feedbackFile.addEventListener('change', () => applyFeedbackFile(feedbackFile.files[0]));
+  document.getElementById('h4rf-feedback-clear').addEventListener('click', () => {
+    feedbackImage = null; feedbackFile.value = ''; feedbackStatus.textContent = ''; document.getElementById('h4rf-feedback-clear').hidden = true;
+  });
+  review.addEventListener('input', () => {
+    charCount.textContent = `${review.value.length} / 500`;
+    if (!review.value.trim()) suggestionUsed = false;
+  });
+  document.getElementById('h4rf-suggest').addEventListener('click', () => {
+    review.value = 'cdg - ' + suggestions[Math.floor(Math.random() * suggestions.length)];
+    suggestionUsed = true;
+    charCount.textContent = `${review.value.length} / 500`;
+  });
+  modal.addEventListener('click', event => { if (event.target === modal) closeH4ReviewForm(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm(); });
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const reviewCode = code.value.trim().toUpperCase();
+    const customerName = name.value.trim();
+    let reviewText = review.value.trim();
+    const blocked = /^(anjing|babi|sial|bodoh|bangang|bangsat|celaka|laknat)$/i.test(customerName) || /(pukimak|kimak|puki|butoh|butuh|kontol|memek|lancau|lanjiao|cibai|jibai|pundek|fuck|shit|bitch|asshole|nigger|nigga|keling)/i.test(customerName);
+    if (!reviewCode) return message('Sila masukkan kod pengesahan.', true);
+    if (!customerName) return message('Sila isi nama atau username.', true);
+    if (blocked || customerName.toLowerCase().includes('h4sx')) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
+    if (!db || !window.firebase) return message('Sistem review belum sedia. Cuba semula sebentar lagi.', true);
+    if (suggestionUsed && reviewText && !/^cdg\s*[-:]/i.test(reviewText)) reviewText = `cdg - ${reviewText}`.slice(0, 500);
+    submit.disabled = true;
+    submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar...';
+    try {
+      const codeRef = db.collection('review_codes').doc(reviewCode);
+      const codeSnapshot = await codeRef.get();
+      if (!codeSnapshot.exists) throw new Error('review-code-invalid');
+      const payload = { nama: customerName, bintang: Number(rating.value), ulasan: reviewText || 'Tiada ulasan ditinggalkan.', diciptaPada: firebase.firestore.FieldValue.serverTimestamp() };
+      if (selectedColor) payload.warnaProfil = selectedColor;
+      if (selectedEmoji) payload.emojiProfil = selectedEmoji;
+      if (profileImage) payload.profileImg = profileImage;
+      if (feedbackImage) payload.feedbackImg = feedbackImage;
+      const reviewRef = await db.collection('ratings').add(payload);
+      await codeRef.delete();
+      try {
+        await reviewRef.update({ balasanAdmin: `Terima kasih, ${customerName}! Kami hargai ulasan anda kepada H4SX STORE. Sokongan anda membantu kami terus memperbaiki servis.`, balasanPada: firebase.firestore.FieldValue.serverTimestamp(), ...(suggestionUsed ? { cdg: true, cadanganDigunakan: true } : {}) });
+      } catch (replyError) { console.warn('Auto reply review tidak dapat disimpan.', replyError); }
+      form.reset();
+      selectedColor = null; selectedEmoji = null; profileImage = null; feedbackImage = null; suggestionUsed = false;
+      avatar.classList.remove('has-image'); avatarImg.src = ''; feedbackStatus.textContent = ''; charCount.textContent = '0 / 500';
+      swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
+      document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
+      updateAvatar();
+      message('Ulasan berjaya dihantar. Terima kasih!');
+      setTimeout(closeH4ReviewForm, 700);
+    } catch (error) {
+      message(error.message === 'review-code-invalid' ? 'Kod pengesahan tidak sah atau telah digunakan.' : 'Gagal hantar ulasan. Cuba lagi.', true);
+    } finally {
+      submit.disabled = false;
+      submit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Hantar Ulasan';
+    }
+  });
+  updateAvatar();
+  if (new URLSearchParams(window.location.search).get('review') === 'submit') setTimeout(openH4ReviewForm, 400);
+}, { once: true });

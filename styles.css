@@ -6449,3 +6449,57 @@ nav,
     .review-submit-main-btn { width: 100%; }
     .review-share-btn { width: 100%; justify-content: center; }
 }
+
+/* Native H4SX review submission form. */
+.h4rf-modal { position:fixed; inset:0; z-index:10050; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(4,24,53,.68); backdrop-filter:blur(9px); }
+.h4rf-modal.show { display:flex; }
+.h4rf-dialog { width:min(700px,100%); max-height:calc(100dvh - 28px); overflow:auto; border:1px solid #a8e3ff; border-radius:24px; background:#f8fcff; box-shadow:0 28px 90px rgba(0,28,58,.45); }
+.h4rf-head { display:flex; justify-content:space-between; gap:16px; padding:20px 23px 17px; color:#fff; background:linear-gradient(105deg,#088ee2,#13bcd4 58%,#16bf76); }
+.h4rf-head span { font-size:.64rem; font-weight:900; letter-spacing:.13em; }
+.h4rf-head h2 { margin:4px 0; font-size:1.35rem; }
+.h4rf-head p { margin:0; font-size:.78rem; line-height:1.4; }
+.h4rf-head button { width:38px; height:38px; flex:0 0 auto; border:1px solid rgba(255,255,255,.52); border-radius:12px; color:#fff; background:rgba(255,255,255,.14); font-size:1.6rem; cursor:pointer; }
+.h4rf-form { padding:20px 23px 23px; }
+.h4rf-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+.h4rf-field { display:block; color:#173f66; }
+.h4rf-wide { grid-column:1/-1; }
+.h4rf-field > span,.h4rf-feedback > span { display:block; margin-bottom:7px; font-size:.7rem; font-weight:900; letter-spacing:.035em; text-transform:uppercase; }
+.h4rf-field em,.h4rf-feedback em { font-style:normal; font-weight:600; text-transform:none; }
+.h4rf-field input,.h4rf-field select,.h4rf-field textarea,.h4rf-url-row input { width:100%; border:1px solid #c5e9ff; border-radius:12px; outline:0; color:#12395e; background:#fff; font:inherit; font-size:.83rem; }
+.h4rf-field input,.h4rf-field select,.h4rf-url-row input { height:43px; padding:0 12px; }
+.h4rf-field textarea { min-height:94px; padding:11px 12px; resize:vertical; line-height:1.5; }
+.h4rf-field input:focus,.h4rf-field select:focus,.h4rf-field textarea:focus,.h4rf-url-row input:focus { border-color:#0eb8de; box-shadow:0 0 0 3px rgba(14,184,222,.12); }
+.h4rf-name-row,.h4rf-url-row { display:flex; gap:8px; }
+.h4rf-name-row button,.h4rf-url-row button { flex:0 0 auto; border:0; border-radius:11px; padding:0 13px; color:#0879bc; background:#e9f8ff; font:inherit; font-size:.73rem; font-weight:850; cursor:pointer; }
+.h4rf-profile { display:flex; align-items:center; gap:14px; margin:16px 0 10px; padding:13px; border:1px solid #d0edff; border-radius:17px; background:#effaff; }
+.h4rf-avatar { position:relative; width:58px; height:58px; flex:0 0 58px; overflow:hidden; border:0; border-radius:17px; color:#fff; background:#20a7df; font-size:1.22rem; font-weight:900; cursor:pointer; }
+.h4rf-avatar img { display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.h4rf-avatar.has-image img { display:block; }
+.h4rf-avatar.has-image span { visibility:hidden; }
+.h4rf-avatar i { position:absolute; right:3px; bottom:3px; display:grid; width:18px; height:18px; place-items:center; border-radius:50%; color:#0879bc; background:#fff; font-size:.56rem; }
+.h4rf-profile-options { min-width:0; flex:1; }
+.h4rf-profile-options strong { display:block; margin-bottom:7px; color:#19486f; font-size:.69rem; text-transform:uppercase; letter-spacing:.04em; }
+.h4rf-swatches,.h4rf-emojis { display:flex; gap:6px; flex-wrap:wrap; }
+.h4rf-emojis { margin-top:7px; }
+.h4rf-swatch,.h4rf-emoji { display:grid; width:20px; height:20px; place-items:center; border:2px solid transparent; border-radius:50%; cursor:pointer; }
+.h4rf-swatch.active { border-color:#0d4d78; box-shadow:0 0 0 2px #fff; }
+.h4rf-emoji { width:25px; height:23px; border-radius:7px; background:#fff; font-size:.78rem; }
+.h4rf-emoji.active { border-color:#0aa8df; background:#e5f8ff; }
+.h4rf-upload { padding:11px; border:1px dashed #abdff8; border-radius:15px; background:#fbfeff; }
+.h4rf-upload-tabs { display:flex; gap:6px; }
+.h4rf-upload-tabs button { flex:1; min-width:0; border:1px solid #c7eaff; border-radius:9px; padding:7px 5px; color:#5a83a0; background:#f6fbff; font:inherit; font-size:.67rem; font-weight:800; cursor:pointer; }
+.h4rf-upload-tabs button.active { color:#fff; border-color:#13addf; background:linear-gradient(110deg,#14abe7,#12c68c); }
+.h4rf-upload-panel { display:none; align-items:center; gap:8px; padding:10px 2px 1px; }
+.h4rf-upload-panel.active { display:flex; }
+.h4rf-upload-panel small { color:#6e8aa4; font-size:.68rem; }
+.h4rf-upload-pick,.h4rf-feedback button { border:1px solid #bce8ff; border-radius:9px; padding:8px 11px; color:#087bbd; background:#ecf9ff; font:inherit; font-size:.72rem; font-weight:850; cursor:pointer; }
+.h4rf-clear-image { margin-top:8px; border:0; color:#d34954; background:transparent; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
+.h4rf-review-tools { display:flex; align-items:center; justify-content:space-between; margin-top:7px; }
+.h4rf-review-tools button { border:0; border-radius:9px; padding:7px 10px; color:#087aba; background:#e6f8ff; font:inherit; font-size:.7rem; font-weight:850; cursor:pointer; }
+.h4rf-review-tools small,.h4rf-feedback small { color:#6d8ba5; font-size:.68rem; }
+.h4rf-feedback { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:15px; padding:11px 12px; border:1px solid #d2efff; border-radius:14px; background:#f9fdff; }
+.h4rf-feedback > span { margin:0 auto 0 0; }
+.h4rf-feedback button[hidden],.h4rf-clear-image[hidden] { display:none; }
+.h4rf-submit { width:100%; margin-top:17px; border:0; border-radius:14px; padding:14px; color:#fff; background:linear-gradient(105deg,#0d9ee8,#13bfd5 55%,#18bf74); box-shadow:0 10px 20px rgba(4,165,205,.22); font:inherit; font-size:.85rem; font-weight:900; cursor:pointer; }
+.h4rf-submit:disabled { opacity:.7; cursor:wait; }
+@media (max-width:620px) { .h4rf-modal { padding:7px; align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-form { padding:15px; } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
