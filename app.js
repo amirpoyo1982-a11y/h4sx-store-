@@ -360,6 +360,7 @@ function getLocalHelperAnswer(question) {
   const asksTime = helperIncludes(q, ['berapa lama', 'lama', 'proses', 'delivery', 'deliver', 'siap bila', 'tunggu', 'minit', 'jam']);
   const asksCheap = helperIncludes(q, ['paling murah', 'termurah', 'murah apa', 'murah', 'budget', 'bajet', 'lowest', 'cheap']);
   const asksReview = helperIncludes(q, ['review', 'ulasan', 'rating', 'rate', 'testimoni']);
+  const asksChannel = helperIncludes(q, ['channel', 'saluran', 'whatsapp channel', 'post', 'update review', 'follow']);
   const asksWebsite = helperIncludes(q, ['website', 'web', 'site', 'kedai', 'store']);
   const greeting = /^(hai|hi|hello|helo|weh|yo|assalam|salam)\b/i.test(q);
   const thanks = helperIncludes(q, ['terima kasih', 'thanks', 'thank you', 'tq']);
@@ -389,7 +390,7 @@ function getLocalHelperAnswer(question) {
     return 'Boleh tengok atau hantar review dekat sini:\nhttps://h4sxreview.vercel.app/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Alamat baru H4SX:\nWebsite utama: https://h4sxmy.vercel.app/\nWebsite review: https://h4sxreview.vercel.app/\n\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Alamat baru H4SX:\nWebsite utama: https://h4sxmy.vercel.app/\nWebsite review: https://h4sxreview.vercel.app/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/60193263016';
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
@@ -618,6 +619,7 @@ const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pix
 // Tukar link kat atas ni je kalau nak tukar model background.
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '60193263016';
+const H4SX_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XfQADeOMynLbTB443';
 const GAMES_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/92b41c9122c025c2536e68353a82ee0f/raw/games.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/games.json'

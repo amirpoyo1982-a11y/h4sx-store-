@@ -6126,3 +6126,45 @@ nav,
   .receipt-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .receipt-action { min-height: 54px; flex-direction: row; border-radius: 15px; }
 }
+/* H4SX Helper suggestion chips scroll fix */
+.ai-side-assistant .ai-helper-suggestions {
+  position: relative;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 10px 12px 12px !important;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(14,165,233,.45) transparent;
+}
+.ai-side-assistant .ai-helper-suggestions::-webkit-scrollbar { height: 6px; }
+.ai-side-assistant .ai-helper-suggestions::-webkit-scrollbar-track { background: transparent; }
+.ai-side-assistant .ai-helper-suggestions::-webkit-scrollbar-thumb {
+  background: rgba(14,165,233,.42);
+  border-radius: 999px;
+}
+.ai-side-assistant .ai-helper-suggestions button {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  scroll-snap-align: start;
+}
+.ai-side-assistant .ai-chat-panel {
+  overflow: hidden !important;
+}
+@media (min-width: 521px) {
+  .ai-side-assistant .ai-helper-suggestions {
+    padding-right: 18px !important;
+  }
+}
+@media (max-width: 520px) {
+  .ai-side-assistant .ai-helper-suggestions {
+    scrollbar-width: none;
+  }
+  .ai-side-assistant .ai-helper-suggestions::-webkit-scrollbar { display: none; }
+}
