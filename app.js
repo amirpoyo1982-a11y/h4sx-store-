@@ -2454,7 +2454,7 @@ function fixMojibakeText(value) {
 }
 function escapeHtml(str) {
   const d = document.createElement('div');
-  d.textContent = fixMojibakeText(str);
+  d.textContent = cleanUiMojibakeText(fixMojibakeText(str));
   return d.innerHTML;
 }
 function clampRating(value) {
@@ -3262,7 +3262,7 @@ async function takeScreenshot() {
   }
 }
 function escapeForHtml(value) {
-  return String(value ?? '')
+  return cleanUiMojibakeText(String(value ?? ''))
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -4001,3 +4001,43 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAvatar();
   if (new URLSearchParams(window.location.search).get('review') === 'submit') setTimeout(openH4ReviewForm, 400);
 }, { once: true });
+
+function cleanUiMojibakeText(value) {
+  return String(value ?? '')
+    .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00e2\u20ac[\u0093\u0094\u009d\u2013\u2014\u201c\u201d]/g, '-')
+    .replace(/\u00e2\u20ac[\u0093\u0094\u009d\u2013\u2014\u201c\u201d]/g, '-')
+    .replace(/\u00c3\u00a2\u00e2\u201a\u00ac\u00c2\u00a2/g, '*')
+    .replace(/\u00e2\u20ac\u00a2/g, '*')
+    .replace(/\u00c3\u0083\u00c2\u0097|\u00c3\u0097/g, 'x')
+    .replace(/\u00e2\u2014\u008f/g, '*')
+    .replace(/\u00c2\u00a0/g, ' ')
+    .replace(/\u00ef\u00bf\u00bd/g, '');
+}
+
+function repairMojibakeInPage(root) {
+  if (!root) return;
+  const repairTextNode = node => {
+    const cleaned = cleanUiMojibakeText(node.nodeValue);
+    if (cleaned !== node.nodeValue) node.nodeValue = cleaned;
+  };
+  if (root.nodeType === Node.TEXT_NODE) {
+    repairTextNode(root);
+    return;
+  }
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+  while ((node = walker.nextNode())) repairTextNode(node);
+}
+
+function startMojibakeRepair() {
+  repairMojibakeInPage(document.body);
+  new MutationObserver(records => {
+    records.forEach(record => {
+      if (record.type === 'characterData') repairMojibakeInPage(record.target);
+      record.addedNodes.forEach(node => repairMojibakeInPage(node));
+    });
+  }).observe(document.body, { childList: true, characterData: true, subtree: true });
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMojibakeRepair, { once: true });
+else startMojibakeRepair();
