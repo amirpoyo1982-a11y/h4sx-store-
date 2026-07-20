@@ -3740,6 +3740,8 @@ function toast(msg, err, name, count) {
 initChangelog();
 initReviewSystemPopup();
 
+const H4RF_DIRECT_MODE = new URLSearchParams(window.location.search).get('review') === 'submit';
+if (H4RF_DIRECT_MODE) document.documentElement.classList.add('review-submit-direct');
 const REVIEW_FORM_LINK = 'https://h4sxmy.vercel.app/?review=submit';
 
 async function copyReviewFormLink() {

@@ -6503,3 +6503,23 @@ nav,
 .h4rf-submit { width:100%; margin-top:17px; border:0; border-radius:14px; padding:14px; color:#fff; background:linear-gradient(105deg,#0d9ee8,#13bfd5 55%,#18bf74); box-shadow:0 10px 20px rgba(4,165,205,.22); font:inherit; font-size:.85rem; font-weight:900; cursor:pointer; }
 .h4rf-submit:disabled { opacity:.7; cursor:wait; }
 @media (max-width:620px) { .h4rf-modal { padding:7px; align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-form { padding:15px; } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
+
+/* Shared review link: show only the native form, without the store chrome. */
+html.review-submit-direct,
+html.review-submit-direct body { min-height:100%; background:#eef9ff; }
+html.review-submit-direct .site-header,
+html.review-submit-direct .marquee-wrap,
+html.review-submit-direct #mob-menu,
+html.review-submit-direct #search-overlay,
+html.review-submit-direct #closure-overlay,
+html.review-submit-direct .page-mesh,
+html.review-submit-direct #earth-bg,
+html.review-submit-direct .ai-chat-panel,
+html.review-submit-direct .ai-helper-bubble,
+html.review-submit-direct iframe,
+html.review-submit-direct [id*="balasan"],
+html.review-submit-direct [class*="balasan"] { display:none !important; }
+html.review-submit-direct #home-view > :not(.h4rf-modal) { display:none !important; }
+html.review-submit-direct .wrap { width:100%; max-width:none; padding:0; }
+html.review-submit-direct .h4rf-modal { position:fixed; z-index:2147483000; padding:14px; background:linear-gradient(135deg,#e5f8ff,#f7fffb); }
+html.review-submit-direct .h4rf-dialog { width:min(700px,100%); max-height:calc(100dvh - 28px); }
