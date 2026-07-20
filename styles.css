@@ -6528,7 +6528,7 @@ html.review-submit-direct .h4rf-dialog { width:min(700px,100%); max-height:calc(
 #shop-section #game-grid,
 #game-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)) !important;
   align-items: stretch !important;
   overflow: visible !important;
   padding: 4px !important;
