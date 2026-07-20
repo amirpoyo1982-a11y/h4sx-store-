@@ -5844,3 +5844,63 @@ nav,
   .pbuy { min-width: 0 !important; }
   .pbuy span { display: none !important; }
 }
+/* Changelog image export button */
+.changelog-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.changelog-image-btn {
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid rgba(14,165,233,.18);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(14,165,233,.12), rgba(255,255,255,.96));
+  color: var(--ink2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  box-shadow: 0 10px 24px rgba(14,165,233,.09);
+}
+.changelog-image-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(14,165,233,.38);
+  background: linear-gradient(135deg, rgba(14,165,233,.18), #fff);
+}
+.changelog-image-btn.is-loading i {
+  animation: hardRefreshSpin .75s linear infinite;
+}
+.changelog-image-btn > i {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(14,165,233,.22);
+}
+.changelog-image-btn span {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.changelog-image-btn strong {
+  font-size: 14px;
+  line-height: 1.1;
+}
+.changelog-image-btn small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+@media (max-width: 520px) {
+  .changelog-action-row { grid-template-columns: 1fr; }
+  .changelog-image-btn { min-height: 58px; border-radius: 15px; }
+}

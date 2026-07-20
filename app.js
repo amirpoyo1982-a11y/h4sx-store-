@@ -794,6 +794,181 @@ function dismissChangelog() {
   try { localStorage.setItem(CHANGELOG_STORAGE_KEY, '1'); } catch (e) {}
   closeChangelog();
 }
+function stripChangelogHtml(value) {
+  const div = document.createElement('div');
+  div.innerHTML = String(value || '').replace(/<br\s*\/?>(\s*)/gi, ' ');
+  return (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+}
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+function roundRectCanvas(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+function drawChangelogPill(ctx, x, y, label, value, color) {
+  roundRectCanvas(ctx, x, y, 262, 82, 22);
+  ctx.fillStyle = '#f7fcff';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(14, 165, 233, .18)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#64748b';
+  ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText(label, x + 22, y + 30);
+  ctx.fillStyle = color || '#0ea5e9';
+  ctx.font = '900 28px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText(value, x + 22, y + 62);
+}
+function downloadChangelogImage() {
+  const data = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
+  if (!data) { toast('Changelog belum siap untuk dijadikan gambar.', true); return; }
+  const btn = document.querySelector('.changelog-image-btn');
+  btn?.classList.add('is-loading');
+  btn?.setAttribute('disabled', 'disabled');
+  try {
+    const width = 1080;
+    const pad = 56;
+    const cardW = width - pad * 2;
+    const sectionGap = 24;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '500 27px "Plus Jakarta Sans", Arial, sans-serif';
+    let height = 300;
+    for (const section of (data.sections || [])) {
+      height += 86;
+      for (const item of (section.items || [])) {
+        const lines = wrapCanvasText(ctx, stripChangelogHtml(item.text), cardW - 132);
+        height += Math.max(78, 34 + lines.length * 31) + 12;
+      }
+      height += sectionGap;
+    }
+    height += 70;
+    canvas.width = width;
+    canvas.height = height;
+
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, '#e8f8ff');
+    bg.addColorStop(.45, '#ffffff');
+    bg.addColorStop(1, '#dff5ff');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'rgba(14,165,233,.10)';
+    for (let i = 0; i < 20; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 173) % width, 70 + (i * 97) % (height - 120), 38 + (i % 4) * 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    roundRectCanvas(ctx, 32, 32, width - 64, height - 64, 36);
+    ctx.fillStyle = 'rgba(255,255,255,.84)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(14,165,233,.22)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    const topGrad = ctx.createLinearGradient(32, 32, width - 32, 32);
+    topGrad.addColorStop(0, '#0ea5e9');
+    topGrad.addColorStop(.55, '#06b6d4');
+    topGrad.addColorStop(1, '#22c55e');
+    ctx.fillStyle = topGrad;
+    roundRectCanvas(ctx, 32, 32, width - 64, 8, 4);
+    ctx.fill();
+
+    ctx.fillStyle = '#082f49';
+    ctx.font = '1000 52px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(data.title || 'Apa Yang Baru - H4SX STORE', pad, 116);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.font = '900 28px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('Update hari ini sahaja', pad, 158);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '700 22px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText((data.date || '') + '  |  ' + (data.time || '') + '  |  ' + (data.version || 'Latest'), pad, 198);
+
+    const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
+    drawChangelogPill(ctx, pad, 228, 'Release', data.version || 'Latest', '#0ea5e9');
+    drawChangelogPill(ctx, pad + 282, 228, 'Kemaskini', totalItems + ' item', '#059669');
+    drawChangelogPill(ctx, pad + 564, 228, 'Status', 'Live', '#f59e0b');
+
+    let y = 344;
+    const metaMap = {
+      added: { color: '#10b981', soft: 'rgba(16,185,129,.10)', title: 'Ditambah' },
+      fixed: { color: '#0ea5e9', soft: 'rgba(14,165,233,.11)', title: 'Diperbaiki' },
+      removed: { color: '#ef4444', soft: 'rgba(239,68,68,.09)', title: 'Dibuang' }
+    };
+    for (const section of (data.sections || [])) {
+      const meta = metaMap[section.type] || { color: '#f59e0b', soft: 'rgba(245,158,11,.10)', title: 'Info' };
+      ctx.fillStyle = meta.color;
+      ctx.font = '1000 30px "Plus Jakarta Sans", Arial, sans-serif';
+      ctx.fillText(section.title || meta.title, pad, y);
+      y += 26;
+      for (const item of (section.items || [])) {
+        const text = stripChangelogHtml(item.text);
+        ctx.font = '600 25px "Plus Jakarta Sans", Arial, sans-serif';
+        const lines = wrapCanvasText(ctx, text, cardW - 132);
+        const h = Math.max(78, 34 + lines.length * 31);
+        roundRectCanvas(ctx, pad, y, cardW, h, 24);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(14,165,233,.14)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        roundRectCanvas(ctx, pad + 18, y + 18, 44, 44, 14);
+        ctx.fillStyle = meta.soft;
+        ctx.fill();
+        ctx.fillStyle = meta.color;
+        ctx.font = '1000 27px Arial, sans-serif';
+        ctx.fillText('+', pad + 32, y + 49);
+        ctx.fillStyle = '#10233f';
+        ctx.font = '600 25px "Plus Jakarta Sans", Arial, sans-serif';
+        lines.forEach((line, idx) => ctx.fillText(line, pad + 84, y + 36 + idx * 31));
+        y += h + 12;
+      }
+      y += sectionGap;
+    }
+
+    ctx.fillStyle = '#0ea5e9';
+    ctx.font = '1000 24px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('H4SX STORE', pad, height - 70);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('https://h4sxmy.vercel.app  |  https://h4sxreview.vercel.app', pad, height - 42);
+
+    const a = document.createElement('a');
+    a.download = 'h4sx-changelog-' + (data.version || 'latest') + '.png';
+    a.href = canvas.toDataURL('image/png');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('Gambar changelog berjaya download!');
+  } catch (error) {
+    console.error(error);
+    toast('Tak dapat generate gambar changelog.', true);
+  } finally {
+    btn?.classList.remove('is-loading');
+    btn?.removeAttribute('disabled');
+  }
+}
 async function hardRefreshSite() {
   const btns = document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh');
   btns.forEach(btn => {

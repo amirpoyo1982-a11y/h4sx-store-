@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-mobile-premium-1">
+<link rel="stylesheet" href="styles.css?v=h4sx-changelog-image-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -82,13 +82,12 @@
     </div>
     
     <div class="changelog-foot">
-      <button class="changelog-hard-refresh" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i><span><strong>Hard Refresh Update</strong><small>Tekan kalau website masih nampak versi lama</small></span></button>
-      <button class="changelog-ok" onclick="dismissChangelog()"><i class="fa-solid fa-check"></i> Faham, terima kasih!</button>
+      <div class="changelog-action-row"><button class="changelog-image-btn" onclick="downloadChangelogImage()"><i class="fa-solid fa-image"></i><span><strong>Save Image</strong><small>Download changelog sebagai PNG</small></span></button><button class="changelog-hard-refresh" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i><span><strong>Hard Refresh Update</strong><small>Tekan kalau website masih nampak versi lama</small></span></button></div><button class="changelog-ok" onclick="dismissChangelog()"><i class="fa-solid fa-check"></i> Faham, terima kasih!</button>
     </div>
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=v1.8-today-only"></script>
+<script defer src="changelog-loader.js?v=v1.8-image-btn"></script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
   <div class="marquee-track">
@@ -654,7 +653,7 @@
 </div>
 <div id="toasts"></div>
 <script src="https://balasan.id/widget.js?v=1779446071" data-workspace="h4sx"></script>
-<script defer src="app.js?v=h4sx-changelog-v18"></script>
+<script defer src="app.js?v=h4sx-changelog-image-1"></script>
 
 </body>
 </html>
