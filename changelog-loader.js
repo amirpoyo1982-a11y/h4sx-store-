@@ -1,50 +1,76 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '16 July 2026',
+  date: '20 July 2026',
   time: 'Latest',
-  version: 'v1.7',
+  version: 'v1.8',
   sections: [
     {
       type: 'added',
-      title: 'Ditambah',
+      title: 'Ditambah Hari Ini',
       items: [
         {
-          icon: 'fa-receipt',
-          text: '<strong>Histori Transaksi</strong> - pelanggan kini boleh semak pembelian menggunakan nombor transaksi atau nombor WhatsApp.'
+          icon: 'fa-mobile-screen-button',
+          text: '<strong>Mobile view premium</strong> - paparan phone H4SX dikemas semula dengan header compact, menu lebih kemas, banner lebih ngam dan product card 2 column yang lebih cantik.'
         },
         {
-          icon: 'fa-user-shield',
-          text: '<strong>Panel transaksi admin</strong> - admin boleh tambah, edit, padam dan lihat transaksi terkini terus dari website.'
+          icon: 'fa-robot',
+          text: '<strong>H4SX Helper tanpa API</strong> - helper kini guna jawapan pantas dari website sendiri untuk bantu pelanggan tentang cara beli, harga, stok, resit, proses dan link admin.'
         },
         {
-          icon: 'fa-wand-magic-sparkles',
-          text: '<strong>Generate nombor transaksi</strong> - code H4SX rawak boleh dijana terus semasa membuat transaksi baru.'
+          icon: 'fa-comments',
+          text: '<strong>Balasan.ID widget</strong> - widget support Balasan.ID ditambah pada website utama H4SX untuk percubaan live chat/support.'
+        },
+        {
+          icon: 'fa-link',
+          text: '<strong>URL rasmi baru</strong> - semua link lama ditukar kepada domain baru H4SX: h4sxmy.vercel.app dan h4sxreview.vercel.app.'
         },
         {
           icon: 'fa-image',
-          text: '<strong>Paste gambar produk</strong> - screenshot boleh dipaste terus dalam transaksi tanpa perlu upload satu-satu.'
+          text: '<strong>H4SX Helper logo</strong> - logo helper baru dipasang khas pada bubble dan panel helper sahaja.'
         },
         {
-          icon: 'fa-chart-line',
-          text: '<strong>Statistik pelawat admin</strong> - jumlah dan sejarah pelawat website kini boleh dilihat oleh admin sahaja.'
-        },
-        {
-          icon: 'fa-calendar-clock',
-          text: '<strong>Tarikh transaksi custom</strong> - admin boleh set tarikh dan masa asal untuk transaksi lama.'
+          icon: 'fa-wand-magic-sparkles',
+          text: '<strong>Price List Maker</strong> - tool poster price list dibuat dengan import gambar dari file, clipboard, buang background hitam dan template bingkai H4SX STORE.'
         }
       ]
     },
     {
       type: 'fixed',
-      title: 'Diperbaiki',
+      title: 'Diperbaiki Hari Ini',
       items: [
         {
-          icon: 'fa-eye-slash',
-          text: '<strong>Privasi nombor WhatsApp</strong> - nombor customer dipaparkan dalam bentuk disembunyikan seperti 601*******32.'
+          icon: 'fa-gauge-high',
+          text: '<strong>Phone layout lebih ringan</strong> - hero, banner promo, game card, product card dan modal produk disusun semula supaya kurang sempit dan lebih smooth di mobile.'
         },
         {
-          icon: 'fa-trash-can',
-          text: '<strong>Padam transaksi</strong> - masalah admin tidak dapat memadam transaksi telah diperbaiki.'
+          icon: 'fa-window-restore',
+          text: '<strong>Modal produk mobile</strong> - paparan detail produk di phone kini jadi gaya bottom sheet, gambar/video lebih terkawal dan button tidak tenggelam.'
+        },
+        {
+          icon: 'fa-arrows-left-right',
+          text: '<strong>Banner dan media produk</strong> - carousel/banner dikemas supaya boleh digeser dan link produk lebih senang digunakan.'
+        },
+        {
+          icon: 'fa-seedling',
+          text: '<strong>Gambar fruit non-perm</strong> - gambar inventory Blox Fruits non-permanent fruit dalam Gist telah diganti dengan link gambar baru.'
+        },
+        {
+          icon: 'fa-broom',
+          text: '<strong>Changelog dibersihkan</strong> - changelog lama dibuang dan release ini hanya memaparkan update yang dibuat hari ini sahaja.'
+        }
+      ]
+    },
+    {
+      type: 'removed',
+      title: 'Dibuang Hari Ini',
+      items: [
+        {
+          icon: 'fa-plug-circle-xmark',
+          text: '<strong>Kebergantungan AI API pada helper utama</strong> - helper H4SX tidak lagi tersangkut menunggu Gemini/OpenAI untuk jawapan asas pelanggan.'
+        },
+        {
+          icon: 'fa-trash',
+          text: '<strong>Isi changelog lama</strong> - semua nota update lama telah dikeluarkan daripada paparan changelog terbaru.'
         }
       ]
     }
