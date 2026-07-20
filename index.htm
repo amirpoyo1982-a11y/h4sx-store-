@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-url-update-1">
+<link rel="stylesheet" href="styles.css?v=h4sx-mobile-premium-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -246,8 +246,8 @@
       <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
         <div class="review-summary-card">
           <span class="review-summary-label">Purata Rating</span>
-          <strong id="mainReviewAverage">—</strong>
-          <span class="review-summary-stars" id="mainReviewStars">☆☆☆☆☆</span>
+          <strong id="mainReviewAverage">&mdash;</strong>
+          <span class="review-summary-stars" id="mainReviewStars">&#9734;&#9734;&#9734;&#9734;&#9734;</span>
         </div>
         <div class="review-summary-card">
           <span class="review-summary-label">Jumlah Ulasan</span>
@@ -627,7 +627,7 @@
       <div class="order-admin-user"><span id="order-admin-email-display"></span><button onclick="adminOrderLogout()">Log keluar</button></div>
       <div class="visitor-dashboard">
         <div class="visitor-dashboard-head"><strong><i class="fa-solid fa-chart-line"></i> Pelawat Website</strong><button onclick="loadVisitorDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
-        <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">—</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">—</strong></div></div>
+        <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">&mdash;</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">&mdash;</strong></div></div>
         <div id="visitor-history" class="visitor-history">Loading sejarah pelawat...</div>
       </div>
       <form class="order-form" onsubmit="saveManualOrder(event)">
@@ -654,7 +654,7 @@
 </div>
 <div id="toasts"></div>
 <script src="https://balasan.id/widget.js?v=1779446071" data-workspace="h4sx"></script>
-<script defer src="app.js?v=h4sx-url-update-1"></script>
+<script defer src="app.js?v=h4sx-mobile-premium-1"></script>
 
 </body>
 </html>
