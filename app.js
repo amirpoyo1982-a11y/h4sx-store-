@@ -839,7 +839,7 @@ function drawChangelogPill(ctx, x, y, label, value, color) {
   ctx.font = '900 28px "Plus Jakarta Sans", Arial, sans-serif';
   ctx.fillText(value, x + 22, y + 62);
 }
-function downloadChangelogImage() {
+async function downloadChangelogImage() {
   const data = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
   if (!data) { toast('Changelog belum siap untuk dijadikan gambar.', true); return; }
   const btn = document.querySelector('.changelog-image-btn');
@@ -981,13 +981,19 @@ function downloadChangelogImage() {
     ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText('h4sxmy.vercel.app  |  h4sxreview.vercel.app', 74, height - 46);
 
-    const a = document.createElement('a');
-    a.download = 'h4sx-changelog-' + (data.version || 'latest') + '-wide.png';
-    a.href = canvas.toDataURL('image/png');
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    toast('Gambar changelog besar berjaya download!');
+    if (!navigator.clipboard || !window.ClipboardItem) {
+      const plainText = [data.title || 'Apa Yang Baru - H4SX STORE']
+        .concat((data.sections || []).flatMap(section => [section.title || 'Update'].concat((section.items || []).map(item => '- ' + stripChangelogHtml(item.text)))))
+        .join('\n');
+      await navigator.clipboard?.writeText(plainText);
+      toast('Browser tak support copy gambar. Teks changelog disalin.');
+      return;
+    }
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(result => result ? resolve(result) : reject(new Error('Canvas blob kosong')), 'image/png');
+    });
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('Gambar changelog disalin ke clipboard! Paste terus dekat WhatsApp/Discord.');
   } catch (error) {
     console.error(error);
     toast('Tak dapat generate gambar changelog.', true);
