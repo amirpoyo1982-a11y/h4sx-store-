@@ -2508,6 +2508,15 @@ function updateMainReviewStats(list = []) {
   const avg = count ? ratings.reduce((sum, value) => sum + value, 0) / count : 0;
   const roundedStars = Math.round(avg);
 
+  if (!count) {
+    avgEl.textContent = 'Belum ada';
+    countEl.textContent = 'Belum ada';
+    starsEl.classList.add('review-summary-pending');
+    starsEl.textContent = 'Rating akan dipaparkan di sini';
+    return;
+  }
+  starsEl.classList.remove('review-summary-pending');
+
   avgEl.textContent = count ? avg.toFixed(1) : 'â€”';
   countEl.textContent = String(count);
   starsEl.innerHTML = Array(5).fill(0).map((_, i) =>
@@ -3086,8 +3095,7 @@ function initScrollReveal() {
 function animateCounters() {
   document.querySelectorAll('[data-target]').forEach(el => {
     const target = parseInt(el.dataset.target), prefix = el.dataset.prefix||'', suffix = el.dataset.suffix||'';
-    let cur = 0, step = Math.ceil(target/60);
-    const t = setInterval(() => { cur = Math.min(cur+step,target); el.textContent = prefix+cur+suffix; if(cur>=target) clearInterval(t); }, 25);
+    el.textContent = prefix + target + suffix;
   });
 }
 function getCartCount() { return cartItems.reduce((s,ci)=>s+ci.qty,0); }

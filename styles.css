@@ -6628,3 +6628,27 @@ html.review-submit-direct .h4rf-dialog { width:min(700px,100%); max-height:calc(
   /* Music is optional on phone; it was the third floating button covering the dock. */
   .music-btn { display: none !important; }
 }
+
+/* Honest loading and credential guidance states. */
+.review-summary-stars.review-summary-pending {
+  display: block;
+  min-height: 18px;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.credential-safety-note {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  margin: 10px 0 0;
+  color: #0f5f8d;
+  font-size: .76rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+.credential-safety-note i {
+  color: var(--primary);
+  margin-top: 2px;
+}

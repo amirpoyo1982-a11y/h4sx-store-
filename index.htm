@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-review-return-1">
+<link rel="stylesheet" href="styles.css?v=h4sx-trust-polish-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -189,19 +189,19 @@
         <h1 class="hero-h1">Beli item <em>Roblox</em><br>dengan lebih<br>yakin.</h1>
         <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, bantuan admin responsif, dan H4SX Helper untuk bantu pilih item paling ngam ikut bajet anda.</p>
         <div class="hero-stats">
-          <div class="hstat"><div class="hstat-n" data-target="400" data-suffix="+">0+</div><div class="hstat-l">Customers</div></div>
-          <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">0%</div><div class="hstat-l">Secure</div></div>
-          <div class="hstat"><div class="hstat-n" data-target="15" data-prefix="<" data-suffix="m">0m</div><div class="hstat-l">Delivery</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="300" data-suffix="+">300+</div><div class="hstat-l">Pembeli</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">100%</div><div class="hstat-l">Proses Telus</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="30" data-prefix="1-" data-suffix=" min">1-30 min</div><div class="hstat-l">Masa Proses</div></div>
         </div>
         <div class="hero-cta-row">
-          <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Browse Collection <i class="fa-solid fa-arrow-right"></i></a>
+          <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Lihat Produk <i class="fa-solid fa-arrow-right"></i></a>
           <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-brands fa-whatsapp"></i> H4SX Helper</a>
           <a href="https://wa.me/60193263016" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> Chat Admin</a>
         </div>
         <div class="hero-proof-strip">
-          <span class="proof-pill"><i class="fa-solid fa-circle-check"></i> Trusted Buyers</span>
-          <span class="proof-pill"><i class="fa-solid fa-bolt"></i> Fast Response</span>
-          <span class="proof-pill"><i class="fa-solid fa-shield"></i> Secure Payment</span>
+          <span class="proof-pill"><i class="fa-solid fa-circle-check"></i> Pembeli Sebenar</span>
+          <span class="proof-pill"><i class="fa-solid fa-bolt"></i> Respon Pantas</span>
+          <span class="proof-pill"><i class="fa-solid fa-shield"></i> Pembayaran Jelas</span>
         </div>
         <div style="margin-top: 16px; padding: 10px 16px; background: white; border-radius: 12px; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 8px;">
           <i class="fa-solid fa-clock" style="color: var(--primary);"></i>
@@ -238,7 +238,7 @@
       <div class="steps-grid">
         <div class="step reveal reveal-delay-1"><div class="step-icon"><i class="fa-solid fa-basket-shopping"></i></div><div class="step-num-label">Step 01</div><div class="step-title">Add to Cart</div><p class="step-desc">Pilih item yang anda mahu dan tambah ke dalam cart.</p><div class="step-bg-num">1</div></div>
         <div class="step reveal reveal-delay-2"><div class="step-icon"><i class="fa-solid fa-qrcode"></i></div><div class="step-num-label">Step 02</div><div class="step-title">Scan &amp; Pay</div><p class="step-desc">Checkout dan bayar melalui DuitNow QR atau TNG eWallet.</p><div class="step-bg-num">2</div></div>
-        <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-brands fa-whatsapp"></i></div><div class="step-num-label">Step 03</div><div class="step-title">Get Assets</div><p class="step-desc">Hantar resit ke admin via WhatsApp untuk penghantaran segera.</p><div class="step-bg-num">3</div></div>
+        <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-brands fa-whatsapp"></i></div><div class="step-num-label">Langkah 03</div><div class="step-title">Terima Item</div><p class="step-desc">Hantar resit ke admin melalui WhatsApp untuk proses penghantaran.</p><div class="step-bg-num">3</div></div>
       </div>
     </section>
     <div class="div"></div>
@@ -247,16 +247,16 @@
       <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
         <div class="review-summary-card">
           <span class="review-summary-label">Purata Rating</span>
-          <strong id="mainReviewAverage">&mdash;</strong>
-          <span class="review-summary-stars" id="mainReviewStars">&#9734;&#9734;&#9734;&#9734;&#9734;</span>
+          <strong id="mainReviewAverage" aria-live="polite">Memuatkan</strong>
+          <span class="review-summary-stars review-summary-pending" id="mainReviewStars">Semak ulasan terkini...</span>
         </div>
         <div class="review-summary-card">
           <span class="review-summary-label">Jumlah Ulasan</span>
-          <strong id="mainReviewCount">0</strong>
+          <strong id="mainReviewCount" aria-live="polite">Memuatkan</strong>
           <span class="review-summary-sub">Ulasan pembeli sah</span>
         </div>
       </div>
-      <div class="testi-grid" id="testi-grid"><div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Loading reviews...</div></div>
+      <div class="testi-grid" id="testi-grid"><div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Memuatkan ulasan pelanggan...</div></div>
     </section>
     <div class="h4rf-modal" id="h4rf-modal" aria-hidden="true">
       <section class="h4rf-dialog" role="dialog" aria-modal="true" aria-labelledby="h4rf-title">
@@ -295,7 +295,7 @@
         <details class="faq reveal"><summary>Adakah akaun selamat daripada hackback? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami utamakan proses yang telus. Semak maklumat pesanan dan hubungi admin jika perlukan pengesahan tambahan.</div></details>
         <details class="faq reveal"><summary>Apa kaedah pembayaran yang diterima? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami menerima DuitNow QR dan TNG eWallet. Scan kod QR semasa checkout untuk bayar.</div></details>
         <details class="faq reveal"><summary>Boleh beli beberapa item sekali gus? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Boleh! Tambah pelbagai item ke cart dan bayar sekali. Nota: Tier Gamepass hanya boleh dibeli 1x dalam satu akaun.</div></details>
-        <details class="faq reveal"><summary>Bagaimana jika ada masalah selepas bayar? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Hubungi admin kami terus via WhatsApp. Kami sedia membantu 24/7 dan akan selesaikan sebarang isu dengan segera.</div></details>
+        <details class="faq reveal"><summary>Bagaimana jika ada masalah selepas bayar? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Hubungi admin terus melalui WhatsApp bersama resit anda. Balasan dibuat mengikut waktu operasi dan giliran semasa.</div></details>
       </div>
     </section>
     <footer>
@@ -342,7 +342,8 @@
           <input type="text" id="login-username" oninput="valCO()" placeholder="Masukkan username login" class="finput" autocomplete="off">
           <div style="height:10px"></div>
           <label class="flabel" id="login-pass-label">Password login Roblox</label>
-          <input type="text" id="login-password" oninput="valCO()" placeholder="Masukkan password login" class="finput" autocomplete="off">
+          <input type="password" id="login-password" oninput="valCO()" placeholder="Masukkan password login" class="finput" autocomplete="off">
+          <p class="credential-safety-note"><i class="fa-solid fa-shield-halved"></i> Untuk servis login sahaja. Guna kata laluan sementara dan tukar semula selepas pesanan selesai.</p>
           <div id="backup-wrap-1" style="margin-top:10px" class="hidden">
             <label class="flabel" id="backup1-label">Backup Code 1</label>
             <input type="text" id="backup-code-1" oninput="valCO()" placeholder="Masukkan backup code 1" class="finput" autocomplete="off">
@@ -466,11 +467,11 @@
     <div class="bh-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
     <div class="bh-text">
       <div class="bh-title">Waktu Operasi</div>
-      <div class="bh-desc" id="business-hours-text">Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup</div>
+      <div class="bh-desc" id="business-hours-text">Menyemak waktu operasi...</div>
     </div>
     <div class="bh-status" id="bh-status">
-      <span class="bh-dot open"></span>
-      <span id="bh-status-text">BUKA</span>
+      <span class="bh-dot"></span>
+      <span id="bh-status-text">SEMAK</span>
     </div>
   </div>
 </div>
@@ -560,8 +561,8 @@
       <div id="product-modal-desc" class="product-modal-desc"></div>
       <div class="product-modal-trust">
         <div class="pm-trust-item"><i class="fa-solid fa-bolt"></i>Proses Pantas</div>
-        <div class="pm-trust-item"><i class="fa-solid fa-shield-halved"></i>101% Selamat</div>
-        <div class="pm-trust-item"><i class="fa-brands fa-whatsapp"></i>Support 24/7</div>
+        <div class="pm-trust-item"><i class="fa-solid fa-shield-halved"></i>Transaksi Telus</div>
+        <div class="pm-trust-item"><i class="fa-brands fa-whatsapp"></i>Bantuan Admin</div>
       </div>
       <div class="product-modal-actions">
         <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
@@ -667,7 +668,7 @@
 </div>
 <div id="toasts"></div>
 <script src="https://balasan.id/widget.js?v=1779446071" data-workspace="h4sx"></script>
-<script defer src="app.js?v=h4sx-review-return-1"></script>
+<script defer src="app.js?v=h4sx-trust-polish-1"></script>
 
 </body>
 </html>
