@@ -705,7 +705,26 @@ function flagOff(value) {
 }
 function isPreviewBypass() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('preview') === '1' || params.get('preview') === 'true';
+  const cacheKey = 'h4sx_preview_bypass';
+  const isOff = value => ['0', 'false', 'off', 'no'].includes(String(value || '').trim().toLowerCase());
+
+  if (params.has('preview')) {
+    const value = params.get('preview') || '1';
+    try {
+      if (isOff(value)) {
+        localStorage.removeItem(cacheKey);
+        return false;
+      }
+      localStorage.setItem(cacheKey, '1');
+    } catch (error) {}
+    return true;
+  }
+
+  try {
+    return localStorage.getItem(cacheKey) === '1';
+  } catch (error) {
+    return false;
+  }
 }
 let promoBannerIndex = 0;
 let promoBannerSlides = [];
