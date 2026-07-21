@@ -3764,7 +3764,18 @@ function openH4ReviewForm() {
   setTimeout(() => document.getElementById('h4rf-code')?.focus(), 100);
 }
 
+function returnToH4sxHome() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('review');
+  url.hash = '';
+  window.location.assign(url.toString());
+}
+
 function closeH4ReviewForm() {
+  if (H4RF_DIRECT_MODE) {
+    returnToH4sxHome();
+    return;
+  }
   const modal = document.getElementById('h4rf-modal');
   if (!modal) return;
   modal.classList.remove('show');
@@ -3774,6 +3785,7 @@ function closeH4ReviewForm() {
 
 window.openH4ReviewForm = openH4ReviewForm;
 window.closeH4ReviewForm = closeH4ReviewForm;
+window.returnToH4sxHome = returnToH4sxHome;
 
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('h4rf-modal');

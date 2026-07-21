@@ -6459,6 +6459,8 @@ nav,
 .h4rf-head h2 { margin:4px 0; font-size:1.35rem; }
 .h4rf-head p { margin:0; font-size:.78rem; line-height:1.4; }
 .h4rf-head button { width:38px; height:38px; flex:0 0 auto; border:1px solid rgba(255,255,255,.52); border-radius:12px; color:#fff; background:rgba(255,255,255,.14); font-size:1.6rem; cursor:pointer; }
+.h4rf-head-actions { display:flex; align-items:center; gap:8px; }
+.h4rf-head .h4rf-back { width:auto; min-width:0; padding:0 12px; display:inline-flex; align-items:center; gap:7px; font:800 .72rem inherit; }
 .h4rf-form { padding:20px 23px 23px; }
 .h4rf-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
 .h4rf-field { display:block; color:#173f66; }
@@ -6502,7 +6504,7 @@ nav,
 .h4rf-feedback button[hidden],.h4rf-clear-image[hidden] { display:none; }
 .h4rf-submit { width:100%; margin-top:17px; border:0; border-radius:14px; padding:14px; color:#fff; background:linear-gradient(105deg,#0d9ee8,#13bfd5 55%,#18bf74); box-shadow:0 10px 20px rgba(4,165,205,.22); font:inherit; font-size:.85rem; font-weight:900; cursor:pointer; }
 .h4rf-submit:disabled { opacity:.7; cursor:wait; }
-@media (max-width:620px) { .h4rf-modal { padding:7px; align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-form { padding:15px; } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
+@media (max-width:620px) { .h4rf-modal { padding:7px; align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-head .h4rf-back { width:38px; padding:0; justify-content:center; } .h4rf-head .h4rf-back span { display:none; } .h4rf-form { padding:15px; } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
 
 /* Shared review link: show only the native form, without the store chrome. */
 html.review-submit-direct,
