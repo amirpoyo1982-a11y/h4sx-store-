@@ -378,7 +378,7 @@ function getLocalHelperAnswer(question) {
     return helperItemLines(foundItems);
   }
   if (asksBuy) {
-    return 'Cara beli dekat H4SX:\n1. Pilih item dekat website.\n2. Tekan Buy Now atau Add to Cart.\n3. Isi info yang diminta.\n4. Bayar melalui QR DuitNow/TNG rasmi.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+    return 'Cara beli dekat H4SX:\n1. Pilih item dekat website.\n2. Tekan Beli Sekarang atau Tambah ke Troli.\n3. Isi info yang diminta.\n4. Bayar melalui QR DuitNow/TNG rasmi.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
   }
   if (asksSafe) {
     return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://h4sxreview.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
@@ -923,7 +923,7 @@ function openChangelog(manual) {
   const timeEl = document.getElementById('changelog-time-text');
   const releaseDate = getChangelogReleaseDate();
   if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
-  if (timeEl && typeof CHANGELOG_DATA !== 'undefined') timeEl.textContent = CHANGELOG_DATA.time || '';
+  if (timeEl && typeof CHANGELOG_DATA !== 'undefined') timeEl.textContent = CHANGELOG_DATA.time || 'Terkini';
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -1420,9 +1420,9 @@ let currentStoreConfig = {
   promo_banner_interval: 5500,
   promo_banners: [],
   buka_jam: "09:00", // 9 AM
-  tutup_jam: "23:00", // 11 PM
-  tutup_hari: ["Jumaat"], // Days to close (e.g., ["Jumaat", "Ahad"])
-  business_hours_text: "Isnin - Khamis: 9AM - 11PM | Jumaat: Tutup",
+  tutup_jam: "00:00", // Midnight
+  tutup_hari: [], // Days to close (e.g., ["Jumaat", "Ahad"])
+  business_hours_text: "Isnin - Ahad: 9AM - 12AM",
   // Announcement settings
   announcement_active: false,
   announcement_id: "v1", // Change this ID every time you want a new popup
@@ -2901,7 +2901,7 @@ function updateModalCartBtn(item) {
   btn.classList.toggle('in-cart', qty > 0);
   btn.innerHTML = oos
     ? '<i class="fa-solid fa-ban"></i> Habis Stok'
-    : '<i class="fa-solid fa-cart-plus"></i> Add to Cart' + (qty > 0 ? '<span class="pm-qty">' + qty + '</span>' : '');
+    : '<i class="fa-solid fa-cart-plus"></i> Tambah ke Troli' + (qty > 0 ? '<span class="pm-qty">' + qty + '</span>' : '');
 }
 function getGameBadgeMeta(value) {
   const text = String(value || '').trim();

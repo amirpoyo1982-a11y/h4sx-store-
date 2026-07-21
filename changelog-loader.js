@@ -100,7 +100,7 @@ function renderChangelog(data) {
 
   if (titleEl) titleEl.textContent = data.title || 'Apa Yang Baru - H4SX STORE';
   if (dateEl) dateEl.textContent = data.date || '';
-  if (timeEl) timeEl.textContent = data.time || '';
+  if (timeEl) timeEl.textContent = data.time || 'Terkini';
 
   const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
   let html = '<div class="changelog-summary">';
