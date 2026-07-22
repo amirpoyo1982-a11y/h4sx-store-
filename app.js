@@ -619,7 +619,7 @@ const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pix
 // Tukar link kat atas ni je kalau nak tukar model background.
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '60193263016';
-const H4SX_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb8XfQADeOMynLbTB443';
+const H4SX_CHANNEL_URL = null;
 const GAMES_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/92b41c9122c025c2536e68353a82ee0f/raw/games.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/games.json'
