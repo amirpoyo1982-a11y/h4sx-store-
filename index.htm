@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-trust-polish-2">
+<link rel="stylesheet" href="styles.css?v=h4sx-storefront-redesign-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -113,6 +113,9 @@
       <div class="nav-logo"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX" decoding="async" fetchpriority="high"></div>
       <span class="nav-wordmark">H4SX STORE</span>
     </button>
+    <button class="nav-store-search" type="button" onclick="openSearch()" aria-label="Cari game atau item">
+      <i class="fa-solid fa-magnifying-glass"></i><span>Cari game, item atau akaun</span><kbd>/</kbd>
+    </button>
     <div class="nav-links">
       <a onclick="goSection('guide')">Guide</a>
       <a onclick="goSection('faq')">FAQ</a>
@@ -136,6 +139,16 @@
     </div>
   </div>
 </nav>
+<div class="storefront-tabs" aria-label="Akses pantas katalog">
+  <button type="button" onclick="showHome()"><i class="fa-solid fa-house"></i><span>Utama</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><i class="fa-solid fa-cube"></i><span>Roblox</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Free Fire')"><i class="fa-solid fa-fire"></i><span>Free Fire</span></button>
+  <button type="button" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i><span>Semak Pesanan</span></button>
+  <button type="button" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span>Hantar Ulasan</span></button>
+  <button type="button" onclick="goSection('reviews')"><i class="fa-solid fa-star"></i><span>Ulasan</span></button>
+  <button type="button" onclick="goSection('guide')"><i class="fa-solid fa-book-open"></i><span>Panduan</span></button>
+  <button type="button" onclick="goSection('faq')"><i class="fa-solid fa-circle-question"></i><span>FAQ</span></button>
+</div>
 <!-- MOBILE MENU -->
 <div id="mob-menu">
   <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
@@ -185,18 +198,18 @@
     </section>
     <section class="hero">
       <div>
-        <div class="hero-eyebrow"><span class="ey-dot"></span> Kedai Dipercayai</div>
-        <h1 class="hero-h1">Beli item <em>Roblox</em><br>dengan lebih<br>yakin.</h1>
-        <p class="hero-desc">Rekaan checkout yang lebih jelas, proses pembelian mudah, bantuan admin responsif, dan H4SX Helper untuk bantu pilih item paling ngam ikut bajet anda.</p>
+        <div class="hero-eyebrow"><span class="ey-dot"></span> H4SX DIGITAL STORE</div>
+        <h1 class="hero-h1">Cari game, item dan<br><em>akaun pilihan</em> anda.</h1>
+        <p class="hero-desc">Pilih katalog Roblox atau Free Fire, semak detail item dengan jelas dan teruskan pembelian melalui checkout yang ringkas.</p>
         <div class="hero-stats">
           <div class="hstat"><div class="hstat-n" data-target="300" data-suffix="+">300+</div><div class="hstat-l">Pembeli</div></div>
           <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">100%</div><div class="hstat-l">Proses Telus</div></div>
           <div class="hstat"><div class="hstat-n" data-target="30" data-prefix="1-" data-suffix=" min">1-30 min</div><div class="hstat-l">Masa Proses</div></div>
         </div>
         <div class="hero-cta-row">
-          <a class="btn-primary" onclick="document.getElementById('game-grid').scrollIntoView({behavior:'smooth'})">Lihat Produk <i class="fa-solid fa-arrow-right"></i></a>
-          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-brands fa-whatsapp"></i> H4SX Helper</a>
-          <a href="https://wa.me/60193263016" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> Chat Admin</a>
+          <a class="btn-primary" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'})">Terokai Katalog <i class="fa-solid fa-arrow-right"></i></a>
+          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-brands fa-whatsapp"></i> Tanya Helper</a>
+          <a href="https://wa.me/60193263016" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
         </div>
         <div class="hero-proof-strip">
           <span class="proof-pill"><i class="fa-solid fa-circle-check"></i> Pembeli Sebenar</span>
@@ -227,8 +240,8 @@
     </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
-      <div class="sh"><div><div class="sh-tag">Collections</div><div class="sh-title">Pilih game anda</div></div></div>
-      <div class="detail-note"><i class="fa-solid fa-layer-group"></i> Pilih Roblox atau Free Fire dulu, kemudian pilih game, item atau akaun yang tersedia di bawah.</div>
+      <div class="sh"><div><div class="sh-tag">Katalog H4SX</div><div class="sh-title">Pilih game anda</div></div><button class="catalog-search-link" type="button" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Cari item</button></div>
+      <div class="detail-note"><i class="fa-solid fa-layer-group"></i> Pilih platform dahulu, kemudian semak game, item atau akaun yang tersedia.</div>
       <div id="platform-filter-bar" class="platform-filter-bar" aria-label="Pilih part game"></div>
       <div id="game-grid"></div>
     </section>

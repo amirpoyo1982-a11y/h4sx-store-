@@ -901,7 +901,7 @@ function renderPromoBanner(config = currentStoreConfig) {
     const slideClass = cleanFit === 'contain' ? ' promo-contain' : '';
     const slideStyle = cleanFit === 'contain' ? ' style="--promo-img:url(\'' + escapeHtml(slide.img) + '\')"' : '';
     const inner = '<picture>' + mobileSource
-      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
+      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' onerror="this.closest(\'.promo-hero-slide\').classList.add(\'image-failed\')" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
       ? '<a class="promo-hero-slide' + slideClass + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
