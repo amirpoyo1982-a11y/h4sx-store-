@@ -1804,11 +1804,12 @@ function renderPlatformFilters() {
     'Free Fire': { title: 'Free Fire', sub: 'Item dan akun FF sahaja', icon: 'fa-crosshairs' }
   };
   bar.innerHTML = platforms.map(p =>
-    '<button class="platform-chip platform-card' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p.replace(/'/g,"\\'") + '\')">' +
+    '<button type="button" aria-pressed="' + (activePlatform === p ? 'true' : 'false') + '" class="platform-chip platform-card' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p.replace(/'/g,"\\'") + '\')">' +
       '<span class="platform-card-bg" style="background-image:url(\'' + escapeCssUrl(covers[p] || getProductScreenshotFallback()) + '\')"></span>' +
       '<span class="platform-card-icon"><i class="fa-solid ' + ((labels[p] && labels[p].icon) || 'fa-gamepad') + '"></i></span>' +
       '<span class="platform-card-copy"><strong>' + escapeHtml((labels[p] && labels[p].title) || p) + '</strong><small>' + escapeHtml((labels[p] && labels[p].sub) || 'Pilihan tersedia') + '</small></span>' +
       '<b>' + (counts[p] || 0) + '</b>' +
+      '<span class="platform-card-action">Lihat katalog <i class="fa-solid fa-arrow-right"></i></span>' +
     '</button>'
   ).join('');
 }

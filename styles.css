@@ -6816,6 +6816,125 @@ body {
 #game-grid .gc-name { min-height: 30px; display: grid; place-items: center; color: #173455; font-size: .67rem; letter-spacing: .18px; }
 .steps-grid, .testi-grid { gap: 12px; }
 .step, .testi-card { border-radius: 12px; box-shadow: none; }
+
+/* Platform menu: two visual catalog cards, then reveal the selected platform's games below. */
+#shop-section .platform-filter-bar {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(168px, 238px)) !important;
+  justify-content: start;
+  gap: 16px !important;
+  margin: 0 0 24px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+#shop-section .platform-card {
+  min-height: 0 !important;
+  aspect-ratio: 4 / 5;
+  display: flex !important;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+  padding: 16px !important;
+  overflow: hidden;
+  border: 1px solid #d6e7f2 !important;
+  border-radius: 14px !important;
+  color: #fff !important;
+  background: #082039 !important;
+  box-shadow: 0 9px 18px rgba(24,77,111,.12) !important;
+  text-align: left;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+#shop-section .platform-card::before {
+  z-index: 0 !important;
+  background: linear-gradient(180deg, rgba(3,19,37,.08) 20%, rgba(3,16,31,.9) 100%) !important;
+}
+#shop-section .platform-card::after {
+  content: "" !important;
+  z-index: 1 !important;
+  inset: auto 16px 10px !important;
+  height: 2px !important;
+  opacity: .55 !important;
+}
+#shop-section .platform-card-bg {
+  z-index: -1 !important;
+  opacity: 1 !important;
+  transform: scale(1.01) !important;
+  filter: none !important;
+}
+#shop-section .platform-card-icon {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 7px 16px rgba(0,0,0,.18);
+}
+#shop-section .platform-card-copy {
+  position: relative;
+  z-index: 2;
+  gap: 4px;
+  max-width: 100%;
+}
+#shop-section .platform-card-copy strong {
+  font-size: clamp(1.15rem, 2vw, 1.48rem);
+  letter-spacing: .35px;
+}
+#shop-section .platform-card-copy small {
+  color: rgba(255,255,255,.87);
+  font-size: .7rem;
+  line-height: 1.35;
+}
+#shop-section .platform-card b {
+  z-index: 2;
+  right: 12px;
+  top: 12px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  font-size: .7rem;
+}
+#shop-section .platform-card-action {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: #e7f8ff;
+  background: rgba(255,255,255,.13);
+  font-size: .66rem;
+  font-weight: 850;
+}
+#shop-section .platform-card:hover,
+#shop-section .platform-card.active {
+  transform: translateY(-3px) !important;
+  border-color: #1ac8ed !important;
+  box-shadow: 0 14px 26px rgba(14,165,233,.2) !important;
+}
+#shop-section .platform-card.active::after { height: 3px !important; opacity: 1 !important; }
+#shop-section .platform-card:hover .platform-card-bg { transform: scale(1.06) !important; opacity: 1 !important; }
+@media (max-width: 560px) {
+  #shop-section .platform-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  #shop-section .platform-card { padding: 12px !important; border-radius: 12px !important; }
+  #shop-section .platform-card-icon { top: 10px; left: 10px; width: 31px; height: 31px; border-radius: 9px; font-size: 12px; }
+  #shop-section .platform-card-copy strong { font-size: 1rem; }
+  #shop-section .platform-card-copy small { font-size: .62rem; }
+  #shop-section .platform-card-action { margin-top: 7px; padding: 5px 7px; font-size: .58rem; }
+  #shop-section .platform-card b { top: 9px; right: 9px; min-width: 23px; height: 23px; font-size: .62rem; }
+}
 @media (max-width: 1080px) {
   .nav-store-search { max-width: none; }
   .nav-right .ai-helper-btn span, .nav-right .changelog-btn span, .nav-right .hard-refresh-btn span { display: none; }
