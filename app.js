@@ -378,7 +378,7 @@ function getLocalHelperAnswer(question) {
     return helperItemLines(foundItems);
   }
   if (asksBuy) {
-    return 'Cara beli dekat H4SX:\n1. Pilih item dekat website.\n2. Tekan Beli Sekarang atau Tambah ke Troli.\n3. Isi info yang diminta.\n4. Bayar melalui QR DuitNow/TNG rasmi.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+    return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
   }
   if (asksSafe) {
     return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://h4sxreview.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
@@ -620,6 +620,10 @@ const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pix
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '60193263016';
 const H4SX_CHANNEL_URL = null;
+const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
+const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
+const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
+const CURRENCY_FALLBACK_RATES = { MYR: 1, IDR: 4350 };
 const GAMES_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/92b41c9122c025c2536e68353a82ee0f/raw/games.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/games.json'
@@ -2746,7 +2750,7 @@ function buildAddBtnHTML(item, oos) {
 }
 function buildQuickBarHTML(item, oos) {
   if (oos) return '';
-  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();addCart(' + item.id + ', this)"><i class="fa-solid fa-cart-plus"></i> Add Cart</button><button class="pquick-btn buy" onclick="event.stopPropagation();buyNowItem(' + item.id + ')"><i class="fa-solid fa-bolt"></i> Buy Now</button></div>';
+  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();addCart(' + item.id + ', this)"><i class="fa-solid fa-cart-plus"></i> Add Cart</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
 }
 let currentProductItems = [];
 let currentProductBanner = '';
@@ -2795,7 +2799,7 @@ function productCardHTML(item) {
   const cartQty = getCartQtyForItem(item.id);
   const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
   const addBtn = buildAddBtnHTML(item, oos);
-  const buyBtn = oos ? '<button class="pbuy" disabled>BUY NOW</button>' : '<button class="pbuy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')">BUY NOW</button>';
+  const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
   return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
@@ -3027,7 +3031,7 @@ function doSearch(q) {
   res.innerHTML = '<div class="search-summary"><b>' + hits.length + '</b> result untuk "' + escapeHtml(q) + '"</div>' + hits.slice(0,8).map(item => {
     const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
     const oos = isOutOfStock(item);
-    const buyBtn = oos ? '<button class="pbuy" disabled style="height:26px;font-size:9px">BUY</button>' : '<button class="pbuy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')">BUY</button>';
+    const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled style="height:26px;font-size:9px">HABIS</button>' : '<button class="pbuy whatsapp-buy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WA</button>';
     return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
@@ -3642,27 +3646,48 @@ function modalAddToCart() {
 }
 function modalBuyNow() {
   if (!modalItemId) return;
-  const item = inventory.find(i => i.id === modalItemId);
-  if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
-  cartItems = [{ id: modalItemId, qty: 1 }];
-  updateBadge();
+  const itemId = modalItemId;
   closeProductImage();
-  goCO(true);
+  buyNowItem(itemId);
 }
 function buyNowItem(id) {
   const item = inventory.find(i => i.id === id);
   if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
-  
-  // If it's a promoted item, go directly to promoter's WhatsApp
-  if (item.promotedBy && item.promoterPhone) {
-    const message = encodeURIComponent('Hi! Saya ingin membeli ' + item.name + ' (RM' + Number(item.price).toFixed(2) + ')');
-    window.open('https://wa.me/' + item.promoterPhone + '?text=' + message, '_blank');
-    return;
-  }
-  
-  cartItems = [{ id, qty: 1 }];
-  updateBadge();
-  goCO(true);
+  const phone = String((item.promotedBy && item.promoterPhone) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
+  const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
+  const message = [
+    'Hi H4SX, saya berminat dengan item ini:',
+    '',
+    'Item: ' + item.name,
+    'Game: ' + (item.game || item.gameGroup || '-'),
+    'Harga katalog: RM' + Number(item.price || 0).toFixed(2),
+    'Stok: ' + stock,
+    '',
+    'Boleh bantu semak dan teruskan urusan?'
+  ].join('\n');
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+}
+function sendCartToWhatsApp() {
+  if (!cartItems.length) { toast('Troli masih kosong', true); return; }
+  let total = 0;
+  const lines = cartItems.map(ci => {
+    const item = inventory.find(entry => entry.id === ci.id);
+    if (!item) return '';
+    const quantity = Math.max(1, Number(ci.qty || 1));
+    const subtotal = Number(item.price || 0) * quantity;
+    total += subtotal;
+    return '- ' + item.name + ' x' + quantity + ' (RM' + subtotal.toFixed(2) + ')';
+  }).filter(Boolean);
+  if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
+  const message = [
+    'Hi H4SX, saya ingin semak troli ini:',
+    '',
+    ...lines,
+    '',
+    'Jumlah katalog: RM' + total.toFixed(2),
+    'Boleh semak stok dan teruskan urusan?'
+  ].join('\n');
+  window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
 }
 function toast(msg, err, name, count) {
   const c = document.getElementById('toasts'); if (!c) return;
@@ -4081,3 +4106,96 @@ function startMojibakeRepair() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMojibakeRepair, { once: true });
 else startMojibakeRepair();
+
+let h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
+let h4sxCurrencyUpdatedAt = 0;
+
+function currencyName(code) {
+  try {
+    const names = new Intl.DisplayNames(['ms-MY'], { type: 'currency' });
+    return code + ' - ' + names.of(code);
+  } catch (error) {
+    return code;
+  }
+}
+
+function populateCurrencySelects() {
+  const from = document.getElementById('currency-from');
+  const to = document.getElementById('currency-to');
+  if (!from || !to) return;
+  const previousFrom = from.value || 'MYR';
+  const previousTo = to.value || 'IDR';
+  const options = Object.keys(h4sxCurrencyRates).sort().map(code => '<option value="' + code + '">' + currencyName(code) + '</option>').join('');
+  from.innerHTML = options;
+  to.innerHTML = options;
+  from.value = h4sxCurrencyRates[previousFrom] ? previousFrom : 'MYR';
+  to.value = h4sxCurrencyRates[previousTo] ? previousTo : (h4sxCurrencyRates.IDR ? 'IDR' : 'MYR');
+}
+
+function formatCurrencyValue(code, amount) {
+  try {
+    return new Intl.NumberFormat('ms-MY', { style: 'currency', currency: code, maximumFractionDigits: code === 'IDR' ? 0 : 2 }).format(amount);
+  } catch (error) {
+    return code + ' ' + Number(amount || 0).toFixed(2);
+  }
+}
+
+function updateCurrencyConverter() {
+  const amount = Math.max(0, Number(document.getElementById('currency-amount')?.value || 0));
+  const from = document.getElementById('currency-from')?.value || 'MYR';
+  const to = document.getElementById('currency-to')?.value || 'IDR';
+  const output = document.getElementById('currency-output');
+  const status = document.getElementById('currency-status');
+  const fromRate = h4sxCurrencyRates[from] || 1;
+  const toRate = h4sxCurrencyRates[to] || 1;
+  const converted = amount * (toRate / fromRate);
+  if (output) output.textContent = formatCurrencyValue(to, converted);
+  if (status) status.innerHTML = '<i class="fa-solid fa-chart-line"></i> 1 ' + from + ' = ' + formatCurrencyValue(to, toRate / fromRate) + ' · Kadar anggaran sahaja';
+}
+
+function swapCurrencyConverter() {
+  const from = document.getElementById('currency-from');
+  const to = document.getElementById('currency-to');
+  if (!from || !to) return;
+  const current = from.value;
+  from.value = to.value;
+  to.value = current;
+  updateCurrencyConverter();
+}
+
+function updatePriceCalculator() {
+  const price = Math.max(0, Number(document.getElementById('price-calculator-price')?.value || 0));
+  const qty = Math.max(1, Math.floor(Number(document.getElementById('price-calculator-qty')?.value || 1)));
+  const output = document.getElementById('price-calculator-output');
+  if (output) output.textContent = formatCurrencyValue('MYR', price * qty);
+}
+
+async function initCurrencyTools() {
+  const status = document.getElementById('currency-status');
+  if (!status) return;
+  try {
+    const cached = JSON.parse(localStorage.getItem(CURRENCY_CACHE_KEY) || 'null');
+    if (cached?.rates && cached?.updatedAt && Date.now() - cached.updatedAt < CURRENCY_CACHE_MAX_AGE) {
+      h4sxCurrencyRates = cached.rates;
+      h4sxCurrencyUpdatedAt = cached.updatedAt;
+    } else {
+      const response = await fetch(CURRENCY_API_URL, { cache: 'no-store' });
+      const data = await response.json();
+      if (!response.ok || data.result !== 'success' || !data.rates?.IDR) throw new Error('rate-unavailable');
+      h4sxCurrencyRates = { ...data.rates, MYR: 1 };
+      h4sxCurrencyUpdatedAt = Date.now();
+      localStorage.setItem(CURRENCY_CACHE_KEY, JSON.stringify({ rates: h4sxCurrencyRates, updatedAt: h4sxCurrencyUpdatedAt }));
+    }
+    populateCurrencySelects();
+    updateCurrencyConverter();
+  } catch (error) {
+    h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
+    populateCurrencySelects();
+    updateCurrencyConverter();
+    if (status) status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Kadar live tidak dapat dimuatkan. Anggaran MYR / IDR dipaparkan.';
+  }
+  updatePriceCalculator();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCurrencyTools, { once: true });
+else initCurrencyTools();

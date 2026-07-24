@@ -1589,6 +1589,55 @@ nav {
 .pbuy:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(16,185,129,0.4); }
 .pbuy:active { transform: translateY(0); }
 .pbuy:disabled { opacity: 0.5; cursor: not-allowed; background: #6b7280; box-shadow: none; }
+
+/* Catalog purchase calls-to-action: hand off to WhatsApp instead of pretending payment happens on-site. */
+.whatsapp-buy {
+  background: linear-gradient(135deg, #25d366, #128c47) !important;
+  color: #fff !important;
+  box-shadow: 0 9px 22px rgba(18,140,71,.28) !important;
+}
+.whatsapp-buy:hover { box-shadow: 0 12px 26px rgba(18,140,71,.36) !important; }
+.pbuy.whatsapp-buy { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+
+.store-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 26px;
+}
+.store-tool {
+  padding: 18px;
+  border: 1px solid #d8ebf7;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 9px 20px rgba(30,93,131,.06);
+}
+.store-tool-head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
+.store-tool-head strong { display: block; color: #0b2949; font-size: .96rem; }
+.store-tool-head span { display: block; margin-top: 3px; color: #69809a; font-size: .7rem; line-height: 1.35; }
+.store-tool-icon { width: 39px; height: 39px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #0ea5e9, #18b8cd); }
+.store-tool-icon.green { background: linear-gradient(135deg, #25d366, #128c47); }
+.currency-form { display: grid; grid-template-columns: minmax(92px, 1fr) minmax(112px, 1.15fr) 35px minmax(112px, 1.15fr); gap: 8px; align-items: end; }
+.currency-form label, .price-calculator-form label { display: grid; gap: 5px; color: #52708e; font-size: .66rem; font-weight: 850; }
+.currency-form input, .currency-form select, .price-calculator-form input { width: 100%; height: 39px; padding: 0 9px; border: 1px solid #c8e4f5; border-radius: 9px; color: #123252; background: #f9fdff; font: inherit; font-size: .74rem; outline: none; }
+.currency-form input:focus, .currency-form select:focus, .price-calculator-form input:focus { border-color: #15a8df; box-shadow: 0 0 0 3px rgba(14,165,233,.1); }
+.currency-swap { width: 35px; height: 39px; border: 1px solid #bfe4f6; border-radius: 9px; color: #0789c9; background: #effaff; cursor: pointer; }
+.currency-result { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 11px 12px; border-radius: 10px; background: linear-gradient(135deg, #eefaff, #f2fff7); }
+.currency-result span { color: #52708e; font-size: .68rem; font-weight: 800; }
+.currency-result strong { color: #087ebc; font-size: 1.12rem; line-height: 1; }
+.price-result strong { color: #16874d; }
+.currency-status { display: flex; align-items: flex-start; gap: 6px; margin-top: 9px; color: #6c8199; font-size: .63rem; font-weight: 700; line-height: 1.45; }
+.currency-status i { margin-top: 1px; color: #0b9bd5; }
+.price-calculator-form { display: grid; grid-template-columns: 1.35fr .8fr; gap: 8px; }
+@media (max-width: 820px) {
+  .store-tools { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+}
+@media (max-width: 440px) {
+  .store-tool { padding: 14px; }
+  .currency-form { grid-template-columns: 1fr 1fr; }
+  .currency-swap { grid-column: 1 / -1; width: 100%; height: 32px; }
+  .price-calculator-form { grid-template-columns: 1fr 1fr; }
+}
 .pss {
   width: 44px; height: 44px; border-radius: 12px;
   background: var(--secondary); color: #fff; border: none;

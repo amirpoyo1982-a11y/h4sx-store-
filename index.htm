@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-storefront-redesign-2">
+<link rel="stylesheet" href="styles.css?v=h4sx-storefront-tools-3">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -200,7 +200,7 @@
       <div>
         <div class="hero-eyebrow"><span class="ey-dot"></span> H4SX DIGITAL STORE</div>
         <h1 class="hero-h1">Cari game, item dan<br><em>akaun pilihan</em> anda.</h1>
-        <p class="hero-desc">Pilih katalog Roblox atau Free Fire, semak detail item dengan jelas dan teruskan pembelian melalui checkout yang ringkas.</p>
+        <p class="hero-desc">Pilih katalog Roblox atau Free Fire, semak detail item dengan jelas dan teruskan urusan beli bersama admin melalui WhatsApp.</p>
         <div class="hero-stats">
           <div class="hstat"><div class="hstat-n" data-target="300" data-suffix="+">300+</div><div class="hstat-l">Pembeli</div></div>
           <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">100%</div><div class="hstat-l">Proses Telus</div></div>
@@ -238,6 +238,28 @@
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
     </section>
+    <section class="store-tools reveal" id="store-tools" aria-label="Kalkulator harga dan mata wang">
+      <div class="store-tool currency-tool">
+        <div class="store-tool-head"><div class="store-tool-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div><strong>Penukar Mata Wang</strong><span>Kadar anggaran semasa untuk pelanggan luar negara</span></div></div>
+        <div class="currency-form">
+          <label>Jumlah<input id="currency-amount" type="number" min="0" step="0.01" value="1" inputmode="decimal" oninput="updateCurrencyConverter()"></label>
+          <label>Dari<select id="currency-from" onchange="updateCurrencyConverter()"></select></label>
+          <button class="currency-swap" type="button" onclick="swapCurrencyConverter()" aria-label="Tukar mata wang"><i class="fa-solid fa-right-left"></i></button>
+          <label>Ke<select id="currency-to" onchange="updateCurrencyConverter()"></select></label>
+        </div>
+        <div class="currency-result"><span>Anggaran diterima</span><strong id="currency-output">Memuatkan kadar...</strong></div>
+        <div class="currency-status" id="currency-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyemak kadar mata wang...</div>
+      </div>
+      <div class="store-tool price-tool">
+        <div class="store-tool-head"><div class="store-tool-icon green"><i class="fa-solid fa-calculator"></i></div><div><strong>Kalkulator Harga</strong><span>Kira jumlah item sebelum hubungi admin</span></div></div>
+        <div class="price-calculator-form">
+          <label>Harga seunit (RM)<input id="price-calculator-price" type="number" min="0" step="0.01" value="0" inputmode="decimal" oninput="updatePriceCalculator()"></label>
+          <label>Kuantiti<input id="price-calculator-qty" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="updatePriceCalculator()"></label>
+        </div>
+        <div class="currency-result price-result"><span>Jumlah anggaran</span><strong id="price-calculator-output">RM0.00</strong></div>
+        <div class="currency-status"><i class="fa-solid fa-circle-info"></i> Harga akhir disahkan bersama admin WhatsApp.</div>
+      </div>
+    </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
       <div class="sh"><div><div class="sh-tag">Katalog H4SX</div><div class="sh-title">Pilih game anda</div></div><button class="catalog-search-link" type="button" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Cari item</button></div>
@@ -249,9 +271,9 @@
     <section id="guide" class="section-panel" style="margin-bottom:32px">
       <div class="sh reveal"><div><div class="sh-tag">Panduan</div><div class="sh-title">Cara membeli</div></div></div>
       <div class="steps-grid">
-        <div class="step reveal reveal-delay-1"><div class="step-icon"><i class="fa-solid fa-basket-shopping"></i></div><div class="step-num-label">Langkah 01</div><div class="step-title">Tambah ke Troli</div><p class="step-desc">Pilih item yang anda mahu dan tambah ke dalam troli.</p><div class="step-bg-num">1</div></div>
-        <div class="step reveal reveal-delay-2"><div class="step-icon"><i class="fa-solid fa-qrcode"></i></div><div class="step-num-label">Langkah 02</div><div class="step-title">Imbas &amp; Bayar</div><p class="step-desc">Checkout dan bayar melalui DuitNow QR atau TNG eWallet.</p><div class="step-bg-num">2</div></div>
-        <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-brands fa-whatsapp"></i></div><div class="step-num-label">Langkah 03</div><div class="step-title">Terima Item</div><p class="step-desc">Hantar resit ke admin melalui WhatsApp untuk proses penghantaran.</p><div class="step-bg-num">3</div></div>
+        <div class="step reveal reveal-delay-1"><div class="step-icon"><i class="fa-solid fa-magnifying-glass"></i></div><div class="step-num-label">Langkah 01</div><div class="step-title">Pilih Item</div><p class="step-desc">Semak harga, stok dan detail item dalam katalog.</p><div class="step-bg-num">1</div></div>
+        <div class="step reveal reveal-delay-2"><div class="step-icon"><i class="fa-brands fa-whatsapp"></i></div><div class="step-num-label">Langkah 02</div><div class="step-title">Chat WhatsApp</div><p class="step-desc">Tekan Beli WhatsApp supaya admin boleh semak item dulu.</p><div class="step-bg-num">2</div></div>
+        <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-solid fa-receipt"></i></div><div class="step-num-label">Langkah 03</div><div class="step-title">Sahkan Pesanan</div><p class="step-desc">Ikut arahan bayaran rasmi daripada admin dan hantar resit.</p><div class="step-bg-num">3</div></div>
       </div>
     </section>
     <div class="div"></div>
@@ -306,7 +328,7 @@
       <div class="faq-list">
         <details class="faq reveal"><summary>Berapa lama masa penghantaran? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Biasanya antara 1 hingga 30 minit jika ramai boleh lebih lama selepas pembayaran disahkan.</div></details>
         <details class="faq reveal"><summary>Adakah akaun selamat daripada hackback? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami utamakan proses yang telus. Semak maklumat pesanan dan hubungi admin jika perlukan pengesahan tambahan.</div></details>
-        <details class="faq reveal"><summary>Apa kaedah pembayaran yang diterima? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami menerima DuitNow QR dan TNG eWallet. Scan kod QR semasa checkout untuk bayar.</div></details>
+        <details class="faq reveal"><summary>Apa kaedah pembayaran yang diterima? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Tekan Beli WhatsApp dahulu. Admin akan semak item dan beri arahan bayaran rasmi melalui DuitNow QR atau TNG eWallet.</div></details>
         <details class="faq reveal"><summary>Boleh beli beberapa item sekali gus? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Boleh! Tambah pelbagai item ke cart dan bayar sekali. Nota: Tier Gamepass hanya boleh dibeli 1x dalam satu akaun.</div></details>
         <details class="faq reveal"><summary>Bagaimana jika ada masalah selepas bayar? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Hubungi admin terus melalui WhatsApp bersama resit anda. Balasan dibuat mengikut waktu operasi dan giliran semasa.</div></details>
       </div>
@@ -541,7 +563,7 @@
     <div id="cart-body" class="cart-body"></div>
     <div class="cart-foot">
       <div class="ct-row"><span class="ct-l">Total</span><span class="ct-v" id="cart-total">RM0</span></div>
-      <button class="btn-proc" onclick="goCO()">Proceed to Checkout</button>
+      <button class="btn-proc whatsapp-buy" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Troli ke WhatsApp</button>
     </div>
   </div>
 </div>
@@ -580,7 +602,7 @@
       <div class="product-modal-actions">
         <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
         <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Tambah ke Troli</button>
-        <button class="pm-btn buy" onclick="modalBuyNow()"><i class="fa-solid fa-bolt"></i> Buy Now</button>
+        <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>
       </div>
     </div>
   </div>
