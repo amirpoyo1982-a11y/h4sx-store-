@@ -2181,6 +2181,7 @@ let customVoteConfig = null;
 let customVoteEntries = [];
 let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
+let customVoteEndTimer = null;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -2220,8 +2221,31 @@ function normaliseCustomVoteConfig(data = {}) {
     pollId: String(data.pollId || 'vote_default').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60) || 'vote_default',
     title: String(data.title || 'Vote H4SX').trim().slice(0, 80) || 'Vote H4SX',
     description: String(data.description || 'Pilih cadangan anda.').trim().slice(0, 180),
-    options: options.length >= 2 ? options : ['Pilihan A', 'Pilihan B']
+    options: options.length >= 2 ? options : ['Pilihan A', 'Pilihan B'],
+    endAt: Number.isFinite(Date.parse(data.endAt || '')) ? new Date(data.endAt).toISOString() : null
   };
+}
+
+function customVoteEndTime(config = customVoteConfig) {
+  const value = Date.parse(config?.endAt || '');
+  return Number.isFinite(value) ? value : null;
+}
+
+function isCustomVoteOpen(config = customVoteConfig) {
+  const endTime = customVoteEndTime(config);
+  return !!config?.active && (!endTime || Date.now() < endTime);
+}
+
+function formatCustomVoteEnd(endAt) {
+  try { return new Intl.DateTimeFormat('ms-MY', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(endAt)); }
+  catch (error) { return endAt; }
+}
+
+function toCustomVoteDateTimeLocalValue(endAt) {
+  const date = new Date(endAt || '');
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = value => String(value).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
 }
 
 function customVoteChoiceKey(pollId) {
@@ -2241,12 +2265,17 @@ function syncCustomVoteAdmin(config = customVoteConfig) {
   const title = document.getElementById('vote-admin-title-input');
   const description = document.getElementById('vote-admin-description');
   const options = document.getElementById('vote-admin-options');
+  const endAt = document.getElementById('vote-admin-end-at');
   if (active && config) active.checked = config.active;
   if (title && config) title.value = config.title;
   if (description && config) description.value = config.description;
   if (options && config) options.value = config.options.join('\n');
+  if (endAt && config) endAt.value = toCustomVoteDateTimeLocalValue(config.endAt);
   if (!isAdmin) setCustomVoteAdminStatus('Log masuk sebagai admin untuk urus undian.');
-  else if (config) setCustomVoteAdminStatus(config.active ? 'Vote sedang dipaparkan kepada pelanggan.' : 'Vote disimpan tetapi sedang dimatikan.', config.active ? 'success' : '');
+  else if (config) {
+    const ended = config.active && !isCustomVoteOpen(config);
+    setCustomVoteAdminStatus(ended ? 'Vote sudah tamat. Pelanggan hanya boleh lihat keputusan.' : (config.active ? 'Vote sedang dipaparkan kepada pelanggan.' : 'Vote disimpan tetapi sedang dimatikan.'), config.active && !ended ? 'success' : '');
+  }
 }
 
 function renderCustomVote() {
@@ -2255,6 +2284,7 @@ function renderCustomVote() {
   const description = document.getElementById('custom-vote-description');
   const optionsBox = document.getElementById('custom-vote-options');
   const totalEl = document.getElementById('custom-vote-total');
+  const note = document.getElementById('custom-vote-note-text');
   if (!section || !title || !description || !optionsBox || !totalEl) return;
   const config = customVoteConfig;
   if (!config?.active) {
@@ -2264,6 +2294,8 @@ function renderCustomVote() {
   section.classList.remove('is-hidden');
   title.textContent = config.title;
   description.textContent = config.description;
+  const endTime = customVoteEndTime(config);
+  const voteOpen = isCustomVoteOpen(config);
   const counts = Array.from({ length: config.options.length }, () => 0);
   customVoteEntries.forEach(entry => {
     const index = Number(entry.optionIndex);
@@ -2277,12 +2309,22 @@ function renderCustomVote() {
     const count = counts[index];
     const percent = total ? Math.round((count / total) * 100) : 0;
     const voted = choice === index;
-    const disabled = Number.isInteger(choice) ? ' disabled' : '';
+    const disabled = !voteOpen || Number.isInteger(choice) ? ' disabled' : '';
     return '<button type="button" class="custom-vote-option' + (voted ? ' is-voted' : '') + '" onclick="submitCustomVote(' + index + ')"' + disabled + '>' +
       '<span class="custom-vote-option-fill" style="--vote-percent:' + percent + '%"></span>' +
       '<span class="custom-vote-option-label">' + voteEscape(option) + '</span>' +
       '<span class="custom-vote-option-count">' + count + '<small>' + percent + '%</small></span></button>';
   }).join('');
+  if (note) {
+    if (endTime && !voteOpen) note.textContent = 'Undian telah tamat pada ' + formatCustomVoteEnd(config.endAt) + '. Keputusan masih dipaparkan.';
+    else if (endTime) note.textContent = 'Undian tamat pada ' + formatCustomVoteEnd(config.endAt) + '. Satu undi untuk satu perangkat.';
+    else note.textContent = 'Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.';
+  }
+  if (customVoteEndTimer) { clearTimeout(customVoteEndTimer); customVoteEndTimer = null; }
+  if (voteOpen && endTime) {
+    const delay = Math.max(1000, endTime - Date.now() + 250);
+    customVoteEndTimer = setTimeout(renderCustomVote, Math.min(delay, 2147483647));
+  }
 }
 
 function listenCustomVoteEntries() {
@@ -2319,6 +2361,7 @@ function loadCustomVote() {
 async function submitCustomVote(optionIndex) {
   const config = customVoteConfig;
   if (!config?.active || !db) return toast('Undian belum sedia. Cuba semula sebentar lagi.', true);
+  if (!isCustomVoteOpen(config)) return toast('Masa undian sudah tamat. Keputusan masih boleh dilihat.', true);
   if (!Number.isInteger(optionIndex) || !config.options[optionIndex]) return;
   const choiceKey = customVoteChoiceKey(config.pollId);
   if (localStorage.getItem(choiceKey) !== null) return toast('Anda sudah mengundi untuk vote ini.', true);
@@ -2348,9 +2391,12 @@ async function saveCustomVote(event, startNew = false) {
   const title = String(document.getElementById('vote-admin-title-input')?.value || '').trim();
   const description = String(document.getElementById('vote-admin-description')?.value || '').trim();
   const options = [...new Set(String(document.getElementById('vote-admin-options')?.value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean))];
+  const endAtInput = String(document.getElementById('vote-admin-end-at')?.value || '').trim();
   if (!title) return setCustomVoteAdminStatus('Sila isi tajuk undian.', 'error');
   if (options.length < 2 || options.length > 6) return setCustomVoteAdminStatus('Letak 2 hingga 6 pilihan jawapan.', 'error');
   if (options.some(item => item.length > 60)) return setCustomVoteAdminStatus('Setiap pilihan mesti 60 aksara atau kurang.', 'error');
+  const endAtTime = endAtInput ? new Date(endAtInput).getTime() : null;
+  if (endAtInput && !Number.isFinite(endAtTime)) return setCustomVoteAdminStatus('Masa tamat tidak sah.', 'error');
   const current = customVoteConfig || normaliseCustomVoteConfig();
   const pollId = startNew ? createCustomVoteId() : current.pollId;
   try {
@@ -2361,6 +2407,7 @@ async function saveCustomVote(event, startNew = false) {
       title: title.slice(0, 80),
       description: description.slice(0, 180),
       options: options.slice(0, 6),
+      endAt: endAtTime ? new Date(endAtTime).toISOString() : null,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: orderAuth.currentUser.email || 'admin'
     }, { merge: true });

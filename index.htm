@@ -268,7 +268,7 @@
           <div class="custom-vote-total"><strong id="custom-vote-total">0</strong><span>undi</span></div>
         </div>
         <div class="custom-vote-options" id="custom-vote-options"></div>
-        <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span>Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
+        <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span id="custom-vote-note-text">Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
       </div>
     </section>
     <div class="div"></div>
@@ -697,6 +697,7 @@
           <label>Tajuk undian<input id="vote-admin-title-input" maxlength="80" placeholder="Contoh: Game apa patut kami tambah?"></label>
           <label>Penerangan<textarea id="vote-admin-description" rows="2" maxlength="180" placeholder="Tulis arahan pendek untuk pelanggan."></textarea></label>
           <label>Pilihan jawapan <small>Satu pilihan setiap baris, minimum 2 dan maksimum 6.</small><textarea id="vote-admin-options" rows="5" maxlength="420" placeholder="Blox Fruits\nFree Fire\nGame lain"></textarea></label>
+          <label>Vote tamat pada <small>Kosongkan jika tiada masa tamat. Selepas masa ini, pelanggan hanya boleh lihat keputusan.</small><input id="vote-admin-end-at" type="datetime-local"></label>
           <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Vote</button><button type="button" class="vote-reset-btn" onclick="startNewCustomVote()"><i class="fa-solid fa-rotate"></i> Vote Baru</button></div>
           <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
         </form>
@@ -725,7 +726,7 @@
 </div>
 <div id="toasts"></div>
 <script src="https://balasan.id/widget.js?v=1779446071" data-workspace="h4sx"></script>
-<script defer src="app.js?v=h4sx-custom-vote-2"></script>
+<script defer src="app.js?v=h4sx-custom-vote-end-1"></script>
 
 </body>
 </html>

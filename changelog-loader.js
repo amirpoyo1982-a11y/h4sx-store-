@@ -10,7 +10,7 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-square-poll-vertical',
-          text: '<strong>Custom Vote Firebase</strong> - admin boleh hidup atau matikan undian, tukar tajuk, ayat dan 2 hingga 6 pilihan jawapan. Keputusan pelanggan dikemas kini secara live.'
+          text: '<strong>Custom Vote Firebase</strong> - admin boleh hidup atau matikan undian, tukar tajuk, ayat, masa tamat dan 2 hingga 6 pilihan jawapan. Keputusan pelanggan dikemas kini secara live.'
         },
         {
           icon: 'fa-whatsapp',
