@@ -16,7 +16,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-storefront-tools-3">
+<link rel="stylesheet" href="styles.css?v=h4sx-custom-vote-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -87,7 +87,7 @@
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=v1.9-whatsapp-tools-1"></script>
+<script defer src="changelog-loader.js?v=v1.9-custom-vote-2"></script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
   <div class="marquee-track">
@@ -258,6 +258,17 @@
         </div>
         <div class="currency-result price-result"><span>Jumlah anggaran</span><strong id="price-calculator-output">RM0.00</strong></div>
         <div class="currency-status"><i class="fa-solid fa-circle-info"></i> Harga akhir disahkan bersama admin WhatsApp.</div>
+      </div>
+    </section>
+    <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
+      <div class="custom-vote-card">
+        <div class="custom-vote-head">
+          <div class="custom-vote-icon"><i class="fa-solid fa-square-poll-vertical"></i></div>
+          <div><span>UNDIAN H4SX</span><h2 id="custom-vote-title">Vote H4SX</h2><p id="custom-vote-description">Pilih cadangan anda.</p></div>
+          <div class="custom-vote-total"><strong id="custom-vote-total">0</strong><span>undi</span></div>
+        </div>
+        <div class="custom-vote-options" id="custom-vote-options"></div>
+        <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span>Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
       </div>
     </section>
     <div class="div"></div>
@@ -679,6 +690,17 @@
         <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">&mdash;</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">&mdash;</strong></div></div>
         <div id="visitor-history" class="visitor-history">Loading sejarah pelawat...</div>
       </div>
+      <section class="vote-admin-panel" aria-labelledby="vote-admin-title">
+        <div class="vote-admin-head"><div><span>FIREBASE CUSTOM VOTE</span><h3 id="vote-admin-title">Tetapan Undian</h3><p>Hidupkan, tukar ayat atau pilihan vote yang pelanggan nampak.</p></div><button type="button" onclick="loadCustomVote(true)"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <form class="vote-admin-form" onsubmit="saveCustomVote(event)">
+          <label class="vote-admin-toggle"><input id="vote-admin-active" type="checkbox"><span></span><b>Paparkan undian di website</b></label>
+          <label>Tajuk undian<input id="vote-admin-title-input" maxlength="80" placeholder="Contoh: Game apa patut kami tambah?"></label>
+          <label>Penerangan<textarea id="vote-admin-description" rows="2" maxlength="180" placeholder="Tulis arahan pendek untuk pelanggan."></textarea></label>
+          <label>Pilihan jawapan <small>Satu pilihan setiap baris, minimum 2 dan maksimum 6.</small><textarea id="vote-admin-options" rows="5" maxlength="420" placeholder="Blox Fruits\nFree Fire\nGame lain"></textarea></label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Vote</button><button type="button" class="vote-reset-btn" onclick="startNewCustomVote()"><i class="fa-solid fa-rotate"></i> Vote Baru</button></div>
+          <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
+        </form>
+      </section>
       <form class="order-form" onsubmit="saveManualOrder(event)">
         <div class="order-form-grid">
           <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
@@ -703,7 +725,7 @@
 </div>
 <div id="toasts"></div>
 <script src="https://balasan.id/widget.js?v=1779446071" data-workspace="h4sx"></script>
-<script defer src="app.js?v=h4sx-preview-cache-1"></script>
+<script defer src="app.js?v=h4sx-custom-vote-1"></script>
 
 </body>
 </html>

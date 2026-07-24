@@ -2172,6 +2172,15 @@ let pendingOrderImageFile = null;
 let editingOrderCode = null;
 let editingOriginalPhone = '';
 const STORE_VISITOR_KEY = 'h4sx_store_visitor_id';
+const CUSTOM_VOTE_CONFIG_COLLECTION = 'store_settings';
+const CUSTOM_VOTE_CONFIG_ID = 'custom_vote';
+const CUSTOM_VOTE_ENTRIES_COLLECTION = 'custom_vote_entries';
+const CUSTOM_VOTE_DEVICE_KEY = 'h4sx_custom_vote_device';
+const CUSTOM_VOTE_CHOICE_PREFIX = 'h4sx_custom_vote_choice_';
+let customVoteConfig = null;
+let customVoteEntries = [];
+let customVoteConfigUnsubscribe = null;
+let customVoteEntriesUnsubscribe = null;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -2182,6 +2191,193 @@ if (firebaseConfig.apiKey) {
     console.error("Firebase init error:", e);
   }
 }
+
+function voteEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
+}
+
+function createCustomVoteId() {
+  const suffix = typeof crypto !== 'undefined' && crypto.getRandomValues
+    ? Array.from(crypto.getRandomValues(new Uint32Array(2))).map(value => value.toString(36)).join('')
+    : Math.random().toString(36).slice(2);
+  return 'vote_' + Date.now().toString(36) + '_' + suffix.slice(0, 10);
+}
+
+function getCustomVoteDeviceId() {
+  let id = localStorage.getItem(CUSTOM_VOTE_DEVICE_KEY);
+  if (!id) {
+    id = 'device_' + createCustomVoteId().replace('vote_', '');
+    localStorage.setItem(CUSTOM_VOTE_DEVICE_KEY, id);
+  }
+  return id;
+}
+
+function normaliseCustomVoteConfig(data = {}) {
+  const rawOptions = Array.isArray(data.options) ? data.options : [];
+  const options = [...new Set(rawOptions.map(item => String(item || '').trim()).filter(Boolean))].slice(0, 6);
+  return {
+    active: data.active === true,
+    pollId: String(data.pollId || 'vote_default').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 60) || 'vote_default',
+    title: String(data.title || 'Vote H4SX').trim().slice(0, 80) || 'Vote H4SX',
+    description: String(data.description || 'Pilih cadangan anda.').trim().slice(0, 180),
+    options: options.length >= 2 ? options : ['Pilihan A', 'Pilihan B']
+  };
+}
+
+function customVoteChoiceKey(pollId) {
+  return CUSTOM_VOTE_CHOICE_PREFIX + pollId;
+}
+
+function setCustomVoteAdminStatus(text, type = '') {
+  const status = document.getElementById('vote-admin-status');
+  if (!status) return;
+  status.textContent = text;
+  status.className = 'vote-admin-status' + (type ? ' ' + type : '');
+}
+
+function syncCustomVoteAdmin(config = customVoteConfig) {
+  const isAdmin = !!orderAuth?.currentUser;
+  const active = document.getElementById('vote-admin-active');
+  const title = document.getElementById('vote-admin-title-input');
+  const description = document.getElementById('vote-admin-description');
+  const options = document.getElementById('vote-admin-options');
+  if (active && config) active.checked = config.active;
+  if (title && config) title.value = config.title;
+  if (description && config) description.value = config.description;
+  if (options && config) options.value = config.options.join('\n');
+  if (!isAdmin) setCustomVoteAdminStatus('Log masuk sebagai admin untuk urus undian.');
+  else if (config) setCustomVoteAdminStatus(config.active ? 'Vote sedang dipaparkan kepada pelanggan.' : 'Vote disimpan tetapi sedang dimatikan.', config.active ? 'success' : '');
+}
+
+function renderCustomVote() {
+  const section = document.getElementById('custom-vote-section');
+  const title = document.getElementById('custom-vote-title');
+  const description = document.getElementById('custom-vote-description');
+  const optionsBox = document.getElementById('custom-vote-options');
+  const totalEl = document.getElementById('custom-vote-total');
+  if (!section || !title || !description || !optionsBox || !totalEl) return;
+  const config = customVoteConfig;
+  if (!config?.active) {
+    section.classList.add('is-hidden');
+    return;
+  }
+  section.classList.remove('is-hidden');
+  title.textContent = config.title;
+  description.textContent = config.description;
+  const counts = Array.from({ length: config.options.length }, () => 0);
+  customVoteEntries.forEach(entry => {
+    const index = Number(entry.optionIndex);
+    if (Number.isInteger(index) && index >= 0 && index < counts.length) counts[index] += 1;
+  });
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  const choice = Number(localStorage.getItem(customVoteChoiceKey(config.pollId)));
+  totalEl.textContent = String(total);
+  optionsBox.innerHTML = config.options.map((option, index) => {
+    const count = counts[index];
+    const percent = total ? Math.round((count / total) * 100) : 0;
+    const voted = choice === index;
+    const disabled = Number.isInteger(choice) ? ' disabled' : '';
+    return '<button type="button" class="custom-vote-option' + (voted ? ' is-voted' : '') + '" onclick="submitCustomVote(' + index + ')"' + disabled + '>' +
+      '<span class="custom-vote-option-fill" style="--vote-percent:' + percent + '%"></span>' +
+      '<span class="custom-vote-option-label">' + voteEscape(option) + '</span>' +
+      '<span class="custom-vote-option-count">' + count + '<small>' + percent + '%</small></span></button>';
+  }).join('');
+}
+
+function listenCustomVoteEntries() {
+  if (customVoteEntriesUnsubscribe) { customVoteEntriesUnsubscribe(); customVoteEntriesUnsubscribe = null; }
+  customVoteEntries = [];
+  if (!db || !customVoteConfig?.active) { renderCustomVote(); return; }
+  customVoteEntriesUnsubscribe = db.collection(CUSTOM_VOTE_ENTRIES_COLLECTION)
+    .where('pollId', '==', customVoteConfig.pollId)
+    .onSnapshot(snapshot => {
+      customVoteEntries = snapshot.docs.map(doc => doc.data());
+      renderCustomVote();
+    }, error => {
+      console.warn('Custom vote entries tidak dapat dimuatkan.', error);
+      renderCustomVote();
+    });
+}
+
+function loadCustomVote() {
+  if (!db) return;
+  if (customVoteConfigUnsubscribe) customVoteConfigUnsubscribe();
+  customVoteConfigUnsubscribe = db.collection(CUSTOM_VOTE_CONFIG_COLLECTION).doc(CUSTOM_VOTE_CONFIG_ID)
+    .onSnapshot(snapshot => {
+      customVoteConfig = normaliseCustomVoteConfig(snapshot.exists ? snapshot.data() : {});
+      syncCustomVoteAdmin(customVoteConfig);
+      listenCustomVoteEntries();
+    }, error => {
+      console.warn('Custom vote config tidak dapat dimuatkan.', error);
+      customVoteConfig = null;
+      document.getElementById('custom-vote-section')?.classList.add('is-hidden');
+      if (orderAuth?.currentUser) setCustomVoteAdminStatus('Tak dapat baca vote. Semak Firestore Rules.', 'error');
+    });
+}
+
+async function submitCustomVote(optionIndex) {
+  const config = customVoteConfig;
+  if (!config?.active || !db) return toast('Undian belum sedia. Cuba semula sebentar lagi.', true);
+  if (!Number.isInteger(optionIndex) || !config.options[optionIndex]) return;
+  const choiceKey = customVoteChoiceKey(config.pollId);
+  if (localStorage.getItem(choiceKey) !== null) return toast('Anda sudah mengundi untuk vote ini.', true);
+  const deviceId = getCustomVoteDeviceId();
+  const voteRef = db.collection(CUSTOM_VOTE_ENTRIES_COLLECTION).doc(config.pollId + '_' + deviceId);
+  try {
+    const existing = await voteRef.get();
+    if (existing.exists) {
+      localStorage.setItem(choiceKey, String(existing.data().optionIndex));
+      renderCustomVote();
+      return toast('Undi untuk peranti ini sudah direkodkan.');
+    }
+    await voteRef.set({ pollId: config.pollId, optionIndex, deviceId, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    localStorage.setItem(choiceKey, String(optionIndex));
+    renderCustomVote();
+    toast('Undi anda berjaya direkodkan. Terima kasih!');
+  } catch (error) {
+    console.error('Custom vote submit error:', error);
+    toast('Tak dapat hantar undi. Semak sambungan atau cuba lagi.', true);
+  }
+}
+
+async function saveCustomVote(event, startNew = false) {
+  if (event) event.preventDefault();
+  if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const active = !!document.getElementById('vote-admin-active')?.checked;
+  const title = String(document.getElementById('vote-admin-title-input')?.value || '').trim();
+  const description = String(document.getElementById('vote-admin-description')?.value || '').trim();
+  const options = [...new Set(String(document.getElementById('vote-admin-options')?.value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean))];
+  if (!title) return setCustomVoteAdminStatus('Sila isi tajuk undian.', 'error');
+  if (options.length < 2 || options.length > 6) return setCustomVoteAdminStatus('Letak 2 hingga 6 pilihan jawapan.', 'error');
+  if (options.some(item => item.length > 60)) return setCustomVoteAdminStatus('Setiap pilihan mesti 60 aksara atau kurang.', 'error');
+  const current = customVoteConfig || normaliseCustomVoteConfig();
+  const pollId = startNew ? createCustomVoteId() : current.pollId;
+  try {
+    setCustomVoteAdminStatus(startNew ? 'Membuka pusingan vote baru...' : 'Menyimpan tetapan...');
+    await db.collection(CUSTOM_VOTE_CONFIG_COLLECTION).doc(CUSTOM_VOTE_CONFIG_ID).set({
+      active,
+      pollId,
+      title: title.slice(0, 80),
+      description: description.slice(0, 180),
+      options: options.slice(0, 6),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: orderAuth.currentUser.email || 'admin'
+    }, { merge: true });
+    setCustomVoteAdminStatus(startNew ? 'Vote baru sudah dibuka. Kiraan bermula dari 0.' : 'Tetapan vote berjaya disimpan.', 'success');
+    toast(startNew ? 'Pusingan vote baru dimulakan.' : 'Custom vote berjaya disimpan.');
+  } catch (error) {
+    console.error('Custom vote save error:', error);
+    setCustomVoteAdminStatus('Tak dapat simpan. Semak Firestore Rules untuk admin.', 'error');
+  }
+}
+
+function startNewCustomVote() {
+  if (!orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  if (!confirm('Mula pusingan vote baru? Undi lama akan kekal dalam rekod tetapi tidak dikira lagi.')) return;
+  saveCustomVote(null, true);
+}
+
+if (db) loadCustomVote();
 
 // --- MANUAL TRANSACTION HISTORY (Firebase Firestore) ---
 function normaliseOrderCode(value) {
@@ -2271,7 +2467,8 @@ function syncOrderAdminUI() {
   if (form) form.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
-  if (user) { loadAdminOrders(); loadVisitorDashboard(); }
+  if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); }
+  else syncCustomVoteAdmin(customVoteConfig);
 }
 async function adminOrderLogin(event) {
   event.preventDefault();

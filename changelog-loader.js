@@ -9,6 +9,10 @@ const CHANGELOG_DATA = {
       title: 'Ditambah Hari Ini',
       items: [
         {
+          icon: 'fa-square-poll-vertical',
+          text: '<strong>Custom Vote Firebase</strong> - admin boleh hidup atau matikan undian, tukar tajuk, ayat dan 2 hingga 6 pilihan jawapan. Keputusan pelanggan dikemas kini secara live.'
+        },
+        {
           icon: 'fa-whatsapp',
           text: '<strong>Katalog terus ke WhatsApp</strong> - setiap button beli kini berwarna hijau dengan logo WhatsApp supaya pelanggan terus faham pembelian dibuat melalui chat admin.'
         },
