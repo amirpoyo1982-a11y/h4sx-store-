@@ -1,36 +1,32 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '20 July 2026',
+  date: '24 July 2026',
   time: 'Latest',
-  version: 'v1.8',
+  version: 'v1.9',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
         {
-          icon: 'fa-mobile-screen-button',
-          text: '<strong>Mobile view premium</strong> - paparan phone H4SX dikemas semula dengan header compact, menu lebih kemas, banner lebih ngam dan product card 2 column yang lebih cantik.'
+          icon: 'fa-whatsapp',
+          text: '<strong>Katalog terus ke WhatsApp</strong> - setiap button beli kini berwarna hijau dengan logo WhatsApp supaya pelanggan terus faham pembelian dibuat melalui chat admin.'
         },
         {
-          icon: 'fa-robot',
-          text: '<strong>H4SX Helper tanpa API</strong> - helper kini guna jawapan pantas dari website sendiri untuk bantu pelanggan tentang cara beli, harga, stok, resit, proses dan link admin.'
+          icon: 'fa-money-bill-transfer',
+          text: '<strong>Penukar mata wang live</strong> - converter baru menyokong banyak mata wang, dengan pilihan MYR dan IDR serta kadar disimpan sementara untuk loading lebih pantas.'
         },
         {
-          icon: 'fa-comments',
-          text: '<strong>Balasan.ID widget</strong> - widget support Balasan.ID ditambah pada website utama H4SX untuk percubaan live chat/support.'
+          icon: 'fa-calculator',
+          text: '<strong>Kalkulator harga</strong> - pelanggan boleh kira jumlah harga ikut kuantiti terus pada website tanpa perlu tanya admin untuk kiraan asas.'
         },
         {
-          icon: 'fa-link',
-          text: '<strong>URL rasmi baru</strong> - semua link lama ditukar kepada domain baru H4SX: h4sxmy.vercel.app dan h4sxreview.vercel.app.'
+          icon: 'fa-gamepad',
+          text: '<strong>Menu platform baru</strong> - Roblox dan Free Fire kini ada kad pilihan tersendiri; tekan platform untuk lihat game atau item yang berkaitan sahaja.'
         },
         {
-          icon: 'fa-image',
-          text: '<strong>H4SX Helper logo</strong> - logo helper baru dipasang khas pada bubble dan panel helper sahaja.'
-        },
-        {
-          icon: 'fa-wand-magic-sparkles',
-          text: '<strong>Price List Maker</strong> - tool poster price list dibuat dengan import gambar dari file, clipboard, buang background hitam dan template bingkai H4SX STORE.'
+          icon: 'fa-cart-shopping',
+          text: '<strong>Troli ke WhatsApp</strong> - pelanggan boleh hantar senarai penuh item dalam troli terus ke chat admin bersama jumlah pesanan.'
         }
       ]
     },
@@ -39,24 +35,20 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki Hari Ini',
       items: [
         {
+          icon: 'fa-list-check',
+          text: '<strong>Aliran beli lebih jelas</strong> - panduan pembelian, FAQ dan mesej checkout dikemas supaya pelanggan tahu langkah selepas pilih item.'
+        },
+        {
+          icon: 'fa-magnifying-glass',
+          text: '<strong>Carian produk</strong> - hasil carian kini menggunakan button beli WhatsApp yang sama seperti katalog utama.'
+        },
+        {
+          icon: 'fa-mobile-screen-button',
+          text: '<strong>Mobile dan PC lebih konsisten</strong> - warna button beli, label katalog dan susun atur tool baru disesuaikan untuk kedua-dua paparan.'
+        },
+        {
           icon: 'fa-gauge-high',
-          text: '<strong>Phone layout lebih ringan</strong> - hero, banner promo, game card, product card dan modal produk disusun semula supaya kurang sempit dan lebih smooth di mobile.'
-        },
-        {
-          icon: 'fa-window-restore',
-          text: '<strong>Modal produk mobile</strong> - paparan detail produk di phone kini jadi gaya bottom sheet, gambar/video lebih terkawal dan button tidak tenggelam.'
-        },
-        {
-          icon: 'fa-arrows-left-right',
-          text: '<strong>Banner dan media produk</strong> - carousel/banner dikemas supaya boleh digeser dan link produk lebih senang digunakan.'
-        },
-        {
-          icon: 'fa-seedling',
-          text: '<strong>Gambar fruit non-perm</strong> - gambar inventory Blox Fruits non-permanent fruit dalam Gist telah diganti dengan link gambar baru.'
-        },
-        {
-          icon: 'fa-broom',
-          text: '<strong>Changelog dibersihkan</strong> - changelog lama dibuang dan release ini hanya memaparkan update yang dibuat hari ini sahaja.'
+          text: '<strong>Kadar mata wang lebih tahan</strong> - jika internet atau API kadar terganggu, website masih guna kadar sandaran MYR dan IDR supaya tool tidak kosong.'
         }
       ]
     },
@@ -65,12 +57,12 @@ const CHANGELOG_DATA = {
       title: 'Dibuang Hari Ini',
       items: [
         {
-          icon: 'fa-plug-circle-xmark',
-          text: '<strong>Kebergantungan AI API pada helper utama</strong> - helper H4SX tidak lagi tersangkut menunggu Gemini/OpenAI untuk jawapan asas pelanggan.'
+          icon: 'fa-credit-card',
+          text: '<strong>Button bayar lama pada katalog</strong> - label pembayaran lama diganti dengan tindakan Beli WhatsApp agar tidak mengelirukan pelanggan.'
         },
         {
           icon: 'fa-trash',
-          text: '<strong>Isi changelog lama</strong> - semua nota update lama telah dikeluarkan daripada paparan changelog terbaru.'
+          text: '<strong>Nota changelog v1.8</strong> - paparan ini dibersihkan semula supaya hanya perubahan release hari ini dipaparkan.'
         }
       ]
     }
