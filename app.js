@@ -2270,7 +2270,8 @@ function renderCustomVote() {
     if (Number.isInteger(index) && index >= 0 && index < counts.length) counts[index] += 1;
   });
   const total = counts.reduce((sum, count) => sum + count, 0);
-  const choice = Number(localStorage.getItem(customVoteChoiceKey(config.pollId)));
+  const storedChoice = localStorage.getItem(customVoteChoiceKey(config.pollId));
+  const choice = storedChoice === null ? null : Number(storedChoice);
   totalEl.textContent = String(total);
   optionsBox.innerHTML = config.options.map((option, index) => {
     const count = counts[index];
