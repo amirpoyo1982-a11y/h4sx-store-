@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '24 July 2026',
-  time: 'Latest',
-  version: 'v1.9',
+  date: '25 July 2026',
+  time: 'Update hari ini',
+  version: 'v2.0',
   sections: [
     {
       type: 'added',
@@ -10,27 +10,19 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-square-poll-vertical',
-          text: '<strong>Custom Vote Firebase</strong> - admin boleh hidup atau matikan undian, tukar tajuk, ayat, masa tamat dan 2 hingga 6 pilihan jawapan. Keputusan pelanggan dikemas kini secara live.'
+          text: '<strong>Custom Vote berasingan</strong> - undian H4SX STORE dan H4SX Review kini menggunakan ruang data masing-masing supaya tajuk, pilihan dan kiraan tidak bercampur.'
         },
         {
-          icon: 'fa-whatsapp',
-          text: '<strong>Katalog terus ke WhatsApp</strong> - setiap button beli kini berwarna hijau dengan logo WhatsApp supaya pelanggan terus faham pembelian dibuat melalui chat admin.'
+          icon: 'fa-clock',
+          text: '<strong>Masa tamat undian</strong> - admin boleh set tarikh dan masa tamat; pilihan automatik terkunci selepas tamat, manakala keputusan masih boleh dilihat.'
         },
         {
-          icon: 'fa-money-bill-transfer',
-          text: '<strong>Penukar mata wang live</strong> - converter baru menyokong banyak mata wang, dengan pilihan MYR dan IDR serta kadar disimpan sementara untuk loading lebih pantas.'
+          icon: 'fa-image',
+          text: '<strong>Logo pada card vote</strong> - card undian kini menggunakan logo H4SX STORE supaya lebih kemas dan mudah dikenali.'
         },
         {
-          icon: 'fa-calculator',
-          text: '<strong>Kalkulator harga</strong> - pelanggan boleh kira jumlah harga ikut kuantiti terus pada website tanpa perlu tanya admin untuk kiraan asas.'
-        },
-        {
-          icon: 'fa-gamepad',
-          text: '<strong>Menu platform baru</strong> - Roblox dan Free Fire kini ada kad pilihan tersendiri; tekan platform untuk lihat game atau item yang berkaitan sahaja.'
-        },
-        {
-          icon: 'fa-cart-shopping',
-          text: '<strong>Troli ke WhatsApp</strong> - pelanggan boleh hantar senarai penuh item dalam troli terus ke chat admin bersama jumlah pesanan.'
+          icon: 'fa-mobile-screen-button',
+          text: '<strong>Mobile hardening</strong> - susun atur khas phone ditambah untuk mengunci saiz card, modal dan kawalan bawah agar lebih stabil.'
         }
       ]
     },
@@ -39,20 +31,16 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki Hari Ini',
       items: [
         {
-          icon: 'fa-list-check',
-          text: '<strong>Aliran beli lebih jelas</strong> - panduan pembelian, FAQ dan mesej checkout dikemas supaya pelanggan tahu langkah selepas pilih item.'
-        },
-        {
-          icon: 'fa-magnifying-glass',
-          text: '<strong>Carian produk</strong> - hasil carian kini menggunakan button beli WhatsApp yang sama seperti katalog utama.'
+          icon: 'fa-table-cells-large',
+          text: '<strong>Pilih game lebih compact</strong> - card Roblox dan Free Fire pada phone kini dua kolum, tidak lagi jadi carousel atau kotak terlalu besar.'
         },
         {
           icon: 'fa-mobile-screen-button',
-          text: '<strong>Mobile dan PC lebih konsisten</strong> - warna button beli, label katalog dan susun atur tool baru disesuaikan untuk kedua-dua paparan.'
+          text: '<strong>Game card phone</strong> - grid game, gambar dan tajuk dikemas supaya muat tanpa melimpah atau mengubah lebar halaman.'
         },
         {
-          icon: 'fa-gauge-high',
-          text: '<strong>Kadar mata wang lebih tahan</strong> - jika internet atau API kadar terganggu, website masih guna kadar sandaran MYR dan IDR supaya tool tidak kosong.'
+          icon: 'fa-window-maximize',
+          text: '<strong>Changelog phone</strong> - pop-up changelog kini terkunci di tengah skrin, boleh scroll dalam kotak sendiri dan tidak terkeluar dari paparan.'
         }
       ]
     },
@@ -61,12 +49,8 @@ const CHANGELOG_DATA = {
       title: 'Dibuang Hari Ini',
       items: [
         {
-          icon: 'fa-credit-card',
-          text: '<strong>Button bayar lama pada katalog</strong> - label pembayaran lama diganti dengan tindakan Beli WhatsApp agar tidak mengelirukan pelanggan.'
-        },
-        {
           icon: 'fa-trash',
-          text: '<strong>Nota changelog v1.8</strong> - paparan ini dibersihkan semula supaya hanya perubahan release hari ini dipaparkan.'
+          text: '<strong>Gaya mobile bertindih</strong> - rule lama yang menjadikan card platform besar atau boleh bergerak ke tepi telah ditindih dengan susun atur baru yang stabil.'
         }
       ]
     }
