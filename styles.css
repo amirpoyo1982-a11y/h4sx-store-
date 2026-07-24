@@ -1634,6 +1634,9 @@ nav {
 .custom-vote-card { padding: 20px; border: 1px solid #ccebf7; border-radius: 16px; background: linear-gradient(135deg, #ffffff 0%, #effaff 100%); box-shadow: 0 11px 24px rgba(14, 116, 162, .08); }
 .custom-vote-head { display: grid; grid-template-columns: 45px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #d8eef8; }
 .custom-vote-icon { width: 45px; height: 45px; display: grid; place-items: center; border-radius: 13px; color: #fff; background: linear-gradient(135deg, #0ea5e9, #16bf85); box-shadow: 0 8px 16px rgba(14, 165, 233, .2); }
+.custom-vote-icon img { display: block; width: 35px; height: 35px; object-fit: contain; border-radius: 10px; }
+.custom-vote.is-ended .custom-vote-card { border-color: rgba(234, 88, 12, .38); }
+.custom-vote.is-ended .custom-vote-head > div:nth-child(2) > span { color: #c2410c; }
 .custom-vote-head > div:nth-child(2) { min-width: 0; }
 .custom-vote-head span { display: block; color: #148bc0; font-size: .62rem; font-weight: 900; letter-spacing: .08em; }
 .custom-vote-head h2 { margin: 3px 0 3px; color: #0b2949; font-size: 1.05rem; line-height: 1.2; }

@@ -2285,6 +2285,7 @@ function renderCustomVote() {
   const optionsBox = document.getElementById('custom-vote-options');
   const totalEl = document.getElementById('custom-vote-total');
   const note = document.getElementById('custom-vote-note-text');
+  const status = document.getElementById('custom-vote-status');
   if (!section || !title || !description || !optionsBox || !totalEl) return;
   const config = customVoteConfig;
   if (!config?.active) {
@@ -2296,6 +2297,8 @@ function renderCustomVote() {
   description.textContent = config.description;
   const endTime = customVoteEndTime(config);
   const voteOpen = isCustomVoteOpen(config);
+  if (status) status.textContent = voteOpen ? 'UNDIAN H4SX' : 'VOTE TELAH TAMAT';
+  section.classList.toggle('is-ended', !voteOpen);
   const counts = Array.from({ length: config.options.length }, () => 0);
   customVoteEntries.forEach(entry => {
     const index = Number(entry.optionIndex);
@@ -2316,7 +2319,7 @@ function renderCustomVote() {
       '<span class="custom-vote-option-count">' + count + '<small>' + percent + '%</small></span></button>';
   }).join('');
   if (note) {
-    if (endTime && !voteOpen) note.textContent = 'Undian telah tamat pada ' + formatCustomVoteEnd(config.endAt) + '. Keputusan masih dipaparkan.';
+    if (endTime && !voteOpen) note.textContent = 'Vote telah tamat. Keputusan terakhir masih dipaparkan.';
     else if (endTime) note.textContent = 'Undian tamat pada ' + formatCustomVoteEnd(config.endAt) + '. Satu undi untuk satu perangkat.';
     else note.textContent = 'Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.';
   }
