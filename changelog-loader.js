@@ -22,7 +22,7 @@ const CHANGELOG_DATA = {
         },
         {
           icon: 'fa-mobile-screen-button',
-          text: '<strong>Mobile hardening</strong> - susun atur khas phone ditambah untuk mengunci saiz card, modal dan kawalan bawah agar lebih stabil.'
+          text: '<strong>Mobile hardening</strong> - susun atur phone dikunci lebih stabil dan loader background 3D tersembunyi tidak lagi dimuatkan untuk kurangkan lag serta penggunaan data.'
         }
       ]
     },

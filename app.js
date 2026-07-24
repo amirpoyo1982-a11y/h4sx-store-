@@ -3963,6 +3963,12 @@ function toast(msg, err, name, count) {
 (() => {
   const container = document.getElementById('earth-3d-container');
   if (!container) return;
+  const earthBackground = document.getElementById('earth-bg');
+  const hiddenByLayout = !earthBackground || window.getComputedStyle(earthBackground).display === 'none';
+  if (hiddenByLayout || window.matchMedia('(max-width: 820px)').matches) {
+    container.replaceChildren();
+    return;
+  }
   // Convert Sketchfab link to Embed link
   let modelId = '';
   if (BACKGROUND_3D_URL.includes('/3d-models/')) {
