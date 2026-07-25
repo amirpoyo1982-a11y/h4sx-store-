@@ -3093,6 +3093,7 @@ let currentProductItems = [];
 let currentProductBanner = '';
 let currentProductFilter = 'all';
 let selectedPermanentFruitId = null;
+let activeGameConsultationConfig = null;
 const PRODUCT_FILTERS = [
   { id:'all', label:'Semua', icon:'fa-border-all', test:() => true },
   { id:'stock', label:'Stok Ada', icon:'fa-box', test:item => !isOutOfStock(item) },
@@ -3214,6 +3215,47 @@ function applyPermanentFruitConfig(data) {
   if (isBloxFruitsGame(currentGame)) renderProductGrid();
 }
 
+function getGameConsultationConfig(gameName = currentGame) {
+  const game = gamesList.find(entry => entry && (entry.name === gameName || gameGroupName(entry) === gameName));
+  const raw = game && (game.consultation || game.konsultasi || game.consult);
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return {
+    active: raw.active !== false && String(raw.active).toLowerCase() !== 'false',
+    label: raw.label || raw.badge || 'Konsultasi',
+    title: raw.title || ('Konsultasi ' + gameName),
+    image: raw.image || raw.img || raw.poster || game.img || game.image || '',
+    description: raw.description || raw.desc || ('Chat admin untuk tanya servis dan item khas ' + gameName + '.'),
+    buttonText: raw.buttonText || raw.button_text || raw.cta || 'Chat WhatsApp',
+    whatsapp: raw.whatsapp || raw.phone || raw.number || '',
+    message: raw.message || raw.text || ('Hi H4SX, saya nak tanya ' + gameName + '.')
+  };
+}
+
+function gameConsultationSectionHTML(config) {
+  if (!config || !config.active) return '';
+  const label = escapeHtml(String(config.label || 'Konsultasi'));
+  const title = escapeHtml(String(config.title || 'Konsultasi'));
+  const image = escapeHtml(String(config.image || 'https://i.imgur.com/cLPulXQ.png'));
+  const description = escapeHtml(String(config.description || 'Chat admin untuk maklumat lanjut.'));
+  const buttonText = escapeHtml(String(config.buttonText || 'Chat WhatsApp'));
+  return '<section class="product-subsection game-consult-section reveal">' +
+    '<div class="product-subhead"><div><i class="fa-solid fa-headset"></i><span>' + label + '</span></div><b>Chat Admin</b></div>' +
+    '<div class="product-subgrid">' +
+      '<article class="pc game-consult-card" role="button" tabindex="0" onclick="openGameConsultation()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openGameConsultation()}">' +
+        '<div class="pimg"><img src="' + image + '" alt="' + title + '" loading="lazy"><span class="permanent-consult-badge"><i class="fa-solid fa-headset"></i> ' + label + '</span></div>' +
+        '<div class="pbody"><div class="pname">' + title + '</div><p class="pdesc">' + description + '</p><div class="pactions"><button type="button" class="pbuy whatsapp-buy" onclick="event.stopPropagation();openGameConsultation()"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div></div>' +
+      '</article>' +
+    '</div>' +
+  '</section>';
+}
+
+function openGameConsultation() {
+  const config = activeGameConsultationConfig;
+  if (!config) return;
+  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
+}
+
 function permanentFruitConsultationSectionHTML() {
   if (permanentFruitConfig.active === false) return '';
   const title = escapeHtml(String(permanentFruitConfig.title || DEFAULT_PERMANENT_FRUIT_CONFIG.title));
@@ -3253,13 +3295,16 @@ function renderProductGrid() {
   const filters = activeProductFilters();
   const active = filters.find(f => f.id === currentProductFilter) || filters[0];
   const items = currentProductItems.filter(active.test);
-  const permanentConsultation = isBloxFruitsGame(currentGame) && currentProductFilter === 'all'
+  activeGameConsultationConfig = currentProductFilter === 'all' ? getGameConsultationConfig() : null;
+  const gameConsultation = gameConsultationSectionHTML(activeGameConsultationConfig);
+  const permanentConsultation = !activeGameConsultationConfig && isBloxFruitsGame(currentGame) && currentProductFilter === 'all'
     ? permanentFruitConsultationSectionHTML()
     : '';
+  const consultationSection = gameConsultation || permanentConsultation;
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
   renderProductFilters();
   if (!items.length) {
-    grid.innerHTML = currentProductBanner + (permanentConsultation || '<p class="product-empty">Tiada item untuk filter ini.</p>');
+    grid.innerHTML = currentProductBanner + (consultationSection || '<p class="product-empty">Tiada item untuk filter ini.</p>');
     return;
   }
   if (isPermanentFruitFilter()) {
@@ -3273,12 +3318,12 @@ function renderProductGrid() {
   }
   const subcats = orderedProductSubcategories(items);
   if (currentProductFilter === 'all' && subcats.length > 1) {
-    grid.innerHTML = currentProductBanner + permanentConsultation + subcats.map(sub => {
+    grid.innerHTML = currentProductBanner + consultationSection + subcats.map(sub => {
       const groupItems = items.filter(item => productSubcategory(item) === sub);
       return renderProductSubsection(sub, groupItems);
     }).join('');
   } else {
-    grid.innerHTML = currentProductBanner + permanentConsultation + items.map(productCardHTML).join('');
+    grid.innerHTML = currentProductBanner + consultationSection + items.map(productCardHTML).join('');
   }
   setTimeout(initScrollReveal, 100);
 }

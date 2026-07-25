@@ -7641,28 +7641,34 @@ body {
 }
 
 /* Blox Fruits has one consultation card instead of a long permanent-fruit list. */
-.permanent-consult-section .product-subhead b {
+.permanent-consult-section .product-subhead b,
+.game-consult-section .product-subhead b {
   background: rgba(34, 197, 94, .12);
   border-color: rgba(34, 197, 94, .24);
   color: #15803d;
 }
-.permanent-consult-card {
+.permanent-consult-card,
+.game-consult-card {
   cursor: pointer;
   border-color: rgba(14, 165, 233, .26);
 }
-.permanent-consult-card .pimg {
+.permanent-consult-card .pimg,
+.game-consult-card .pimg {
   aspect-ratio: 16 / 10;
   cursor: pointer;
   background: #dff5ff;
 }
-.permanent-consult-card .pimg img {
+.permanent-consult-card .pimg img,
+.game-consult-card .pimg img {
   object-position: center 38%;
 }
-.permanent-consult-card .pbody {
+.permanent-consult-card .pbody,
+.game-consult-card .pbody {
   display: grid;
   gap: 8px;
 }
-.permanent-consult-card .pdesc {
+.permanent-consult-card .pdesc,
+.game-consult-card .pdesc {
   display: block;
   margin: 0;
   line-height: 1.45;
@@ -7683,5 +7689,6 @@ body {
   box-shadow: 0 6px 16px rgba(15, 23, 42, .22);
 }
 @media (max-width: 480px) {
-  .permanent-consult-card .pimg { aspect-ratio: 16 / 9; }
+  .permanent-consult-card .pimg,
+  .game-consult-card .pimg { aspect-ratio: 16 / 9; }
 }
