@@ -3113,7 +3113,34 @@ function renderProductSkeleton(count = 6) {
     '</div>'
   )).join('');
 }
+function inventoryConsultationConfig(item) {
+  const source = item && (item.consultation ?? item.konsultasi ?? item.consult);
+  const enabled = source === true || String(source).toLowerCase() === 'true' || (source && typeof source === 'object' && !Array.isArray(source));
+  if (!enabled) return null;
+  const raw = source && typeof source === 'object' && !Array.isArray(source) ? source : {};
+  return {
+    active: raw.active !== false && String(raw.active).toLowerCase() !== 'false',
+    label: raw.label || raw.badge || item.badge || 'Konsultasi',
+    buttonText: raw.buttonText || item.consultationButton || 'Konsultasi WhatsApp',
+    whatsapp: raw.whatsapp || item.whatsapp || item.phone || WA_NUMBER,
+    message: raw.message || item.consultationMessage || ('Hi H4SX, saya nak tanya ' + (item.name || 'produk ini') + '.')
+  };
+}
+function openInventoryConsultation(id) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  const config = inventoryConsultationConfig(item);
+  if (!config || !config.active) return;
+  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message)), '_blank', 'noopener');
+}
 function productCardHTML(item) {
+  const consultation = inventoryConsultationConfig(item);
+  if (consultation && consultation.active) {
+    const badge = '<div class="ptag consultation-item-badge"><i class="fa-solid fa-headset"></i> ' + escapeHtml(consultation.label) + '</div>';
+    return '<div class="pc reveal consultation-inventory-card" id="product-' + item.id + '">' + badge +
+      '<div class="pimg" role="button" tabindex="0" onclick="openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')}">' + renderMediaHTML(item, 'card') + '</div>' +
+      '<div class="pbody"><div class="pname">' + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
+  }
   const oos = isOutOfStock(item);
   const promo = item.promoLabel ? '<div class="ptag">' + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
