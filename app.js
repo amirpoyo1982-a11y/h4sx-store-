@@ -1818,7 +1818,7 @@ function renderPlatformFilters() {
       '<span class="platform-card-icon"><i class="fa-solid ' + ((labels[p] && labels[p].icon) || 'fa-gamepad') + '"></i></span>' +
       '<span class="platform-card-copy"><strong>' + escapeHtml((labels[p] && labels[p].title) || p) + '</strong><small>' + escapeHtml((labels[p] && labels[p].sub) || 'Pilihan tersedia') + '</small></span>' +
       '<b>' + (counts[p] || 0) + '</b>' +
-      '<span class="platform-card-action">Lihat katalog <i class="fa-solid fa-arrow-right"></i></span>' +
+      '<span class="platform-card-action"><i class="fa-solid fa-box-open"></i> ' + (counts[p] || 0) + ' item tersedia <i class="fa-solid fa-arrow-right"></i></span>' +
     '</button>'
   ).join('');
 }
