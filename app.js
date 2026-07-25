@@ -1775,6 +1775,8 @@ function isPermanentFruitCatalogItem(item = {}) {
   const text = [productSubcategory(item), item.name, item.game, item.gameGroup]
     .filter(Boolean)
     .join(' ');
+  // "Non perm" ialah buah biasa, bukan Permanent Fruit.
+  if (/\b(?:non[-\s]?perm|not[-\s]?permanent|bukan[-\s]?permanent)\b/i.test(text)) return false;
   return /\b(permanent|perm|kekal)\b/i.test(text);
 }
 function catalogGames(showAllPlatforms = false) {
