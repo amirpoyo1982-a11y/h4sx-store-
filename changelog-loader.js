@@ -1,28 +1,28 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '25 July 2026',
+  date: '26 July 2026',
   time: 'Update hari ini',
-  version: 'v2.0',
+  version: 'v2.1',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
         {
-          icon: 'fa-square-poll-vertical',
-          text: '<strong>Custom Vote berasingan</strong> - undian H4SX STORE dan H4SX Review kini menggunakan ruang data masing-masing supaya tajuk, pilihan dan kiraan tidak bercampur.'
+          icon: 'fa-headset',
+          text: '<strong>Kad konsultasi inventory</strong> - admin boleh tambah satu card konsultasi dalam inventory setiap game untuk urusan Gamepass, item khas atau pakej yang perlu semakan dahulu.'
         },
         {
-          icon: 'fa-clock',
-          text: '<strong>Masa tamat undian</strong> - admin boleh set tarikh dan masa tamat; pilihan automatik terkunci selepas tamat, manakala keputusan masih boleh dilihat.'
+          icon: 'fa-whatsapp',
+          text: '<strong>Popup WhatsApp konsultasi</strong> - pelanggan kini dapat pilihan Cancel atau Pergi WhatsApp sebelum chat admin, dengan paparan ringan dan tidak menggelapkan skrin.'
         },
         {
-          icon: 'fa-image',
-          text: '<strong>Logo pada card vote</strong> - card undian kini menggunakan logo H4SX STORE supaya lebih kemas dan mudah dikenali.'
+          icon: 'fa-globe',
+          text: '<strong>Domain rasmi baharu</strong> - website utama kini di <strong>www.h4sxmy.xyz</strong> dan laman ulasan di <strong>review.h4sxmy.xyz</strong>.'
         },
         {
-          icon: 'fa-mobile-screen-button',
-          text: '<strong>Mobile hardening</strong> - susun atur phone dikunci lebih stabil dan loader background 3D tersembunyi tidak lagi dimuatkan untuk kurangkan lag serta penggunaan data.'
+          icon: 'fa-link',
+          text: '<strong>Gist game lebih tahan</strong> - pembaca game kini menyokong struktur data biasa atau dibungkus supaya katalog tidak mudah kembali kepada cache lama.'
         }
       ]
     },
@@ -31,16 +31,16 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki Hari Ini',
       items: [
         {
-          icon: 'fa-table-cells-large',
-          text: '<strong>Pilih game lebih compact</strong> - card Roblox dan Free Fire pada phone kini dua kolum, tidak lagi jadi carousel atau kotak terlalu besar.'
+          icon: 'fa-box-open',
+          text: '<strong>Item Non Perm</strong> - item dengan nama Non perm tidak lagi tersalah ditapis sebagai Permanent Fruit dan akan muncul semula dalam katalog Blox Fruits.'
         },
         {
-          icon: 'fa-mobile-screen-button',
-          text: '<strong>Game card phone</strong> - grid game, gambar dan tajuk dikemas supaya muat tanpa melimpah atau mengubah lebar halaman.'
+          icon: 'fa-rotate',
+          text: '<strong>Cache katalog</strong> - versi skrip dinaikkan supaya browser lebih cepat menerima pembetulan katalog selepas website dikemaskini.'
         },
         {
-          icon: 'fa-window-maximize',
-          text: '<strong>Changelog phone</strong> - pop-up changelog kini terkunci di tengah skrin, boleh scroll dalam kotak sendiri dan tidak terkeluar dari paparan.'
+          icon: 'fa-calendar-check',
+          text: '<strong>Tarikh changelog</strong> - simbol masa lama yang mengelirukan dibuang dan paparan release dikemas kini kepada versi v2.1.'
         }
       ]
     },
@@ -50,7 +50,7 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-trash',
-          text: '<strong>Gaya mobile bertindih</strong> - rule lama yang menjadikan card platform besar atau boleh bergerak ke tepi telah ditindih dengan susun atur baru yang stabil.'
+          text: '<strong>Padanan Permanent yang terlalu luas</strong> - filter lama tidak lagi menyembunyikan item hanya kerana nama mengandungi perkataan Non perm.'
         }
       ]
     }
