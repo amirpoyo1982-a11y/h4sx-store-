@@ -3,6 +3,11 @@
 const REVIEW_SYSTEM_POPUP_KEY = 'h4sx_review_system_notice_hidden_until';
 const REVIEW_SYSTEM_HIDE_MS = 90 * 60 * 1000;
 
+// Keep the phone layout at its intended scale, including Safari gesture zoom.
+['gesturestart', 'gesturechange', 'gestureend'].forEach(eventName => {
+  document.addEventListener(eventName, event => event.preventDefault(), { passive: false });
+});
+
 function shouldShowReviewSystemPopup() {
   try {
     const hiddenUntil = Number(localStorage.getItem(REVIEW_SYSTEM_POPUP_KEY) || 0);

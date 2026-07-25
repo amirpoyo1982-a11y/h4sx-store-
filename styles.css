@@ -7180,3 +7180,39 @@ body {
   #shop-section .gc,
   .pc { box-shadow: 0 6px 16px rgba(15,23,42,.06) !important; }
 }
+
+/* Phone desktop-density mode and modal containment. */
+@media (max-width: 820px) {
+  html { touch-action: pan-x pan-y; }
+  .wrap { width: min(100%, 760px); }
+  .section-panel { padding: 14px !important; }
+  #shop-section .sh { margin-bottom: 12px; }
+  #shop-section .detail-note { margin-bottom: 12px; }
+
+  #changelog-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147480000 !important;
+    align-items: center !important;
+    padding: 12px !important;
+    transform: none !important;
+  }
+  #changelog-modal.show { display: flex !important; }
+  .changelog-box {
+    width: min(100%, 430px) !important;
+    height: min(720px, calc(100dvh - 24px)) !important;
+    max-height: calc(100dvh - 24px) !important;
+    min-height: 0 !important;
+    margin: auto !important;
+    transform: none !important;
+  }
+  #changelog-modal.show .changelog-box { transform: none !important; }
+  .changelog-head { flex: 0 0 auto; }
+  .changelog-body { min-height: 0 !important; flex: 1 1 auto !important; overflow-y: auto !important; }
+  .changelog-foot { flex: 0 0 auto; }
+  .changelog-action-row { grid-template-columns: 1fr !important; }
+  .changelog-image-btn,
+  .changelog-hard-refresh { min-height: 48px !important; padding: 9px 11px !important; }
+  .changelog-image-btn small,
+  .changelog-hard-refresh small { display: none; }
+}
