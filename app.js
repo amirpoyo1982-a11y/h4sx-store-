@@ -1766,6 +1766,17 @@ function productSubcategory(item = {}) {
   if (/free\s*fire|ff/.test(name)) return item.ffType || item.type || 'Akun/Item';
   return item.type || item.category || 'Lain-lain';
 }
+function isBloxFruitsGame(value = {}) {
+  const name = typeof value === 'string' ? value : gameGroupName(value);
+  return /blox\s*fruits?/i.test(String(name || ''));
+}
+function isPermanentFruitCatalogItem(item = {}) {
+  if (!isBloxFruitsGame(item)) return false;
+  const text = [productSubcategory(item), item.name, item.game, item.gameGroup]
+    .filter(Boolean)
+    .join(' ');
+  return /\b(permanent|perm|kekal)\b/i.test(text);
+}
 function catalogGames(showAllPlatforms = false) {
   const map = new Map();
   const addGame = (entry, sourceItem = null) => {
@@ -1788,7 +1799,9 @@ function catalogGames(showAllPlatforms = false) {
     map.set(key, existing);
   };
   gamesList.forEach(g => addGame(g));
-  inventory.forEach(item => addGame({ name: gameGroupName(item), platform: inferPlatform(item), img: productPosterUrl(item), badge: item.gameBadge || item.badge }, item));
+  inventory
+    .filter(item => !isPermanentFruitCatalogItem(item))
+    .forEach(item => addGame({ name: gameGroupName(item), platform: inferPlatform(item), img: productPosterUrl(item), badge: item.gameBadge || item.badge }, item));
   return [...map.values()].filter(g => showAllPlatforms || g.platform === activePlatform || (!activePlatform && g.platform));
 }
 function renderPlatformFilters() {
@@ -3181,6 +3194,25 @@ function permanentFruitPickerHTML(items, selected) {
     '<label class="permanent-fruit-select-wrap"><span>Permanent Fruit</span><select onchange="selectPermanentFruit(this.value)">' + options + '</select></label>' +
   '</section>';
 }
+function permanentFruitConsultationSectionHTML() {
+  return '<section class="product-subsection permanent-consult-section reveal">' +
+    '<div class="product-subhead"><div><i class="fa-solid fa-crown"></i><span>Permanent Fruit / Gamepass</span></div><b>Chat Admin</b></div>' +
+    '<div class="product-subgrid">' +
+      '<article class="pc permanent-consult-card" role="button" tabindex="0" onclick="openPermanentFruitConsultation()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openPermanentFruitConsultation()}">' +
+        '<div class="pimg"><img src="assets/permanent-fruits/permanent-fruit-consultation.png" alt="Konsultasi Permanent Fruit dan Gamepass Blox Fruits" loading="lazy"><span class="permanent-consult-badge"><i class="fa-solid fa-comments"></i> Tanya Admin</span></div>' +
+        '<div class="pbody"><div class="pname">Permanent Fruit / Gamepass</div><p class="pdesc">Nak beli Permanent Fruit atau Gamepass Blox Fruits? Chat admin untuk semak harga dan cara urusan.</p><div class="pactions"><button type="button" class="pbuy whatsapp-buy" onclick="event.stopPropagation();openPermanentFruitConsultation()"><i class="fa-brands fa-whatsapp"></i> Konsultasi WhatsApp</button></div></div>' +
+      '</article>' +
+    '</div>' +
+  '</section>';
+}
+function openPermanentFruitConsultation() {
+  const message = [
+    'Hi H4SX, saya nak tanya Permanent Fruit / Gamepass Blox Fruits.',
+    '',
+    'Boleh semak harga dan cara urusan?'
+  ].join('\n');
+  window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+}
 function renderProductSubsection(label, items) {
   const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
   return '<section class="product-subsection reveal">' +
@@ -3194,10 +3226,13 @@ function renderProductGrid() {
   const filters = activeProductFilters();
   const active = filters.find(f => f.id === currentProductFilter) || filters[0];
   const items = currentProductItems.filter(active.test);
+  const permanentConsultation = isBloxFruitsGame(currentGame) && currentProductFilter === 'all'
+    ? permanentFruitConsultationSectionHTML()
+    : '';
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
   renderProductFilters();
   if (!items.length) {
-    grid.innerHTML = currentProductBanner + '<p class="product-empty">Tiada item untuk filter ini.</p>';
+    grid.innerHTML = currentProductBanner + (permanentConsultation || '<p class="product-empty">Tiada item untuk filter ini.</p>');
     return;
   }
   if (isPermanentFruitFilter()) {
@@ -3211,12 +3246,12 @@ function renderProductGrid() {
   }
   const subcats = orderedProductSubcategories(items);
   if (currentProductFilter === 'all' && subcats.length > 1) {
-    grid.innerHTML = currentProductBanner + subcats.map(sub => {
+    grid.innerHTML = currentProductBanner + permanentConsultation + subcats.map(sub => {
       const groupItems = items.filter(item => productSubcategory(item) === sub);
       return renderProductSubsection(sub, groupItems);
     }).join('');
   } else {
-    grid.innerHTML = currentProductBanner + items.map(productCardHTML).join('');
+    grid.innerHTML = currentProductBanner + permanentConsultation + items.map(productCardHTML).join('');
   }
   setTimeout(initScrollReveal, 100);
 }
@@ -3270,7 +3305,7 @@ function openGame(name, options = {}) {
   if (!options.fromUrl) updateGameUrl(name);
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
-  let items = inventory.filter(i => gameGroupName(i) === name);
+  let items = inventory.filter(i => gameGroupName(i) === name && !isPermanentFruitCatalogItem(i));
   // Sort items: in-stock first, out-of-stock last
   items.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
   document.getElementById('pv-title').textContent = name;
@@ -3333,6 +3368,7 @@ function doSearch(q) {
     .split(/\s+/)
     .filter(t => t && !/^\d+(\.\d+)?$/.test(t));
   let hits = inventory.filter(item => {
+    if (isPermanentFruitCatalogItem(item)) return false;
     const hay = searchTextForItem(item);
     const textMatch = !plainTerms.length || plainTerms.every(t => hay.includes(t));
     if (!textMatch) return false;
@@ -3907,7 +3943,7 @@ function openQR(method) {
 function closeQR() { document.getElementById('qr-modal')?.classList.remove('show'); }
 function openProductImage(id, options = {}) {
   const item = inventory.find(i => String(i.id) === String(id));
-  if (!item) return;
+  if (!item || isPermanentFruitCatalogItem(item)) return;
   modalItemId = item.id;
   if (!options.fromUrl) updateProductUrl(item);
   const mediaWrap = document.getElementById('product-modal-media');
