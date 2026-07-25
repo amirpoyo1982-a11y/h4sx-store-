@@ -1600,6 +1600,70 @@ nav {
 .whatsapp-buy:hover { box-shadow: 0 12px 26px rgba(18,140,71,.36) !important; }
 .pbuy.whatsapp-buy { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 
+.consult-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(219, 244, 255, .38);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.consult-confirm-modal.show { opacity: 1; pointer-events: auto; }
+.consult-confirm-dialog {
+  position: relative;
+  width: min(100%, 390px);
+  padding: 28px;
+  border: 1px solid rgba(56, 189, 248, .34);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ffffff, #eefaff);
+  box-shadow: 0 24px 65px rgba(12, 74, 110, .24);
+  text-align: center;
+  transform: translateY(14px) scale(.98);
+  transition: transform .22s ease;
+}
+.consult-confirm-modal.show .consult-confirm-dialog { transform: translateY(0) scale(1); }
+.consult-confirm-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d9eef9;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+.consult-confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #25d366, #128c47);
+  color: #fff;
+  font-size: 28px;
+  box-shadow: 0 12px 24px rgba(18, 140, 71, .25);
+}
+.consult-confirm-kicker { color: #0284c7; font-size: 10px; font-weight: 900; letter-spacing: 1px; }
+.consult-confirm-dialog h3 { margin: 7px 26px 8px; color: #0f172a; font-size: 21px; }
+.consult-confirm-dialog p { margin: 0; color: #53657b; font-size: 13px; line-height: 1.6; }
+.consult-confirm-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 10px; margin-top: 22px; }
+.consult-confirm-actions button { min-height: 45px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+.consult-confirm-cancel { border: 1px solid #cfe8f7; background: #fff; color: #334155; }
+.consult-confirm-go { border: 0; }
+@media (max-width: 480px) {
+  .consult-confirm-modal { padding: 16px; }
+  .consult-confirm-dialog { padding: 24px 18px 18px; border-radius: 17px; }
+  .consult-confirm-dialog h3 { font-size: 19px; }
+}
+
 .store-tools {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

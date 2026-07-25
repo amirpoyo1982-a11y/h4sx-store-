@@ -3126,12 +3126,39 @@ function inventoryConsultationConfig(item) {
     message: raw.message || item.consultationMessage || ('Hi H4SX, saya nak tanya ' + (item.name || 'produk ini') + '.')
   };
 }
+function showConsultationConfirm(config = {}) {
+  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  const oldModal = document.getElementById('consultation-confirm-modal');
+  if (oldModal) oldModal.remove();
+  const modal = document.createElement('div');
+  modal.id = 'consultation-confirm-modal';
+  modal.className = 'consult-confirm-modal';
+  const title = escapeHtml(String(config.title || 'Konsultasi H4SX'));
+  const description = escapeHtml(String(config.description || 'Admin akan bantu semak pilihan dan harga semasa.'));
+  modal.innerHTML = '<div class="consult-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="consult-confirm-title">' +
+    '<button type="button" class="consult-confirm-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
+    '<div class="consult-confirm-icon"><i class="fa-brands fa-whatsapp"></i></div>' +
+    '<span class="consult-confirm-kicker">KONSULTASI H4SX</span>' +
+    '<h3 id="consult-confirm-title">' + title + '</h3>' +
+    '<p>' + description + '</p>' +
+    '<div class="consult-confirm-actions"><button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> Pergi WhatsApp</button></div>' +
+  '</div>';
+  const close = () => modal.remove();
+  modal.addEventListener('click', event => { if (event.target === modal) close(); });
+  modal.querySelector('.consult-confirm-close').addEventListener('click', close);
+  modal.querySelector('.consult-confirm-cancel').addEventListener('click', close);
+  modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
+    close();
+  });
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+}
 function openInventoryConsultation(id) {
   const item = inventory.find(entry => String(entry.id) === String(id));
   const config = inventoryConsultationConfig(item);
   if (!config || !config.active) return;
-  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message)), '_blank', 'noopener');
+  showConsultationConfirm({ ...config, title: item.name || 'Konsultasi H4SX', description: item.desc || 'Admin akan bantu semak pilihan dan harga semasa.' });
 }
 function productCardHTML(item) {
   const consultation = inventoryConsultationConfig(item);
@@ -3284,8 +3311,7 @@ function gameConsultationSectionHTML(config) {
 function openGameConsultation(gameName = '') {
   const config = gameName ? getGameConsultationConfig(gameName) : activeGameConsultationConfig;
   if (!config || !config.active) return;
-  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
+  showConsultationConfirm(config);
 }
 
 function permanentFruitConsultationSectionHTML() {
