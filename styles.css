@@ -7393,3 +7393,95 @@ body {
   #shop-section .platform-card-action { width: calc(100% - 20px) !important; margin: 0 10px 10px !important; padding: 6px 7px !important; font-size: .55rem !important; }
   #shop-section #game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
 }
+
+/* Itemku-style platform choice: image card first, then reveal the selected game's catalog. */
+#shop-section .catalog-marketplace-intro { display: none !important; }
+#shop-section .platform-filter-bar {
+  grid-template-columns: repeat(2, minmax(180px, 214px)) !important;
+  justify-content: start !important;
+  gap: 18px !important;
+  margin: 2px 0 26px !important;
+}
+#shop-section .platform-card {
+  display: grid !important;
+  grid-template-rows: minmax(138px, 1fr) auto !important;
+  min-height: 0 !important;
+  height: 268px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(22, 76, 112, .09) !important;
+}
+#shop-section .platform-card::before {
+  inset: 0 0 auto 0 !important;
+  z-index: 1 !important;
+  height: 100% !important;
+  background: linear-gradient(180deg, rgba(8, 27, 45, .08) 32%, rgba(8, 27, 45, .58) 100%) !important;
+}
+#shop-section .platform-card-bg {
+  inset: 0 0 auto 0 !important;
+  z-index: 0 !important;
+  height: 100% !important;
+  background-position: center !important;
+  background-size: cover !important;
+}
+#shop-section .platform-card-icon { display: none !important; }
+#shop-section .platform-card-copy {
+  align-self: end !important;
+  z-index: 2 !important;
+  display: grid !important;
+  gap: 3px !important;
+  width: 100% !important;
+  min-height: 82px !important;
+  padding: 15px 14px 8px !important;
+  color: #fff !important;
+  background: linear-gradient(180deg, rgba(9, 29, 48, 0), rgba(9, 29, 48, .84) 45%, rgba(9, 29, 48, .96) 100%) !important;
+}
+#shop-section .platform-card-copy strong {
+  color: #fff !important;
+  font-size: 1.05rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0 !important;
+}
+#shop-section .platform-card-copy small {
+  color: rgba(255,255,255,.82) !important;
+  font-size: .67rem !important;
+  font-weight: 750 !important;
+}
+#shop-section .platform-card b { display: none !important; }
+#shop-section .platform-card-action {
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: calc(100% - 28px) !important;
+  margin: -3px 14px 13px !important;
+  padding: 7px 9px !important;
+  color: #087fbf !important;
+  border: 1px solid #b9e8fb !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  font-size: .61rem !important;
+  font-weight: 900 !important;
+}
+#shop-section .platform-card.active .platform-card-action { color: #087550 !important; background: #edfff7 !important; border-color: #a8eed0 !important; }
+#shop-section .platform-card:hover,
+#shop-section .platform-card.active {
+  transform: translateY(-3px) !important;
+  border-color: #38bff1 !important;
+  box-shadow: 0 16px 28px rgba(19, 125, 182, .17) !important;
+}
+
+@media (max-width: 820px) {
+  #shop-section .platform-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 11px !important;
+    margin-bottom: 18px !important;
+  }
+  #shop-section .platform-card { height: 190px !important; border-radius: 11px !important; }
+  #shop-section .platform-card-copy { min-height: 64px !important; padding: 10px 10px 5px !important; }
+  #shop-section .platform-card-copy strong { font-size: .84rem !important; }
+  #shop-section .platform-card-copy small { font-size: .57rem !important; }
+  #shop-section .platform-card-action { width: calc(100% - 20px) !important; margin: -2px 10px 10px !important; padding: 5px 6px !important; font-size: .52rem !important; }
+}
