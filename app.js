@@ -1457,15 +1457,104 @@ let currentStoreConfig = {
   announcement_title: "KEMASKINI BARU!",
   announcement_subtitle: "Barang baru ditambah!",
   announcement_message: "Kami telah menambah item-item baru! Sila semak katalog kami.",
-  announcement_button_text: "Saya faham"
+  announcement_button_text: "Saya faham",
+  announcement_cooldown_days: 1,
+  announcement_show_dont_show: true
 };
 
-// Announcement lama dimatikan. Field announcement_* dalam kedai.json tidak lagi membuka popup.
-function checkAndShowAnnouncement() {
-  return;
+function announcementTextValue(config, nested, key, fallback = '') {
+  const nestedValue = nested && nested[key];
+  const legacyKey = 'announcement_' + key.replace(/[A-Z]/g, match => '_' + match.toLowerCase());
+  const legacyValue = config && config[legacyKey];
+  return nestedValue !== undefined ? nestedValue : (legacyValue !== undefined ? legacyValue : fallback);
 }
-function closeAnnDetails() {
-  return;
+function safeAnnouncementHtml(value) {
+  return String(value || '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/\son\w+\s*=\s*(["']).*?\1/gi, '');
+}
+function getAnnouncementConfig(config = currentStoreConfig) {
+  const nested = config && config.announcement && typeof config.announcement === 'object' && !Array.isArray(config.announcement)
+    ? config.announcement
+    : null;
+  const activeValue = nested?.active ?? config?.announcement_active;
+  const id = String(nested?.id ?? config?.announcement_id ?? '').trim();
+  const cooldownRaw = nested?.cooldownDays ?? nested?.cooldown_days ?? config?.announcement_cooldown_days ?? config?.announcement_hide_days ?? 1;
+  const cooldownDays = Math.max(1, Math.min(30, Number(cooldownRaw) || 1));
+  return {
+    active: flagOn(activeValue),
+    id,
+    kicker: announcementTextValue(config, nested, 'kicker', announcementTextValue(config, nested, 'subtitle', 'MAKLUMAN H4SX')),
+    title: announcementTextValue(config, nested, 'title', 'Makluman H4SX'),
+    message: announcementTextValue(config, nested, 'message', ''),
+    buttonText: announcementTextValue(config, nested, 'buttonText', 'Saya faham'),
+    image: announcementTextValue(config, nested, 'image', ''),
+    icon: announcementTextValue(config, nested, 'icon', 'fa-bullhorn'),
+    buttonLink: announcementTextValue(config, nested, 'buttonLink', ''),
+    openNewTab: flagOn(nested?.openNewTab ?? config?.announcement_open_new_tab),
+    showDontShow: nested?.showDontShow !== undefined ? flagOn(nested.showDontShow) : !flagOff(config?.announcement_show_dont_show),
+    cooldownDays
+  };
+}
+function announcementStorageKey(config) {
+  return 'h4sx_announcement_' + String(config.id || 'default').replace(/[^a-z0-9_-]+/gi, '_') + '_hide_until';
+}
+function isAnnouncementHidden(config) {
+  try { return Number(localStorage.getItem(announcementStorageKey(config)) || 0) > Date.now(); }
+  catch (e) { return false; }
+}
+function rememberAnnouncement(config) {
+  try { localStorage.setItem(announcementStorageKey(config), String(Date.now() + (config.cooldownDays * 86400000))); }
+  catch (e) {}
+}
+function closeAnnouncementModal(modal) {
+  if (!modal) return;
+  modal.classList.remove('show');
+  setTimeout(() => modal.remove(), 190);
+}
+function showAnnouncementModal(config) {
+  const existing = document.getElementById('h4sx-announcement-modal');
+  if (existing && existing.dataset.announcementId === config.id) return;
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'h4sx-announcement-modal';
+  modal.dataset.announcementId = config.id;
+  modal.className = 'h4sx-announcement-modal';
+  const icon = String(config.icon || 'fa-bullhorn').replace(/[^a-z0-9\s-]/gi, '') || 'fa-bullhorn';
+  const image = String(config.image || '').trim();
+  const safeImage = /^https:\/\//i.test(image) ? image : '';
+  const dontShow = config.showDontShow
+    ? '<label class="h4sx-announcement-hide"><input type="checkbox" id="h4sx-announcement-hide"><span>Jangan tunjuk lagi selama ' + config.cooldownDays + ' hari</span></label>'
+    : '';
+  modal.innerHTML = '<section class="h4sx-announcement-card" role="dialog" aria-modal="true" aria-labelledby="h4sx-announcement-title">' +
+    '<button class="h4sx-announcement-close" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
+    (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="Makluman H4SX">' : '<div class="h4sx-announcement-icon"><i class="fa-solid ' + icon + '"></i></div>') +
+    '<span class="h4sx-announcement-kicker">' + escapeHtml(config.kicker) + '</span>' +
+    '<h2 id="h4sx-announcement-title">' + escapeHtml(config.title) + '</h2>' +
+    '<div class="h4sx-announcement-message">' + safeAnnouncementHtml(config.message) + '</div>' +
+    '<div class="h4sx-announcement-bottom">' + dontShow + '<button class="h4sx-announcement-confirm" type="button">' + escapeHtml(config.buttonText) + '<i class="fa-solid fa-arrow-right"></i></button></div>' +
+  '</section>';
+  const dismiss = () => {
+    if (modal.querySelector('#h4sx-announcement-hide')?.checked) rememberAnnouncement(config);
+    closeAnnouncementModal(modal);
+  };
+  modal.addEventListener('click', event => { if (event.target === modal) dismiss(); });
+  modal.querySelector('.h4sx-announcement-close').addEventListener('click', dismiss);
+  modal.querySelector('.h4sx-announcement-confirm').addEventListener('click', () => {
+    const link = String(config.buttonLink || '').trim();
+    dismiss();
+    if (/^https:\/\//i.test(link)) {
+      if (config.openNewTab) window.open(link, '_blank', 'noopener');
+      else window.location.assign(link);
+    }
+  });
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+}
+function checkAndShowAnnouncement() {
+  const config = getAnnouncementConfig();
+  if (!config.active || !config.id || isAnnouncementHidden(config)) return;
+  showAnnouncementModal(config);
 }
 function isTimeWithinRange(currentTime, startTime, endTime) {
   const [startHour, startMin] = startTime.split(':').map(Number);

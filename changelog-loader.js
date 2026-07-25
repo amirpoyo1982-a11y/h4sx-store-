@@ -9,6 +9,10 @@ const CHANGELOG_DATA = {
       title: 'Ditambah Hari Ini',
       items: [
         {
+          icon: 'fa-bullhorn',
+          text: '<strong>Announcement dari Gist</strong> - admin kini boleh hidupkan notis baharu melalui kedai.json dengan tajuk, mesej, gambar, button, link dan tempoh sembunyi sendiri.'
+        },
+        {
           icon: 'fa-headset',
           text: '<strong>Kad konsultasi inventory</strong> - admin boleh tambah satu card konsultasi dalam inventory setiap game untuk urusan Gamepass, item khas atau pakej yang perlu semakan dahulu.'
         },
