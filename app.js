@@ -2187,6 +2187,7 @@ let customVoteEntries = [];
 let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
 let customVoteEndTimer = null;
+let customVoteDirectLinkHandled = false;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -2283,6 +2284,47 @@ function syncCustomVoteAdmin(config = customVoteConfig) {
   }
 }
 
+function customVoteDirectLink(config = customVoteConfig) {
+  const url = new URL(window.location.origin + window.location.pathname);
+  url.searchParams.set('vote', config?.pollId || 'active');
+  url.hash = 'custom-vote-section';
+  return url.toString();
+}
+
+async function copyCustomVoteLink() {
+  if (!orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  if (!customVoteConfig?.active) return toast('Hidupkan dan simpan vote dahulu sebelum copy link.', true);
+  const link = customVoteDirectLink();
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(link);
+    else {
+      const input = document.createElement('textarea');
+      input.value = link;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    }
+    setCustomVoteAdminStatus('Link vote sudah disalin. Bila dibuka, terus pergi ke undian ini.', 'success');
+    toast('Link undian sudah copy.');
+  } catch (error) {
+    console.error('Custom vote link copy error:', error);
+    setCustomVoteAdminStatus('Tak dapat copy link. Cuba semula.', 'error');
+  }
+}
+
+function focusCustomVoteFromLink(section, config = customVoteConfig) {
+  if (customVoteDirectLinkHandled || !section || !config?.active) return;
+  const requestedVote = new URLSearchParams(window.location.search).get('vote');
+  if (!requestedVote || (requestedVote !== 'active' && requestedVote !== config.pollId)) return;
+  customVoteDirectLinkHandled = true;
+  requestAnimationFrame(() => {
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    section.classList.add('is-direct-link');
+    setTimeout(() => section.classList.remove('is-direct-link'), 1900);
+  });
+}
+
 function renderCustomVote() {
   const section = document.getElementById('custom-vote-section');
   const title = document.getElementById('custom-vote-title');
@@ -2298,6 +2340,7 @@ function renderCustomVote() {
     return;
   }
   section.classList.remove('is-hidden');
+  focusCustomVoteFromLink(section, config);
   title.textContent = config.title;
   description.textContent = config.description;
   const endTime = customVoteEndTime(config);
@@ -2432,6 +2475,8 @@ function startNewCustomVote() {
   if (!confirm('Mula pusingan vote baru? Undi lama akan kekal dalam rekod tetapi tidak dikira lagi.')) return;
   saveCustomVote(null, true);
 }
+
+window.copyCustomVoteLink = copyCustomVoteLink;
 
 if (db) loadCustomVote();
 
