@@ -3021,6 +3021,7 @@ function bootStoreApp() {
   startCountdown();
   initScrollReveal();
   runWhenIdle(loadReviews, 1200);
+  runWhenIdle(loadPermanentFruitConfig, 500);
   runWhenIdle(animateCounters, 1600);
   runWhenIdle(initChangelog, 2200);
   runWhenIdle(checkSiteUpdateAvailable, 2600);
@@ -3194,24 +3195,55 @@ function permanentFruitPickerHTML(items, selected) {
     '<label class="permanent-fruit-select-wrap"><span>Permanent Fruit</span><select onchange="selectPermanentFruit(this.value)">' + options + '</select></label>' +
   '</section>';
 }
+const DEFAULT_PERMANENT_FRUIT_CONFIG = {
+  active: true,
+  title: 'Permanent Fruit / Gamepass',
+  image: 'assets/permanent-fruits/permanent-fruit-consultation.png',
+  description: 'Nak beli Permanent Fruit atau Gamepass Blox Fruits? Chat admin untuk semak harga dan cara urusan.',
+  buttonText: 'Konsultasi WhatsApp',
+  whatsapp: '',
+  message: ''
+};
+let permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG };
+
+async function loadPermanentFruitConfig() {
+  try {
+    const response = await fetch('permanent-fruit.json', { cache: 'no-store' });
+    if (!response.ok) throw new Error('Config tidak dijumpai');
+    const data = await response.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+    permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG, ...data };
+    if (isBloxFruitsGame(currentGame)) renderProductGrid();
+  } catch (error) {
+    console.warn('Permanent Fruit config menggunakan tetapan asal.', error);
+  }
+}
+
 function permanentFruitConsultationSectionHTML() {
+  if (permanentFruitConfig.active === false) return '';
+  const title = escapeHtml(String(permanentFruitConfig.title || DEFAULT_PERMANENT_FRUIT_CONFIG.title));
+  const image = escapeHtml(String(permanentFruitConfig.image || DEFAULT_PERMANENT_FRUIT_CONFIG.image));
+  const description = escapeHtml(String(permanentFruitConfig.description || DEFAULT_PERMANENT_FRUIT_CONFIG.description));
+  const buttonText = escapeHtml(String(permanentFruitConfig.buttonText || DEFAULT_PERMANENT_FRUIT_CONFIG.buttonText));
   return '<section class="product-subsection permanent-consult-section reveal">' +
     '<div class="product-subhead"><div><i class="fa-solid fa-crown"></i><span>Permanent Fruit / Gamepass</span></div><b>Chat Admin</b></div>' +
     '<div class="product-subgrid">' +
       '<article class="pc permanent-consult-card" role="button" tabindex="0" onclick="openPermanentFruitConsultation()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openPermanentFruitConsultation()}">' +
-        '<div class="pimg"><img src="assets/permanent-fruits/permanent-fruit-consultation.png" alt="Konsultasi Permanent Fruit dan Gamepass Blox Fruits" loading="lazy"><span class="permanent-consult-badge"><i class="fa-solid fa-comments"></i> Tanya Admin</span></div>' +
-        '<div class="pbody"><div class="pname">Permanent Fruit / Gamepass</div><p class="pdesc">Nak beli Permanent Fruit atau Gamepass Blox Fruits? Chat admin untuk semak harga dan cara urusan.</p><div class="pactions"><button type="button" class="pbuy whatsapp-buy" onclick="event.stopPropagation();openPermanentFruitConsultation()"><i class="fa-brands fa-whatsapp"></i> Konsultasi WhatsApp</button></div></div>' +
+        '<div class="pimg"><img src="' + image + '" alt="Konsultasi Permanent Fruit dan Gamepass Blox Fruits" loading="lazy"><span class="permanent-consult-badge"><i class="fa-solid fa-comments"></i> Tanya Admin</span></div>' +
+        '<div class="pbody"><div class="pname">' + title + '</div><p class="pdesc">' + description + '</p><div class="pactions"><button type="button" class="pbuy whatsapp-buy" onclick="event.stopPropagation();openPermanentFruitConsultation()"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div></div>' +
       '</article>' +
     '</div>' +
   '</section>';
 }
 function openPermanentFruitConsultation() {
-  const message = [
+  const fallbackMessage = [
     'Hi H4SX, saya nak tanya Permanent Fruit / Gamepass Blox Fruits.',
     '',
     'Boleh semak harga dan cara urusan?'
   ].join('\n');
-  window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  const phone = String(permanentFruitConfig.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  const message = String(permanentFruitConfig.message || fallbackMessage);
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
 }
 function renderProductSubsection(label, items) {
   const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
