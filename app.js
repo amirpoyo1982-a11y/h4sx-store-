@@ -376,7 +376,7 @@ function getLocalHelperAnswer(question) {
   if (who) return 'Saya H4SX Helper, pembantu ringkas untuk bantu customer H4SX tentang item, harga, stok, cara beli, resit, review dan support admin.';
   if (asksCheap) {
     const cheap = helperCheapestItems();
-    return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://h4sxmy.vercel.app/';
+    return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://www.h4sxmy.xyz/';
   }
   const foundItems = helperFindItems(question);
   if (foundItems.length && helperIncludes(q, ['ada', 'stok', 'harga', 'berapa', 'item', 'akun', 'account', 'gamepass', 'buah', 'fruit', 'ff', 'free fire', 'roblox', 'brookhaven'])) {
@@ -386,16 +386,16 @@ function getLocalHelperAnswer(question) {
     return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
   }
   if (asksSafe) {
-    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://h4sxreview.vercel.app/\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/60193263016';
   }
   if (asksTime) {
     return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/60193263016';
   }
   if (asksReview) {
-    return 'Boleh tengok atau hantar review dekat sini:\nhttps://h4sxreview.vercel.app/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Alamat baru H4SX:\nWebsite utama: https://h4sxmy.vercel.app/\nWebsite review: https://h4sxreview.vercel.app/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/60193263016';
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
@@ -566,7 +566,7 @@ function renderReceiptCanvas() {
   ctx.fillText('Simpan resit ini dan hantar ke WhatsApp admin selepas pembayaran.', 76, height - 82);
   ctx.fillStyle = '#0ea5e9';
   ctx.font = '1000 16px "Plus Jakarta Sans", Arial, sans-serif';
-  ctx.fillText('h4sxmy.vercel.app', 76, height - 52);
+  ctx.fillText('www.h4sxmy.xyz', 76, height - 52);
   return canvas;
 }
 
@@ -1159,7 +1159,7 @@ async function downloadChangelogImage() {
     ctx.fillText('H4SX STORE', 74, height - 80);
     ctx.fillStyle = '#64748b';
     ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText('h4sxmy.vercel.app  |  h4sxreview.vercel.app', 74, height - 46);
+    ctx.fillText('www.h4sxmy.xyz  |  review.h4sxmy.xyz', 74, height - 46);
 
     const blob = await new Promise((resolve, reject) => {
       canvas.toBlob(result => result ? resolve(result) : reject(new Error('Canvas blob kosong')), 'image/png');
@@ -3566,7 +3566,7 @@ async function takeScreenshot() {
             </div>`;
         }).join('')}
       </div>
-      <div class="product-ss-foot">h4sxmy.vercel.app</div>`;
+      <div class="product-ss-foot">www.h4sxmy.xyz</div>`;
     document.body.appendChild(board);
     await waitForBoardImages(board);
     await ensureHtml2Canvas();
@@ -4122,7 +4122,7 @@ initReviewSystemPopup();
 
 const H4RF_DIRECT_MODE = new URLSearchParams(window.location.search).get('review') === 'submit';
 if (H4RF_DIRECT_MODE) document.documentElement.classList.add('review-submit-direct');
-const REVIEW_FORM_LINK = 'https://h4sxmy.vercel.app/?review=submit';
+const REVIEW_FORM_LINK = 'https://www.h4sxmy.xyz/?review=submit';
 
 async function copyReviewFormLink() {
   try {
@@ -4395,7 +4395,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateAvatar();
       message('Ulasan berjaya dihantar. Membuka H4SX Review...');
       setTimeout(() => {
-        window.location.assign('https://h4sxreview.vercel.app/?reviewId=' + encodeURIComponent(reviewRef.id));
+        window.location.assign('https://review.h4sxmy.xyz/?reviewId=' + encodeURIComponent(reviewRef.id));
       }, 800);
     } catch (error) {
       message(error.message === 'review-code-invalid' ? 'Kod pengesahan tidak sah atau telah digunakan.' : 'Gagal hantar ulasan. Cuba lagi.', true);

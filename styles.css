@@ -7583,3 +7583,59 @@ body {
   #home-view > #faq { margin-top: 18px; }
   .nav-store-search { display: none !important; }
 }
+
+/* Final mobile changelog containment. Keep the update list inside one stable sheet. */
+@media (max-width: 820px) {
+  #changelog-modal.show {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100svh !important;
+    padding: 12px !important;
+    overflow: hidden !important;
+    background: rgba(15, 32, 51, .68) !important;
+  }
+
+  #changelog-modal.show .changelog-box {
+    display: flex !important;
+    flex-direction: column !important;
+    width: min(100%, 430px) !important;
+    height: calc(100vh - 24px) !important;
+    max-height: calc(100vh - 24px) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    background: #f9fdff !important;
+    border-radius: 20px !important;
+    transform: none !important;
+  }
+
+  @supports (height: 100dvh) {
+    #changelog-modal.show { height: 100dvh !important; min-height: 100dvh !important; }
+    #changelog-modal.show .changelog-box {
+      height: calc(100dvh - 24px) !important;
+      max-height: calc(100dvh - 24px) !important;
+    }
+  }
+
+  #changelog-modal.show .changelog-head,
+  #changelog-modal.show .changelog-foot {
+    flex: 0 0 auto !important;
+  }
+
+  #changelog-modal.show .changelog-body {
+    display: flex !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    background: #f9fdff !important;
+  }
+}
