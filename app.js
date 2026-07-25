@@ -2803,6 +2803,29 @@ function toReviewTime(value) {
 }
 let unsubscribeReviews = null;
 let latestReviewStatsData = [];
+function reviewRecordTime(value) {
+  if (typeof value?.toMillis === 'function') return value.toMillis();
+  if (typeof value?.toDate === 'function') return value.toDate().getTime();
+  const time = new Date(value || '').getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+function uniqueReviewRecords(list = []) {
+  const seen = new Set();
+  return list.filter(item => {
+    const time = reviewRecordTime(item.diciptaPada || item.timestamp || item.date);
+    // Only collapse exact duplicates submitted in the same minute. Older legitimate reviews stay untouched.
+    if (!time) return true;
+    const key = [
+      String(item.nama || item.name || '').trim().toLowerCase(),
+      Number(item.bintang ?? item.rating ?? 0),
+      String(item.ulasan || item.komen || item.comment || item.feedback || '').trim().toLowerCase(),
+      Math.floor(time / 60000)
+    ].join('|');
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 function isReviewMaintenanceActive(config = currentStoreConfig) {
   return flagOn(config.review_maintenance)
     || flagOn(config.maintenance_review)
@@ -2875,7 +2898,7 @@ async function loadReviews() {
     unsubscribeReviews = db.collection('ratings')
       .orderBy('diciptaPada', 'desc')
       .onSnapshot(snapshot => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const data = uniqueReviewRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         latestReviewStatsData = data;
         updateMainReviewStats(data);
         if (isReviewMaintenanceActive()) {
@@ -4347,8 +4370,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedEmoji) payload.emojiProfil = selectedEmoji;
       if (profileImage) payload.profileImg = profileImage;
       if (feedbackImage) payload.feedbackImg = feedbackImage;
-      const reviewRef = await db.collection('ratings').add(payload);
-      await codeRef.delete();
+      const reviewRef = db.collection('ratings').doc('review_' + reviewCode);
+      try {
+        await reviewRef.create(payload);
+      } catch (createError) {
+        if (createError?.code === 'already-exists') throw new Error('review-code-invalid');
+        throw createError;
+      }
+      try {
+        await codeRef.delete();
+      } catch (codeDeleteError) {
+        // Firestore rules keep review-code deletion for admins only. The stable review ID
+        // still prevents this code from producing a second rating.
+        console.warn('Kod review perlu dibersihkan oleh admin:', codeDeleteError);
+      }
       try {
         await reviewRef.update({ balasanAdmin: `Terima kasih, ${customerName}! Kami hargai ulasan anda kepada H4SX STORE. Sokongan anda membantu kami terus memperbaiki servis.`, balasanPada: firebase.firestore.FieldValue.serverTimestamp(), ...(suggestionUsed ? { cdg: true, cadanganDigunakan: true } : {}) });
       } catch (replyError) { console.warn('Auto reply review tidak dapat disimpan.', replyError); }
@@ -4358,8 +4393,10 @@ document.addEventListener('DOMContentLoaded', () => {
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
-      message('Ulasan berjaya dihantar. Terima kasih!');
-      setTimeout(closeH4ReviewForm, 700);
+      message('Ulasan berjaya dihantar. Membuka H4SX Review...');
+      setTimeout(() => {
+        window.location.assign('https://h4sxreview.vercel.app/?reviewId=' + encodeURIComponent(reviewRef.id));
+      }, 800);
     } catch (error) {
       message(error.message === 'review-code-invalid' ? 'Kod pengesahan tidak sah atau telah digunakan.' : 'Gagal hantar ulasan. Cuba lagi.', true);
     } finally {
