@@ -1558,6 +1558,9 @@ async function checkStore() {
     // Update current config with gist data
     if (normalizedConfig) {
       currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
+      if (normalizedConfig.permanent_fruit && typeof normalizedConfig.permanent_fruit === 'object') {
+        applyPermanentFruitConfig(normalizedConfig.permanent_fruit);
+      }
       if (normalizedConfig.payment) {
         storeConfig = {
           ...storeConfig,
@@ -3021,7 +3024,6 @@ function bootStoreApp() {
   startCountdown();
   initScrollReveal();
   runWhenIdle(loadReviews, 1200);
-  runWhenIdle(loadPermanentFruitConfig, 500);
   runWhenIdle(animateCounters, 1600);
   runWhenIdle(initChangelog, 2200);
   runWhenIdle(checkSiteUpdateAvailable, 2600);
@@ -3206,17 +3208,10 @@ const DEFAULT_PERMANENT_FRUIT_CONFIG = {
 };
 let permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG };
 
-async function loadPermanentFruitConfig() {
-  try {
-    const response = await fetch('permanent-fruit.json', { cache: 'no-store' });
-    if (!response.ok) throw new Error('Config tidak dijumpai');
-    const data = await response.json();
-    if (!data || typeof data !== 'object' || Array.isArray(data)) return;
-    permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG, ...data };
-    if (isBloxFruitsGame(currentGame)) renderProductGrid();
-  } catch (error) {
-    console.warn('Permanent Fruit config menggunakan tetapan asal.', error);
-  }
+function applyPermanentFruitConfig(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+  permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG, ...data };
+  if (isBloxFruitsGame(currentGame)) renderProductGrid();
 }
 
 function permanentFruitConsultationSectionHTML() {
