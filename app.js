@@ -1558,9 +1558,6 @@ async function checkStore() {
     // Update current config with gist data
     if (normalizedConfig) {
       currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
-      if (normalizedConfig.permanent_fruit && typeof normalizedConfig.permanent_fruit === 'object') {
-        applyPermanentFruitConfig(normalizedConfig.permanent_fruit);
-      }
       if (normalizedConfig.payment) {
         storeConfig = {
           ...storeConfig,
@@ -1854,8 +1851,14 @@ async function loadGames() {
   for (const url of GAMES_GIST_URLS) {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
-      const data = await r.json();
-      if (Array.isArray(data) && data.length) {
+      const rawData = await r.json();
+      // Terima array biasa serta format pembungkus agar Gist yang tersalah format tidak memaksa paparan cache lama.
+      const data = Array.isArray(rawData)
+        ? rawData
+        : (Array.isArray(rawData && rawData.games)
+          ? rawData.games
+          : (Array.isArray(rawData && rawData.value) ? rawData.value : []));
+      if (data.length) {
         gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => {
           const customBadge = g.badgeTitle || g.badgeText || g.titleBadge || g.label || g.badge || null;
           const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:customBadge };
@@ -3217,17 +3220,19 @@ function applyPermanentFruitConfig(data) {
 
 function getGameConsultationConfig(gameName = currentGame) {
   const game = gamesList.find(entry => entry && (entry.name === gameName || gameGroupName(entry) === gameName));
-  const raw = game && (game.consultation || game.konsultasi || game.consult);
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const source = game && (game.consultation ?? game.konsultasi ?? game.consult);
+  const enabled = source === true || String(source).toLowerCase() === 'true' || (source && typeof source === 'object' && !Array.isArray(source));
+  if (!enabled) return null;
+  const raw = source && typeof source === 'object' && !Array.isArray(source) ? source : {};
   return {
     active: raw.active !== false && String(raw.active).toLowerCase() !== 'false',
-    label: raw.label || raw.badge || 'Konsultasi',
-    title: raw.title || ('Konsultasi ' + gameName),
+    label: raw.label || raw.badge || game.consultationLabel || 'Konsultasi',
+    title: raw.title || game.consultationTitle || ('Konsultasi ' + gameName),
     image: raw.image || raw.img || raw.poster || game.img || game.image || '',
-    description: raw.description || raw.desc || ('Chat admin untuk tanya servis dan item khas ' + gameName + '.'),
-    buttonText: raw.buttonText || raw.button_text || raw.cta || 'Chat WhatsApp',
-    whatsapp: raw.whatsapp || raw.phone || raw.number || '',
-    message: raw.message || raw.text || ('Hi H4SX, saya nak tanya ' + gameName + '.')
+    description: raw.description || raw.desc || game.consultationDescription || ('Chat admin untuk tanya servis dan item khas ' + gameName + '.'),
+    buttonText: raw.buttonText || raw.button_text || raw.cta || game.consultationButton || 'Chat WhatsApp',
+    whatsapp: raw.whatsapp || raw.phone || raw.number || game.whatsapp || game.phone || '',
+    message: raw.message || raw.text || game.consultationMessage || ('Hi H4SX, saya nak tanya ' + gameName + '.')
   };
 }
 
@@ -3249,9 +3254,9 @@ function gameConsultationSectionHTML(config) {
   '</section>';
 }
 
-function openGameConsultation() {
-  const config = activeGameConsultationConfig;
-  if (!config) return;
+function openGameConsultation(gameName = '') {
+  const config = gameName ? getGameConsultationConfig(gameName) : activeGameConsultationConfig;
+  if (!config || !config.active) return;
   const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
   window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
 }
@@ -3295,12 +3300,8 @@ function renderProductGrid() {
   const filters = activeProductFilters();
   const active = filters.find(f => f.id === currentProductFilter) || filters[0];
   const items = currentProductItems.filter(active.test);
-  activeGameConsultationConfig = currentProductFilter === 'all' ? getGameConsultationConfig() : null;
-  const gameConsultation = gameConsultationSectionHTML(activeGameConsultationConfig);
-  const permanentConsultation = !activeGameConsultationConfig && isBloxFruitsGame(currentGame) && currentProductFilter === 'all'
-    ? permanentFruitConsultationSectionHTML()
-    : '';
-  const consultationSection = gameConsultation || permanentConsultation;
+  activeGameConsultationConfig = null;
+  const consultationSection = '';
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
   renderProductFilters();
   if (!items.length) {
@@ -3367,6 +3368,11 @@ function renderGames() {
   document.getElementById('game-grid').innerHTML = visibleGames.map(g => {
     const badgeMeta = getGameBadgeMeta(g.badge || g.badgeTitle || g.badgeText || g.titleBadge || g.label);
     const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + escapeHtml(badgeMeta.text) + '</div>' : '';
+    const consultation = getGameConsultationConfig(g.name);
+    if (consultation && consultation.active) {
+      const consultationBadge = '<div class="gc-badge consultation">' + escapeHtml(consultation.label || 'Konsultasi') + '</div>';
+      return '<div class="gc reveal consultation-game-card" onclick="openGameConsultation(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + consultationBadge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+    }
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');

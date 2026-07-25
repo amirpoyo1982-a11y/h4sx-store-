@@ -930,6 +930,7 @@ nav {
 .gc-badge.new { background: var(--primary); color: #fff; }
 .gc-badge.sale { background: var(--orange); color: #fff; }
 .gc-badge.ready { background: var(--green); color: #fff; }
+.gc-badge.consultation { background: linear-gradient(135deg, #16a34a, #0ea5e9); color: #fff; }
 .gc-badge.soon { background: var(--muted2); color: #fff; }
 .gc-badge.akan-dihapus,
 .gc-badge.delete-soon,
