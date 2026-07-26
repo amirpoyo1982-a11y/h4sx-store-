@@ -7994,3 +7994,183 @@ body {
   #shop-section .platform-card { height: 160px !important; }
   .storefront-tabs button { padding-inline: 9px !important; }
 }
+
+/* H4SX marketplace layout: familiar catalog hierarchy, with original H4SX sky-blue styling. */
+.marketplace-command {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 20px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid #e2eef6;
+}
+.marketplace-command > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.marketplace-command > div > i {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #0ea5e9, #14b8a6);
+  box-shadow: 0 9px 18px rgba(14, 165, 233, .2);
+}
+.marketplace-command span { min-width: 0; display: grid; gap: 2px; }
+.marketplace-command strong { color: #102b4c; font-size: .83rem; font-weight: 900; }
+.marketplace-command small { color: #70849b; font-size: .71rem; line-height: 1.35; }
+.marketplace-command button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border: 1px solid #bee6f8;
+  border-radius: 10px;
+  color: #087ebd;
+  background: #f2fbff;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.marketplace-command button:hover { color: #fff; border-color: #0ea5e9; background: #0ea5e9; }
+
+#shop-section {
+  padding: clamp(20px, 2.4vw, 32px) !important;
+  border: 1px solid #dbeaf4 !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 28px rgba(18, 84, 120, .07) !important;
+}
+#shop-section .sh {
+  align-items: end !important;
+  margin-bottom: 14px !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+}
+#shop-section .sh-title { font-size: clamp(1.38rem, 2.2vw, 1.9rem) !important; }
+#shop-section .sh-tag { color: #0b96d5 !important; font-size: .63rem !important; }
+#shop-section .catalog-search-link { min-height: 40px; border-radius: 10px; }
+
+/* Platform cards are the main catalog entry points. */
+#shop-section .platform-filter-bar {
+  grid-template-columns: repeat(2, minmax(250px, 340px)) !important;
+  gap: 16px !important;
+  margin: 0 0 26px !important;
+}
+#shop-section .platform-card {
+  height: 214px !important;
+  grid-template-rows: 1fr auto !important;
+  border: 1px solid #d4e7f3 !important;
+  border-radius: 14px !important;
+  background: #0d2945 !important;
+  box-shadow: 0 9px 20px rgba(20, 73, 110, .11) !important;
+}
+#shop-section .platform-card::before {
+  background: linear-gradient(180deg, rgba(4, 21, 37, .06) 18%, rgba(4, 21, 37, .86) 100%) !important;
+}
+#shop-section .platform-card-copy { min-height: 73px !important; padding: 13px 14px 8px !important; }
+#shop-section .platform-card-copy strong { font-size: 1.07rem !important; }
+#shop-section .platform-card-copy small { font-size: .66rem !important; }
+#shop-section .platform-card-action {
+  width: calc(100% - 28px) !important;
+  min-height: 30px;
+  margin: -3px 14px 12px !important;
+  padding: 7px 9px !important;
+  color: #086fae !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+}
+#shop-section .platform-card.active {
+  border-color: #14b8a6 !important;
+  box-shadow: 0 12px 25px rgba(14, 165, 233, .19) !important;
+}
+
+/* Game cards and product cards use the same easy-to-scan shelf system. */
+#shop-section #game-grid {
+  grid-template-columns: repeat(auto-fill, minmax(154px, 1fr)) !important;
+  gap: 14px !important;
+}
+#shop-section .gc {
+  padding: 8px !important;
+  gap: 8px !important;
+  border: 1px solid #dcebf5 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: 0 5px 14px rgba(28, 78, 108, .07) !important;
+}
+#shop-section .gc::after { display: none !important; }
+#shop-section .gc-icon-wrap { border: 0 !important; border-radius: 9px !important; box-shadow: none !important; }
+#shop-section .gc-name {
+  min-height: 34px !important;
+  padding: 2px 3px !important;
+  color: #183552 !important;
+  background: transparent !important;
+  font-size: .68rem !important;
+}
+#shop-section .gc:not(.oos):hover { transform: translateY(-3px) !important; border-color: #75d4f5 !important; box-shadow: 0 12px 22px rgba(14,165,233,.15) !important; }
+
+#product-view .section-panel {
+  border: 1px solid #dbeaf4;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(18,84,120,.07);
+}
+#product-view .ph { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e5eff5; }
+#product-view .ph-title { letter-spacing: 0; }
+#product-view .detail-note { margin-bottom: 14px; border-radius: 10px; box-shadow: none; }
+.product-filter-bar { margin: 0 0 12px; padding: 2px 0 10px; }
+.product-filter-chip { height: 36px; box-shadow: none; }
+#inventory-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 15px; }
+.product-subsection { padding: 14px; border-radius: 14px; box-shadow: none; background: #f8fcff; }
+.product-subgrid { grid-template-columns: repeat(auto-fill, minmax(198px, 1fr)); gap: 14px; }
+.pc { border-radius: 12px; border-color: #dcebf5; box-shadow: 0 5px 14px rgba(28,78,108,.07); }
+.pc:hover { transform: translateY(-3px); border-color: #83d5f4; box-shadow: 0 14px 24px rgba(14,165,233,.14) !important; }
+.pimg { background: #f2f9fd; }
+.pbody { padding: 12px; }
+.pname { color: #132e4c; font-weight: 900; }
+.pdesc { color: #71839a; }
+.pprice { color: #0489cf; }
+.pbuy { border-radius: 9px; }
+
+@media (max-width: 820px) {
+  #shop-section { padding: 15px !important; border-radius: 14px !important; }
+  #shop-section .sh { align-items: center !important; }
+  .marketplace-command { gap: 10px; margin-bottom: 15px; padding-bottom: 14px; }
+  .marketplace-command strong { font-size: .74rem; }
+  .marketplace-command small { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .62rem; }
+  .marketplace-command > div > i { width: 34px; height: 34px; flex-basis: 34px; border-radius: 10px; font-size: .84rem; }
+  .marketplace-command button { min-width: 36px; padding: 0 10px; }
+  .marketplace-command button span { display: none; }
+  #shop-section .platform-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; margin-bottom: 18px !important; }
+  #shop-section .platform-card { height: 178px !important; }
+  #shop-section .platform-card-copy { min-height: 61px !important; padding: 10px 10px 5px !important; }
+  #shop-section .platform-card-copy strong { font-size: .83rem !important; }
+  #shop-section .platform-card-copy small { font-size: .57rem !important; }
+  #shop-section .platform-card-action { width: calc(100% - 20px) !important; min-height: 25px; margin: -2px 10px 10px !important; padding: 5px 6px !important; font-size: .52rem !important; }
+  #shop-section #game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  #shop-section .gc { padding: 7px !important; }
+  #product-view { padding-top: 12px !important; }
+  #product-view .section-panel { padding: 14px !important; border-radius: 14px !important; }
+  #inventory-grid, .product-subgrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .product-subsection { padding: 10px; border-radius: 12px; }
+  .product-subhead { padding-bottom: 10px; }
+  .product-subhead > div { font-size: .69rem; }
+  .product-subhead i { width: 26px; height: 26px; border-radius: 8px; }
+  .product-subhead b { padding: 5px 8px; font-size: 9px; }
+  .pbody { padding: 9px; }
+  .pname { min-height: 31px; font-size: .7rem !important; }
+  .pdesc { display: none; }
+  .psold, .pmeta { font-size: .61rem !important; }
+  .pprice { font-size: .96rem; }
+  .pactions { gap: 6px; }
+  .pbuy, .padd { min-height: 35px; font-size: .62rem; }
+}
