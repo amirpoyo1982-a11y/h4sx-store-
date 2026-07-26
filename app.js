@@ -2287,6 +2287,7 @@ let pendingOrderImageFile = null;
 let editingOrderCode = null;
 let editingOriginalPhone = '';
 const STORE_VISITOR_KEY = 'h4sx_store_visitor_id';
+const STORE_VISITOR_FIRST_SEEN_KEY = 'h4sx_store_visitor_first_seen';
 const CUSTOM_VOTE_CONFIG_COLLECTION = 'store_settings';
 const CUSTOM_VOTE_CONFIG_ID = 'custom_vote';
 const CUSTOM_VOTE_ENTRIES_COLLECTION = 'custom_vote_entries';
@@ -2800,14 +2801,23 @@ function getStoreVisitorId() {
     return id;
   } catch (error) { return 'store-' + Math.random().toString(36).slice(2) + Date.now(); }
 }
-async function recordStoreVisit() {
+function getStoreVisitorFirstSeen() {
+  try {
+    let firstSeen = localStorage.getItem(STORE_VISITOR_FIRST_SEEN_KEY);
+    if (!firstSeen) {
+      firstSeen = new Date().toISOString();
+      localStorage.setItem(STORE_VISITOR_FIRST_SEEN_KEY, firstSeen);
+    }
+    return firstSeen;
+  } catch (error) { return new Date().toISOString(); }
+}
+async function recordStoreVisit(online = true) {
   if (!db) return;
   const id = getStoreVisitorId();
   const now = new Date().toISOString();
   const ref = db.collection('store_visits').doc(id);
   try {
-    const existing = await ref.get();
-    await ref.set({ page:'store', online:true, firstSeen: existing.exists ? (existing.data().firstSeen || now) : now, lastSeen:now, userAgent:String(navigator.userAgent || '').slice(0, 140) }, { merge:true });
+    await ref.set({ page:'store', online, firstSeen:getStoreVisitorFirstSeen(), lastSeen:now, userAgent:String(navigator.userAgent || '').slice(0, 140) }, { merge:true });
   } catch (error) { console.warn('Visitor record skipped', error); }
 }
 async function loadVisitorDashboard() {
@@ -2831,9 +2841,10 @@ async function loadVisitorDashboard() {
   } catch (error) { console.error(error); history.textContent = 'Tak dapat load. Pastikan Firestore Rules untuk store_visits telah ditambah.'; }
 }
 recordStoreVisit();
+setInterval(() => recordStoreVisit(document.visibilityState !== 'hidden'), 60000);
+document.addEventListener('visibilitychange', () => recordStoreVisit(document.visibilityState !== 'hidden'));
 window.addEventListener('pagehide', () => {
-  if (!db) return;
-  try { db.collection('store_visits').doc(getStoreVisitorId()).set({ online:false, lastSeen:new Date().toISOString() }, { merge:true }); } catch (error) {}
+  recordStoreVisit(false);
 });
 async function findOrder(event) {
   event.preventDefault();
