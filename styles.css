@@ -7937,3 +7937,60 @@ body {
   .closure-title { font-size: 27px !important; }
   .closure-message { font-size: 14px !important; }
 }
+
+/* Final phone GUI polish: compact controls, clean spacing and no fixed-widget overlap. */
+@media (max-width: 820px) {
+  body { padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; }
+  .site-header-nav-wrap { position: sticky !important; top: 0; z-index: 650 !important; }
+  #main-nav { min-height: 62px !important; }
+  .nav-inner { min-height: 62px; padding-inline: 12px !important; gap: 7px !important; }
+  .nav-brand { min-width: 0; gap: 8px !important; }
+  .nav-logo { width: 38px !important; height: 38px !important; flex: 0 0 38px; }
+  .nav-wordmark { max-width: 126px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .82rem !important; }
+  .nav-right { margin-left: auto; gap: 6px !important; }
+  .nav-right .ai-helper-btn,
+  .nav-right .changelog-btn,
+  .nav-right .hard-refresh-btn,
+  .nav-right .btn-wa { display: none !important; }
+  .nav-right .search-btn,
+  .nav-right .cart-btn,
+  .nav-right .nav-ham { width: 38px !important; min-width: 38px !important; height: 38px !important; padding: 0 !important; border-radius: 11px !important; }
+  .storefront-tabs { min-height: 43px; padding-inline: 10px !important; scroll-padding-inline: 10px; }
+  .storefront-tabs button { min-height: 43px !important; padding: 0 10px !important; font-size: .68rem !important; }
+
+  #home-view { padding-top: 15px !important; }
+  .wrap { padding-inline: 12px !important; }
+  .promo-hero-shell { margin-inline: 0 !important; border-radius: 13px !important; }
+  .promo-hero-slide { min-height: 0 !important; }
+  #home-view .hero { padding: 16px !important; border-radius: 13px !important; }
+  #home-view .hero-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .section-panel { padding: 14px !important; border-radius: 14px !important; }
+
+  #shop-section .platform-filter-bar { gap: 10px !important; margin-bottom: 16px !important; }
+  #shop-section .platform-card { height: 174px !important; }
+  #shop-section .platform-card-copy { min-height: 60px !important; }
+  #shop-section .platform-card-action { min-height: 27px; }
+  #shop-section #game-grid,
+  #game-grid,
+  #inventory-grid,
+  .product-grid,
+  .product-subgrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .pc, #inventory-grid .pc { min-width: 0 !important; border-radius: 13px !important; }
+  .pbody { padding: 10px !important; }
+  .pname { min-height: 32px; font-size: .72rem !important; line-height: 1.2 !important; overflow-wrap: anywhere; }
+  .pmeta { font-size: .62rem !important; }
+  .price { font-size: 1rem !important; }
+
+  .bottom-nav { padding-bottom: max(8px, env(safe-area-inset-bottom)) !important; }
+  .bn-item { min-width: 54px; padding: 6px 7px !important; font-size: 8px !important; }
+  .ai-side-assistant { right: 12px !important; bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
+  #toasts { right: 12px; bottom: calc(84px + env(safe-area-inset-bottom)); max-width: calc(100vw - 24px); }
+  footer { padding-bottom: 18px !important; }
+}
+
+@media (max-width: 390px) {
+  .nav-inner { padding-inline: 9px !important; }
+  .nav-wordmark { display: none; }
+  #shop-section .platform-card { height: 160px !important; }
+  .storefront-tabs button { padding-inline: 9px !important; }
+}
