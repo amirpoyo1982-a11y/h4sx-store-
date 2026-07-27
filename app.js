@@ -1692,24 +1692,24 @@ async function checkStore() {
   if (flagOn(currentStoreConfig.maintenance)) {
     shouldClose = true;
     closureType = 'maintenance';
-    title = currentStoreConfig.tajuk_maintenance || 'SISTEM UPDATE';
-    status = currentStoreConfig.sub_maintenance || 'REHAT JAP';
-    message = currentStoreConfig.mesej_maintenance || 'Tengah restock barang baru mat!';
+    title = currentStoreConfig.tajuk_maintenance || currentStoreConfig.maintenance_title || 'SISTEM UPDATE';
+    status = currentStoreConfig.sub_maintenance || currentStoreConfig.maintenance_kicker || 'REHAT JAP';
+    message = currentStoreConfig.mesej_maintenance || currentStoreConfig.maintenance_message || 'Tengah restock barang baru mat!';
   } else if (flagOff(currentStoreConfig.bukakedai)) {
     shouldClose = true;
     closureType = 'closed';
-    title = currentStoreConfig.tajuk_tutup || 'KEDAI TUTUP';
-    status = currentStoreConfig.sub_tutup || 'TIADA OPERASI';
-    message = currentStoreConfig.mesej_tutup || 'Kedai kami sedang ditutup buat sementara waktu.<br>Sila datang semula pada waktu yang ditetapkan.';
+    title = currentStoreConfig.tajuk_tutup || currentStoreConfig.closed_title || 'KEDAI TUTUP';
+    status = currentStoreConfig.sub_tutup || currentStoreConfig.closed_kicker || 'TIADA OPERASI';
+    message = currentStoreConfig.mesej_tutup || currentStoreConfig.closed_message || 'Kedai kami sedang ditutup buat sementara waktu.<br>Sila datang semula pada waktu yang ditetapkan.';
   } else {
     // Check automatic business hours
     const autoCheck = shouldStoreCloseAutomatically(currentStoreConfig);
     if (autoCheck.closed) {
       shouldClose = true;
       closureType = 'hours';
-      title = 'Di Luar Waktu Operasi';
-      status = 'WAKTU OPERASI';
-      message = currentStoreConfig.mesej_tutup || 'Kami sedang tutup buat masa ini. Sila kembali semasa waktu operasi kami.';
+      title = currentStoreConfig.tajuk_tutup || currentStoreConfig.closed_title || 'Di Luar Waktu Operasi';
+      status = currentStoreConfig.sub_tutup || currentStoreConfig.closed_kicker || 'WAKTU OPERASI';
+      message = currentStoreConfig.mesej_tutup || currentStoreConfig.closed_message || 'Kami sedang tutup buat masa ini. Sila kembali semasa waktu operasi kami.';
     }
   }
   
