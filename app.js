@@ -1425,6 +1425,44 @@ function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
   copyProductLinkById(modalItemId);
 }
+function shareableProductLink(item) {
+  const url = new URL(productLink(item));
+  url.searchParams.delete('preview');
+  url.searchParams.delete('refresh');
+  return url.toString();
+}
+async function shareStoreContent(shareData, copiedMessage, promptLabel) {
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      toast('Berjaya dikongsi!');
+      return true;
+    }
+    await navigator.clipboard.writeText([shareData.text, shareData.url].filter(Boolean).join('\n'));
+    toast(copiedMessage);
+    return true;
+  } catch (error) {
+    if (error?.name === 'AbortError') return false;
+    try {
+      await navigator.clipboard.writeText([shareData.text, shareData.url].filter(Boolean).join('\n'));
+      toast(copiedMessage);
+      return true;
+    } catch (copyError) {
+      window.prompt(promptLabel, [shareData.text, shareData.url].filter(Boolean).join('\n'));
+      return false;
+    }
+  }
+}
+async function shareProductItem(id) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  if (!item) { toast('Barang tidak dijumpai', true); return; }
+  const price = 'RM' + Number(item.price || 0).toFixed(2);
+  await shareStoreContent({
+    title: item.name + ' | H4SX STORE',
+    text: 'Tengok item ini dekat H4SX STORE: ' + item.name + ' (' + price + ')',
+    url: shareableProductLink(item)
+  }, 'Link item sudah disalin!', 'Copy link item ini:');
+}
 function getStickyOffset() {
   return 16;
 }
@@ -2467,6 +2505,7 @@ function renderCustomVote() {
     if (Number.isInteger(index) && index >= 0 && index < counts.length) counts[index] += 1;
   });
   const total = counts.reduce((sum, count) => sum + count, 0);
+  const leadingCount = total ? Math.max(...counts) : 0;
   const storedChoice = localStorage.getItem(customVoteChoiceKey(config.pollId));
   const choice = storedChoice === null ? null : Number(storedChoice);
   totalEl.textContent = String(total);
@@ -2474,10 +2513,11 @@ function renderCustomVote() {
     const count = counts[index];
     const percent = total ? Math.round((count / total) * 100) : 0;
     const voted = choice === index;
+    const leading = leadingCount > 0 && count === leadingCount;
     const disabled = !voteOpen || Number.isInteger(choice) ? ' disabled' : '';
-    return '<button type="button" class="custom-vote-option' + (voted ? ' is-voted' : '') + '" onclick="submitCustomVote(' + index + ')"' + disabled + '>' +
+    return '<button type="button" class="custom-vote-option' + (voted ? ' is-voted' : '') + (leading ? ' is-leading' : '') + '" onclick="submitCustomVote(' + index + ')"' + disabled + '>' +
       '<span class="custom-vote-option-fill" style="--vote-percent:' + percent + '%"></span>' +
-      '<span class="custom-vote-option-label">' + voteEscape(option) + '</span>' +
+      '<span class="custom-vote-option-label">' + (leading ? '<span class="vote-leader-crown" title="Undian paling tinggi"><i class="fa-solid fa-crown"></i></span>' : '') + voteEscape(option) + '</span>' +
       '<span class="custom-vote-option-count">' + count + '<small>' + percent + '%</small></span></button>';
   }).join('');
   if (note) {
@@ -3299,9 +3339,10 @@ function productCardHTML(item) {
   const cartQty = getCartQtyForItem(item.id);
   const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
   const addBtn = buildAddBtnHTML(item, oos);
+  const shareBtn = '<button class="pshare" type="button" onclick="event.stopPropagation();event.preventDefault();shareProductItem(' + item.id + ')" title="Kongsi item" aria-label="Kongsi ' + escapeHtml(item.name) + '"><i class="fa-solid fa-share-nodes"></i></button>';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions">' + buyBtn + addBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -4036,6 +4077,8 @@ function toggleCart() { document.getElementById('cart-overlay').classList.toggle
 function ocClose(e) { if (e.target===document.getElementById('cart-overlay')) toggleCart(); }
 function renderCart() {
   const body = document.getElementById('cart-body');
+  const shareButton = document.getElementById('cart-share-btn');
+  if (shareButton) shareButton.disabled = !cartItems.length;
   if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping" style="font-size:28px;color:var(--border2);margin-bottom:10px;display:block"></i>Cart kosong</div>'; document.getElementById('cart-total').textContent = 'RM0'; return; }
   let tot = 0;
   body.innerHTML = cartItems.map(ci => {
@@ -4281,6 +4324,27 @@ function sendCartToWhatsApp() {
     'Boleh semak stok dan teruskan urusan?'
   ].join('\n');
   window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+}
+async function shareCartItems() {
+  if (!cartItems.length) { toast('Troli masih kosong', true); return; }
+  let total = 0;
+  const lines = cartItems.map((ci, index) => {
+    const item = inventory.find(entry => entry.id === ci.id);
+    if (!item) return '';
+    const quantity = Math.max(1, Number(ci.qty || 1));
+    const subtotal = Number(item.price || 0) * quantity;
+    total += subtotal;
+    return (index + 1) + '. ' + item.name + ' x' + quantity + ' - RM' + subtotal.toFixed(2) + '\n' + shareableProductLink(item);
+  }).filter(Boolean);
+  if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
+  const storeUrl = new URL(window.location.href);
+  ['preview', 'refresh', 'game', 'part', 'item'].forEach(param => storeUrl.searchParams.delete(param));
+  const text = ['Pilihan item saya dari H4SX STORE:', '', ...lines, '', 'Jumlah katalog: RM' + total.toFixed(2)].join('\n');
+  await shareStoreContent({
+    title: 'Cart H4SX STORE',
+    text,
+    url: storeUrl.toString()
+  }, 'Senarai item dalam cart sudah disalin!', 'Copy senarai item ini:');
 }
 function toast(msg, err, name, count) {
   const c = document.getElementById('toasts'); if (!c) return;
