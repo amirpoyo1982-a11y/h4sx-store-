@@ -4812,3 +4812,34 @@ async function initCurrencyTools() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCurrencyTools, { once: true });
 else initCurrencyTools();
+
+// Share the current store view without carrying preview or cache-buster parameters.
+async function shareH4sxStore() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('preview');
+  url.searchParams.delete('refresh');
+  const shareUrl = url.toString();
+  const shareData = {
+    title: 'H4SX STORE',
+    text: 'Jom tengok game, item dan akaun digital dekat H4SX STORE.',
+    url: shareUrl
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      toast('Terima kasih sebab kongsi H4SX!');
+      return;
+    }
+    await navigator.clipboard.writeText(shareUrl);
+    toast('Link H4SX sudah disalin. Hantar dekat kawan anda!');
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast('Link H4SX sudah disalin. Hantar dekat kawan anda!');
+    } catch (copyError) {
+      window.prompt('Copy link H4SX ini:', shareUrl);
+    }
+  }
+}

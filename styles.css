@@ -8174,3 +8174,22 @@ body {
   .pactions { gap: 6px; }
   .pbuy, .padd { min-height: 35px; font-size: .62rem; }
 }
+
+/* H4SX Circle: one-tap sharing for customers who want to bring friends along. */
+.btn-share-h4sx {
+  border-color: rgba(22, 183, 203, .34) !important;
+  color: #087dbb !important;
+  background: rgba(237, 251, 255, .88) !important;
+  cursor: pointer;
+}
+.btn-share-h4sx:hover {
+  color: #fff !important;
+  border-color: #12b7c7 !important;
+  background: linear-gradient(135deg, #079de1, #16c49b) !important;
+  box-shadow: 0 12px 22px rgba(10, 168, 192, .19) !important;
+}
+.btn-share-h4sx i { transition: transform .2s ease; }
+.btn-share-h4sx:hover i { transform: translateX(2px) rotate(-8deg); }
+@media (max-width: 620px) {
+  .btn-share-h4sx { grid-column: span 1; }
+}
