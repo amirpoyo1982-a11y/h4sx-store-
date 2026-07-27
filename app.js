@@ -1499,6 +1499,7 @@ function getAnnouncementConfig(config = currentStoreConfig) {
 function announcementStorageKey(config) {
   return 'h4sx_announcement_' + String(config.id || 'default').replace(/[^a-z0-9_-]+/gi, '_') + '_hide_until';
 }
+const dismissedAnnouncementIds = new Set();
 function isAnnouncementHidden(config) {
   try { return Number(localStorage.getItem(announcementStorageKey(config)) || 0) > Date.now(); }
   catch (e) { return false; }
@@ -1535,6 +1536,8 @@ function showAnnouncementModal(config) {
     '<div class="h4sx-announcement-bottom">' + dontShow + '<button class="h4sx-announcement-confirm" type="button">' + escapeHtml(config.buttonText) + '<i class="fa-solid fa-arrow-right"></i></button></div>' +
   '</section>';
   const dismiss = () => {
+    // Do not interrupt browsing again until this page is refreshed.
+    dismissedAnnouncementIds.add(config.id);
     if (modal.querySelector('#h4sx-announcement-hide')?.checked) rememberAnnouncement(config);
     closeAnnouncementModal(modal);
   };
@@ -1553,7 +1556,7 @@ function showAnnouncementModal(config) {
 }
 function checkAndShowAnnouncement() {
   const config = getAnnouncementConfig();
-  if (!config.active || !config.id || isAnnouncementHidden(config)) return;
+  if (!config.active || !config.id || isAnnouncementHidden(config) || dismissedAnnouncementIds.has(config.id)) return;
   showAnnouncementModal(config);
 }
 function isTimeWithinRange(currentTime, startTime, endTime) {
@@ -3273,11 +3276,11 @@ function productCardHTML(item) {
   const oos = isOutOfStock(item);
   const promo = item.promoLabel ? '<div class="ptag">' + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
-  if (storeConfig.promote.enabled && item.promotedBy) {
+  if (item.promotedBy) {
     promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
   }
   let itemQRHTML = '';
-  const isPromotedItem = storeConfig.promote.enabled && item.promotedBy && item.promoterPhone;
+  const isPromotedItem = item.promotedBy && item.promoterPhone;
   if (isPromotedItem) {
     itemQRHTML = '<div class="product-promoter-box"><small>Hubungi Promoter</small><a href="https://wa.me/' + escapeHtml(item.promoterPhone) + '" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>';
   } else if (item.qrDuitNow || item.qrTng) {
