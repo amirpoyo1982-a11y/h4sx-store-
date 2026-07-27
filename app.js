@@ -3280,13 +3280,15 @@ function showConsultationConfirm(config = {}) {
   modal.className = 'consult-confirm-modal';
   const title = escapeHtml(String(config.title || 'Konsultasi H4SX'));
   const description = escapeHtml(String(config.description || 'Admin akan bantu semak pilihan dan harga semasa.'));
+  const kicker = escapeHtml(String(config.kicker || 'KONSULTASI H4SX'));
+  const buttonText = escapeHtml(String(config.buttonText || 'Pergi WhatsApp'));
   modal.innerHTML = '<div class="consult-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="consult-confirm-title">' +
     '<button type="button" class="consult-confirm-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
     '<div class="consult-confirm-icon"><i class="fa-brands fa-whatsapp"></i></div>' +
-    '<span class="consult-confirm-kicker">KONSULTASI H4SX</span>' +
+    '<span class="consult-confirm-kicker">' + kicker + '</span>' +
     '<h3 id="consult-confirm-title">' + title + '</h3>' +
     '<p>' + description + '</p>' +
-    '<div class="consult-confirm-actions"><button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> Pergi WhatsApp</button></div>' +
+    '<div class="consult-confirm-actions"><button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div>' +
   '</div>';
   const close = () => modal.remove();
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
@@ -3484,7 +3486,14 @@ function openPermanentFruitConsultation() {
   ].join('\n');
   const phone = String(permanentFruitConfig.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
   const message = String(permanentFruitConfig.message || fallbackMessage);
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  showConsultationConfirm({
+    kicker: 'KONSULTASI H4SX',
+    title: permanentFruitConfig.title || 'Permanent Fruit / Gamepass',
+    description: permanentFruitConfig.description || 'Admin akan bantu semak pilihan dan harga semasa.',
+    buttonText: permanentFruitConfig.buttonText || 'Pergi WhatsApp',
+    whatsapp: phone,
+    message
+  });
 }
 function renderProductSubsection(label, items) {
   const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
@@ -4139,8 +4148,14 @@ function goCO(focusPayment) {
     }
     promoterBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Hubungi ' + firstItem.promotedBy;
     promoterBtn.onclick = () => {
-      const message = encodeURIComponent('Hi! Saya ingin membeli ' + firstItem.name + ' (RM' + Number(firstItem.price).toFixed(2) + ')');
-      window.open('https://wa.me/' + firstItem.promoterPhone + '?text=' + message, '_blank');
+      showConsultationConfirm({
+        kicker: 'SEMAK PEMBELIAN',
+        title: 'Teruskan ke WhatsApp?',
+        description: firstItem.name + ' - RM' + Number(firstItem.price).toFixed(2) + '. Anda akan chat promoter untuk semak stok dan urusan.',
+        buttonText: 'Pergi WhatsApp',
+        whatsapp: firstItem.promoterPhone,
+        message: 'Hi! Saya ingin membeli ' + firstItem.name + ' (RM' + Number(firstItem.price).toFixed(2) + ')'
+      });
     };
   } else {
     if (sendBtn) sendBtn.style.display = '';
@@ -4301,7 +4316,14 @@ function buyNowItem(id) {
     '',
     'Boleh bantu semak dan teruskan urusan?'
   ].join('\n');
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  showConsultationConfirm({
+    kicker: 'SEMAK PEMBELIAN',
+    title: 'Teruskan ke WhatsApp?',
+    description: item.name + ' - RM' + Number(item.price || 0).toFixed(2) + '. Admin akan semak stok sebelum urusan diteruskan.',
+    buttonText: 'Pergi WhatsApp',
+    whatsapp: phone,
+    message
+  });
 }
 function sendCartToWhatsApp() {
   if (!cartItems.length) { toast('Troli masih kosong', true); return; }
@@ -4323,7 +4345,14 @@ function sendCartToWhatsApp() {
     'Jumlah katalog: RM' + total.toFixed(2),
     'Boleh semak stok dan teruskan urusan?'
   ].join('\n');
-  window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  showConsultationConfirm({
+    kicker: 'SEMAK CART H4SX',
+    title: 'Teruskan ke WhatsApp?',
+    description: lines.length + ' item dalam cart, jumlah katalog RM' + total.toFixed(2) + '. Admin akan semak stok sebelum urusan diteruskan.',
+    buttonText: 'Pergi WhatsApp',
+    whatsapp: WA_NUMBER,
+    message
+  });
 }
 async function shareCartItems() {
   if (!cartItems.length) { toast('Troli masih kosong', true); return; }
