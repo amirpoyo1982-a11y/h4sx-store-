@@ -3500,7 +3500,14 @@ async function verifyPromoTurnstile() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, action: 'promo_otp' })
     });
-    if (!response.ok) throw new Error('turnstile-rejected');
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = String(payload?.error || '');
+      if (response.status === 503) throw new Error('turnstile-secret-missing');
+      if (response.status === 403) throw new Error('turnstile-rejected');
+      if (response.status === 400) throw new Error('turnstile-token-invalid');
+      throw new Error('turnstile-server:' + message);
+    }
   } finally {
     resetPromoTurnstile();
   }
@@ -3536,7 +3543,24 @@ function setupProductPromoOtp(item) {
       if (promoRecaptchaVerifier) { try { promoRecaptchaVerifier.clear(); } catch (_) {} promoRecaptchaVerifier = null; }
       clearPromoOtpSession();
       showPromoOtpPanel(item, result.promo);
-      setPromoOtpStatus('OTP tidak dapat dihantar. Cuba semula sebentar lagi.', 'error');
+      const errorCode = String(error?.code || error?.message || '');
+      let message = 'OTP tidak dapat dihantar. Cuba semula sebentar lagi.';
+      if (errorCode.includes('turnstile-secret-missing')) {
+        message = 'Cloudflare belum siap: letak TURNSTILE_SECRET_KEY di Vercel, kemudian redeploy.';
+      } else if (errorCode.includes('turnstile-rejected')) {
+        message = 'Cloudflare menolak semakan ini. Semak hostname widget dan cuba semula.';
+      } else if (errorCode.includes('turnstile-not-ready') || errorCode.includes('turnstile-timeout')) {
+        message = 'Semakan Cloudflare belum sedia. Refresh halaman dan cuba semula.';
+      } else if (errorCode.includes('auth/invalid-phone-number')) {
+        message = 'Format nombor tidak sah. Cuba 01XXXXXXXXX atau +601XXXXXXXXX.';
+      } else if (errorCode.includes('auth/too-many-requests')) {
+        message = 'Terlalu banyak cubaan OTP. Tunggu sebentar sebelum cuba lagi.';
+      } else if (errorCode.includes('auth/operation-not-allowed')) {
+        message = 'Firebase Phone Auth belum diaktifkan untuk projek ini.';
+      } else if (errorCode.includes('auth/unauthorized-domain')) {
+        message = 'Domain belum dibenarkan di Firebase Auth. Tambah www.h4sxmy.xyz di Authorized domains.';
+      }
+      setPromoOtpStatus(message, 'error');
     } finally {
       sendButton.disabled = false;
     }
