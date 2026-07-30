@@ -3422,7 +3422,7 @@ function getCartUnitPrice(item, cartItem) {
 }
 function getProductModalPromoCode() {
   const item = inventory.find(entry => String(entry.id) === String(modalItemId));
-  const value = document.getElementById('product-modal-promo-input')?.value || '';
+  const value = document.getElementById('product-modal-promo-input')?.value || savedProductPromoCode(item);
   return productPromoResult(item, value).valid ? value.trim().toUpperCase() : '';
 }
 function syncProductModalPromo(item) {
@@ -4843,7 +4843,9 @@ async function modalBuyNow() {
 function buyNowItem(id, promoCode = '') {
   const item = inventory.find(i => i.id === id);
   if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
-  const promo = productPromoResult(item, promoCode);
+  // A redeemed code stays active for this device, including when Buy WhatsApp is pressed from a card.
+  const activePromoCode = String(promoCode || '').trim().toUpperCase() || savedProductPromoCode(item);
+  const promo = productPromoResult(item, activePromoCode);
   const finalPrice = promo.final;
   const phone = String(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
   const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
