@@ -3602,8 +3602,8 @@ async function claimProductPromo(item, promoCode) {
         ...(promo.expiresAt ? { expiresAt: new Date(promo.expiresAt) } : {})
       };
       if (usageSnapshot.exists) transaction.update(usageRef, usagePayload);
-      else transaction.create(usageRef, usagePayload);
-      transaction.create(redemptionRef, {
+      else transaction.set(usageRef, usagePayload);
+      transaction.set(redemptionRef, {
         code: promo.code,
         itemId: String(item.id),
         deviceId,
