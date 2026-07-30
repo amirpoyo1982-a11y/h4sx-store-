@@ -2413,6 +2413,10 @@ const CUSTOM_VOTE_CONFIG_ID = 'custom_vote';
 const CUSTOM_VOTE_ENTRIES_COLLECTION = 'custom_vote_entries';
 const CUSTOM_VOTE_DEVICE_KEY = 'h4sx_custom_vote_device';
 const CUSTOM_VOTE_CHOICE_PREFIX = 'h4sx_custom_vote_choice_';
+const PROMO_REDEMPTIONS_COLLECTION = 'promo_redemptions';
+const PROMO_USAGE_COLLECTION = 'promo_usage';
+const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
+const PROMO_REDEMPTION_PREFIX = 'h4sx_promo_redeemed_';
 let customVoteConfig = null;
 let customVoteEntries = [];
 let customVoteConfigUnsubscribe = null;
@@ -3313,24 +3317,46 @@ function getCartQtyForItem(id) {
   const ci = cartItems.find(c => c.id === id);
   return ci ? ci.qty : 0;
 }
+let productModalPromoTimer = null;
+function promoExpiryTimestamp(item) {
+  const explicit = Date.parse(String(item?.promoExpiresAt || '').trim());
+  if (Number.isFinite(explicit)) return explicit;
+  const started = Date.parse(String(item?.promoStartsAt ?? item?.promoStartAt ?? '').trim());
+  const minutes = Number(item?.promoDurationMinutes ?? item?.promoDurationMins ?? 0);
+  const hours = Number(item?.promoDurationHours ?? 0);
+  const duration = (Number.isFinite(minutes) && minutes > 0 ? minutes * 60000 : 0) || (Number.isFinite(hours) && hours > 0 ? hours * 3600000 : 0);
+  return Number.isFinite(started) && duration ? started + duration : 0;
+}
+function formatPromoCountdown(milliseconds) {
+  const total = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  return (hours ? String(hours).padStart(2, '0') + ':' : '') + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+}
 function productPromoConfig(item) {
   const rawCode = String(item?.promoCode ?? item?.discountCode ?? '').trim();
   const rawDiscount = Number(item?.promoDiscount ?? item?.discount ?? 0);
   if (!rawCode || !Number.isFinite(rawDiscount) || rawDiscount <= 0) return null;
   if (item?.promoActive === false || String(item?.promoActive).toLowerCase() === 'false') return null;
   const type = String(item?.promoType || 'percent').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+  const expiresAt = promoExpiryTimestamp(item);
+  const usageLimit = Math.max(1, Math.floor(Number(item?.promoUsageLimit ?? item?.promoLimit ?? 1) || 1));
   return {
     code: rawCode.toUpperCase(),
     amount: type === 'percent' ? Math.min(100, rawDiscount) : rawDiscount,
     type,
-    label: item?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off')
+    label: item?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off'),
+    usageLimit,
+    expiresAt,
+    expired: Boolean(expiresAt && Date.now() >= expiresAt)
   };
 }
 function productPromoResult(item, suppliedCode) {
   const promo = productPromoConfig(item);
   const base = Math.max(0, Number(item?.price || 0));
   const entered = String(suppliedCode || '').trim().toUpperCase();
-  if (!promo || !entered || entered !== promo.code) return { valid: false, base, final: base, promo: null };
+  if (!promo || !entered || entered !== promo.code || promo.expired) return { valid: false, base, final: base, promo, reason: promo?.expired ? 'expired' : 'invalid' };
   const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
   return { valid: true, base, final: Math.max(0, base - discount), promo, discount };
 }
@@ -3356,32 +3382,129 @@ function syncProductModalPromo(item) {
   if (!wrap || !input || !status) return;
   wrap.hidden = !promo;
   if (!promo) return;
-  if (title) title.textContent = 'Kod promo tersedia: ' + promo.label;
+  if (title) title.textContent = 'Kod promo: ' + promo.label + ' - terhad ' + promo.usageLimit + ' pelanggan';
   const result = productPromoResult(item, input.value);
   status.className = 'product-modal-promo-status';
   if (result.valid) {
     status.classList.add('is-valid');
-    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Kod sah. Jimat RM' + result.discount.toFixed(2) + '.';
+    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Kod sah. Jimat RM' + result.discount.toFixed(2) + '.<span id="product-modal-promo-clock"></span>';
     if (priceEl) priceEl.textContent = 'RM' + result.final.toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = 'RM' + result.base.toFixed(2);
   } else {
-    status.textContent = input.value.trim() ? 'Kod tidak sah untuk item ini.' : 'Masukkan kod untuk aktifkan harga promo.';
-    if (input.value.trim()) status.classList.add('is-error');
+    status.innerHTML = result.reason === 'expired'
+      ? '<i class="fa-solid fa-clock"></i> Promo ini telah tamat.<span id="product-modal-promo-clock"></span>'
+      : (input.value.trim() ? 'Kod tidak sah untuk item ini.' : 'Masukkan kod untuk aktifkan harga promo.') + '<span id="product-modal-promo-clock"></span>';
+    if (input.value.trim() || result.reason === 'expired') status.classList.add('is-error');
     if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   }
+  const clock = document.getElementById('product-modal-promo-clock');
+  if (clock && promo.expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(promo.expiresAt - Date.now()) + '</strong>';
 }
 function setupProductModalPromo(item) {
   const wrap = document.getElementById('product-modal-promo');
   const input = document.getElementById('product-modal-promo-input');
   const apply = document.getElementById('product-modal-promo-apply');
   if (!wrap || !input || !apply) return;
+  if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
   input.value = '';
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
   apply.onclick = sync;
+  const promo = productPromoConfig(item);
+  input.disabled = Boolean(promo?.expired);
+  apply.disabled = Boolean(promo?.expired);
   sync();
+  if (promo?.expiresAt && !promo.expired) {
+    productModalPromoTimer = setInterval(() => {
+      if (modalItemId !== item.id) return;
+      const nextPromo = productPromoConfig(item);
+      if (nextPromo?.expired) {
+        input.disabled = true;
+        apply.disabled = true;
+        sync();
+        clearInterval(productModalPromoTimer);
+        productModalPromoTimer = null;
+      } else {
+        const clock = document.getElementById('product-modal-promo-clock');
+        if (clock) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(nextPromo.expiresAt - Date.now()) + '</strong>';
+      }
+    }, 1000);
+  }
+}
+function getPromoDeviceId() {
+  let id = localStorage.getItem(PROMO_DEVICE_KEY);
+  if (!id) {
+    const random = typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? Array.from(crypto.getRandomValues(new Uint32Array(2))).map(value => value.toString(36)).join('')
+      : Math.random().toString(36).slice(2);
+    id = 'promo_' + Date.now().toString(36) + '_' + random.slice(0, 14);
+    localStorage.setItem(PROMO_DEVICE_KEY, id);
+  }
+  return id;
+}
+function promoRedemptionId(item, promo) {
+  return String(item?.id || 'item') + '_' + String(promo?.code || '').replace(/[^A-Z0-9_-]/gi, '_').slice(0, 60);
+}
+async function claimProductPromo(item, promoCode) {
+  const result = productPromoResult(item, promoCode);
+  if (!promoCode) return true;
+  if (!result.valid) {
+    toast(result.reason === 'expired' ? 'Promo ini telah tamat.' : 'Kod promo tidak sah.', true);
+    return false;
+  }
+  const promo = result.promo;
+  if (!db || !window.firebase) {
+    toast('Kod promo perlukan sambungan Firebase. Cuba semula sebentar lagi.', true);
+    return false;
+  }
+  const deviceId = getPromoDeviceId();
+  const promoId = promoRedemptionId(item, promo);
+  const redemptionId = promoId + '_' + deviceId;
+  const localKey = PROMO_REDEMPTION_PREFIX + promoId;
+  if (localStorage.getItem(localKey) === deviceId) return true;
+  const redemptionRef = db.collection(PROMO_REDEMPTIONS_COLLECTION).doc(redemptionId);
+  const usageRef = db.collection(PROMO_USAGE_COLLECTION).doc(promoId);
+  try {
+    await db.runTransaction(async transaction => {
+      const [redemptionSnapshot, usageSnapshot] = await Promise.all([
+        transaction.get(redemptionRef),
+        transaction.get(usageRef)
+      ]);
+      if (redemptionSnapshot.exists) return;
+      const usage = usageSnapshot.exists ? (usageSnapshot.data() || {}) : {};
+      const expiry = usage.expiresAt?.toDate ? usage.expiresAt.toDate().getTime() : promo.expiresAt;
+      if (expiry && Date.now() >= expiry) throw new Error('promo-expired');
+      const maxUses = Math.max(1, Number(usage.maxUses || promo.usageLimit));
+      const used = Math.max(0, Number(usage.useCount || 0));
+      if (used >= maxUses) throw new Error('promo-used');
+      const usagePayload = {
+        code: promo.code,
+        itemId: String(item.id),
+        maxUses,
+        useCount: used + 1,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ...(promo.expiresAt ? { expiresAt: new Date(promo.expiresAt) } : {})
+      };
+      if (usageSnapshot.exists) transaction.update(usageRef, usagePayload);
+      else transaction.create(usageRef, usagePayload);
+      transaction.create(redemptionRef, {
+        code: promo.code,
+        itemId: String(item.id),
+        deviceId,
+        redeemedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    localStorage.setItem(localKey, deviceId);
+    return true;
+  } catch (error) {
+    console.warn('Promo redemption error:', error);
+    if (String(error?.message || '').includes('promo-expired')) toast('Masa promo ini sudah tamat.', true);
+    else if (String(error?.message || '').includes('promo-used')) toast('Had penggunaan kod promo ini sudah penuh.', true);
+    else toast('Tak dapat sahkan kod promo. Cuba semula sebentar lagi.', true);
+    return false;
+  }
 }
 function buildAddBtnHTML(item, oos) {
   if (oos) return '<button class="padd" disabled><i class="fa-solid fa-ban"></i><span class="padd-txt">Habis</span></button>';
@@ -4566,6 +4689,7 @@ function openProductImage(id, options = {}) {
 }
 function closeProductImage() {
   document.getElementById('product-modal')?.classList.remove('show');
+  if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = '';
   modalItemId = null;
@@ -4574,15 +4698,21 @@ function closeProductImage() {
     document.body.style.overflow = '';
   }
 }
-function modalAddToCart() {
+async function modalAddToCart() {
   if (!modalItemId) return;
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  if (!item) return;
   const btn = document.getElementById('product-modal-cart-btn');
-  addCart(modalItemId, btn, { promoCode: getProductModalPromoCode() });
+  const promoCode = getProductModalPromoCode();
+  if (!(await claimProductPromo(item, promoCode))) return;
+  addCart(modalItemId, btn, { promoCode });
 }
-function modalBuyNow() {
+async function modalBuyNow() {
   if (!modalItemId) return;
   const itemId = modalItemId;
+  const item = inventory.find(entry => String(entry.id) === String(itemId));
   const promoCode = getProductModalPromoCode();
+  if (!item || !(await claimProductPromo(item, promoCode))) return;
   closeProductImage();
   buyNowItem(itemId, promoCode);
 }
