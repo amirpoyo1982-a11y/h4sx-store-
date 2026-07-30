@@ -114,22 +114,30 @@ function toggleSoundEffects() {
   if (nextEnabled) playH4sxSound('toggle');
 }
 
-function playH4sxSound(kind = 'tap') {
-  if (!soundEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+function unlockH4sxSound() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return;
-
+  if (!AudioContextClass) return null;
   try {
     h4sxSoundContext ||= new AudioContextClass();
-    const context = h4sxSoundContext;
-    if (context.state === 'suspended') context.resume().catch(() => {});
+    if (h4sxSoundContext.state === 'suspended') h4sxSoundContext.resume().catch(() => {});
+    return h4sxSoundContext;
+  } catch (error) {
+    return null;
+  }
+}
 
+function playH4sxSound(kind = 'tap') {
+  if (!soundEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const context = unlockH4sxSound();
+  if (!context) return;
+
+  try {
     const presets = {
-      tap: { notes: [520], duration: 0.055, type: 'sine', volume: 0.03 },
-      cart: { notes: [540, 720], duration: 0.08, type: 'triangle', volume: 0.05 },
-      open: { notes: [390, 540], duration: 0.075, type: 'sine', volume: 0.035 },
-      whatsapp: { notes: [620, 860], duration: 0.09, type: 'sine', volume: 0.045 },
-      toggle: { notes: [660], duration: 0.07, type: 'triangle', volume: 0.04 }
+      tap: { notes: [520], duration: 0.065, type: 'sine', volume: 0.07 },
+      cart: { notes: [540, 720], duration: 0.09, type: 'triangle', volume: 0.11 },
+      open: { notes: [390, 540], duration: 0.08, type: 'sine', volume: 0.075 },
+      whatsapp: { notes: [620, 860], duration: 0.1, type: 'sine', volume: 0.1 },
+      toggle: { notes: [660], duration: 0.08, type: 'triangle', volume: 0.085 }
     };
     const preset = presets[kind] || presets.tap;
     const startAt = context.currentTime + 0.005;
@@ -155,6 +163,8 @@ function playH4sxSound(kind = 'tap') {
 
 function initSoundEffects() {
   updateSoundEffectsButton();
+  document.addEventListener('pointerdown', unlockH4sxSound, { once: true, passive: true });
+  document.addEventListener('touchstart', unlockH4sxSound, { once: true, passive: true });
   document.addEventListener('click', event => {
     const waLink = event.target.closest('a[href*="wa.me/"]');
     if (waLink) playH4sxSound('whatsapp');
@@ -2417,6 +2427,7 @@ const PROMO_REDEMPTIONS_COLLECTION = 'promo_redemptions';
 const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
 const PROMO_REDEMPTION_PREFIX = 'h4sx_promo_redeemed_';
+const PROMO_DRAFT_PREFIX = 'h4sx_promo_draft_';
 let customVoteConfig = null;
 let customVoteEntries = [];
 let customVoteConfigUnsubscribe = null;
@@ -3360,6 +3371,19 @@ function productPromoResult(item, suppliedCode) {
   const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
   return { valid: true, base, final: Math.max(0, base - discount), promo, discount };
 }
+function promoDraftStorageKey(item) {
+  return PROMO_DRAFT_PREFIX + String(item?.id || 'item');
+}
+function savedProductPromoCode(item) {
+  const saved = String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
+  return productPromoResult(item, saved).valid ? saved : '';
+}
+function saveProductPromoDraft(item, code) {
+  const result = productPromoResult(item, code);
+  if (result.valid) localStorage.setItem(promoDraftStorageKey(item), result.promo.code);
+  else if (!String(code || '').trim() || result.reason === 'expired') localStorage.removeItem(promoDraftStorageKey(item));
+  return result;
+}
 function getCartPromoResult(item, cartItem) {
   return productPromoResult(item, cartItem?.promoCode);
 }
@@ -3407,11 +3431,14 @@ function setupProductModalPromo(item) {
   const apply = document.getElementById('product-modal-promo-apply');
   if (!wrap || !input || !apply) return;
   if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
-  input.value = '';
+  input.value = savedProductPromoCode(item);
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
-  apply.onclick = sync;
+  apply.onclick = () => {
+    saveProductPromoDraft(item, input.value);
+    sync();
+  };
   const promo = productPromoConfig(item);
   input.disabled = Boolean(promo?.expired);
   apply.disabled = Boolean(promo?.expired);

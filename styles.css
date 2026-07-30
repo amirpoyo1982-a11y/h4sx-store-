@@ -7067,7 +7067,8 @@ body {
 .sound-fx-btn.is-muted { color: #94a3b8 !important; background: #f8fafc !important; }
 
 @media (max-width: 820px) {
-  .nav-right .sound-fx-btn { display: none !important; }
+  .nav-right .sound-fx-btn { display: inline-flex !important; width: 38px; min-width: 38px; padding: 0; }
+  .nav-right .sound-fx-btn .sound-fx-label { display: none; }
 }
 .nav-right .cart-btn { height: 38px; padding: 0 12px; border-radius: 10px; }
 .btn-wa { min-height: 38px; padding: 0 13px; border-radius: 10px; box-shadow: none; }
