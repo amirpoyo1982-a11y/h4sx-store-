@@ -3949,8 +3949,11 @@ async function claimProductPromo(item, promoCode) {
     return true;
   } catch (error) {
     console.warn('Promo redemption error:', error);
-    if (error?.code === 'permission-denied') toast('Firebase Rules promo belum benarkan transaksi ini. Semak Rules sudah Publish.', true);
-    else if (error?.code === 'unauthenticated') toast('Pengesahan nombor belum sampai ke Firebase. Cuba OTP sekali lagi.', true);
+    const errorCode = String(error?.code || '').toLowerCase();
+    const errorMessage = String(error?.message || '').toLowerCase();
+    if (errorCode === 'permission-denied') toast('Firebase Rules promo belum benarkan transaksi ini. Semak Rules sudah Publish.', true);
+    else if (errorCode === 'unauthenticated') toast('Pengesahan nombor belum sampai ke Firebase. Cuba OTP sekali lagi.', true);
+    else if (errorCode === 'resource-exhausted' || errorMessage.includes('quota exceeded')) toast('Firebase quota sedang penuh. OTP anda sah, cuba lagi selepas quota pulih.', true);
     else if (String(error?.message || '').includes('promo-expired')) toast('Masa promo ini sudah tamat.', true);
     else if (String(error?.message || '').includes('promo-used')) toast('Had penggunaan kod promo ini sudah penuh.', true);
     else toast('Tak dapat sahkan kod promo. Cuba semula sebentar lagi.', true);
