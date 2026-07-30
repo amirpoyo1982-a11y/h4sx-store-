@@ -3382,7 +3382,8 @@ function productPromoConfig(item, requestedCode = '') {
       usageLimit,
       expiresAt,
       durationMs: promoDurationMs(config),
-      requirePhone: config?.promoRequirePhone !== false,
+      // OTP is opt-in. Promo biasa terus boleh ditebus tanpa nombor telefon.
+      requirePhone: config?.promoRequirePhone === true || String(config?.promoRequirePhone).toLowerCase() === 'true',
       expired: Boolean(expiresAt && Date.now() >= expiresAt)
     };
   }).filter(Boolean);
