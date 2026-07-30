@@ -2943,6 +2943,8 @@ details.faq[open] .faq-ic {
 .product-modal-promo-row input { min-width: 0; flex: 1; height: 40px; padding: 0 11px; border: 1px solid rgba(14,165,233,.22); border-radius: 10px; background: #fff; color: var(--ink); font: 800 12px/1 inherit; letter-spacing: .4px; outline: none; }
 .product-modal-promo-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(14,165,233,.12); }
 .product-modal-promo-row button { flex: 0 0 auto; min-width: 62px; border: 0; border-radius: 10px; background: var(--primary-gradient); color: #fff; font: 800 12px/1 inherit; cursor: pointer; }
+.product-modal-promo-row .product-modal-promo-cancel { min-width: 54px; background: #eef5fa; color: #527188; border: 1px solid rgba(14,165,233,.2); }
+.product-modal-promo-row .product-modal-promo-cancel:hover { background: #e1f3fb; color: #087eb4; }
 .product-modal-promo-status { min-height: 17px; padding-top: 7px; color: var(--muted); font-size: 11px; font-weight: 700; }
 .product-modal-promo-status.is-valid { color: #079669; }
 .product-modal-promo-status.is-error { color: #d84a4a; }
