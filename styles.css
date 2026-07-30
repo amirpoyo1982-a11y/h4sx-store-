@@ -8007,6 +8007,28 @@ body {
 /* Final phone GUI polish: compact controls, clean spacing and no fixed-widget overlap. */
 @media (max-width: 820px) {
   body { padding-bottom: calc(82px + env(safe-area-inset-bottom)) !important; }
+  /* Cart must sit above the mobile dock; otherwise its checkout controls are hidden. */
+  #cart-overlay {
+    z-index: 1200 !important;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  #cart-overlay .cart-box {
+    width: 100%;
+    max-width: 620px;
+    height: min(78dvh, 680px);
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)));
+    border-radius: 22px 22px 0 0;
+    overflow: hidden;
+  }
+  #cart-overlay .cart-body {
+    min-height: 0;
+    padding: 12px 14px;
+    overscroll-behavior: contain;
+  }
+  #cart-overlay .cart-foot {
+    padding: 13px 14px max(14px, env(safe-area-inset-bottom));
+  }
   .site-header-nav-wrap { position: sticky !important; top: 0; z-index: 650 !important; }
   #main-nav { min-height: 62px !important; }
   .nav-inner { min-height: 62px; padding-inline: 12px !important; gap: 7px !important; }
