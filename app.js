@@ -127,14 +127,16 @@ function unlockH4sxSound() {
 }
 
 function playH4sxSound(kind = 'tap') {
-  if (!soundEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!soundEffectsEnabled()) return;
   const context = unlockH4sxSound();
   if (!context) return;
 
-  try {
+  const playPreset = () => {
+    if (context.state !== 'running') return;
     const presets = {
       tap: { notes: [520], duration: 0.065, type: 'sine', volume: 0.07 },
-      cart: { notes: [540, 720], duration: 0.09, type: 'triangle', volume: 0.11 },
+      // Short three-note confirmation. More recognisable on desktop than the old two-tone beep.
+      cart: { notes: [392, 523.25, 659.25], duration: 0.13, type: 'triangle', volume: 0.075 },
       open: { notes: [390, 540], duration: 0.08, type: 'sine', volume: 0.075 },
       whatsapp: { notes: [620, 860], duration: 0.1, type: 'sine', volume: 0.1 },
       toggle: { notes: [660], duration: 0.08, type: 'triangle', volume: 0.085 }
@@ -156,6 +158,14 @@ function playH4sxSound(kind = 'tap') {
       oscillator.stop(noteStart + preset.duration + 0.02);
     });
     h4sxSoundReady = true;
+  };
+
+  try {
+    if (context.state === 'suspended') {
+      context.resume().then(playPreset).catch(() => {});
+    } else {
+      playPreset();
+    }
   } catch (error) {
     if (h4sxSoundReady) console.warn('Sound effect H4SX tidak dapat dimainkan', error);
   }
