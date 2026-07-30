@@ -236,13 +236,14 @@ function openReceipt() {
   cartItems.forEach(ci => {
     const item = inventory.find(i => i.id === ci.id);
     if (!item) return;
-    const itemTotal = item.price * ci.qty;
+    const promo = getCartPromoResult(item, ci);
+    const itemTotal = promo.final * ci.qty;
     total += itemTotal;
     const div = document.createElement('div');
     div.className = 'receipt-item-line';
     div.innerHTML = `
       <div>
-        <div class="receipt-item-name">${item.name}</div>
+        <div class="receipt-item-name">${item.name}${promo.valid ? ' (' + promo.promo.code + ')' : ''}</div>
         <div class="receipt-item-qty">x${ci.qty}</div>
       </div>
       <div class="receipt-item-price">RM${itemTotal.toFixed(2)}</div>
@@ -266,7 +267,8 @@ Item Dibeli:
   cartItems.forEach(ci => {
     const item = inventory.find(i => i.id === ci.id);
     if (!item) return;
-    currentReceiptText += `- ${item.name} x${ci.qty} = RM${(item.price * ci.qty).toFixed(2)}\n`;
+    const promo = getCartPromoResult(item, ci);
+    currentReceiptText += `- ${item.name}${promo.valid ? ' [' + promo.promo.code + ']' : ''} x${ci.qty} = RM${(promo.final * ci.qty).toFixed(2)}\n`;
   });
   currentReceiptText += `
 ============================
@@ -3295,7 +3297,7 @@ function productMiniStatusHTML(item) {
   const chips = [];
   const state = stockState(item);
   if (state.type !== 'unknown') chips.push('<span class="pstatus-chip ' + state.type + '"><i class="fa-solid fa-box"></i>' + escapeHtml(state.label) + '</span>');
-  if (item.promoLabel || (item.originalPrice && item.originalPrice > item.price)) chips.push('<span class="pstatus-chip promo"><i class="fa-solid fa-tag"></i>Promo</span>');
+  if (item.promoLabel || productPromoConfig(item) || (item.originalPrice && item.originalPrice > item.price)) chips.push('<span class="pstatus-chip promo"><i class="fa-solid fa-tag"></i>Promo</span>');
   if (isVideoMediaUrl(productMediaUrl(item), item)) chips.push('<span class="pstatus-chip video"><i class="fa-solid fa-play"></i>Video</span>');
   const updated = getUpdatedText(item);
   if (updated || item.recentlyUpdated) chips.push('<span class="pstatus-chip updated"><i class="fa-solid fa-clock-rotate-left"></i>' + escapeHtml(updated || 'Updated') + '</span>');
@@ -3310,6 +3312,76 @@ function isOutOfStock(item) {
 function getCartQtyForItem(id) {
   const ci = cartItems.find(c => c.id === id);
   return ci ? ci.qty : 0;
+}
+function productPromoConfig(item) {
+  const rawCode = String(item?.promoCode ?? item?.discountCode ?? '').trim();
+  const rawDiscount = Number(item?.promoDiscount ?? item?.discount ?? 0);
+  if (!rawCode || !Number.isFinite(rawDiscount) || rawDiscount <= 0) return null;
+  if (item?.promoActive === false || String(item?.promoActive).toLowerCase() === 'false') return null;
+  const type = String(item?.promoType || 'percent').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+  return {
+    code: rawCode.toUpperCase(),
+    amount: type === 'percent' ? Math.min(100, rawDiscount) : rawDiscount,
+    type,
+    label: item?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off')
+  };
+}
+function productPromoResult(item, suppliedCode) {
+  const promo = productPromoConfig(item);
+  const base = Math.max(0, Number(item?.price || 0));
+  const entered = String(suppliedCode || '').trim().toUpperCase();
+  if (!promo || !entered || entered !== promo.code) return { valid: false, base, final: base, promo: null };
+  const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
+  return { valid: true, base, final: Math.max(0, base - discount), promo, discount };
+}
+function getCartPromoResult(item, cartItem) {
+  return productPromoResult(item, cartItem?.promoCode);
+}
+function getCartUnitPrice(item, cartItem) {
+  return getCartPromoResult(item, cartItem).final;
+}
+function getProductModalPromoCode() {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  const value = document.getElementById('product-modal-promo-input')?.value || '';
+  return productPromoResult(item, value).valid ? value.trim().toUpperCase() : '';
+}
+function syncProductModalPromo(item) {
+  const wrap = document.getElementById('product-modal-promo');
+  const input = document.getElementById('product-modal-promo-input');
+  const status = document.getElementById('product-modal-promo-status');
+  const title = document.getElementById('product-modal-promo-title');
+  const priceEl = document.getElementById('product-modal-price');
+  const oldPriceEl = document.getElementById('product-modal-price-old');
+  const promo = productPromoConfig(item);
+  if (!wrap || !input || !status) return;
+  wrap.hidden = !promo;
+  if (!promo) return;
+  if (title) title.textContent = 'Kod promo tersedia: ' + promo.label;
+  const result = productPromoResult(item, input.value);
+  status.className = 'product-modal-promo-status';
+  if (result.valid) {
+    status.classList.add('is-valid');
+    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Kod sah. Jimat RM' + result.discount.toFixed(2) + '.';
+    if (priceEl) priceEl.textContent = 'RM' + result.final.toFixed(2);
+    if (oldPriceEl) oldPriceEl.textContent = 'RM' + result.base.toFixed(2);
+  } else {
+    status.textContent = input.value.trim() ? 'Kod tidak sah untuk item ini.' : 'Masukkan kod untuk aktifkan harga promo.';
+    if (input.value.trim()) status.classList.add('is-error');
+    if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
+    if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
+  }
+}
+function setupProductModalPromo(item) {
+  const wrap = document.getElementById('product-modal-promo');
+  const input = document.getElementById('product-modal-promo-input');
+  const apply = document.getElementById('product-modal-promo-apply');
+  if (!wrap || !input || !apply) return;
+  input.value = '';
+  const sync = () => syncProductModalPromo(item);
+  input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
+  input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
+  apply.onclick = sync;
+  sync();
 }
 function buildAddBtnHTML(item, oos) {
   if (oos) return '<button class="padd" disabled><i class="fa-solid fa-ban"></i><span class="padd-txt">Habis</span></button>';
@@ -3330,7 +3402,7 @@ let activeGameConsultationConfig = null;
 const PRODUCT_FILTERS = [
   { id:'all', label:'Semua', icon:'fa-border-all', test:() => true },
   { id:'stock', label:'Stok Ada', icon:'fa-box', test:item => !isOutOfStock(item) },
-  { id:'promo', label:'Promo', icon:'fa-tags', test:item => !!item.promoLabel || (item.originalPrice && item.originalPrice > item.price) },
+  { id:'promo', label:'Promo', icon:'fa-tags', test:item => !!item.promoLabel || Boolean(productPromoConfig(item)) || (item.originalPrice && item.originalPrice > item.price) },
   { id:'cheap', label:'Murah', icon:'fa-coins', test:item => Number(item.price || 0) <= 5 },
   { id:'video', label:'Video', icon:'fa-play', test:item => isVideoMediaUrl(productMediaUrl(item), item) }
 ];
@@ -4190,7 +4262,7 @@ function updateAddButtons() {
     if (modalItem) updateModalCartBtn(modalItem);
   }
 }
-function addCart(input, originEl) {
+function addCart(input, originEl, options = {}) {
   let item, name;
   if (typeof input === 'number') {
     item = inventory.find(i=>i.id===input);
@@ -4211,8 +4283,13 @@ function addCart(input, originEl) {
     toast('Limit pembelian item ini: ' + max + 'x', true); 
     return; 
   }
-  if (ex) ex.qty++; 
-  else cartItems.push({id: (typeof input === 'number' ? input : name), qty:1});
+  const requestedPromo = typeof input === 'number' ? productPromoResult(item, options.promoCode) : { valid: false };
+  if (ex) {
+    ex.qty++;
+    if (requestedPromo.valid) ex.promoCode = requestedPromo.promo.code;
+  } else {
+    cartItems.push({ id: (typeof input === 'number' ? input : name), qty: 1, ...(requestedPromo.valid ? { promoCode: requestedPromo.promo.code } : {}) });
+  }
   
   playH4sxSound('cart');
   persistCart();
@@ -4266,7 +4343,7 @@ function persistCart() {
   try {
     const cleanCart = cartItems
       .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
-      .map(item => ({ id: item.id, qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))) }));
+      .map(item => ({ id: item.id, qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }));
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cleanCart));
   } catch (error) {
     console.warn('Cart tidak dapat disimpan', error);
@@ -4279,7 +4356,7 @@ function restoreCart() {
     cartItems = savedCart
       .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
       .slice(0, 20)
-      .map(item => ({ id: typeof item.id === 'number' ? item.id : Number(item.id), qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))) }))
+      .map(item => ({ id: typeof item.id === 'number' ? item.id : Number(item.id), qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }))
       .filter(item => Number.isFinite(item.id));
   } catch (error) {
     localStorage.removeItem(CART_STORAGE_KEY);
@@ -4296,10 +4373,13 @@ function renderCart() {
   let tot = 0;
   body.innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
-    const line = (item.price*ci.qty).toFixed(2); tot += item.price*ci.qty;
+    const promo = getCartPromoResult(item, ci);
+    const unitPrice = promo.final;
+    const line = (unitPrice * ci.qty).toFixed(2); tot += unitPrice * ci.qty;
     const max = getMaxPurchase(item); const limited = max && ci.qty >= max;
     const plusBtn = limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',1)">+</button>';
-    return '<div class="cart-row"><img class="cr-img" src="' + productPosterUrl(item) + '" alt="' + item.name + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + item.name + '</div><div class="cr-p">RM' + Number(item.price).toFixed(2) + ' ? ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',-1)">?</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + ci.id + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
+    const promoLabel = promo.valid ? ' <span class="cart-promo-tag"><i class="fa-solid fa-ticket"></i>' + escapeHtml(promo.promo.code) + '</span>' : '';
+    return '<div class="cart-row"><img class="cr-img" src="' + productPosterUrl(item) + '" alt="' + item.name + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + item.name + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' ? ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',-1)">?</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + ci.id + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
   }).join('');
   document.getElementById('cart-total').textContent = 'RM' + tot.toFixed(2);
 }
@@ -4313,7 +4393,8 @@ function goCO(focusPayment) {
   const isPromotedItem = isPromotedProduct(firstItem);
   document.getElementById('co-items').innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
-    const line = item.price*ci.qty; tot += line;
+    const promo = getCartPromoResult(item, ci);
+    const line = promo.final * ci.qty; tot += line;
     return '<div class="order-row"><span class="or-name">' + item.name + (ci.qty>1?' Ã—'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
   }).join('');
   document.getElementById('co-total').textContent = 'RM' + tot.toFixed(2);
@@ -4390,7 +4471,7 @@ function valCO() {
     isPromotedItem = isPromotedProduct(firstItem);
   }
   
-  let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += it.price*ci.qty; });
+  let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += getCartUnitPrice(it, ci) * ci.qty; });
   // Check if username is required based on config and if it's promoted item
   const usernameRequired = !isPromotedItem && (storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false);
   const usernameOk = !usernameRequired || u.length >= 3;
@@ -4475,6 +4556,7 @@ function openProductImage(id, options = {}) {
     else chips.push('<span class="pm-chip stock"><i class="fa-solid fa-circle-check"></i>Tersedia</span>');
     metaEl.innerHTML = chips.join('');
   }
+  setupProductModalPromo(item);
   updateModalCartBtn(item);
   const modal = document.getElementById('product-modal');
   if (modal) {
@@ -4495,17 +4577,20 @@ function closeProductImage() {
 function modalAddToCart() {
   if (!modalItemId) return;
   const btn = document.getElementById('product-modal-cart-btn');
-  addCart(modalItemId, btn);
+  addCart(modalItemId, btn, { promoCode: getProductModalPromoCode() });
 }
 function modalBuyNow() {
   if (!modalItemId) return;
   const itemId = modalItemId;
+  const promoCode = getProductModalPromoCode();
   closeProductImage();
-  buyNowItem(itemId);
+  buyNowItem(itemId, promoCode);
 }
-function buyNowItem(id) {
+function buyNowItem(id, promoCode = '') {
   const item = inventory.find(i => i.id === id);
   if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
+  const promo = productPromoResult(item, promoCode);
+  const finalPrice = promo.final;
   const phone = String(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
   const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
   const message = [
@@ -4513,7 +4598,8 @@ function buyNowItem(id) {
     '',
     'Item: ' + item.name,
     'Game: ' + (item.game || item.gameGroup || '-'),
-    'Harga katalog: RM' + Number(item.price || 0).toFixed(2),
+    'Harga katalog: RM' + finalPrice.toFixed(2),
+    ...(promo.valid ? ['Kod promo: ' + promo.promo.code + ' (' + promo.promo.label + ')'] : []),
     'Stok: ' + stock,
     '',
     'Boleh bantu semak dan teruskan urusan?'
@@ -4521,7 +4607,7 @@ function buyNowItem(id) {
   showConsultationConfirm({
     kicker: 'SEMAK PEMBELIAN',
     title: 'Teruskan ke WhatsApp?',
-    description: item.name + ' - RM' + Number(item.price || 0).toFixed(2) + '. Admin akan semak stok sebelum urusan diteruskan.',
+    description: item.name + ' - RM' + finalPrice.toFixed(2) + (promo.valid ? ' selepas kod ' + promo.promo.code + '.' : '.') + ' Admin akan semak stok sebelum urusan diteruskan.',
     buttonText: 'Pergi WhatsApp',
     showPaymentCatalog: isPromotedEnabled(item),
     whatsapp: phone,
@@ -4535,9 +4621,10 @@ function sendCartToWhatsApp() {
     const item = inventory.find(entry => entry.id === ci.id);
     if (!item) return '';
     const quantity = Math.max(1, Number(ci.qty || 1));
-    const subtotal = Number(item.price || 0) * quantity;
+    const promo = getCartPromoResult(item, ci);
+    const subtotal = promo.final * quantity;
     total += subtotal;
-    return '- ' + item.name + ' x' + quantity + ' (RM' + subtotal.toFixed(2) + ')';
+    return '- ' + item.name + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' (RM' + subtotal.toFixed(2) + ')';
   }).filter(Boolean);
   if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
   const message = [
@@ -4564,9 +4651,10 @@ async function shareCartItems() {
     const item = inventory.find(entry => entry.id === ci.id);
     if (!item) return '';
     const quantity = Math.max(1, Number(ci.qty || 1));
-    const subtotal = Number(item.price || 0) * quantity;
+    const promo = getCartPromoResult(item, ci);
+    const subtotal = promo.final * quantity;
     total += subtotal;
-    return (index + 1) + '. ' + item.name + ' x' + quantity + ' - RM' + subtotal.toFixed(2) + '\n' + shareableProductLink(item);
+    return (index + 1) + '. ' + item.name + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' - RM' + subtotal.toFixed(2) + '\n' + shareableProductLink(item);
   }).filter(Boolean);
   if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
   const storeUrl = new URL(window.location.href);
