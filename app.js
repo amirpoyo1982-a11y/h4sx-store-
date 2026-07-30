@@ -3338,6 +3338,11 @@ function promoExpiryTimestamp(item) {
   const duration = (Number.isFinite(minutes) && minutes > 0 ? minutes * 60000 : 0) || (Number.isFinite(hours) && hours > 0 ? hours * 3600000 : 0);
   return Number.isFinite(started) && duration ? started + duration : 0;
 }
+function promoDurationMs(item) {
+  const minutes = Number(item?.promoDurationMinutes ?? item?.promoDurationMins ?? 0);
+  const hours = Number(item?.promoDurationHours ?? 0);
+  return (Number.isFinite(minutes) && minutes > 0 ? minutes * 60000 : 0) || (Number.isFinite(hours) && hours > 0 ? hours * 3600000 : 0);
+}
 function formatPromoCountdown(milliseconds) {
   const total = Math.max(0, Math.floor(milliseconds / 1000));
   const hours = Math.floor(total / 3600);
@@ -3360,6 +3365,7 @@ function productPromoConfig(item) {
     label: item?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off'),
     usageLimit,
     expiresAt,
+    durationMs: promoDurationMs(item),
     expired: Boolean(expiresAt && Date.now() >= expiresAt)
   };
 }
@@ -3367,16 +3373,21 @@ function productPromoResult(item, suppliedCode) {
   const promo = productPromoConfig(item);
   const base = Math.max(0, Number(item?.price || 0));
   const entered = String(suppliedCode || '').trim().toUpperCase();
-  if (!promo || !entered || entered !== promo.code || promo.expired) return { valid: false, base, final: base, promo, reason: promo?.expired ? 'expired' : 'invalid' };
+  const expiresAt = promo ? effectivePromoExpiry(item, promo) : 0;
+  const expired = Boolean(expiresAt && Date.now() >= expiresAt);
+  if (!promo || !entered || entered !== promo.code || expired) return { valid: false, base, final: base, promo, expiresAt, reason: expired ? 'expired' : 'invalid' };
   const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
-  return { valid: true, base, final: Math.max(0, base - discount), promo, discount };
+  return { valid: true, base, final: Math.max(0, base - discount), promo, expiresAt, discount };
 }
 function promoDraftStorageKey(item) {
   return PROMO_DRAFT_PREFIX + String(item?.id || 'item');
 }
 function savedProductPromoCode(item) {
-  const saved = String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
+  const saved = storedProductPromoCode(item);
   return productPromoResult(item, saved).valid ? saved : '';
+}
+function storedProductPromoCode(item) {
+  return String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
 }
 function saveProductPromoDraft(item, code) {
   const result = productPromoResult(item, code);
@@ -3441,8 +3452,9 @@ function syncProductModalPromo(item) {
     if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   }
+  const expiresAt = effectivePromoExpiry(item, promo);
   const clock = document.getElementById('product-modal-promo-clock');
-  if (clock && promo.expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(promo.expiresAt - Date.now()) + '</strong>';
+  if (clock && expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(expiresAt - Date.now()) + '</strong>';
 }
 function setupProductModalPromo(item) {
   const wrap = document.getElementById('product-modal-promo');
@@ -3450,24 +3462,48 @@ function setupProductModalPromo(item) {
   const apply = document.getElementById('product-modal-promo-apply');
   if (!wrap || !input || !apply) return;
   if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
-  input.value = savedProductPromoCode(item);
+  input.value = storedProductPromoCode(item);
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
-  apply.onclick = () => {
-    saveProductPromoDraft(item, input.value);
+  apply.onclick = async () => {
+    const code = input.value;
+    apply.disabled = true;
+    const claimed = await claimProductPromo(item, code);
+    if (claimed) saveProductPromoDraft(item, code);
     sync();
     syncProductPromoCard(item);
+    if (claimed && !productModalPromoTimer) {
+      productModalPromoTimer = setInterval(() => {
+        if (modalItemId !== item.id) return;
+        const activePromo = productPromoConfig(item);
+        const activeExpiry = effectivePromoExpiry(item, activePromo);
+        if (activeExpiry && Date.now() >= activeExpiry) {
+          input.disabled = true;
+          apply.disabled = true;
+          syncProductModalPromo(item);
+          syncProductPromoCard(item);
+          clearInterval(productModalPromoTimer);
+          productModalPromoTimer = null;
+        } else {
+          syncProductModalPromo(item);
+        }
+      }, 1000);
+    }
+    const nextPromo = productPromoConfig(item);
+    apply.disabled = Boolean(effectivePromoExpiry(item, nextPromo) && Date.now() >= effectivePromoExpiry(item, nextPromo));
   };
   const promo = productPromoConfig(item);
-  input.disabled = Boolean(promo?.expired);
-  apply.disabled = Boolean(promo?.expired);
+  const initialExpiry = effectivePromoExpiry(item, promo);
+  input.disabled = Boolean(initialExpiry && Date.now() >= initialExpiry);
+  apply.disabled = Boolean(initialExpiry && Date.now() >= initialExpiry);
   sync();
-  if (promo?.expiresAt && !promo.expired) {
+  if (initialExpiry && Date.now() < initialExpiry) {
     productModalPromoTimer = setInterval(() => {
       if (modalItemId !== item.id) return;
       const nextPromo = productPromoConfig(item);
-      if (nextPromo?.expired) {
+      const nextExpiry = effectivePromoExpiry(item, nextPromo);
+      if (nextExpiry && Date.now() >= nextExpiry) {
         input.disabled = true;
         apply.disabled = true;
         sync();
@@ -3476,7 +3512,7 @@ function setupProductModalPromo(item) {
         productModalPromoTimer = null;
       } else {
         const clock = document.getElementById('product-modal-promo-clock');
-        if (clock) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(nextPromo.expiresAt - Date.now()) + '</strong>';
+        if (clock && nextExpiry) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(nextExpiry - Date.now()) + '</strong>';
       }
     }, 1000);
   }
@@ -3495,6 +3531,24 @@ function getPromoDeviceId() {
 function promoRedemptionId(item, promo) {
   return String(item?.id || 'item') + '_' + String(promo?.code || '').replace(/[^A-Z0-9_-]/gi, '_').slice(0, 60);
 }
+function promoRedemptionState(item, promo) {
+  if (!promo) return null;
+  const raw = localStorage.getItem(PROMO_REDEMPTION_PREFIX + promoRedemptionId(item, promo));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (_) {}
+  return { deviceId: raw, expiresAt: 0 };
+}
+function effectivePromoExpiry(item, promo) {
+  if (!promo) return 0;
+  const state = promoRedemptionState(item, promo);
+  const personalExpiry = Number(state?.expiresAt || 0);
+  const globalExpiry = Number(promo.expiresAt || 0);
+  if (personalExpiry && globalExpiry) return Math.min(personalExpiry, globalExpiry);
+  return personalExpiry || globalExpiry || 0;
+}
 async function claimProductPromo(item, promoCode) {
   const result = productPromoResult(item, promoCode);
   if (!promoCode) return true;
@@ -3511,7 +3565,19 @@ async function claimProductPromo(item, promoCode) {
   const promoId = promoRedemptionId(item, promo);
   const redemptionId = promoId + '_' + deviceId;
   const localKey = PROMO_REDEMPTION_PREFIX + promoId;
-  if (localStorage.getItem(localKey) === deviceId) return true;
+  const previous = promoRedemptionState(item, promo);
+  if (previous?.deviceId === deviceId) {
+    if (promo.durationMs && !Number(previous.expiresAt || 0)) {
+      const migratedExpiry = Date.now() + promo.durationMs;
+      localStorage.setItem(localKey, JSON.stringify({ deviceId, expiresAt: migratedExpiry }));
+      return true;
+    }
+    if (effectivePromoExpiry(item, promo) && Date.now() >= effectivePromoExpiry(item, promo)) {
+      toast('Tempoh promo untuk peranti ini sudah tamat.', true);
+      return false;
+    }
+    return true;
+  }
   const redemptionRef = db.collection(PROMO_REDEMPTIONS_COLLECTION).doc(redemptionId);
   const usageRef = db.collection(PROMO_USAGE_COLLECTION).doc(promoId);
   try {
@@ -3544,7 +3610,8 @@ async function claimProductPromo(item, promoCode) {
         redeemedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     });
-    localStorage.setItem(localKey, deviceId);
+    const personalExpiry = promo.durationMs ? Date.now() + promo.durationMs : 0;
+    localStorage.setItem(localKey, JSON.stringify({ deviceId, expiresAt: personalExpiry }));
     return true;
   } catch (error) {
     console.warn('Promo redemption error:', error);
