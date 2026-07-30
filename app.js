@@ -3615,7 +3615,8 @@ async function claimProductPromo(item, promoCode) {
     return true;
   } catch (error) {
     console.warn('Promo redemption error:', error);
-    if (String(error?.message || '').includes('promo-expired')) toast('Masa promo ini sudah tamat.', true);
+    if (error?.code === 'permission-denied') toast('Firebase Rules promo belum dibenarkan atau belum Publish.', true);
+    else if (String(error?.message || '').includes('promo-expired')) toast('Masa promo ini sudah tamat.', true);
     else if (String(error?.message || '').includes('promo-used')) toast('Had penggunaan kod promo ini sudah penuh.', true);
     else toast('Tak dapat sahkan kod promo. Cuba semula sebentar lagi.', true);
     return false;
