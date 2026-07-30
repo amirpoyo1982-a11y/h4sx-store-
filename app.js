@@ -86,6 +86,81 @@ document.addEventListener('keydown', function(e) {
 });
 // --- END ANTI-INSPECT ---
 
+// --- UI SOUND EFFECTS ---
+// Small synthesized tones keep the interface responsive without loading extra audio files.
+const H4SX_SOUND_FX_KEY = 'h4sx_sound_effects';
+let h4sxSoundContext = null;
+let h4sxSoundReady = false;
+
+function soundEffectsEnabled() {
+  return localStorage.getItem(H4SX_SOUND_FX_KEY) !== 'off';
+}
+
+function updateSoundEffectsButton() {
+  const button = document.getElementById('sound-fx-btn');
+  if (!button) return;
+  const enabled = soundEffectsEnabled();
+  button.classList.toggle('is-muted', !enabled);
+  button.setAttribute('aria-pressed', String(enabled));
+  button.setAttribute('aria-label', enabled ? 'Tutup sound effect' : 'Hidupkan sound effect');
+  button.title = enabled ? 'Sound effect: ON' : 'Sound effect: OFF';
+  button.innerHTML = '<i class="fa-solid ' + (enabled ? 'fa-volume-high' : 'fa-volume-xmark') + '"></i><span class="sound-fx-label">Sound</span>';
+}
+
+function toggleSoundEffects() {
+  const nextEnabled = !soundEffectsEnabled();
+  localStorage.setItem(H4SX_SOUND_FX_KEY, nextEnabled ? 'on' : 'off');
+  updateSoundEffectsButton();
+  if (nextEnabled) playH4sxSound('toggle');
+}
+
+function playH4sxSound(kind = 'tap') {
+  if (!soundEffectsEnabled() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+
+  try {
+    h4sxSoundContext ||= new AudioContextClass();
+    const context = h4sxSoundContext;
+    if (context.state === 'suspended') context.resume().catch(() => {});
+
+    const presets = {
+      tap: { notes: [520], duration: 0.055, type: 'sine', volume: 0.03 },
+      cart: { notes: [540, 720], duration: 0.08, type: 'triangle', volume: 0.05 },
+      open: { notes: [390, 540], duration: 0.075, type: 'sine', volume: 0.035 },
+      whatsapp: { notes: [620, 860], duration: 0.09, type: 'sine', volume: 0.045 },
+      toggle: { notes: [660], duration: 0.07, type: 'triangle', volume: 0.04 }
+    };
+    const preset = presets[kind] || presets.tap;
+    const startAt = context.currentTime + 0.005;
+
+    preset.notes.forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const noteStart = startAt + index * 0.075;
+      oscillator.type = preset.type;
+      oscillator.frequency.setValueAtTime(frequency, noteStart);
+      gain.gain.setValueAtTime(0.0001, noteStart);
+      gain.gain.exponentialRampToValueAtTime(preset.volume, noteStart + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + preset.duration);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(noteStart);
+      oscillator.stop(noteStart + preset.duration + 0.02);
+    });
+    h4sxSoundReady = true;
+  } catch (error) {
+    if (h4sxSoundReady) console.warn('Sound effect H4SX tidak dapat dimainkan', error);
+  }
+}
+
+function initSoundEffects() {
+  updateSoundEffectsButton();
+  document.addEventListener('click', event => {
+    const waLink = event.target.closest('a[href*="wa.me/"]');
+    if (waLink) playH4sxSound('whatsapp');
+  }, { passive: true });
+}
+
 // --- DATE & TIME DISPLAY ---
 function updateDateTime() {
   const now = new Date();
@@ -3173,6 +3248,7 @@ function runWhenIdle(fn, timeout = 1800) {
 
 function bootStoreApp() {
   cleanHardRefreshParam();
+  initSoundEffects();
   restoreCart();
   updateBadge();
   startCatalogProgress();
@@ -3319,14 +3395,17 @@ function showConsultationConfirm(config = {}) {
   modal.querySelector('.consult-confirm-close').addEventListener('click', close);
   modal.querySelector('.consult-confirm-cancel').addEventListener('click', close);
   modal.querySelector('.consult-confirm-payment')?.addEventListener('click', () => {
+    playH4sxSound('tap');
     window.open(paymentUrl, '_blank', 'noopener');
     close();
   });
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
+    playH4sxSound('whatsapp');
     window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
     close();
   });
   document.body.appendChild(modal);
+  playH4sxSound('open');
   requestAnimationFrame(() => modal.classList.add('show'));
 }
 function openInventoryConsultation(id) {
@@ -4135,6 +4214,7 @@ function addCart(input, originEl) {
   if (ex) ex.qty++; 
   else cartItems.push({id: (typeof input === 'number' ? input : name), qty:1});
   
+  playH4sxSound('cart');
   persistCart();
   updateBadge();
   updateAddButtons();
