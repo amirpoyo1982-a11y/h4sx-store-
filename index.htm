@@ -16,7 +16,8 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="styles.css?v=h4sx-marketplace-2">
+  <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+<link rel="stylesheet" href="styles.css?v=h4sx-turnstile-1">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -639,6 +640,21 @@
           <button type="button" id="product-modal-promo-apply">Guna</button>
         </div>
         <div id="product-modal-promo-status" class="product-modal-promo-status" aria-live="polite"></div>
+        <div class="product-modal-promo-otp" id="product-modal-promo-otp" hidden>
+          <div class="product-modal-promo-otp-title"><i class="fa-solid fa-mobile-screen-button"></i> Sahkan nombor untuk aktifkan promo</div>
+          <div class="product-modal-promo-otp-row" id="product-modal-promo-phone-row">
+            <input type="tel" id="product-modal-promo-phone" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0123456789">
+            <button type="button" id="product-modal-promo-send-otp">Hantar OTP</button>
+          </div>
+          <div class="product-modal-promo-otp-row" id="product-modal-promo-code-row" hidden>
+            <input type="text" id="product-modal-promo-otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Masukkan 6 digit OTP">
+            <button type="button" id="product-modal-promo-verify-otp">Sahkan</button>
+          </div>
+          <div id="product-modal-promo-otp-status" class="product-modal-promo-otp-status" aria-live="polite"></div>
+          <div id="product-modal-promo-turnstile" class="product-modal-promo-turnstile" aria-hidden="true"></div>
+          <small class="product-modal-promo-turnstile-note">Dilindungi oleh Cloudflare Turnstile. <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Privasi</a></small>
+          <div id="product-modal-promo-recaptcha" class="product-modal-promo-recaptcha"></div>
+        </div>
       </div>
       <div class="product-modal-summary" id="product-modal-summary"></div>
       <div class="product-modal-desc-label">Description</div>
@@ -763,7 +779,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-promo-timer-4"></script>
+<script defer src="app.js?v=h4sx-turnstile-1"></script>
 
 </body>
 </html>

@@ -2413,6 +2413,14 @@ const firebaseConfig = {
 // Inisialisasi Firebase (jika config ada)
 let db = null;
 let orderAuth = null;
+let promoDb = null;
+let promoAuth = null;
+let promoPhoneConfirmation = null;
+let promoRecaptchaVerifier = null;
+let promoTurnstileWidgetId = null;
+let promoTurnstileResolver = null;
+let promoTurnstileRejecter = null;
+let promoTurnstileTimeout = null;
 let pendingOrderImageFile = null;
 let editingOrderCode = null;
 let editingOriginalPhone = '';
@@ -2428,6 +2436,7 @@ const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
 const PROMO_REDEMPTION_PREFIX = 'h4sx_promo_redeemed_';
 const PROMO_DRAFT_PREFIX = 'h4sx_promo_draft_';
+const TURNSTILE_SITE_KEY = '0x4AAAAAAECCSulruVRqWTEI';
 let customVoteConfig = null;
 let customVoteEntries = [];
 let customVoteConfigUnsubscribe = null;
@@ -2439,6 +2448,9 @@ if (firebaseConfig.apiKey) {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     orderAuth = firebase.auth();
+    const promoApp = firebase.apps.find(app => app.name === 'h4sx-promo-phone') || firebase.initializeApp(firebaseConfig, 'h4sx-promo-phone');
+    promoDb = promoApp.firestore();
+    promoAuth = promoApp.auth();
     console.log("Firebase initialized successfully!");
   } catch (e) {
     console.error("Firebase init error:", e);
@@ -3350,41 +3362,211 @@ function formatPromoCountdown(milliseconds) {
   const seconds = total % 60;
   return (hours ? String(hours).padStart(2, '0') + ':' : '') + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
 }
-function productPromoConfig(item) {
-  const rawCode = String(item?.promoCode ?? item?.discountCode ?? '').trim();
-  const rawDiscount = Number(item?.promoDiscount ?? item?.discount ?? 0);
-  if (!rawCode || !Number.isFinite(rawDiscount) || rawDiscount <= 0) return null;
-  if (item?.promoActive === false || String(item?.promoActive).toLowerCase() === 'false') return null;
-  const type = String(item?.promoType || 'percent').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percent';
-  const expiresAt = promoExpiryTimestamp(item);
-  const usageLimit = Math.max(1, Math.floor(Number(item?.promoUsageLimit ?? item?.promoLimit ?? 1) || 1));
-  return {
-    code: rawCode.toUpperCase(),
-    amount: type === 'percent' ? Math.min(100, rawDiscount) : rawDiscount,
-    type,
-    label: item?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off'),
-    usageLimit,
-    expiresAt,
-    durationMs: promoDurationMs(item),
-    expired: Boolean(expiresAt && Date.now() >= expiresAt)
-  };
+function productPromoConfig(item, requestedCode = '') {
+  const requested = String(requestedCode || '').trim().toUpperCase();
+  const sources = Array.isArray(item?.promoCodes) && item.promoCodes.length ? item.promoCodes : [item];
+  const promos = sources.map(source => {
+    const config = { ...item, ...(source || {}) };
+    const rawCode = String(config?.code ?? config?.promoCode ?? config?.discountCode ?? '').trim();
+    const rawDiscount = Number(config?.discount ?? config?.promoDiscount ?? 0);
+    if (!rawCode || !Number.isFinite(rawDiscount) || rawDiscount <= 0) return null;
+    if (config?.active === false || config?.promoActive === false || String(config?.promoActive).toLowerCase() === 'false') return null;
+    const type = String(config?.type ?? config?.promoType ?? 'percent').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+    const expiresAt = promoExpiryTimestamp(config);
+    const usageLimit = Math.max(1, Math.floor(Number(config?.usageLimit ?? config?.promoUsageLimit ?? config?.promoLimit ?? 1) || 1));
+    return {
+      code: rawCode.toUpperCase(),
+      amount: type === 'percent' ? Math.min(100, rawDiscount) : rawDiscount,
+      type,
+      label: config?.text || config?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off'),
+      usageLimit,
+      expiresAt,
+      durationMs: promoDurationMs(config),
+      requirePhone: config?.promoRequirePhone !== false,
+      expired: Boolean(expiresAt && Date.now() >= expiresAt)
+    };
+  }).filter(Boolean);
+  return promos.find(promo => promo.code === requested) || promos[0] || null;
 }
 function productPromoResult(item, suppliedCode) {
-  const promo = productPromoConfig(item);
-  const base = Math.max(0, Number(item?.price || 0));
   const entered = String(suppliedCode || '').trim().toUpperCase();
+  const promo = productPromoConfig(item, entered);
+  const base = Math.max(0, Number(item?.price || 0));
   const expiresAt = promo ? effectivePromoExpiry(item, promo) : 0;
   const expired = Boolean(expiresAt && Date.now() >= expiresAt);
   if (!promo || !entered || entered !== promo.code || expired) return { valid: false, base, final: base, promo, expiresAt, reason: expired ? 'expired' : 'invalid' };
   const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
   return { valid: true, base, final: Math.max(0, base - discount), promo, expiresAt, discount };
 }
+function promoPhoneVerificationRequired(item, promo) {
+  return Boolean(productPromoConfig(item, promo?.code)?.requirePhone);
+}
+function promoPhoneUser() {
+  return promoAuth?.currentUser?.uid ? promoAuth.currentUser : null;
+}
+function promoPhoneReady(item, promo) {
+  if (!promoPhoneVerificationRequired(item, promo)) return true;
+  const user = promoPhoneUser();
+  const state = promoRedemptionState(item, promo);
+  return Boolean(user && state?.userId === user.uid);
+}
+function normalizePromoPhoneNumber(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('60')) return '+' + digits;
+  if (digits.startsWith('0')) return '+60' + digits.slice(1);
+  return '+' + digits;
+}
+function setPromoOtpStatus(text, type = '') {
+  const status = document.getElementById('product-modal-promo-otp-status');
+  if (!status) return;
+  status.textContent = text || '';
+  status.className = 'product-modal-promo-otp-status' + (type ? ' is-' + type : '');
+}
+function showPromoOtpPanel(item, promo, focusPhone = false) {
+  const panel = document.getElementById('product-modal-promo-otp');
+  const phoneRow = document.getElementById('product-modal-promo-phone-row');
+  const codeRow = document.getElementById('product-modal-promo-code-row');
+  const phoneInput = document.getElementById('product-modal-promo-phone');
+  if (!panel || !phoneRow || !codeRow) return;
+  if (!promoPhoneVerificationRequired(item, promo) || promoPhoneReady(item, promo)) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  phoneRow.hidden = Boolean(promoPhoneConfirmation);
+  codeRow.hidden = !promoPhoneConfirmation;
+  if (focusPhone && !promoPhoneConfirmation) setTimeout(() => phoneInput?.focus(), 30);
+}
+function clearPromoOtpSession() {
+  promoPhoneConfirmation = null;
+  const codeInput = document.getElementById('product-modal-promo-otp-code');
+  if (codeInput) codeInput.value = '';
+}
+async function ensurePromoRecaptcha() {
+  if (!promoAuth || !window.firebase) throw new Error('promo-auth-unavailable');
+  if (promoRecaptchaVerifier) return promoRecaptchaVerifier;
+  promoRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('product-modal-promo-recaptcha', { size: 'invisible' }, promoAuth.app);
+  await promoRecaptchaVerifier.render();
+  return promoRecaptchaVerifier;
+}
+function resetPromoTurnstile() {
+  if (promoTurnstileTimeout) {
+    clearTimeout(promoTurnstileTimeout);
+    promoTurnstileTimeout = null;
+  }
+  promoTurnstileResolver = null;
+  promoTurnstileRejecter = null;
+  if (promoTurnstileWidgetId !== null && window.turnstile?.reset) {
+    try { window.turnstile.reset(promoTurnstileWidgetId); } catch (_) {}
+  }
+}
+function ensurePromoTurnstile() {
+  const container = document.getElementById('product-modal-promo-turnstile');
+  if (!container || !window.turnstile) throw new Error('turnstile-not-ready');
+  if (promoTurnstileWidgetId !== null) return promoTurnstileWidgetId;
+  promoTurnstileWidgetId = window.turnstile.render(container, {
+    sitekey: TURNSTILE_SITE_KEY,
+    size: 'invisible',
+    execution: 'execute',
+    action: 'promo_otp',
+    callback(token) {
+      if (promoTurnstileTimeout) clearTimeout(promoTurnstileTimeout);
+      promoTurnstileTimeout = null;
+      const resolve = promoTurnstileResolver;
+      promoTurnstileResolver = null;
+      promoTurnstileRejecter = null;
+      resolve?.(token);
+    },
+    'expired-callback'() { promoTurnstileRejecter?.(new Error('turnstile-expired')); },
+    'error-callback'() { promoTurnstileRejecter?.(new Error('turnstile-error')); }
+  });
+  return promoTurnstileWidgetId;
+}
+async function verifyPromoTurnstile() {
+  const widgetId = ensurePromoTurnstile();
+  resetPromoTurnstile();
+  const token = await new Promise((resolve, reject) => {
+    promoTurnstileResolver = resolve;
+    promoTurnstileRejecter = reject;
+    promoTurnstileTimeout = setTimeout(() => reject(new Error('turnstile-timeout')), 18000);
+    try { window.turnstile.execute(widgetId); }
+    catch (_) { reject(new Error('turnstile-execute')); }
+  });
+  try {
+    const response = await fetch('/api/verify-turnstile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, action: 'promo_otp' })
+    });
+    if (!response.ok) throw new Error('turnstile-rejected');
+  } finally {
+    resetPromoTurnstile();
+  }
+}
+function setupProductPromoOtp(item) {
+  const panel = document.getElementById('product-modal-promo-otp');
+  const phoneInput = document.getElementById('product-modal-promo-phone');
+  const sendButton = document.getElementById('product-modal-promo-send-otp');
+  const otpInput = document.getElementById('product-modal-promo-otp-code');
+  const verifyButton = document.getElementById('product-modal-promo-verify-otp');
+  if (!panel || !phoneInput || !sendButton || !otpInput || !verifyButton) return;
+  clearPromoOtpSession();
+  panel.hidden = true;
+  setPromoOtpStatus('');
+  otpInput.oninput = () => { otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6); };
+  sendButton.onclick = async () => {
+    const result = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
+    if (!result.valid) { setPromoOtpStatus('Masukkan kod promo yang sah dahulu.', 'error'); return; }
+    const phone = normalizePromoPhoneNumber(phoneInput.value);
+    if (!/^\+\d{8,15}$/.test(phone)) { setPromoOtpStatus('Masukkan nombor telefon yang betul.', 'error'); return; }
+    try {
+      sendButton.disabled = true;
+      setPromoOtpStatus('Semakan keselamatan...');
+      await verifyPromoTurnstile();
+      setPromoOtpStatus('Menghantar OTP ke ' + phone + '...');
+      const verifier = await ensurePromoRecaptcha();
+      promoPhoneConfirmation = await promoAuth.signInWithPhoneNumber(phone, verifier);
+      showPromoOtpPanel(item, result.promo);
+      setPromoOtpStatus('OTP sudah dihantar. Masukkan 6 digit untuk sahkan.', 'success');
+      setTimeout(() => otpInput.focus(), 40);
+    } catch (error) {
+      console.warn('Promo phone OTP error:', error);
+      if (promoRecaptchaVerifier) { try { promoRecaptchaVerifier.clear(); } catch (_) {} promoRecaptchaVerifier = null; }
+      clearPromoOtpSession();
+      showPromoOtpPanel(item, result.promo);
+      setPromoOtpStatus('OTP tidak dapat dihantar. Cuba semula sebentar lagi.', 'error');
+    } finally {
+      sendButton.disabled = false;
+    }
+  };
+  verifyButton.onclick = async () => {
+    if (!promoPhoneConfirmation) { setPromoOtpStatus('Sila hantar OTP dahulu.', 'error'); return; }
+    const code = otpInput.value.trim();
+    if (code.length !== 6) { setPromoOtpStatus('Masukkan 6 digit OTP.', 'error'); return; }
+    try {
+      verifyButton.disabled = true;
+      setPromoOtpStatus('Mengesahkan nombor telefon...');
+      await promoPhoneConfirmation.confirm(code);
+      clearPromoOtpSession();
+      const current = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
+      showPromoOtpPanel(item, current.promo);
+      setPromoOtpStatus('Nombor disahkan. Tekan Guna untuk aktifkan promo.', 'success');
+    } catch (error) {
+      console.warn('Promo OTP verify error:', error);
+      setPromoOtpStatus('Kod OTP tidak betul atau sudah tamat.', 'error');
+    } finally {
+      verifyButton.disabled = false;
+    }
+  };
+}
 function promoDraftStorageKey(item) {
   return PROMO_DRAFT_PREFIX + String(item?.id || 'item');
 }
 function savedProductPromoCode(item) {
   const saved = storedProductPromoCode(item);
-  return productPromoResult(item, saved).valid ? saved : '';
+  const result = productPromoResult(item, saved);
+  return result.valid && promoPhoneReady(item, result.promo) ? saved : '';
 }
 function storedProductPromoCode(item) {
   return String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
@@ -3432,18 +3614,23 @@ function syncProductModalPromo(item) {
   const title = document.getElementById('product-modal-promo-title');
   const priceEl = document.getElementById('product-modal-price');
   const oldPriceEl = document.getElementById('product-modal-price-old');
-  const promo = productPromoConfig(item);
   if (!wrap || !input || !status) return;
+  const result = productPromoResult(item, input.value);
+  const promo = result.promo || productPromoConfig(item);
   wrap.hidden = !promo;
   if (!promo) return;
   if (title) title.textContent = 'Kod promo: ' + promo.label + ' - terhad ' + promo.usageLimit + ' pelanggan';
-  const result = productPromoResult(item, input.value);
+  const needsPhone = result.valid && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneReady(item, result.promo);
   status.className = 'product-modal-promo-status';
-  if (result.valid) {
+  if (result.valid && !needsPhone) {
     status.classList.add('is-valid');
     status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Kod sah. Jimat RM' + result.discount.toFixed(2) + '.<span id="product-modal-promo-clock"></span>';
     if (priceEl) priceEl.textContent = 'RM' + result.final.toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = 'RM' + result.base.toFixed(2);
+  } else if (result.valid) {
+    status.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i> Kod sah. Sahkan nombor telefon untuk aktifkan harga promo.<span id="product-modal-promo-clock"></span>';
+    if (priceEl) priceEl.textContent = 'RM' + result.base.toFixed(2);
+    if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   } else {
     status.innerHTML = result.reason === 'expired'
       ? '<i class="fa-solid fa-clock"></i> Promo ini telah tamat.<span id="product-modal-promo-clock"></span>'
@@ -3463,11 +3650,18 @@ function setupProductModalPromo(item) {
   if (!wrap || !input || !apply) return;
   if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
   input.value = storedProductPromoCode(item);
+  setupProductPromoOtp(item);
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
   apply.onclick = async () => {
     const code = input.value;
+    const candidate = productPromoResult(item, code);
+    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneUser()) {
+      showPromoOtpPanel(item, candidate.promo, true);
+      setPromoOtpStatus('Sahkan nombor telefon dahulu untuk guna kod ini.');
+      return;
+    }
     apply.disabled = true;
     const claimed = await claimProductPromo(item, code);
     if (claimed) saveProductPromoDraft(item, code);
@@ -3557,19 +3751,27 @@ async function claimProductPromo(item, promoCode) {
     return false;
   }
   const promo = result.promo;
-  if (!db || !window.firebase) {
+  if (!promoDb || !window.firebase) {
     toast('Kod promo perlukan sambungan Firebase. Cuba semula sebentar lagi.', true);
     return false;
   }
+  const phoneUser = promoPhoneUser();
+  if (promoPhoneVerificationRequired(item, promo) && !phoneUser) {
+    showPromoOtpPanel(item, promo, true);
+    setPromoOtpStatus('Sahkan nombor telefon dahulu untuk aktifkan promo.');
+    return false;
+  }
   const deviceId = getPromoDeviceId();
+  const ownerId = phoneUser?.uid || deviceId;
   const promoId = promoRedemptionId(item, promo);
-  const redemptionId = promoId + '_' + deviceId;
+  const redemptionId = promoId + '_' + String(ownerId).replace(/[^A-Z0-9_-]/gi, '_').slice(0, 80);
   const localKey = PROMO_REDEMPTION_PREFIX + promoId;
   const previous = promoRedemptionState(item, promo);
-  if (previous?.deviceId === deviceId) {
+  const previouslyRedeemed = phoneUser ? previous?.userId === phoneUser.uid : previous?.deviceId === deviceId;
+  if (previouslyRedeemed) {
     if (promo.durationMs && !Number(previous.expiresAt || 0)) {
       const migratedExpiry = Date.now() + promo.durationMs;
-      localStorage.setItem(localKey, JSON.stringify({ deviceId, expiresAt: migratedExpiry }));
+      localStorage.setItem(localKey, JSON.stringify({ deviceId, ...(phoneUser ? { userId: phoneUser.uid } : {}), expiresAt: migratedExpiry }));
       return true;
     }
     if (effectivePromoExpiry(item, promo) && Date.now() >= effectivePromoExpiry(item, promo)) {
@@ -3578,15 +3780,21 @@ async function claimProductPromo(item, promoCode) {
     }
     return true;
   }
-  const redemptionRef = db.collection(PROMO_REDEMPTIONS_COLLECTION).doc(redemptionId);
-  const usageRef = db.collection(PROMO_USAGE_COLLECTION).doc(promoId);
+  const redemptionRef = promoDb.collection(PROMO_REDEMPTIONS_COLLECTION).doc(redemptionId);
+  const usageRef = promoDb.collection(PROMO_USAGE_COLLECTION).doc(promoId);
   try {
-    await db.runTransaction(async transaction => {
+    let redeemedExpiry = 0;
+    await promoDb.runTransaction(async transaction => {
       const [redemptionSnapshot, usageSnapshot] = await Promise.all([
         transaction.get(redemptionRef),
         transaction.get(usageRef)
       ]);
-      if (redemptionSnapshot.exists) return;
+      if (redemptionSnapshot.exists) {
+        const existingExpiry = redemptionSnapshot.data()?.expiresAt?.toDate ? redemptionSnapshot.data().expiresAt.toDate().getTime() : 0;
+        if (existingExpiry && Date.now() >= existingExpiry) throw new Error('promo-expired');
+        redeemedExpiry = existingExpiry;
+        return;
+      }
       const usage = usageSnapshot.exists ? (usageSnapshot.data() || {}) : {};
       const expiry = usage.expiresAt?.toDate ? usage.expiresAt.toDate().getTime() : promo.expiresAt;
       if (expiry && Date.now() >= expiry) throw new Error('promo-expired');
@@ -3607,11 +3815,13 @@ async function claimProductPromo(item, promoCode) {
         code: promo.code,
         itemId: String(item.id),
         deviceId,
-        redeemedAt: firebase.firestore.FieldValue.serverTimestamp()
+        ...(phoneUser ? { userId: phoneUser.uid, phoneVerified: true } : {}),
+        redeemedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ...(promo.durationMs ? { expiresAt: new Date(Date.now() + promo.durationMs) } : {})
       });
     });
-    const personalExpiry = promo.durationMs ? Date.now() + promo.durationMs : 0;
-    localStorage.setItem(localKey, JSON.stringify({ deviceId, expiresAt: personalExpiry }));
+    const personalExpiry = redeemedExpiry || (promo.durationMs ? Date.now() + promo.durationMs : 0);
+    localStorage.setItem(localKey, JSON.stringify({ deviceId, ...(phoneUser ? { userId: phoneUser.uid } : {}), expiresAt: personalExpiry }));
     return true;
   } catch (error) {
     console.warn('Promo redemption error:', error);
