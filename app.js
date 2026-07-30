@@ -2446,6 +2446,7 @@ const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
 const PROMO_REDEMPTION_PREFIX = 'h4sx_promo_redeemed_';
 const PROMO_DRAFT_PREFIX = 'h4sx_promo_draft_';
+const PROMO_OTP_VERIFIED_PREFIX = 'h4sx_promo_otp_verified_';
 const TURNSTILE_SITE_KEY = '0x4AAAAAAECCSulruVRqWTEI';
 let customVoteConfig = null;
 let customVoteEntries = [];
@@ -3425,6 +3426,32 @@ function promoPhoneReady(item, promo) {
   const state = promoRedemptionState(item, promo);
   return Boolean(user && state?.userId === user.uid);
 }
+function promoOtpVerificationKey(item, promo) {
+  return PROMO_OTP_VERIFIED_PREFIX + promoRedemptionId(item, promo);
+}
+function promoOtpVerifiedFor(item, promo) {
+  if (!promoPhoneVerificationRequired(item, promo)) return true;
+  const user = promoPhoneUser();
+  if (!user || !promo) return false;
+  try {
+    const saved = JSON.parse(localStorage.getItem(promoOtpVerificationKey(item, promo)) || 'null');
+    return saved?.userId === user.uid && saved?.code === promo.code;
+  } catch (_) {
+    return false;
+  }
+}
+function markPromoOtpVerified(item, promo) {
+  const user = promoPhoneUser();
+  if (!user || !promo) return;
+  localStorage.setItem(promoOtpVerificationKey(item, promo), JSON.stringify({
+    userId: user.uid,
+    code: promo.code,
+    verifiedAt: Date.now()
+  }));
+}
+function promoPhoneVerificationReady(item, promo) {
+  return promoPhoneReady(item, promo) || promoOtpVerifiedFor(item, promo);
+}
 function normalizePromoPhoneNumber(value) {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -3444,7 +3471,7 @@ function showPromoOtpPanel(item, promo, focusPhone = false) {
   const codeRow = document.getElementById('product-modal-promo-code-row');
   const phoneInput = document.getElementById('product-modal-promo-phone');
   if (!panel || !phoneRow || !codeRow) return;
-  if (!promoPhoneVerificationRequired(item, promo) || promoPhoneReady(item, promo)) {
+  if (!promoPhoneVerificationRequired(item, promo) || promoPhoneVerificationReady(item, promo)) {
     panel.hidden = true;
     return;
   }
@@ -3587,9 +3614,12 @@ function setupProductPromoOtp(item) {
       await promoPhoneConfirmation.confirm(code);
       setPromoOtpStatus('Semakan keselamatan terakhir...');
       await verifyPromoTurnstile();
+      const verifiedPromo = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value).promo;
+      markPromoOtpVerified(item, verifiedPromo);
       clearPromoOtpSession();
       const current = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
       showPromoOtpPanel(item, current.promo);
+      syncProductModalPromo(item);
       setPromoOtpStatus('Nombor disahkan. Tekan Guna untuk aktifkan promo.', 'success');
     } catch (error) {
       console.warn('Promo OTP verify error:', error);
@@ -3687,7 +3717,7 @@ function syncProductModalPromo(item) {
   wrap.hidden = !promo;
   if (!promo) return;
   if (title) title.textContent = 'Kod promo: ' + promo.label + ' - terhad ' + promo.usageLimit + ' pelanggan';
-  const needsPhone = result.valid && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneReady(item, result.promo);
+  const needsPhone = result.valid && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneVerificationReady(item, result.promo);
   status.className = 'product-modal-promo-status';
   if (result.valid && !needsPhone) {
     status.classList.add('is-valid');
@@ -3725,7 +3755,7 @@ function setupProductModalPromo(item) {
     const candidate = productPromoResult(item, input.value);
     sync();
     // Surface OTP as soon as a valid protected code is typed, not only after pressing Guna.
-    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneUser()) {
+    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneVerificationReady(item, candidate.promo)) {
       showPromoOtpPanel(item, candidate.promo, true);
       setPromoOtpStatus('Sahkan nombor telefon untuk aktifkan harga promo.');
     } else if (!input.value.trim()) {
@@ -3740,7 +3770,7 @@ function setupProductModalPromo(item) {
   apply.onclick = async () => {
     const code = input.value;
     const candidate = productPromoResult(item, code);
-    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneUser()) {
+    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneVerificationReady(item, candidate.promo)) {
       showPromoOtpPanel(item, candidate.promo, true);
       setPromoOtpStatus('Sahkan nombor telefon dahulu untuk guna kod ini.');
       return;
@@ -3839,7 +3869,7 @@ async function claimProductPromo(item, promoCode) {
     return false;
   }
   const phoneUser = promoPhoneUser();
-  if (promoPhoneVerificationRequired(item, promo) && !phoneUser) {
+  if (promoPhoneVerificationRequired(item, promo) && !promoPhoneVerificationReady(item, promo)) {
     showPromoOtpPanel(item, promo, true);
     setPromoOtpStatus('Sahkan nombor telefon dahulu untuk aktifkan promo.');
     return false;
@@ -3992,9 +4022,20 @@ function showConsultationConfirm(config = {}) {
     '<span class="consult-confirm-kicker">' + kicker + '</span>' +
     '<h3 id="consult-confirm-title">' + title + '</h3>' +
     '<p>' + description + '</p>' +
+    '<div class="consult-confirm-loading" aria-live="polite" hidden><div class="consult-confirm-loader-icon"><i class="fa-brands fa-whatsapp"></i></div><div><strong>Sedang membuka WhatsApp</strong><span>Semakan selesai dalam <b>5</b> saat</span></div><div class="consult-confirm-progress"><i></i></div></div>' +
     '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div>' +
   '</div>';
-  const close = () => modal.remove();
+  const dialog = modal.querySelector('.consult-confirm-dialog');
+  const loading = modal.querySelector('.consult-confirm-loading');
+  const loadingSeconds = loading?.querySelector('b');
+  const loadingBar = loading?.querySelector('.consult-confirm-progress i');
+  let redirectTimer = null;
+  let progressTimer = null;
+  const close = () => {
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (progressTimer) clearInterval(progressTimer);
+    modal.remove();
+  };
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   modal.querySelector('.consult-confirm-close').addEventListener('click', close);
   modal.querySelector('.consult-confirm-cancel').addEventListener('click', close);
@@ -4004,9 +4045,27 @@ function showConsultationConfirm(config = {}) {
     close();
   });
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
+    const goButton = modal.querySelector('.consult-confirm-go');
+    if (redirectTimer || !goButton) return;
     playH4sxSound('whatsapp');
-    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
-    close();
+    dialog?.classList.add('is-loading');
+    if (loading) loading.hidden = false;
+    modal.querySelectorAll('.consult-confirm-actions button').forEach(button => {
+      if (!button.classList.contains('consult-confirm-cancel')) button.disabled = true;
+    });
+    const startedAt = Date.now();
+    const duration = 5000;
+    const updateProgress = () => {
+      const elapsed = Math.min(duration, Date.now() - startedAt);
+      const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+      if (loadingSeconds) loadingSeconds.textContent = String(remaining);
+      if (loadingBar) loadingBar.style.width = ((elapsed / duration) * 100).toFixed(1) + '%';
+    };
+    updateProgress();
+    progressTimer = setInterval(updateProgress, 100);
+    redirectTimer = setTimeout(() => {
+      window.location.assign('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
+    }, duration);
   });
   document.body.appendChild(modal);
   playH4sxSound('open');
