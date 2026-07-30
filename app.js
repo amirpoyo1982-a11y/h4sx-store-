@@ -3874,6 +3874,17 @@ async function claimProductPromo(item, promoCode) {
     setPromoOtpStatus('Sahkan nombor telefon dahulu untuk aktifkan promo.');
     return false;
   }
+  // Firebase Auth can need a moment to attach the freshly verified phone token to Firestore.
+  if (promoPhoneVerificationRequired(item, promo)) {
+    try {
+      await phoneUser?.getIdToken(true);
+    } catch (error) {
+      console.warn('Promo phone token refresh error:', error);
+      showPromoOtpPanel(item, promo, true);
+      setPromoOtpStatus('Sahkan nombor telefon sekali lagi sebelum guna kod ini.', 'error');
+      return false;
+    }
+  }
   const deviceId = getPromoDeviceId();
   const ownerId = phoneUser?.uid || deviceId;
   const promoId = promoRedemptionId(item, promo);
@@ -3938,7 +3949,8 @@ async function claimProductPromo(item, promoCode) {
     return true;
   } catch (error) {
     console.warn('Promo redemption error:', error);
-    if (error?.code === 'permission-denied') toast('Firebase Rules promo belum dibenarkan atau belum Publish.', true);
+    if (error?.code === 'permission-denied') toast('Firebase Rules promo belum benarkan transaksi ini. Semak Rules sudah Publish.', true);
+    else if (error?.code === 'unauthenticated') toast('Pengesahan nombor belum sampai ke Firebase. Cuba OTP sekali lagi.', true);
     else if (String(error?.message || '').includes('promo-expired')) toast('Masa promo ini sudah tamat.', true);
     else if (String(error?.message || '').includes('promo-used')) toast('Had penggunaan kod promo ini sudah penuh.', true);
     else toast('Tak dapat sahkan kod promo. Cuba semula sebentar lagi.', true);
