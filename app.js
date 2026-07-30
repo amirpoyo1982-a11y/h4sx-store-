@@ -316,7 +316,6 @@ function aiCatalogSnapshot() {
     subcategory: item.subcategory,
     price: Number(item.price || 0),
     stock: Number(item.stock || 0),
-    sold: Number(item.sold || 0),
     desc: String(item.desc || '').slice(0, 220)
   }));
 }
@@ -674,6 +673,7 @@ const PAY_QR = {
   tng:     { url:'https://i.ibb.co/bRyG06zY/image.png', name:'Nurwazni', sub:"Touch 'n Go eWallet", wa:'TNG eWallet' }
 };
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
+const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
 async function fetchKedaiJson() {
@@ -2718,8 +2718,12 @@ function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
   const login = document.getElementById('order-admin-login');
   const form = document.getElementById('order-admin-form-wrap');
+  const jsonHelperLink = document.getElementById('json-helper-link');
+  const jsonHelperDivider = document.getElementById('json-helper-divider');
   if (login) login.hidden = !!user;
   if (form) form.hidden = !user;
+  if (jsonHelperLink) jsonHelperLink.hidden = !user;
+  if (jsonHelperDivider) jsonHelperDivider.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
   if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); }
@@ -3167,6 +3171,8 @@ function runWhenIdle(fn, timeout = 1800) {
 
 function bootStoreApp() {
   cleanHardRefreshParam();
+  restoreCart();
+  updateBadge();
   loadGames().then(renderGames);
   loadInv();
   startCountdown();
@@ -3246,7 +3252,6 @@ const PRODUCT_FILTERS = [
   { id:'all', label:'Semua', icon:'fa-border-all', test:() => true },
   { id:'stock', label:'Stok Ada', icon:'fa-box', test:item => !isOutOfStock(item) },
   { id:'promo', label:'Promo', icon:'fa-tags', test:item => !!item.promoLabel || (item.originalPrice && item.originalPrice > item.price) },
-  { id:'popular', label:'Popular', icon:'fa-fire', test:item => Number(item.sold || 0) >= 5 },
   { id:'cheap', label:'Murah', icon:'fa-coins', test:item => Number(item.price || 0) <= 5 },
   { id:'video', label:'Video', icon:'fa-play', test:item => isVideoMediaUrl(productMediaUrl(item), item) }
 ];
@@ -3344,7 +3349,7 @@ function productCardHTML(item) {
   const shareBtn = '<button class="pshare" type="button" onclick="event.stopPropagation();event.preventDefault();shareProductItem(' + item.id + ')" title="Kongsi item" aria-label="Kongsi ' + escapeHtml(item.name) + '"><i class="fa-solid fa-share-nodes"></i></button>';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><div class="psold"><i class="fa-solid fa-chart-simple"></i> ' + Number(item.sold || 0) + ' sold</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -3668,7 +3673,7 @@ function doSearch(q) {
   hits.sort((a, b) => {
     const stockDiff = isOutOfStock(a) - isOutOfStock(b);
     if (stockDiff) return stockDiff;
-    return Number(b.sold || 0) - Number(a.sold || 0);
+    return 0;
   });
   if (!hits.length) { res.innerHTML='<p class="sr-empty">Tiada produk untuk "' + escapeHtml(q) + '". Cuba cari nama game, "stok ada", "promo", "murah", atau "under rm10".</p>'; return; }
   res.innerHTML = '<div class="search-summary"><b>' + hits.length + '</b> result untuk "' + escapeHtml(q) + '"</div>' + hits.slice(0,8).map(item => {
@@ -3679,8 +3684,10 @@ function doSearch(q) {
   }).join('');
 }
 function openJsonHelper() {
+  if (!orderAuth?.currentUser) return toast('JSON Helper hanya untuk admin. Sila log masuk dahulu.', true);
   const modal = document.getElementById('json-helper-modal');
   if (!modal) return;
+  refreshJsonHelperId(true);
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('jh-name')?.focus(), 80);
@@ -3694,6 +3701,38 @@ function closeJsonHelper() {
 function jhValue(id) {
   return (document.getElementById(id)?.value || '').trim();
 }
+function getUsedInventoryIds() {
+  return new Set(inventory
+    .map(item => Number(item?.id))
+    .filter(id => Number.isSafeInteger(id) && id > 0));
+}
+function getNextInventoryId() {
+  const usedIds = getUsedInventoryIds();
+  let id = 1;
+  while (usedIds.has(id)) id += 1;
+  return id;
+}
+function getMissingInventoryIds(limit = 6) {
+  const usedIds = getUsedInventoryIds();
+  const highestId = Math.max(0, ...usedIds);
+  const missing = [];
+  for (let id = 1; id <= highestId && missing.length < limit; id += 1) {
+    if (!usedIds.has(id)) missing.push(id);
+  }
+  return missing;
+}
+function refreshJsonHelperId(force = false) {
+  const input = document.getElementById('jh-id');
+  const status = document.getElementById('jh-id-status');
+  const suggestedId = getNextInventoryId();
+  const missing = getMissingInventoryIds();
+  if (input && (force || !input.value.trim())) input.value = suggestedId;
+  if (status) {
+    const gapText = missing.length ? 'ID kosong dikesan: <strong>' + missing.join(', ') + '</strong>.' : 'Tiada ID tertinggal dalam senarai semasa.';
+    status.innerHTML = 'Auto pilih ID <strong>' + suggestedId + '</strong>. ' + gapText;
+  }
+  return suggestedId;
+}
 function fillJsonHelperExample() {
   const values = {
     'jh-name': 'Tiger Fruit',
@@ -3702,7 +3741,6 @@ function fillJsonHelperExample() {
     'jh-platform': 'Roblox',
     'jh-price': '7',
     'jh-stock': '3',
-    'jh-sold': '0',
     'jh-badge': 'New',
     'jh-img': 'https://i.imgur.com/QJefiGX.png',
     'jh-desc': 'Via trade. Ready stock.'
@@ -3711,13 +3749,26 @@ function fillJsonHelperExample() {
     const el = document.getElementById(id);
     if (el) el.value = value;
   });
+  refreshJsonHelperId(false);
   generateProductJson();
 }
 function generateProductJson() {
+  const productId = Number(jhValue('jh-id'));
+  const usedIds = getUsedInventoryIds();
+  if (!Number.isSafeInteger(productId) || productId < 1) {
+    toast('Masukkan ID produk yang sah.', true);
+    refreshJsonHelperId(false);
+    return false;
+  }
+  if (usedIds.has(productId)) {
+    toast('ID ' + productId + ' sudah digunakan. Pilih ID kosong yang dicadang.', true);
+    refreshJsonHelperId(false);
+    return false;
+  }
   const price = Number(jhValue('jh-price'));
   const stock = Number(jhValue('jh-stock'));
-  const sold = Number(jhValue('jh-sold'));
   const obj = {
+    id: productId,
     name: jhValue('jh-name') || 'Nama Produk',
     game: jhValue('jh-game') || 'Nama Game',
     platform: jhValue('jh-platform') || 'Roblox',
@@ -3725,7 +3776,6 @@ function generateProductJson() {
     img: jhValue('jh-img') || 'https://i.imgur.com/xxxx.png',
     price: Number.isFinite(price) ? price : 0,
     stock: Number.isFinite(stock) ? stock : 0,
-    sold: Number.isFinite(sold) ? sold : 0,
     badge: jhValue('jh-badge') || undefined,
     desc: jhValue('jh-desc') || '',
     updatedAt: new Date().toISOString().slice(0, 10)
@@ -3733,11 +3783,12 @@ function generateProductJson() {
   Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
   const out = document.getElementById('jh-output');
   if (out) out.value = JSON.stringify(obj, null, 2);
+  return true;
 }
 async function copyJsonHelperOutput() {
   const out = document.getElementById('jh-output');
   if (!out) return;
-  if (!out.value.trim()) generateProductJson();
+  if (!out.value.trim() && !generateProductJson()) return;
   try {
     await navigator.clipboard.writeText(out.value);
     toast('JSON produk sudah copy', false);
@@ -3882,7 +3933,6 @@ async function takeScreenshot() {
               </div>
               <div class="product-ss-body">
                 <div class="product-ss-name">${escapeForHtml(item.name || 'Item')}</div>
-                <div class="product-ss-meta">${escapeForHtml(String(item.sold || 0))} sold</div>
                 <div class="product-ss-price"><span>RM${price}</span>${oldPrice}</div>
               </div>
             </div>`;
@@ -4039,6 +4089,7 @@ function addCart(input, originEl) {
   if (ex) ex.qty++; 
   else cartItems.push({id: (typeof input === 'number' ? input : name), qty:1});
   
+  persistCart();
   updateBadge();
   updateAddButtons();
   if (originEl) flyToCart(originEl);
@@ -4057,12 +4108,14 @@ function changeQty(id, delta) {
   const item = inventory.find(i=>i.id===id); const max = getMaxPurchase(item);
   if (delta > 0 && max && ci.qty >= max) { toast('Limit: ' + max + 'x', true); return; }
   ci.qty += delta; if (ci.qty<=0) cartItems = cartItems.filter(c=>c.id!==id);
+  persistCart();
   updateBadge(); 
   renderCart();
   updateAddButtons();
 }
 function removeItem(id) { 
   cartItems = cartItems.filter(c=>c.id!==id); 
+  persistCart();
   updateBadge(); 
   renderCart();
   updateAddButtons();
@@ -4070,6 +4123,7 @@ function removeItem(id) {
 function clearCart() { 
   if (!cartItems.length) return; 
   cartItems=[]; 
+  persistCart();
   updateBadge(); 
   renderCart(); 
   updateAddButtons();
@@ -4081,6 +4135,30 @@ function updateBadge() {
   if (b) { b.textContent=count; b.style.display=count?'flex':'none'; }
   if (p) p.textContent=count;
   if (bnb) { bnb.textContent=count; bnb.style.display=count?'flex':'none'; }
+}
+function persistCart() {
+  try {
+    const cleanCart = cartItems
+      .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
+      .map(item => ({ id: item.id, qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))) }));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cleanCart));
+  } catch (error) {
+    console.warn('Cart tidak dapat disimpan', error);
+  }
+}
+function restoreCart() {
+  try {
+    const savedCart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+    if (!Array.isArray(savedCart)) return;
+    cartItems = savedCart
+      .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
+      .slice(0, 20)
+      .map(item => ({ id: typeof item.id === 'number' ? item.id : Number(item.id), qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))) }))
+      .filter(item => Number.isFinite(item.id));
+  } catch (error) {
+    localStorage.removeItem(CART_STORAGE_KEY);
+    cartItems = [];
+  }
 }
 function toggleCart() { document.getElementById('cart-overlay').classList.toggle('show'); renderCart(); }
 function ocClose(e) { if (e.target===document.getElementById('cart-overlay')) toggleCart(); }
@@ -4264,9 +4342,7 @@ function openProductImage(id, options = {}) {
   }
   if (metaEl) {
     const oos = isOutOfStock(item);
-    const chips = [
-      '<span class="pm-chip hot"><i class="fa-solid fa-fire"></i>' + (item.sold || 0) + ' sold</span>'
-    ];
+    const chips = [];
     if (item.promoLabel) chips.push('<span class="pm-chip hot"><i class="fa-solid fa-tag"></i>' + item.promoLabel + '</span>');
     if (oos) chips.push('<span class="pm-chip out"><i class="fa-solid fa-box-open"></i>Habis Stok</span>');
     else if (item.stock != null) chips.push('<span class="pm-chip stock"><i class="fa-solid fa-box"></i>' + item.stock + ' stok</span>');

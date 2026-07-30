@@ -3148,6 +3148,23 @@ details.faq[open] .faq-ic {
 }
 .json-helper-grid .finput { margin-top: 6px; text-transform: none; }
 .json-helper-wide { grid-column: 1/-1; }
+.json-helper-id-status {
+  align-self: end;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 9px 11px;
+  border: 1px solid rgba(14,165,233,.22);
+  border-radius: 12px;
+  background: rgba(240,249,255,.8);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.json-helper-id-status strong { color: var(--primary3); }
 .json-helper-actions {
   display: flex;
   flex-wrap: wrap;

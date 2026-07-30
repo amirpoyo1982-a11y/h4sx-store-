@@ -1,13 +1,21 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '26 July 2026',
+  date: '30 July 2026',
   time: 'Update hari ini',
-  version: 'v2.1',
+  version: 'v2.2',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
+        {
+          icon: 'fa-cart-shopping',
+          text: '<strong>Cart kekal selepas refresh</strong> - item yang sudah dimasukkan ke troli kini disimpan pada browser pelanggan, jadi tidak hilang apabila website di-refresh atau dibuka semula pada peranti yang sama.'
+        },
+        {
+          icon: 'fa-hashtag',
+          text: '<strong>Auto ID JSON Helper</strong> - helper admin kini mengesan nombor ID produk yang kosong dan terus mencadangkan ID paling awal, contohnya ID 4 jika susunan ialah 1, 2, 3 dan 5.'
+        },
         {
           icon: 'fa-bullhorn',
           text: '<strong>Announcement dari Gist</strong> - admin kini boleh hidupkan notis baharu melalui kedai.json dengan tajuk, mesej, gambar, button, link dan tempoh sembunyi sendiri.'
