@@ -7719,6 +7719,7 @@ body {
 #home-view > .div { display: none !important; }
 #home-view > .promo-hero { order: 1; margin-bottom: 12px; }
 #home-view > .hero { order: 2; }
+#home-view > .catalog-live-card { order: 3; width: 100%; margin: 0 0 18px; }
 #home-view > #shop-section { order: 3; margin-top: 0; }
 #home-view > .trust-grid { order: 4; margin-top: 18px; }
 #home-view > .store-tools { order: 5; margin-top: 18px; }
