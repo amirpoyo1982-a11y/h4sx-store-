@@ -3287,6 +3287,7 @@ function isPromotedProduct(item) {
   return isPromotedEnabled(item) && Boolean(item?.promotedBy && item?.promoterPhone);
 }
 function paymentCatalogUrl(config = {}) {
+  if (config.showPaymentCatalog === false) return '';
   const customUrl = config.paymentCatalogUrl || config.paymentCatalog || storeConfig?.payment?.catalogUrl;
   return String(customUrl || H4SX_PAYMENT_CATALOG_URL).trim();
 }
@@ -4442,6 +4443,7 @@ function buyNowItem(id) {
     title: 'Teruskan ke WhatsApp?',
     description: item.name + ' - RM' + Number(item.price || 0).toFixed(2) + '. Admin akan semak stok sebelum urusan diteruskan.',
     buttonText: 'Pergi WhatsApp',
+    showPaymentCatalog: isPromotedEnabled(item),
     whatsapp: phone,
     message
   });
