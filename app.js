@@ -3720,7 +3720,21 @@ function setupProductModalPromo(item) {
   input.value = storedProductPromoCode(item);
   setupProductPromoOtp(item);
   const sync = () => syncProductModalPromo(item);
-  input.oninput = () => { input.value = input.value.toUpperCase().replace(/\s+/g, ''); };
+  input.oninput = () => {
+    input.value = input.value.toUpperCase().replace(/\s+/g, '');
+    const candidate = productPromoResult(item, input.value);
+    sync();
+    // Surface OTP as soon as a valid protected code is typed, not only after pressing Guna.
+    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneUser()) {
+      showPromoOtpPanel(item, candidate.promo, true);
+      setPromoOtpStatus('Sahkan nombor telefon untuk aktifkan harga promo.');
+    } else if (!input.value.trim()) {
+      clearPromoOtpSession();
+      const otpPanel = document.getElementById('product-modal-promo-otp');
+      if (otpPanel) otpPanel.hidden = true;
+      setPromoOtpStatus('');
+    }
+  };
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
   if (cancel) cancel.onclick = () => cancelProductPromo(item);
   apply.onclick = async () => {
