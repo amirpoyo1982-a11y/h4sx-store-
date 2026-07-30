@@ -10,7 +10,15 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-chart-pie',
-          text: '<strong>Status katalog live</strong> - kad hijau baharu memaparkan jumlah item sebenar daripada inventory, titik status berkelip dan progress semakan yang bergerak 20% setiap saat.'
+          text: '<strong>Status delivery live</strong> - kad hijau baharu memaparkan jumlah item sebenar daripada inventory, titik status berkelip dan progress proses penghantaran yang bergerak 20% setiap saat.'
+        },
+        {
+          icon: 'fa-qrcode',
+          text: '<strong>QR pembayaran dalam popup WhatsApp</strong> - pelanggan kini boleh pilih untuk lihat katalog QR pembayaran sebelum terus chat admin atau promoter.'
+        },
+        {
+          icon: 'fa-user-tag',
+          text: '<strong>Promoter boleh dimatikan per produk</strong> - tetapkan <code>"promoted": false</code> dalam inventory untuk sembunyikan label Promoted by dan gunakan urusan admin biasa.'
         },
         {
           icon: 'fa-cart-shopping',

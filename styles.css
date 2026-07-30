@@ -1656,6 +1656,8 @@ nav {
 .consult-confirm-dialog p { margin: 0; color: #53657b; font-size: 13px; line-height: 1.6; }
 .consult-confirm-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 10px; margin-top: 22px; }
 .consult-confirm-actions button { min-height: 45px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+.consult-confirm-actions.has-payment .consult-confirm-payment { grid-column: 1 / -1; border: 1px solid rgba(14,165,233,.26); background: #effaff; color: #087dbb; }
+.consult-confirm-payment i { margin-right: 5px; }
 .consult-confirm-cancel { border: 1px solid #cfe8f7; background: #fff; color: #334155; }
 .consult-confirm-go { border: 0; }
 @media (max-width: 480px) {

@@ -624,6 +624,7 @@ const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pix
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '60193263016';
 const H4SX_CHANNEL_URL = null;
+const H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/p/28055223050775063/65563380416582';
 const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
 const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
 const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
@@ -3278,6 +3279,17 @@ function inventoryConsultationConfig(item) {
     message: raw.message || item.consultationMessage || ('Hi H4SX, saya nak tanya ' + (item.name || 'produk ini') + '.')
   };
 }
+function isPromotedEnabled(item) {
+  const value = item?.promoted;
+  return !(value === false || String(value).trim().toLowerCase() === 'false');
+}
+function isPromotedProduct(item) {
+  return isPromotedEnabled(item) && Boolean(item?.promotedBy && item?.promoterPhone);
+}
+function paymentCatalogUrl(config = {}) {
+  const customUrl = config.paymentCatalogUrl || config.paymentCatalog || storeConfig?.payment?.catalogUrl;
+  return String(customUrl || H4SX_PAYMENT_CATALOG_URL).trim();
+}
 function showConsultationConfirm(config = {}) {
   const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
   const oldModal = document.getElementById('consultation-confirm-modal');
@@ -3289,18 +3301,26 @@ function showConsultationConfirm(config = {}) {
   const description = escapeHtml(String(config.description || 'Admin akan bantu semak pilihan dan harga semasa.'));
   const kicker = escapeHtml(String(config.kicker || 'KONSULTASI H4SX'));
   const buttonText = escapeHtml(String(config.buttonText || 'Pergi WhatsApp'));
+  const paymentUrl = paymentCatalogUrl(config);
+  const paymentButton = paymentUrl
+    ? '<button type="button" class="consult-confirm-payment"><i class="fa-solid fa-qrcode"></i> Lihat QR Pembayaran</button>'
+    : '';
   modal.innerHTML = '<div class="consult-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="consult-confirm-title">' +
     '<button type="button" class="consult-confirm-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
     '<div class="consult-confirm-icon"><i class="fa-brands fa-whatsapp"></i></div>' +
     '<span class="consult-confirm-kicker">' + kicker + '</span>' +
     '<h3 id="consult-confirm-title">' + title + '</h3>' +
     '<p>' + description + '</p>' +
-    '<div class="consult-confirm-actions"><button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div>' +
+    '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div>' +
   '</div>';
   const close = () => modal.remove();
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   modal.querySelector('.consult-confirm-close').addEventListener('click', close);
   modal.querySelector('.consult-confirm-cancel').addEventListener('click', close);
+  modal.querySelector('.consult-confirm-payment')?.addEventListener('click', () => {
+    window.open(paymentUrl, '_blank', 'noopener');
+    close();
+  });
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
     window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')), '_blank', 'noopener');
     close();
@@ -3325,11 +3345,11 @@ function productCardHTML(item) {
   const oos = isOutOfStock(item);
   const promo = item.promoLabel ? '<div class="ptag">' + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
-  if (item.promotedBy) {
+  if (isPromotedEnabled(item) && item.promotedBy) {
     promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
   }
   let itemQRHTML = '';
-  const isPromotedItem = item.promotedBy && item.promoterPhone;
+  const isPromotedItem = isPromotedProduct(item);
   if (isPromotedItem) {
     itemQRHTML = '<div class="product-promoter-box"><small>Hubungi Promoter</small><a href="https://wa.me/' + escapeHtml(item.promoterPhone) + '" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>';
   } else if (item.qrDuitNow || item.qrTng) {
@@ -4209,7 +4229,7 @@ function goCO(focusPayment) {
   
   // Check if this is a promoted item
   const firstItem = inventory.find(i=>i.id===cartItems[0].id);
-  const isPromotedItem = firstItem && firstItem.promotedBy && firstItem.promoterPhone;
+  const isPromotedItem = isPromotedProduct(firstItem);
   document.getElementById('co-items').innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
     const line = item.price*ci.qty; tot += line;
@@ -4286,7 +4306,7 @@ function valCO() {
   let isPromotedItem = false;
   if (cartItems.length > 0) {
     const firstItem = inventory.find(i=>i.id===cartItems[0].id);
-    isPromotedItem = firstItem && firstItem.promotedBy && firstItem.promoterPhone;
+    isPromotedItem = isPromotedProduct(firstItem);
   }
   
   let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += it.price*ci.qty; });
@@ -4405,7 +4425,7 @@ function modalBuyNow() {
 function buyNowItem(id) {
   const item = inventory.find(i => i.id === id);
   if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
-  const phone = String((item.promotedBy && item.promoterPhone) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
+  const phone = String(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
   const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
   const message = [
     'Hi H4SX, saya berminat dengan item ini:',
