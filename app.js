@@ -3530,8 +3530,6 @@ function setupProductPromoOtp(item) {
     if (!/^\+\d{8,15}$/.test(phone)) { setPromoOtpStatus('Masukkan nombor telefon yang betul.', 'error'); return; }
     try {
       sendButton.disabled = true;
-      setPromoOtpStatus('Semakan keselamatan...');
-      await verifyPromoTurnstile();
       setPromoOtpStatus('Menghantar OTP ke ' + phone + '...');
       const verifier = await ensurePromoRecaptcha();
       promoPhoneConfirmation = await promoAuth.signInWithPhoneNumber(phone, verifier);
@@ -3573,13 +3571,24 @@ function setupProductPromoOtp(item) {
       verifyButton.disabled = true;
       setPromoOtpStatus('Mengesahkan nombor telefon...');
       await promoPhoneConfirmation.confirm(code);
+      setPromoOtpStatus('Semakan keselamatan terakhir...');
+      await verifyPromoTurnstile();
       clearPromoOtpSession();
       const current = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
       showPromoOtpPanel(item, current.promo);
       setPromoOtpStatus('Nombor disahkan. Tekan Guna untuk aktifkan promo.', 'success');
     } catch (error) {
       console.warn('Promo OTP verify error:', error);
-      setPromoOtpStatus('Kod OTP tidak betul atau sudah tamat.', 'error');
+      const errorCode = String(error?.code || error?.message || '');
+      if (errorCode.includes('turnstile-secret-missing')) {
+        setPromoOtpStatus('Nombor sudah disahkan, tetapi Cloudflare belum siap di Vercel.', 'error');
+      } else if (errorCode.includes('turnstile-rejected')) {
+        setPromoOtpStatus('Nombor sudah disahkan, tetapi Cloudflare menolak semakan. Cuba refresh.', 'error');
+      } else if (errorCode.includes('turnstile-not-ready') || errorCode.includes('turnstile-timeout')) {
+        setPromoOtpStatus('Nombor sudah disahkan, tetapi Cloudflare belum sedia. Refresh dan cuba semula.', 'error');
+      } else {
+        setPromoOtpStatus('Kod OTP tidak betul atau sudah tamat.', 'error');
+      }
     } finally {
       verifyButton.disabled = false;
     }
