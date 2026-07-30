@@ -2,12 +2,16 @@ const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '30 July 2026',
   time: 'Update hari ini',
-  version: 'v2.2',
+  version: 'v2.3',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
+        {
+          icon: 'fa-chart-pie',
+          text: '<strong>Status katalog live</strong> - kad hijau baharu memaparkan jumlah item sebenar daripada inventory, titik status berkelip dan progress semakan yang bergerak 20% setiap saat.'
+        },
         {
           icon: 'fa-cart-shopping',
           text: '<strong>Cart kekal selepas refresh</strong> - item yang sudah dimasukkan ke troli kini disimpan pada browser pelanggan, jadi tidak hilang apabila website di-refresh atau dibuka semula pada peranti yang sama.'

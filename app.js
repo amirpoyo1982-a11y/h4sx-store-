@@ -673,6 +673,7 @@ const PAY_QR = {
   tng:     { url:'https://i.ibb.co/bRyG06zY/image.png', name:'Nurwazni', sub:"Touch 'n Go eWallet", wa:'TNG eWallet' }
 };
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
+let catalogProgressTimer = null;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
@@ -3173,6 +3174,7 @@ function bootStoreApp() {
   cleanHardRefreshParam();
   restoreCart();
   updateBadge();
+  startCatalogProgress();
   loadGames().then(renderGames);
   loadInv();
   startCountdown();
@@ -3589,7 +3591,30 @@ function renderGames() {
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
+  updateCatalogLiveCard();
   initScrollReveal();
+}
+function updateCatalogLiveCard() {
+  const total = inventory.filter(item => item && item.id && !isPermanentFruitCatalogItem(item) && !item.consultation).length;
+  const count = document.getElementById('catalog-item-count');
+  if (count) count.textContent = total;
+}
+function startCatalogProgress() {
+  const ring = document.getElementById('catalog-progress-value');
+  const text = document.getElementById('catalog-progress-text');
+  if (!ring || !text || catalogProgressTimer) return;
+  const circumference = 2 * Math.PI * 40;
+  let progress = 0;
+  const paint = () => {
+    ring.style.strokeDashoffset = String(circumference * (1 - (progress / 100)));
+    text.textContent = progress + '%';
+  };
+  ring.style.strokeDasharray = String(circumference);
+  paint();
+  catalogProgressTimer = window.setInterval(() => {
+    progress = progress >= 100 ? 0 : progress + 20;
+    paint();
+  }, 1000);
 }
 function openGame(name, options = {}) {
   currentGame = name;
