@@ -3384,6 +3384,25 @@ function saveProductPromoDraft(item, code) {
   else if (!String(code || '').trim() || result.reason === 'expired') localStorage.removeItem(promoDraftStorageKey(item));
   return result;
 }
+function syncProductPromoCard(item) {
+  if (!item?.id) return;
+  const result = productPromoResult(item, savedProductPromoCode(item));
+  const cards = [];
+  const mainCard = document.getElementById('product-' + String(item.id));
+  if (mainCard) cards.push(mainCard);
+  document.querySelectorAll('[data-product-id]').forEach(media => {
+    if (String(media.dataset.productId) === String(item.id)) {
+      const card = media.closest('.pc');
+      if (card && !cards.includes(card)) cards.push(card);
+    }
+  });
+  cards.forEach(card => {
+    const price = card.querySelector('.pprice');
+    const oldPrice = card.querySelector('.pprice-old');
+    if (price) price.textContent = 'RM' + result.final.toFixed(2);
+    if (oldPrice) oldPrice.textContent = result.valid ? 'RM' + result.base.toFixed(2) : ((item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '');
+  });
+}
 function getCartPromoResult(item, cartItem) {
   return productPromoResult(item, cartItem?.promoCode);
 }
@@ -3438,6 +3457,7 @@ function setupProductModalPromo(item) {
   apply.onclick = () => {
     saveProductPromoDraft(item, input.value);
     sync();
+    syncProductPromoCard(item);
   };
   const promo = productPromoConfig(item);
   input.disabled = Boolean(promo?.expired);
@@ -3451,6 +3471,7 @@ function setupProductModalPromo(item) {
         input.disabled = true;
         apply.disabled = true;
         sync();
+        syncProductPromoCard(item);
         clearInterval(productModalPromoTimer);
         productModalPromoTimer = null;
       } else {
@@ -3664,9 +3685,12 @@ function productCardHTML(item) {
     }
     itemQRHTML += '</div>';
   }
-  const pHTML = (item.originalPrice && item.originalPrice > item.price)
-    ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + escapeHtml(item.originalPrice) + '</span>'
-    : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>';
+  const appliedPromo = productPromoResult(item, savedProductPromoCode(item));
+  const pHTML = appliedPromo.valid
+    ? '<span class="pprice">RM' + appliedPromo.final.toFixed(2) + '</span><span class="pprice-old">RM' + appliedPromo.base.toFixed(2) + '</span>'
+    : ((item.originalPrice && item.originalPrice > item.price)
+      ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + escapeHtml(item.originalPrice) + '</span>'
+      : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>');
   const cartQty = getCartQtyForItem(item.id);
   const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
   const addBtn = buildAddBtnHTML(item, oos);
@@ -4024,7 +4048,12 @@ function doSearch(q) {
   });
   if (!hits.length) { res.innerHTML='<p class="sr-empty">Tiada produk untuk "' + escapeHtml(q) + '". Cuba cari nama game, "stok ada", "promo", "murah", atau "under rm10".</p>'; return; }
   res.innerHTML = '<div class="search-summary"><b>' + hits.length + '</b> result untuk "' + escapeHtml(q) + '"</div>' + hits.slice(0,8).map(item => {
-    const pHTML = (item.originalPrice && item.originalPrice > item.price) ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>' : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>';
+    const appliedPromo = productPromoResult(item, savedProductPromoCode(item));
+    const pHTML = appliedPromo.valid
+      ? '<span class="pprice" style="font-size:15px">RM' + appliedPromo.final.toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + appliedPromo.base.toFixed(2) + '</span>'
+      : ((item.originalPrice && item.originalPrice > item.price)
+        ? '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old" style="font-size:10px">RM' + item.originalPrice + '</span>'
+        : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>');
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled style="height:26px;font-size:9px">HABIS</button>' : '<button class="pbuy whatsapp-buy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WA</button>';
     return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
