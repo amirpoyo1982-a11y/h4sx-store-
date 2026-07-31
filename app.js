@@ -45,47 +45,6 @@ function initReviewSystemPopup() {
   setTimeout(openReviewSystemPopup, 650);
 }
 
-// --- ANTI-INSPECT / ANTI-COPY ---
-document.addEventListener('contextmenu', function(e) {
-  e.preventDefault();
-});
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'F12') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.key === 'u') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.key === 'U') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.key === 's') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.key === 'S') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'i') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'J') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'j') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-    e.preventDefault();
-  }
-  if (e.ctrlKey && e.shiftKey && e.key === 'c') {
-    e.preventDefault();
-  }
-});
-// --- END ANTI-INSPECT ---
-
 // --- UI SOUND EFFECTS ---
 // Small synthesized tones keep the interface responsive without loading extra audio files.
 const H4SX_SOUND_FX_KEY = 'h4sx_sound_effects';
@@ -1919,43 +1878,39 @@ function showClosure(title, status, message, type = 'closed') {
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 }
-// SECURITY: Block Inspect Element & Right Click
+// SECURITY: Lightweight inspect deterrent and closure-overlay guard.
 (() => {
-  // Block Right Click
-  document.addEventListener('contextmenu', e => e.preventDefault());
-  // Block Text Selection
-  document.addEventListener('selectstart', e => e.preventDefault());
-  // Block Image Dragging
-  document.addEventListener('dragstart', e => e.preventDefault());
-  // Block Keyboard Shortcuts (F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U)
-  document.addEventListener('keydown', e => {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-      (e.ctrlKey && e.key === 'U') ||
-      (e.ctrlKey && e.key === 'S') ||
-      (e.ctrlKey && e.key === 'P')
-    ) {
-      e.preventDefault();
-      return false;
-    }
-  });
-  // Detect DevTools opening (simple check)
-  let devtoolsOpen = false;
-  const threshold = 160;
-  setInterval(() => {
-    const widthDiff = window.outerWidth - window.innerWidth > threshold;
-    const heightDiff = window.outerHeight - window.innerHeight > threshold;
-    if (widthDiff || heightDiff) {
-      if (!devtoolsOpen) {
-        console.log('%cSTOP!', 'color:red; font-size:40px; font-weight:bold; -webkit-text-stroke:1px black;');
-        console.log('%cThis area is for developers only.', 'font-size:20px;');
-        devtoolsOpen = true;
-      }
-    } else {
-      devtoolsOpen = false;
-    }
-  }, 1000);
+  const notifyBlocked = message => {
+    if (typeof toast === 'function') toast(message);
+  };
+
+  document.addEventListener('contextmenu', event => {
+    event.preventDefault();
+    notifyBlocked('Klik kanan dinyahaktifkan pada H4SX STORE.');
+  }, { capture: true });
+
+  document.addEventListener('keydown', event => {
+    const key = String(event.key || '').toLowerCase();
+    const modifier = event.ctrlKey || event.metaKey;
+    const inspectShortcut = modifier && event.shiftKey && ['i', 'j', 'c'].includes(key);
+    const macInspectShortcut = event.metaKey && event.altKey && ['i', 'j', 'c'].includes(key);
+    const sourceShortcut = modifier && key === 'u';
+
+    if (key !== 'f12' && !inspectShortcut && !macInspectShortcut && !sourceShortcut) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    notifyBlocked('Inspect Element dinyahaktifkan pada H4SX STORE.');
+  }, { capture: true });
+
+  const protectedOverlay = document.getElementById('closure-overlay');
+  if (protectedOverlay && document.documentElement) {
+    const overlayGuard = new MutationObserver(() => {
+      const wasVisible = protectedOverlay.style.display === 'flex';
+      if (wasVisible && !protectedOverlay.isConnected) document.body.prepend(protectedOverlay);
+    });
+    overlayGuard.observe(document.documentElement, { childList: true, subtree: true });
+  }
 })();
 checkStore(); setInterval(checkStore, 60000);
 const DEFAULT_GAMES = [
