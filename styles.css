@@ -8099,6 +8099,8 @@ body {
   .wrap { padding-inline: 12px !important; }
   .promo-hero-shell { margin-inline: 0 !important; border-radius: 13px !important; }
   .promo-hero-slide { min-height: 0 !important; }
+  /* Phone banners should show the top of the artwork, even when Gist sets position:center. */
+  .promo-hero-slide img { object-position: center top !important; }
   #home-view .hero { padding: 16px !important; border-radius: 13px !important; }
   #home-view .hero-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .section-panel { padding: 14px !important; border-radius: 14px !important; }
