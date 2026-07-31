@@ -6872,9 +6872,9 @@ nav,
 }
 
 /* Native H4SX review submission form. */
-.h4rf-modal { position:fixed; inset:0; z-index:10050; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(4,24,53,.68); backdrop-filter:blur(9px); }
+.h4rf-modal { position:fixed; inset:0; z-index:2147483000; display:none; align-items:center; justify-content:center; padding:18px; overflow:hidden; background:rgba(4,24,53,.68); backdrop-filter:blur(9px); }
 .h4rf-modal.show { display:flex; }
-.h4rf-dialog { width:min(700px,100%); max-height:calc(100dvh - 28px); overflow:auto; border:1px solid #a8e3ff; border-radius:24px; background:#f8fcff; box-shadow:0 28px 90px rgba(0,28,58,.45); }
+.h4rf-dialog { width:min(700px,100%); max-height:calc(100dvh - 28px); overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; border:1px solid #a8e3ff; border-radius:24px; background:#f8fcff; box-shadow:0 28px 90px rgba(0,28,58,.45); }
 .h4rf-head { display:flex; justify-content:space-between; gap:16px; padding:20px 23px 17px; color:#fff; background:linear-gradient(105deg,#088ee2,#13bcd4 58%,#16bf76); }
 .h4rf-head span { font-size:.64rem; font-weight:900; letter-spacing:.13em; }
 .h4rf-head h2 { margin:4px 0; font-size:1.35rem; }
@@ -6923,9 +6923,9 @@ nav,
 .h4rf-feedback { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:15px; padding:11px 12px; border:1px solid #d2efff; border-radius:14px; background:#f9fdff; }
 .h4rf-feedback > span { margin:0 auto 0 0; }
 .h4rf-feedback button[hidden],.h4rf-clear-image[hidden] { display:none; }
-.h4rf-submit { width:100%; margin-top:17px; border:0; border-radius:14px; padding:14px; color:#fff; background:linear-gradient(105deg,#0d9ee8,#13bfd5 55%,#18bf74); box-shadow:0 10px 20px rgba(4,165,205,.22); font:inherit; font-size:.85rem; font-weight:900; cursor:pointer; }
+.h4rf-submit { position:relative; z-index:1; width:100%; margin-top:17px; border:0; border-radius:14px; padding:14px; color:#fff; background:linear-gradient(105deg,#0d9ee8,#13bfd5 55%,#18bf74); box-shadow:0 10px 20px rgba(4,165,205,.22); font:inherit; font-size:.85rem; font-weight:900; cursor:pointer; }
 .h4rf-submit:disabled { opacity:.7; cursor:wait; }
-@media (max-width:620px) { .h4rf-modal { padding:7px; align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-head .h4rf-back { width:38px; padding:0; justify-content:center; } .h4rf-head .h4rf-back span { display:none; } .h4rf-form { padding:15px; } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
+@media (max-width:620px) { .h4rf-modal { padding:7px 7px max(7px, env(safe-area-inset-bottom)); align-items:flex-end; } .h4rf-dialog { max-height:calc(100dvh - 8px); border-radius:22px 22px 13px 13px; } .h4rf-head { padding:16px; } .h4rf-head .h4rf-back { width:38px; padding:0; justify-content:center; } .h4rf-head .h4rf-back span { display:none; } .h4rf-form { padding:15px 15px max(15px, env(safe-area-inset-bottom)); } .h4rf-grid { grid-template-columns:1fr; gap:11px; } .h4rf-wide { grid-column:auto; } .h4rf-head h2 { font-size:1.15rem; } .h4rf-head p { font-size:.7rem; } .h4rf-profile { align-items:flex-start; } }
 
 /* Shared review link: show only the native form, without the store chrome. */
 html.review-submit-direct,
