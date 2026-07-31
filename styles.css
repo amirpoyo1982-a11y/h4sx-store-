@@ -8532,7 +8532,8 @@ body {
 
 /* Direct review link: give the form the whole phone viewport. */
 html.review-submit-direct .bottom-nav,
-html.review-submit-direct .business-hours-bar {
+html.review-submit-direct .business-hours-bar,
+html.review-submit-direct .h4sx-announcement-modal {
   display: none !important;
 }
 
@@ -8542,6 +8543,56 @@ html.review-submit-direct .wrap {
 }
 
 @media (max-width: 620px) {
+  /* Keep the review shortcut inside the first visible phone viewport. */
+  .storefront-tabs button:nth-child(1) { order: 1; }
+  .storefront-tabs button:nth-child(5) { order: 2; }
+  .storefront-tabs button:nth-child(2) { order: 3; }
+  .storefront-tabs button:nth-child(3) { order: 4; }
+  .storefront-tabs button:nth-child(4) { order: 5; }
+  .storefront-tabs button:nth-child(6) { order: 6; }
+  .storefront-tabs button:nth-child(7) { order: 7; }
+  .storefront-tabs button:nth-child(8) { order: 8; }
+
+  body.h4rf-open .bottom-nav,
+  body.h4rf-open .business-hours-bar,
+  body.h4rf-open .ai-side-assistant,
+  body.h4rf-open .music-btn,
+  body.h4rf-open .h4sx-announcement-modal {
+    display: none !important;
+  }
+
+  body.h4rf-open .h4rf-modal {
+    padding: 0 !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+
+  body.h4rf-open .h4rf-dialog {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  body.h4rf-open .h4rf-head {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  body.h4rf-open .h4rf-form {
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+
+  body.h4rf-open .h4rf-submit {
+    position: sticky !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    z-index: 5 !important;
+    margin-top: 16px !important;
+    box-shadow: 0 10px 26px rgba(4, 115, 160, .3) !important;
+  }
+
   html.review-submit-direct .h4rf-modal {
     padding: 0 !important;
     align-items: stretch !important;

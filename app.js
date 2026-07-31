@@ -5417,6 +5417,7 @@ window.copyReviewFormLink = copyReviewFormLink;
 function openH4ReviewForm() {
   const modal = document.getElementById('h4rf-modal');
   if (!modal) return;
+  document.body.classList.add('h4rf-open');
   modal.classList.add('show');
   modal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
@@ -5437,6 +5438,7 @@ function closeH4ReviewForm() {
   }
   const modal = document.getElementById('h4rf-modal');
   if (!modal) return;
+  document.body.classList.remove('h4rf-open');
   modal.classList.remove('show');
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
@@ -5650,12 +5652,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (profileImage) payload.profileImg = profileImage;
       if (feedbackImage) payload.feedbackImg = feedbackImage;
       const reviewRef = db.collection('ratings').doc('review_' + reviewCode);
-      try {
-        await reviewRef.create(payload);
-      } catch (createError) {
-        if (createError?.code === 'already-exists') throw new Error('review-code-invalid');
-        throw createError;
-      }
+      const existingReview = await reviewRef.get();
+      if (existingReview.exists) throw new Error('review-code-invalid');
+      await reviewRef.set(payload);
       try {
         await codeRef.delete();
       } catch (codeDeleteError) {
@@ -5677,7 +5676,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.assign('https://review.h4sxmy.xyz/?reviewId=' + encodeURIComponent(reviewRef.id));
       }, 800);
     } catch (error) {
-      message(error.message === 'review-code-invalid' ? 'Kod pengesahan tidak sah atau telah digunakan.' : 'Gagal hantar ulasan. Cuba lagi.', true);
+      console.error('H4SX review submit gagal:', error?.code, error?.message, error);
+      if (error.message === 'review-code-invalid') {
+        message('Kod pengesahan tidak sah atau telah digunakan.', true);
+      } else if (String(error?.code || '').includes('permission-denied')) {
+        message('Firebase Rules menolak ulasan. Semak rules ratings dan cuba lagi.', true);
+      } else {
+        message(`Gagal hantar ulasan${error?.code ? ` (${error.code})` : ''}. Cuba lagi.`, true);
+      }
     } finally {
       submit.disabled = false;
       submit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Hantar Ulasan';
