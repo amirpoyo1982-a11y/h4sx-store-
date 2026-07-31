@@ -8529,3 +8529,48 @@ body {
     gap: 8px !important;
   }
 }
+
+/* Direct review link: give the form the whole phone viewport. */
+html.review-submit-direct .bottom-nav,
+html.review-submit-direct .business-hours-bar {
+  display: none !important;
+}
+
+html.review-submit-direct body,
+html.review-submit-direct .wrap {
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 620px) {
+  html.review-submit-direct .h4rf-modal {
+    padding: 0 !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+
+  html.review-submit-direct .h4rf-dialog {
+    width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html.review-submit-direct .h4rf-head {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+  }
+
+  html.review-submit-direct .h4rf-form {
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+
+  html.review-submit-direct .h4rf-submit {
+    position: sticky !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
+    z-index: 5 !important;
+    margin-top: 16px !important;
+    box-shadow: 0 10px 26px rgba(4, 115, 160, .3) !important;
+  }
+}
