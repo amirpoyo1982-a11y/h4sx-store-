@@ -3159,6 +3159,7 @@ function showReviewMaintenanceNotice() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
   clearReviewShowcaseTimer();
+  hideReviewShowcasePopup();
   grid.hidden = false;
   grid.classList.remove('review-showcase-grid');
   const message = currentStoreConfig.review_maintenance_message
@@ -3249,6 +3250,50 @@ function clearReviewShowcaseTimer() {
   reviewShowcaseTimer = null;
 }
 
+function getReviewShowcasePopup() {
+  let popup = document.getElementById('review-showcase-popup');
+  if (popup) return popup;
+  popup = document.createElement('a');
+  popup.id = 'review-showcase-popup';
+  popup.className = 'review-showcase-popup';
+  popup.href = 'https://review.h4sxmy.xyz/';
+  popup.setAttribute('aria-live', 'polite');
+  popup.setAttribute('aria-label', 'Buka semua ulasan pelanggan');
+  document.body.appendChild(popup);
+  popup.addEventListener('mouseenter', clearReviewShowcaseTimer);
+  popup.addEventListener('mouseleave', () => scheduleReviewShowcase(latestReviewStatsData));
+  return popup;
+}
+
+function hideReviewShowcasePopup() {
+  const popup = document.getElementById('review-showcase-popup');
+  if (popup) popup.classList.remove('is-visible');
+}
+
+function showReviewShowcasePopup(item, total) {
+  const popup = getReviewShowcasePopup();
+  const rating = clampRating(item.bintang ?? item.rating);
+  const name = item.nama || item.name || 'Pelanggan';
+  const text = item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.';
+  const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const avatar = item.profileImg
+    ? '<img src="' + escapeHtml(item.profileImg) + '" alt="Profil ' + escapeHtml(name) + '">'
+    : escapeHtml(item.emojiProfil || initials);
+  const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
+  const roleText = item.role || item.badgeText || 'Pembeli disahkan';
+  const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
+
+  popup.classList.remove('is-visible');
+  popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
+  popup.innerHTML = '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
+    '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
+    '<strong>' + escapeHtml(name) + '</strong><span class="review-popup-stars">' + stars + '</span>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span>' +
+    '<span class="review-popup-progress"></span>';
+  void popup.offsetWidth;
+  popup.classList.add('is-visible');
+}
+
 function scheduleReviewShowcase(list) {
   clearReviewShowcaseTimer();
   if (!reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
@@ -3286,45 +3331,21 @@ function renderReviews(list = []) {
     grid.hidden = true;
     grid.classList.remove('review-showcase-grid');
     grid.innerHTML = '';
+    hideReviewShowcasePopup();
     return;
   }
 
-  grid.hidden = false;
-  grid.classList.add('review-showcase-grid');
+  grid.hidden = true;
+  grid.classList.remove('review-showcase-grid');
+  grid.innerHTML = '';
   if (!list.length) {
-    grid.innerHTML = '<div class="testi-loading">Belum ada ulasan pelanggan untuk dipaparkan.</div>';
+    hideReviewShowcasePopup();
     return;
   }
 
   reviewShowcaseIndex = ((reviewShowcaseIndex % list.length) + list.length) % list.length;
   const item = list[reviewShowcaseIndex];
-  const rating = clampRating(item.bintang ?? item.rating);
-  const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
-  const name = item.nama || item.name || 'Pelanggan';
-  const text = item.ulasan || item.komen || item.comment || item.feedback || 'Rating diberikan tanpa ulasan teks.';
-  const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const avatar = item.profileImg ? '<img src="' + escapeHtml(item.profileImg) + '" alt="Profil ' + escapeHtml(name) + '">' : escapeHtml(item.emojiProfil || initials);
-  const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
-  const isAdmin = name.toLowerCase().includes('h4sx');
-  const roleText = item.role || item.badgeText;
-  const role = roleText
-    ? '<span class="testi-role' + (item.badgeAnimated === false ? '' : ' is-animated') + '" style="' + badgeStyle(item) + '">' + escapeHtml(roleText) + '</span>'
-    : (isAdmin ? '<span class="testi-role is-animated" style="' + badgeStyle({ badgeColor:'#2fa8e0', badgeColor2:'#0f2a45', badgeTextColor:'#ffffff', badgeGlowColor:'#2fa8e0', badgeGradient:true }) + '">ADMIN RASMI</span>' : '<span class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>');
-  const feedbackBtn = item.feedbackImg ? '<button class="testi-feedback-btn" id="review-showcase-image" type="button"><i class="fa-solid fa-image"></i> Lihat gambar</button>' : '';
-  const controls = list.length > 1 ? '<div class="review-showcase-controls"><button type="button" onclick="changeReviewShowcase(-1)" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><span>' + (reviewShowcaseIndex + 1) + ' / ' + list.length + '</span><button type="button" onclick="changeReviewShowcase(1)" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button></div>' : '<div class="review-showcase-controls"><span>1 / 1</span></div>';
-
-  grid.innerHTML = '<article class="review-showcase-card" aria-live="polite">' +
-    '<div class="review-showcase-accent"></div>' +
-    '<div class="review-showcase-head"><div><span class="review-showcase-kicker"><i class="fa-solid fa-comment-dots"></i> ULASAN PELANGGAN</span><div class="testi-stars">' + stars + '</div></div>' + controls + '</div>' +
-    '<blockquote>&ldquo;' + escapeHtml(text) + '&rdquo;</blockquote>' + feedbackBtn +
-    '<div class="review-showcase-footer"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div class="review-showcase-person"><strong>' + escapeHtml(name) + '</strong><small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></div>' + role + '<a href="https://review.h4sxmy.xyz/" class="review-showcase-all" aria-label="Lihat semua ulasan"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div>' +
-    (list.length > 1 ? '<div class="review-showcase-progress"><span style="animation-duration:' + reviewShowcaseConfig.intervalSeconds + 's"></span></div>' : '') +
-    '</article>';
-
-  document.getElementById('review-showcase-image')?.addEventListener('click', () => openTestimonialImage(item.feedbackImg));
-  const card = grid.querySelector('.review-showcase-card');
-  card?.addEventListener('mouseenter', clearReviewShowcaseTimer);
-  card?.addEventListener('mouseleave', () => scheduleReviewShowcase(list));
+  showReviewShowcasePopup(item, list.length);
   scheduleReviewShowcase(list);
 }
 function openTestimonialImage(src) {
