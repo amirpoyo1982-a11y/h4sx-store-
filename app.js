@@ -2396,6 +2396,8 @@ const CUSTOM_VOTE_CONFIG_ID = 'custom_vote';
 const CUSTOM_VOTE_ENTRIES_COLLECTION = 'custom_vote_entries';
 const CUSTOM_VOTE_DEVICE_KEY = 'h4sx_custom_vote_device';
 const CUSTOM_VOTE_CHOICE_PREFIX = 'h4sx_custom_vote_choice_';
+const REVIEW_SHOWCASE_CONFIG_COLLECTION = 'config';
+const REVIEW_SHOWCASE_CONFIG_ID = 'review_showcase';
 const PROMO_REDEMPTIONS_COLLECTION = 'promo_redemptions';
 const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
@@ -2409,6 +2411,10 @@ let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
 let customVoteEndTimer = null;
 let customVoteDirectLinkHandled = false;
+let reviewShowcaseConfig = { active:false, intervalSeconds:6 };
+let reviewShowcaseConfigUnsubscribe = null;
+let reviewShowcaseTimer = null;
+let reviewShowcaseIndex = 0;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -2704,7 +2710,79 @@ function startNewCustomVote() {
 
 window.copyCustomVoteLink = copyCustomVoteLink;
 
-if (db) loadCustomVote();
+function normaliseReviewShowcaseConfig(data = {}) {
+  const interval = Number.parseInt(data.intervalSeconds, 10);
+  return {
+    active: data.active === true,
+    intervalSeconds: Math.min(30, Math.max(3, Number.isFinite(interval) ? interval : 6))
+  };
+}
+
+function setReviewShowcaseAdminStatus(text, type = '') {
+  const status = document.getElementById('review-showcase-admin-status');
+  if (!status) return;
+  status.textContent = text;
+  status.className = 'vote-admin-status' + (type ? ' ' + type : '');
+}
+
+function syncReviewShowcaseAdmin() {
+  const active = document.getElementById('review-showcase-admin-active');
+  const interval = document.getElementById('review-showcase-admin-interval');
+  if (active) active.checked = reviewShowcaseConfig.active;
+  if (interval) interval.value = String(reviewShowcaseConfig.intervalSeconds);
+  if (!orderAuth?.currentUser) setReviewShowcaseAdminStatus('Log masuk sebagai admin untuk urus paparan ulasan.');
+  else setReviewShowcaseAdminStatus(
+    reviewShowcaseConfig.active
+      ? `Paparan aktif dan bertukar setiap ${reviewShowcaseConfig.intervalSeconds} saat.`
+      : 'Paparan ulasan sedang dimatikan.',
+    reviewShowcaseConfig.active ? 'success' : ''
+  );
+}
+
+function loadReviewShowcaseConfig(force = false) {
+  if (!db) return;
+  if (reviewShowcaseConfigUnsubscribe && !force) {
+    syncReviewShowcaseAdmin();
+    return;
+  }
+  if (reviewShowcaseConfigUnsubscribe) reviewShowcaseConfigUnsubscribe();
+  reviewShowcaseConfigUnsubscribe = db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID)
+    .onSnapshot(snapshot => {
+      reviewShowcaseConfig = normaliseReviewShowcaseConfig(snapshot.exists ? snapshot.data() : {});
+      reviewShowcaseIndex = 0;
+      syncReviewShowcaseAdmin();
+      renderReviews(latestReviewStatsData);
+    }, error => {
+      console.warn('Review showcase config tidak dapat dimuatkan.', error);
+      setReviewShowcaseAdminStatus('Tak dapat baca tetapan. Semak Firestore Rules.', 'error');
+    });
+}
+
+async function saveReviewShowcaseSettings(event) {
+  event?.preventDefault();
+  if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const active = document.getElementById('review-showcase-admin-active')?.checked === true;
+  const intervalSeconds = Math.min(30, Math.max(3, Number.parseInt(document.getElementById('review-showcase-admin-interval')?.value, 10) || 6));
+  try {
+    setReviewShowcaseAdminStatus('Menyimpan tetapan...');
+    await db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID).set({
+      active,
+      intervalSeconds,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: orderAuth.currentUser.email || 'admin'
+    }, { merge:true });
+    setReviewShowcaseAdminStatus(active ? `Paparan aktif setiap ${intervalSeconds} saat.` : 'Paparan ulasan dimatikan.', active ? 'success' : '');
+    toast('Tetapan paparan ulasan berjaya disimpan.');
+  } catch (error) {
+    console.error('Review showcase save error:', error);
+    setReviewShowcaseAdminStatus('Tak dapat simpan. Semak Firestore Rules config.', 'error');
+  }
+}
+
+window.loadReviewShowcaseConfig = loadReviewShowcaseConfig;
+window.saveReviewShowcaseSettings = saveReviewShowcaseSettings;
+
+if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 
 // --- MANUAL TRANSACTION HISTORY (Firebase Firestore) ---
 function normaliseOrderCode(value) {
@@ -2798,8 +2876,8 @@ function syncOrderAdminUI() {
   if (jsonHelperDivider) jsonHelperDivider.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
-  if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); }
-  else syncCustomVoteAdmin(customVoteConfig);
+  if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); loadReviewShowcaseConfig(); }
+  else { syncCustomVoteAdmin(customVoteConfig); syncReviewShowcaseAdmin(); }
 }
 async function adminOrderLogin(event) {
   event.preventDefault();
@@ -3039,7 +3117,12 @@ function toReviewTime(value) {
   if (!value) return 'Baru sahaja';
   const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
   if (Number.isNaN(date.getTime())) return 'Baru sahaja';
-  return date.toLocaleString('ms-MY', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+  const seconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+  if (seconds < 60) return 'Baru sahaja';
+  if (seconds < 3600) return Math.floor(seconds / 60) + ' minit yang lalu';
+  if (seconds < 86400) return Math.floor(seconds / 3600) + ' jam yang lalu';
+  if (seconds < 2592000) return Math.floor(seconds / 86400) + ' hari yang lalu';
+  return date.toLocaleDateString('ms-MY', { day:'numeric', month:'short', year:'numeric' });
 }
 let unsubscribeReviews = null;
 let latestReviewStatsData = [];
@@ -3075,6 +3158,9 @@ function isReviewMaintenanceActive(config = currentStoreConfig) {
 function showReviewMaintenanceNotice() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
+  clearReviewShowcaseTimer();
+  grid.hidden = false;
+  grid.classList.remove('review-showcase-grid');
   const message = currentStoreConfig.review_maintenance_message
     || currentStoreConfig.review_maintenance_msg
     || 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.';
@@ -3158,43 +3244,88 @@ async function loadReviews() {
     grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
   }
 }
-function renderReviews(list) {
-  const grid = document.getElementById('testi-grid'); if (!grid) return;
+function clearReviewShowcaseTimer() {
+  if (reviewShowcaseTimer) clearTimeout(reviewShowcaseTimer);
+  reviewShowcaseTimer = null;
+}
+
+function scheduleReviewShowcase(list) {
+  clearReviewShowcaseTimer();
+  if (!reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
+  reviewShowcaseTimer = setTimeout(() => {
+    reviewShowcaseIndex = (reviewShowcaseIndex + 1) % list.length;
+    renderReviews(list);
+  }, reviewShowcaseConfig.intervalSeconds * 1000);
+}
+
+function changeReviewShowcase(direction) {
+  const list = latestReviewStatsData;
+  if (!list.length) return;
+  reviewShowcaseIndex = (reviewShowcaseIndex + direction + list.length) % list.length;
+  renderReviews(list);
+}
+window.changeReviewShowcase = changeReviewShowcase;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearReviewShowcaseTimer();
+  else if (reviewShowcaseConfig.active && latestReviewStatsData.length) renderReviews(latestReviewStatsData);
+});
+
+function renderReviews(list = []) {
+  const grid = document.getElementById('testi-grid');
+  if (!grid) return;
   updateMainReviewStats(list);
-  grid.innerHTML = '';
-  return;
+  clearReviewShowcaseTimer();
+
   if (isReviewMaintenanceActive()) {
+    grid.hidden = false;
+    grid.classList.remove('review-showcase-grid');
     showReviewMaintenanceNotice();
     return;
   }
-  if (!list.length) {
-    grid.innerHTML = '<div class="testi-loading">Belum ada ulasan terbaru.</div>';
+  if (!reviewShowcaseConfig.active) {
+    grid.hidden = true;
+    grid.classList.remove('review-showcase-grid');
+    grid.innerHTML = '';
     return;
   }
-  grid.innerHTML = list.map((item,i) => {
-    const rating = clampRating(item.bintang ?? item.rating);
-    const stars = Array(5).fill(0).map((_,si) => '<i class="fa-solid fa-star" style="color:' + (si<rating?'var(--sky)':'var(--border2)') + '"></i>').join('');
-    const name = item.nama || item.name || 'Pelanggan';
-    const text = item.ulasan || item.komen || item.comment || item.feedback || '';
-    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
-    const avatar = item.profileImg
-      ? '<img src="' + escapeHtml(item.profileImg) + '" alt="">'
-      : escapeHtml(item.emojiProfil || initials);
-    const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
-    const isAdmin = name.toLowerCase().includes('h4sx');
-    const roleText = item.role || item.badgeText;
-    const role = roleText
-      ? '<span class="testi-role' + (item.badgeAnimated === false ? '' : ' is-animated') + '" style="' + badgeStyle(item) + '">' + escapeHtml(roleText) + '</span>'
-      : (isAdmin ? '<span class="testi-role is-animated" style="' + badgeStyle({ badgeColor:'#2fa8e0', badgeColor2:'#0f2a45', badgeTextColor:'#ffffff', badgeGlowColor:'#2fa8e0', badgeGradient:true }) + '">ADMIN RASMI</span>' : '<span class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>');
-    const feedbackBtn = item.feedbackImg ? '<button class="testi-feedback-btn" type="button" data-review-index="' + i + '">See image</button>' : '';
-    return '<div class="testi-card reveal ' + (['','reveal-delay-1','reveal-delay-2'][i%3]) + '"><div class="testi-stars">' + stars + '</div><div class="testi-text">"' + escapeHtml(text) + '"</div>' + feedbackBtn + '<div class="testi-bottom"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div><div class="testi-name">' + escapeHtml(name) + '</div><div class="testi-game">' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</div></div>' + role + '</div></div>';
-  }).join('');
-  grid.querySelectorAll('.testi-feedback-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const item = list[Number(btn.dataset.reviewIndex)];
-      openTestimonialImage(item?.feedbackImg);
-    });
-  });
+
+  grid.hidden = false;
+  grid.classList.add('review-showcase-grid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="testi-loading">Belum ada ulasan pelanggan untuk dipaparkan.</div>';
+    return;
+  }
+
+  reviewShowcaseIndex = ((reviewShowcaseIndex % list.length) + list.length) % list.length;
+  const item = list[reviewShowcaseIndex];
+  const rating = clampRating(item.bintang ?? item.rating);
+  const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
+  const name = item.nama || item.name || 'Pelanggan';
+  const text = item.ulasan || item.komen || item.comment || item.feedback || 'Rating diberikan tanpa ulasan teks.';
+  const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const avatar = item.profileImg ? '<img src="' + escapeHtml(item.profileImg) + '" alt="Profil ' + escapeHtml(name) + '">' : escapeHtml(item.emojiProfil || initials);
+  const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
+  const isAdmin = name.toLowerCase().includes('h4sx');
+  const roleText = item.role || item.badgeText;
+  const role = roleText
+    ? '<span class="testi-role' + (item.badgeAnimated === false ? '' : ' is-animated') + '" style="' + badgeStyle(item) + '">' + escapeHtml(roleText) + '</span>'
+    : (isAdmin ? '<span class="testi-role is-animated" style="' + badgeStyle({ badgeColor:'#2fa8e0', badgeColor2:'#0f2a45', badgeTextColor:'#ffffff', badgeGlowColor:'#2fa8e0', badgeGradient:true }) + '">ADMIN RASMI</span>' : '<span class="testi-verified"><i class="fa-solid fa-circle-check"></i> Verified</span>');
+  const feedbackBtn = item.feedbackImg ? '<button class="testi-feedback-btn" id="review-showcase-image" type="button"><i class="fa-solid fa-image"></i> Lihat gambar</button>' : '';
+  const controls = list.length > 1 ? '<div class="review-showcase-controls"><button type="button" onclick="changeReviewShowcase(-1)" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><span>' + (reviewShowcaseIndex + 1) + ' / ' + list.length + '</span><button type="button" onclick="changeReviewShowcase(1)" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button></div>' : '<div class="review-showcase-controls"><span>1 / 1</span></div>';
+
+  grid.innerHTML = '<article class="review-showcase-card" aria-live="polite">' +
+    '<div class="review-showcase-accent"></div>' +
+    '<div class="review-showcase-head"><div><span class="review-showcase-kicker"><i class="fa-solid fa-comment-dots"></i> ULASAN PELANGGAN</span><div class="testi-stars">' + stars + '</div></div>' + controls + '</div>' +
+    '<blockquote>&ldquo;' + escapeHtml(text) + '&rdquo;</blockquote>' + feedbackBtn +
+    '<div class="review-showcase-footer"><div class="testi-avatar"' + avatarStyle + '>' + avatar + '</div><div class="review-showcase-person"><strong>' + escapeHtml(name) + '</strong><small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></div>' + role + '<a href="https://review.h4sxmy.xyz/" class="review-showcase-all" aria-label="Lihat semua ulasan"><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div>' +
+    (list.length > 1 ? '<div class="review-showcase-progress"><span style="animation-duration:' + reviewShowcaseConfig.intervalSeconds + 's"></span></div>' : '') +
+    '</article>';
+
+  document.getElementById('review-showcase-image')?.addEventListener('click', () => openTestimonialImage(item.feedbackImg));
+  const card = grid.querySelector('.review-showcase-card');
+  card?.addEventListener('mouseenter', clearReviewShowcaseTimer);
+  card?.addEventListener('mouseleave', () => scheduleReviewShowcase(list));
+  scheduleReviewShowcase(list);
 }
 function openTestimonialImage(src) {
   if (!src) return;

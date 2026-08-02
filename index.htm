@@ -47,7 +47,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-review-popup-mobile-16">
+  <link rel="stylesheet" href="styles.css?v=h4sx-review-showcase-20260802">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -775,6 +775,20 @@
         <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">&mdash;</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">&mdash;</strong></div></div>
         <div id="visitor-history" class="visitor-history">Loading sejarah pelawat...</div>
       </div>
+      <section class="review-showcase-admin" aria-labelledby="review-showcase-admin-title">
+        <div class="vote-admin-head">
+          <div><span>ULASAN PILIHAN</span><h3 id="review-showcase-admin-title">Paparan Ulasan Automatik</h3><p>Tunjukkan satu ulasan pada satu masa, bermula daripada yang terbaru.</p></div>
+          <button type="button" onclick="loadReviewShowcaseConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <form class="review-showcase-admin-form" onsubmit="saveReviewShowcaseSettings(event)">
+          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan ulasan di website</b></label>
+          <label>Ulasan bertukar setiap
+            <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
+          </label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
+          <div class="vote-admin-status" id="review-showcase-admin-status">Log masuk untuk urus paparan ulasan.</div>
+        </form>
+      </section>
       <section class="vote-admin-panel" aria-labelledby="vote-admin-title">
         <div class="vote-admin-head"><div><span>FIREBASE CUSTOM VOTE</span><h3 id="vote-admin-title">Tetapan Undian</h3><p>Hidupkan, tukar ayat atau pilihan vote yang pelanggan nampak.</p></div><button type="button" onclick="loadCustomVote(true)"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
         <form class="vote-admin-form" onsubmit="saveCustomVote(event)">
@@ -810,7 +824,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-inspect-guard-20260731"></script>
+<script defer src="app.js?v=h4sx-review-showcase-20260802"></script>
 
 </body>
 </html>
