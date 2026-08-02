@@ -47,7 +47,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-review-popup-controls-20260802">
+  <link rel="stylesheet" href="styles.css?v=h4sx-review-popup-premium-20260802">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -785,6 +785,14 @@
           <label>Ulasan bertukar setiap
             <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
           </label>
+          <label>Posisi asal notis
+            <select id="review-showcase-admin-position">
+              <option value="top-left">Kiri atas</option>
+              <option value="top-right">Kanan atas</option>
+              <option value="bottom-left">Kiri bawah</option>
+              <option value="bottom-right">Kanan bawah</option>
+            </select>
+          </label>
           <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
           <div class="vote-admin-status" id="review-showcase-admin-status">Log masuk untuk urus paparan ulasan.</div>
         </form>
@@ -824,7 +832,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-review-popup-controls-20260802"></script>
+<script defer src="app.js?v=h4sx-review-popup-premium-20260802"></script>
 
 </body>
 </html>

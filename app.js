@@ -2398,6 +2398,7 @@ const CUSTOM_VOTE_DEVICE_KEY = 'h4sx_custom_vote_device';
 const CUSTOM_VOTE_CHOICE_PREFIX = 'h4sx_custom_vote_choice_';
 const REVIEW_SHOWCASE_CONFIG_COLLECTION = 'config';
 const REVIEW_SHOWCASE_CONFIG_ID = 'review_showcase';
+const REVIEW_SHOWCASE_POSITION_KEY = 'h4sx_review_popup_position';
 const PROMO_REDEMPTIONS_COLLECTION = 'promo_redemptions';
 const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
@@ -2411,11 +2412,12 @@ let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
 let customVoteEndTimer = null;
 let customVoteDirectLinkHandled = false;
-let reviewShowcaseConfig = { active:false, intervalSeconds:6 };
+let reviewShowcaseConfig = { active:false, intervalSeconds:6, position:'top-left' };
 let reviewShowcaseConfigUnsubscribe = null;
 let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
 let reviewShowcaseDismissed = false;
+let reviewShowcasePaused = false;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -2713,9 +2715,11 @@ window.copyCustomVoteLink = copyCustomVoteLink;
 
 function normaliseReviewShowcaseConfig(data = {}) {
   const interval = Number.parseInt(data.intervalSeconds, 10);
+  const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
   return {
     active: data.active === true,
-    intervalSeconds: Math.min(30, Math.max(3, Number.isFinite(interval) ? interval : 6))
+    intervalSeconds: Math.min(30, Math.max(3, Number.isFinite(interval) ? interval : 6)),
+    position: positions.includes(data.position) ? data.position : 'top-left'
   };
 }
 
@@ -2729,8 +2733,10 @@ function setReviewShowcaseAdminStatus(text, type = '') {
 function syncReviewShowcaseAdmin() {
   const active = document.getElementById('review-showcase-admin-active');
   const interval = document.getElementById('review-showcase-admin-interval');
+  const position = document.getElementById('review-showcase-admin-position');
   if (active) active.checked = reviewShowcaseConfig.active;
   if (interval) interval.value = String(reviewShowcaseConfig.intervalSeconds);
+  if (position) position.value = reviewShowcaseConfig.position;
   if (!orderAuth?.currentUser) setReviewShowcaseAdminStatus('Log masuk sebagai admin untuk urus paparan ulasan.');
   else setReviewShowcaseAdminStatus(
     reviewShowcaseConfig.active
@@ -2752,6 +2758,7 @@ function loadReviewShowcaseConfig(force = false) {
       reviewShowcaseConfig = normaliseReviewShowcaseConfig(snapshot.exists ? snapshot.data() : {});
       reviewShowcaseIndex = 0;
       syncReviewShowcaseAdmin();
+      applyReviewPopupDefaultPosition();
       renderReviews(latestReviewStatsData);
     }, error => {
       console.warn('Review showcase config tidak dapat dimuatkan.', error);
@@ -2764,11 +2771,14 @@ async function saveReviewShowcaseSettings(event) {
   if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
   const active = document.getElementById('review-showcase-admin-active')?.checked === true;
   const intervalSeconds = Math.min(30, Math.max(3, Number.parseInt(document.getElementById('review-showcase-admin-interval')?.value, 10) || 6));
+  const positionInput = document.getElementById('review-showcase-admin-position')?.value || 'top-left';
+  const position = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(positionInput) ? positionInput : 'top-left';
   try {
     setReviewShowcaseAdminStatus('Menyimpan tetapan...');
     await db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID).set({
       active,
       intervalSeconds,
+      position,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: orderAuth.currentUser.email || 'admin'
     }, { merge:true });
@@ -3251,6 +3261,36 @@ function clearReviewShowcaseTimer() {
   reviewShowcaseTimer = null;
 }
 
+function getStoredReviewPopupPosition() {
+  try {
+    const value = JSON.parse(localStorage.getItem(REVIEW_SHOWCASE_POSITION_KEY) || 'null');
+    return Number.isFinite(value?.left) && Number.isFinite(value?.top) ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function applyReviewPopupDefaultPosition() {
+  const popup = document.getElementById('review-showcase-popup');
+  if (!popup || getStoredReviewPopupPosition()) return;
+  popup.classList.remove('position-top-left', 'position-top-right', 'position-bottom-left', 'position-bottom-right', 'has-custom-position');
+  popup.classList.add('position-' + reviewShowcaseConfig.position);
+  popup.style.left = '';
+  popup.style.top = '';
+}
+
+function restoreReviewPopupPosition(popup) {
+  const saved = getStoredReviewPopupPosition();
+  if (!saved) {
+    applyReviewPopupDefaultPosition();
+    return;
+  }
+  popup.classList.add('has-custom-position');
+  popup.style.left = saved.left + 'px';
+  popup.style.top = saved.top + 'px';
+  requestAnimationFrame(clampReviewPopupToViewport);
+}
+
 function getReviewShowcasePopup() {
   let popup = document.getElementById('review-showcase-popup');
   if (popup) return popup;
@@ -3259,8 +3299,15 @@ function getReviewShowcasePopup() {
   popup.className = 'review-showcase-popup';
   popup.setAttribute('aria-live', 'polite');
   document.body.appendChild(popup);
-  popup.addEventListener('mouseenter', clearReviewShowcaseTimer);
-  popup.addEventListener('mouseleave', () => scheduleReviewShowcase(latestReviewStatsData));
+  restoreReviewPopupPosition(popup);
+  popup.addEventListener('mouseenter', () => {
+    clearReviewShowcaseTimer();
+    popup.classList.add('is-hover-paused');
+  });
+  popup.addEventListener('mouseleave', () => {
+    popup.classList.remove('is-hover-paused');
+    renderReviews(latestReviewStatsData);
+  });
   popup.addEventListener('click', event => {
     if (!event.target.closest('.review-popup-close')) return;
     event.preventDefault();
@@ -3304,6 +3351,10 @@ function startReviewPopupDrag(event) {
   };
   const stop = () => {
     popup.classList.remove('is-dragging');
+    const finalRect = popup.getBoundingClientRect();
+    try {
+      localStorage.setItem(REVIEW_SHOWCASE_POSITION_KEY, JSON.stringify({ left:Math.round(finalRect.left), top:Math.round(finalRect.top) }));
+    } catch (error) {}
     window.removeEventListener('pointermove', move);
     window.removeEventListener('pointerup', stop);
     window.removeEventListener('pointercancel', stop);
@@ -3331,30 +3382,50 @@ function showReviewShowcasePopup(item, total) {
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleText = item.role || item.badgeText || 'Pembeli disahkan';
   const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
+  const imageButton = item.feedbackImg ? '<button id="review-popup-image" type="button" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image"></i></button>' : '';
+  const pauseIcon = reviewShowcasePaused ? 'fa-play' : 'fa-pause';
+  const pauseLabel = reviewShowcasePaused ? 'Sambung automatik' : 'Pause automatik';
 
-  popup.classList.remove('is-visible');
+  popup.classList.remove('is-visible', 'is-leaving');
+  popup.classList.toggle('is-paused', reviewShowcasePaused);
   popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
   popup.innerHTML = '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
     '<a class="review-popup-link" href="https://review.h4sxmy.xyz/" aria-label="Buka semua ulasan pelanggan">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<strong>' + escapeHtml(name) + '</strong><span class="review-popup-stars">' + stars + '</span>' +
+    '<span class="review-popup-name"><strong>' + escapeHtml(name) + '</strong><i class="fa-solid fa-circle-check" title="Pembeli disahkan"></i></span><span class="review-popup-stars">' + stars + '</span>' +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></a>' +
-    (total > 1 ? '<span class="review-popup-controls"><button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button></span>' : '') +
+    '<span class="review-popup-controls">' + imageButton +
+    (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button><button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button>' : '') + '</span>' +
     '<span class="review-popup-progress"></span>';
   void popup.offsetWidth;
   popup.classList.add('is-visible');
+  document.getElementById('review-popup-image')?.addEventListener('click', event => {
+    event.preventDefault();
+    openTestimonialImage(item.feedbackImg);
+  });
 }
 
 function scheduleReviewShowcase(list) {
   clearReviewShowcaseTimer();
-  if (reviewShowcaseDismissed || !reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
+  if (reviewShowcaseDismissed || reviewShowcasePaused || !reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
   reviewShowcaseTimer = setTimeout(() => {
-    reviewShowcaseIndex = (reviewShowcaseIndex + 1) % list.length;
-    renderReviews(list);
+    const popup = document.getElementById('review-showcase-popup');
+    popup?.classList.add('is-leaving');
+    reviewShowcaseTimer = setTimeout(() => {
+      reviewShowcaseIndex = (reviewShowcaseIndex + 1) % list.length;
+      renderReviews(list);
+    }, 280);
   }, reviewShowcaseConfig.intervalSeconds * 1000);
 }
+
+function toggleReviewShowcasePause() {
+  reviewShowcasePaused = !reviewShowcasePaused;
+  if (reviewShowcasePaused) clearReviewShowcaseTimer();
+  renderReviews(latestReviewStatsData);
+}
+window.toggleReviewShowcasePause = toggleReviewShowcasePause;
 
 function changeReviewShowcase(direction) {
   const list = latestReviewStatsData;
