@@ -2415,6 +2415,7 @@ let reviewShowcaseConfig = { active:false, intervalSeconds:6 };
 let reviewShowcaseConfigUnsubscribe = null;
 let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
+let reviewShowcaseDismissed = false;
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -3253,16 +3254,63 @@ function clearReviewShowcaseTimer() {
 function getReviewShowcasePopup() {
   let popup = document.getElementById('review-showcase-popup');
   if (popup) return popup;
-  popup = document.createElement('a');
+  popup = document.createElement('div');
   popup.id = 'review-showcase-popup';
   popup.className = 'review-showcase-popup';
-  popup.href = 'https://review.h4sxmy.xyz/';
   popup.setAttribute('aria-live', 'polite');
-  popup.setAttribute('aria-label', 'Buka semua ulasan pelanggan');
   document.body.appendChild(popup);
   popup.addEventListener('mouseenter', clearReviewShowcaseTimer);
   popup.addEventListener('mouseleave', () => scheduleReviewShowcase(latestReviewStatsData));
+  popup.addEventListener('click', event => {
+    if (!event.target.closest('.review-popup-close')) return;
+    event.preventDefault();
+    reviewShowcaseDismissed = true;
+    clearReviewShowcaseTimer();
+    hideReviewShowcasePopup();
+  });
+  popup.addEventListener('pointerdown', startReviewPopupDrag);
+  window.addEventListener('resize', clampReviewPopupToViewport);
   return popup;
+}
+
+function clampReviewPopupToViewport() {
+  const popup = document.getElementById('review-showcase-popup');
+  if (!popup || !popup.classList.contains('has-custom-position')) return;
+  const rect = popup.getBoundingClientRect();
+  const margin = 8;
+  popup.style.left = Math.min(Math.max(margin, rect.left), Math.max(margin, window.innerWidth - rect.width - margin)) + 'px';
+  popup.style.top = Math.min(Math.max(margin, rect.top), Math.max(margin, window.innerHeight - rect.height - margin)) + 'px';
+}
+
+function startReviewPopupDrag(event) {
+  const handle = event.target.closest('.review-popup-drag');
+  if (!handle || event.button > 0) return;
+  const popup = event.currentTarget;
+  const rect = popup.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
+  const margin = 8;
+  popup.classList.add('is-dragging', 'has-custom-position');
+  popup.style.left = rect.left + 'px';
+  popup.style.top = rect.top + 'px';
+  handle.setPointerCapture?.(event.pointerId);
+  event.preventDefault();
+
+  const move = moveEvent => {
+    const maxLeft = Math.max(margin, window.innerWidth - popup.offsetWidth - margin);
+    const maxTop = Math.max(margin, window.innerHeight - popup.offsetHeight - margin);
+    popup.style.left = Math.min(Math.max(margin, moveEvent.clientX - offsetX), maxLeft) + 'px';
+    popup.style.top = Math.min(Math.max(margin, moveEvent.clientY - offsetY), maxTop) + 'px';
+  };
+  const stop = () => {
+    popup.classList.remove('is-dragging');
+    window.removeEventListener('pointermove', move);
+    window.removeEventListener('pointerup', stop);
+    window.removeEventListener('pointercancel', stop);
+  };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('pointercancel', stop);
 }
 
 function hideReviewShowcasePopup() {
@@ -3271,6 +3319,7 @@ function hideReviewShowcasePopup() {
 }
 
 function showReviewShowcasePopup(item, total) {
+  if (reviewShowcaseDismissed) return;
   const popup = getReviewShowcasePopup();
   const rating = clampRating(item.bintang ?? item.rating);
   const name = item.nama || item.name || 'Pelanggan';
@@ -3285,10 +3334,13 @@ function showReviewShowcasePopup(item, total) {
 
   popup.classList.remove('is-visible');
   popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
-  popup.innerHTML = '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
+  popup.innerHTML = '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
+    '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
+    '<a class="review-popup-link" href="https://review.h4sxmy.xyz/" aria-label="Buka semua ulasan pelanggan">' +
+    '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
     '<strong>' + escapeHtml(name) + '</strong><span class="review-popup-stars">' + stars + '</span>' +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></a>' +
     '<span class="review-popup-progress"></span>';
   void popup.offsetWidth;
   popup.classList.add('is-visible');
@@ -3296,7 +3348,7 @@ function showReviewShowcasePopup(item, total) {
 
 function scheduleReviewShowcase(list) {
   clearReviewShowcaseTimer();
-  if (!reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
+  if (reviewShowcaseDismissed || !reviewShowcaseConfig.active || list.length < 2 || document.hidden) return;
   reviewShowcaseTimer = setTimeout(() => {
     reviewShowcaseIndex = (reviewShowcaseIndex + 1) % list.length;
     renderReviews(list);
