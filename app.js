@@ -5477,7 +5477,7 @@ function renderProductModalSelection(item, refreshMedia = true) {
       const soldOut = Number.isFinite(Number(variant.stock)) && Number(variant.stock) <= 0;
       const active = variant.id === modalVariantId ? ' active' : '';
       const image = variant.img ? '<img src="' + escapeHtml(variant.img) + '" alt="" loading="lazy">' : '';
-      return '<button type="button" class="pm-variant' + active + '" onclick="selectProductVariant(' + JSON.stringify(variant.id) + ')"' + (soldOut ? ' disabled' : '') + '>' + image + '<span>' + escapeHtml(variant.name) + '</span></button>';
+      return '<button type="button" class="pm-variant' + active + '" data-variant-id="' + escapeHtml(variant.id) + '" onclick="selectProductVariant(this.dataset.variantId)"' + (soldOut ? ' disabled' : '') + '>' + image + '<span>' + escapeHtml(variant.name) + '</span></button>';
     }).join('');
   }
   const max = getMaxPurchase(displayItem) || 20;
