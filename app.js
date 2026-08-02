@@ -222,7 +222,7 @@ function openReceipt() {
     div.className = 'receipt-item-line';
     div.innerHTML = `
       <div>
-        <div class="receipt-item-name">${item.name}${promo.valid ? ' (' + promo.promo.code + ')' : ''}</div>
+        <div class="receipt-item-name">${cartEntryName(item, ci)}${promo.valid ? ' (' + promo.promo.code + ')' : ''}</div>
         <div class="receipt-item-qty">x${ci.qty}</div>
       </div>
       <div class="receipt-item-price">RM${itemTotal.toFixed(2)}</div>
@@ -247,7 +247,7 @@ Item Dibeli:
     const item = inventory.find(i => i.id === ci.id);
     if (!item) return;
     const promo = getCartPromoResult(item, ci);
-    currentReceiptText += `- ${item.name}${promo.valid ? ' [' + promo.promo.code + ']' : ''} x${ci.qty} = RM${(promo.final * ci.qty).toFixed(2)}\n`;
+    currentReceiptText += `- ${cartEntryName(item, ci)}${promo.valid ? ' [' + promo.promo.code + ']' : ''} x${ci.qty} = RM${(promo.final * ci.qty).toFixed(2)}\n`;
   });
   currentReceiptText += `
 ============================
@@ -730,6 +730,7 @@ const PAY_QR = {
   tng:     { url:'https://i.ibb.co/bRyG06zY/image.png', name:'Nurwazni', sub:"Touch 'n Go eWallet", wa:'TNG eWallet' }
 };
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
+let modalVariantId = '', modalQuantity = 1;
 let catalogProgressTimer = null;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
@@ -3604,15 +3605,44 @@ function productMiniStatusHTML(item) {
   if (updated || item.recentlyUpdated) chips.push('<span class="pstatus-chip updated"><i class="fa-solid fa-clock-rotate-left"></i>' + escapeHtml(updated || 'Updated') + '</span>');
   return chips.length ? '<div class="pstatus-row">' + chips.slice(0, 3).join('') + '</div>' : '';
 }
-function isOutOfStock(item) { 
+function productVariants(item) {
+  const source = Array.isArray(item?.variants) ? item.variants : (Array.isArray(item?.types) ? item.types : []);
+  return source.filter(variant => variant && variant.active !== false).map((variant, index) => ({
+    ...variant,
+    id: String(variant.id ?? variant.value ?? variant.name ?? index).trim(),
+    name: String(variant.name ?? variant.label ?? ('Pilihan ' + (index + 1))).trim(),
+    price: Number.isFinite(Number(variant.price)) ? Number(variant.price) : Number(item?.price || 0),
+    originalPrice: Number.isFinite(Number(variant.originalPrice)) ? Number(variant.originalPrice) : Number(item?.originalPrice || 0),
+    stock: variant.stock == null ? item?.stock : Number(variant.stock),
+    img: variant.img || variant.image || item?.img,
+    poster: variant.poster || variant.img || variant.image || item?.poster
+  }));
+}
+function getProductVariant(item, variantId) {
+  return productVariants(item).find(variant => variant.id === String(variantId || '')) || null;
+}
+function effectiveProductItem(item, variantId) {
+  const variant = getProductVariant(item, variantId);
+  if (!variant) return item;
+  return { ...item, ...variant, id: item.id, name: item.name, variantName: variant.name, variantId: variant.id };
+}
+function cartEntryKey(id, variantId = '') { return String(id) + '::' + String(variantId || ''); }
+function cartEntryName(item, cartItem) {
+  const variant = getProductVariant(item, cartItem?.variantId);
+  return variant ? item.name + ' - ' + variant.name : item.name;
+}
+function modalEffectiveItem(item) { return effectiveProductItem(item, modalVariantId); }
+function isOutOfStock(item, variantId = '') {
+  const variants = productVariants(item);
+  if (!variantId && variants.length) return variants.every(variant => isOutOfStock(item, variant.id));
+  item = effectiveProductItem(item, variantId);
   if (item.stock == null) return false;
-  const cartItem = cartItems.find(ci => ci.id === item.id);
+  const cartItem = cartItems.find(ci => cartEntryKey(ci.id, ci.variantId) === cartEntryKey(item.id, variantId));
   const currentQty = cartItem ? cartItem.qty : 0;
   return currentQty >= item.stock; 
 }
-function getCartQtyForItem(id) {
-  const ci = cartItems.find(c => c.id === id);
-  return ci ? ci.qty : 0;
+function getCartQtyForItem(id, variantId = null) {
+  return cartItems.filter(ci => ci.id === id && (variantId === null || String(ci.variantId || '') === String(variantId || ''))).reduce((sum, ci) => sum + Number(ci.qty || 0), 0);
 }
 let productModalPromoTimer = null;
 function promoExpiryTimestamp(item) {
@@ -3957,7 +3987,7 @@ function syncProductPromoCard(item) {
   });
 }
 function getCartPromoResult(item, cartItem) {
-  return productPromoResult(item, cartItem?.promoCode);
+  return productPromoResult(effectiveProductItem(item, cartItem?.variantId), cartItem?.promoCode);
 }
 function getCartUnitPrice(item, cartItem) {
   return getCartPromoResult(item, cartItem).final;
@@ -3965,9 +3995,10 @@ function getCartUnitPrice(item, cartItem) {
 function getProductModalPromoCode() {
   const item = inventory.find(entry => String(entry.id) === String(modalItemId));
   const value = document.getElementById('product-modal-promo-input')?.value || savedProductPromoCode(item);
-  return productPromoResult(item, value).valid ? value.trim().toUpperCase() : '';
+  return productPromoResult(modalEffectiveItem(item), value).valid ? value.trim().toUpperCase() : '';
 }
 function syncProductModalPromo(item) {
+  item = modalEffectiveItem(item);
   const wrap = document.getElementById('product-modal-promo');
   const input = document.getElementById('product-modal-promo-input');
   const status = document.getElementById('product-modal-promo-status');
@@ -4228,11 +4259,15 @@ function buildAddBtnHTML(item, oos) {
   const qty = getCartQtyForItem(item.id);
   const inCart = qty > 0 ? ' in-cart' : '';
   const qtyBadge = qty > 0 ? '<span class="padd-qty">' + qty + '</span>' : '';
-  return '<button class="padd' + inCart + '" onclick="event.stopPropagation();event.preventDefault();addCart(' + item.id + ', this)"><i class="fa-solid fa-cart-plus"></i><span class="padd-txt">Cart</span>' + qtyBadge + '</button>';
+  const action = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
+  return '<button class="padd' + inCart + '" onclick="event.stopPropagation();event.preventDefault();' + action + '"><i class="fa-solid fa-cart-plus"></i><span class="padd-txt">Cart</span>' + qtyBadge + '</button>';
 }
 function buildQuickBarHTML(item, oos) {
   if (oos) return '';
-  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();addCart(' + item.id + ', this)"><i class="fa-solid fa-cart-plus"></i> Add Cart</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
+  const hasVariants = productVariants(item).length > 0;
+  const cartAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
+  const buyAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
+  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();' + cartAction + '"><i class="fa-solid fa-cart-plus"></i> ' + (hasVariants ? 'Pilih Type' : 'Add Cart') + '</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
 }
 let currentProductItems = [];
 let currentProductBanner = '';
@@ -4401,17 +4436,21 @@ function productCardHTML(item) {
     }
     itemQRHTML += '</div>';
   }
-  const appliedPromo = productPromoResult(item, savedProductPromoCode(item));
-  const pHTML = appliedPromo.valid
+  const variants = productVariants(item);
+  const startingPrice = variants.length ? Math.min(...variants.map(variant => Number(variant.price || 0))) : Number(item.price || 0);
+  const priceItem = variants.length ? { ...item, price: startingPrice, originalPrice: 0 } : item;
+  const appliedPromo = productPromoResult(priceItem, savedProductPromoCode(item));
+  const pHTML = (variants.length ? '<span class="pprice-prefix">Dari</span>' : '') + (appliedPromo.valid
     ? '<span class="pprice">RM' + appliedPromo.final.toFixed(2) + '</span><span class="pprice-old">RM' + appliedPromo.base.toFixed(2) + '</span>'
     : ((item.originalPrice && item.originalPrice > item.price)
       ? '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span><span class="pprice-old">RM' + escapeHtml(item.originalPrice) + '</span>'
-      : '<span class="pprice">RM' + Number(item.price).toFixed(2) + '</span>');
+      : '<span class="pprice">RM' + startingPrice.toFixed(2) + '</span>'));
   const cartQty = getCartQtyForItem(item.id);
   const cartHint = cartQty > 0 ? '<span class="pcart-hint show"><i class="fa-solid fa-check-circle"></i> ' + cartQty + ' in cart</span>' : '<span class="pcart-hint" data-item-id="' + item.id + '"><i class="fa-solid fa-check-circle"></i> in cart</span>';
   const addBtn = buildAddBtnHTML(item, oos);
   const shareBtn = '<button class="pshare" type="button" onclick="event.stopPropagation();event.preventDefault();shareProductItem(' + item.id + ')" title="Kongsi item" aria-label="Kongsi ' + escapeHtml(item.name) + '"><i class="fa-solid fa-share-nodes"></i></button>';
-  const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
+  const buyAction = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
+  const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
   return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
@@ -4625,8 +4664,8 @@ function flyToCart(originEl) {
 function updateModalCartBtn(item) {
   const btn = document.getElementById('product-modal-cart-btn');
   if (!btn || !item) return;
-  const oos = isOutOfStock(item);
-  const qty = getCartQtyForItem(item.id);
+  const oos = isOutOfStock(item, modalVariantId);
+  const qty = getCartQtyForItem(item.id, modalVariantId);
   btn.disabled = oos;
   btn.classList.toggle('in-cart', qty > 0);
   btn.innerHTML = oos
@@ -5168,22 +5207,28 @@ function addCart(input, originEl, options = {}) {
     name = input;
     item = { id: name, name: name, price: 0, game: 'PS' }; 
   }
-  if (typeof input === 'number' && isOutOfStock(item)) { toast('Barang habis stok!',true); return; }
+  const variantId = typeof input === 'number' ? String(options.variantId || '') : '';
+  const variant = typeof input === 'number' ? getProductVariant(item, variantId) : null;
+  if (typeof input === 'number' && productVariants(item).length && !variant) { openProductImage(item.id); toast('Pilih type dahulu'); return; }
+  const effectiveItem = typeof input === 'number' ? effectiveProductItem(item, variantId) : item;
+  const requestedQty = Math.max(1, Math.floor(Number(options.qty || 1)));
+  if (typeof input === 'number' && isOutOfStock(item, variantId)) { toast('Barang habis stok!',true); return; }
   if (getCartCount()>=20) { toast('Cart penuh (max 20)',true); return; }
   
-  const ex = cartItems.find(ci=>ci.id === (typeof input === 'number' ? input : name));
-  const max = (typeof input === 'number') ? getMaxPurchase(item) : 1;
+  const targetId = typeof input === 'number' ? input : name;
+  const ex = cartItems.find(ci => cartEntryKey(ci.id, ci.variantId) === cartEntryKey(targetId, variantId));
+  const max = (typeof input === 'number') ? getMaxPurchase(effectiveItem) : 1;
   
-  if (max && ex && ex.qty >= max) { 
+  if (max && ((ex?.qty || 0) + requestedQty) > max) {
     toast('Limit pembelian item ini: ' + max + 'x', true); 
     return; 
   }
-  const requestedPromo = typeof input === 'number' ? productPromoResult(item, options.promoCode) : { valid: false };
+  const requestedPromo = typeof input === 'number' ? productPromoResult(effectiveItem, options.promoCode) : { valid: false };
   if (ex) {
-    ex.qty++;
+    ex.qty += requestedQty;
     if (requestedPromo.valid) ex.promoCode = requestedPromo.promo.code;
   } else {
-    cartItems.push({ id: (typeof input === 'number' ? input : name), qty: 1, ...(requestedPromo.valid ? { promoCode: requestedPromo.promo.code } : {}) });
+    cartItems.push({ id: targetId, qty: requestedQty, ...(variant ? { variantId: variant.id, variantName: variant.name } : {}), ...(requestedPromo.valid ? { promoCode: requestedPromo.promo.code } : {}) });
   }
   
   playH4sxSound('cart');
@@ -5201,18 +5246,18 @@ function addCart(input, originEl, options = {}) {
   clearTimeout(toastTimeouts[name]);
   toastTimeouts[name] = setTimeout(() => { spamCounts[name] = 0; }, 3000);
 }
-function changeQty(id, delta) {
-  const ci = cartItems.find(c=>c.id===id); if (!ci) return;
-  const item = inventory.find(i=>i.id===id); const max = getMaxPurchase(item);
+function changeQty(key, delta) {
+  const ci = cartItems.find(c => cartEntryKey(c.id, c.variantId) === String(key)); if (!ci) return;
+  const item = inventory.find(i=>i.id===ci.id); const max = getMaxPurchase(effectiveProductItem(item, ci.variantId));
   if (delta > 0 && max && ci.qty >= max) { toast('Limit: ' + max + 'x', true); return; }
-  ci.qty += delta; if (ci.qty<=0) cartItems = cartItems.filter(c=>c.id!==id);
+  ci.qty += delta; if (ci.qty<=0) cartItems = cartItems.filter(c => cartEntryKey(c.id, c.variantId) !== String(key));
   persistCart();
   updateBadge(); 
   renderCart();
   updateAddButtons();
 }
-function removeItem(id) { 
-  cartItems = cartItems.filter(c=>c.id!==id); 
+function removeItem(key) {
+  cartItems = cartItems.filter(c => cartEntryKey(c.id, c.variantId) !== String(key));
   persistCart();
   updateBadge(); 
   renderCart();
@@ -5238,7 +5283,7 @@ function persistCart() {
   try {
     const cleanCart = cartItems
       .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
-      .map(item => ({ id: item.id, qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }));
+      .map(item => ({ id: item.id, qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(item.variantId ? { variantId:String(item.variantId), variantName:String(item.variantName || '') } : {}), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }));
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cleanCart));
   } catch (error) {
     console.warn('Cart tidak dapat disimpan', error);
@@ -5251,7 +5296,7 @@ function restoreCart() {
     cartItems = savedCart
       .filter(item => item && item.id !== undefined && Number.isFinite(Number(item.qty)) && Number(item.qty) > 0)
       .slice(0, 20)
-      .map(item => ({ id: typeof item.id === 'number' ? item.id : Number(item.id), qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }))
+      .map(item => ({ id: typeof item.id === 'number' ? item.id : Number(item.id), qty: Math.max(1, Math.min(20, Math.floor(Number(item.qty)))), ...(item.variantId ? { variantId:String(item.variantId), variantName:String(item.variantName || '') } : {}), ...(String(item.promoCode || '').trim() ? { promoCode: String(item.promoCode).trim().toUpperCase() } : {}) }))
       .filter(item => Number.isFinite(item.id));
   } catch (error) {
     localStorage.removeItem(CART_STORAGE_KEY);
@@ -5268,13 +5313,16 @@ function renderCart() {
   let tot = 0;
   body.innerHTML = cartItems.map(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
+    const displayItem = effectiveProductItem(item, ci.variantId);
+    const displayName = cartEntryName(item, ci);
+    const key = cartEntryKey(ci.id, ci.variantId);
     const promo = getCartPromoResult(item, ci);
     const unitPrice = promo.final;
     const line = (unitPrice * ci.qty).toFixed(2); tot += unitPrice * ci.qty;
-    const max = getMaxPurchase(item); const limited = max && ci.qty >= max;
-    const plusBtn = limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',1)">+</button>';
+    const max = getMaxPurchase(displayItem); const limited = max && ci.qty >= max;
+    const plusBtn = limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" onclick="changeQty(' + JSON.stringify(key) + ',1)">+</button>';
     const promoLabel = promo.valid ? ' <span class="cart-promo-tag"><i class="fa-solid fa-ticket"></i>' + escapeHtml(promo.promo.code) + '</span>' : '';
-    return '<div class="cart-row"><img class="cr-img" src="' + productPosterUrl(item) + '" alt="' + item.name + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + item.name + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' ? ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + ci.id + ',-1)">?</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + ci.id + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
+    return '<div class="cart-row"><img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' x ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + JSON.stringify(key) + ',-1)">-</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + JSON.stringify(key) + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
   }).join('');
   document.getElementById('cart-total').textContent = 'RM' + tot.toFixed(2);
 }
@@ -5290,7 +5338,7 @@ function goCO(focusPayment) {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
     const promo = getCartPromoResult(item, ci);
     const line = promo.final * ci.qty; tot += line;
-    return '<div class="order-row"><span class="or-name">' + item.name + (ci.qty>1?' Ã—'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
+    return '<div class="order-row"><span class="or-name">' + escapeHtml(cartEntryName(item, ci)) + (ci.qty>1?' x'+ci.qty:'') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
   }).join('');
   document.getElementById('co-total').textContent = 'RM' + tot.toFixed(2);
   
@@ -5415,10 +5463,80 @@ function openQR(method) {
   document.getElementById('qr-modal')?.classList.add('show');
 }
 function closeQR() { document.getElementById('qr-modal')?.classList.remove('show'); }
+function renderProductModalSelection(item, refreshMedia = true) {
+  const variants = productVariants(item);
+  const selected = getProductVariant(item, modalVariantId);
+  const displayItem = effectiveProductItem(item, modalVariantId);
+  const choice = document.getElementById('product-modal-choice');
+  const variantWrap = document.getElementById('product-modal-variants');
+  const quantityWrap = document.getElementById('product-modal-quantity');
+  if (choice) choice.hidden = !variants.length;
+  if (quantityWrap) quantityWrap.hidden = !variants.length;
+  if (variantWrap) {
+    variantWrap.innerHTML = variants.map(variant => {
+      const soldOut = Number.isFinite(Number(variant.stock)) && Number(variant.stock) <= 0;
+      const active = variant.id === modalVariantId ? ' active' : '';
+      const image = variant.img ? '<img src="' + escapeHtml(variant.img) + '" alt="" loading="lazy">' : '';
+      return '<button type="button" class="pm-variant' + active + '" onclick="selectProductVariant(' + JSON.stringify(variant.id) + ')"' + (soldOut ? ' disabled' : '') + '>' + image + '<span>' + escapeHtml(variant.name) + '</span></button>';
+    }).join('');
+  }
+  const max = getMaxPurchase(displayItem) || 20;
+  modalQuantity = Math.max(1, Math.min(modalQuantity, max));
+  const quantityValue = document.getElementById('product-modal-quantity-value');
+  const stockLeft = document.getElementById('product-modal-stock-left');
+  if (quantityValue) quantityValue.textContent = modalQuantity;
+  if (stockLeft) stockLeft.textContent = displayItem.stock == null ? '' : Math.max(0, Number(displayItem.stock) - getCartQtyForItem(item.id, modalVariantId)) + ' barang tersedia';
+  if (refreshMedia) {
+    const mediaWrap = document.getElementById('product-modal-media');
+    if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(displayItem, 'modal');
+  }
+  const priceEl = document.getElementById('product-modal-price');
+  const oldPriceEl = document.getElementById('product-modal-price-old');
+  const promo = productPromoResult(displayItem, document.getElementById('product-modal-promo-input')?.value || savedProductPromoCode(item));
+  if (priceEl) priceEl.textContent = 'RM' + promo.final.toFixed(2);
+  if (oldPriceEl) oldPriceEl.textContent = promo.valid ? 'RM' + promo.base.toFixed(2) : ((displayItem.originalPrice && displayItem.originalPrice > displayItem.price) ? 'RM' + Number(displayItem.originalPrice).toFixed(2) : '');
+  const summaryEl = document.getElementById('product-modal-summary');
+  if (summaryEl) {
+    const saving = displayItem.originalPrice && displayItem.originalPrice > displayItem.price ? Math.max(0, Number(displayItem.originalPrice) - Number(displayItem.price || 0)) : 0;
+    const stockText = isOutOfStock(item, modalVariantId) ? 'Habis stok' : (displayItem.stock != null ? displayItem.stock + ' stok' : 'Tersedia');
+    summaryEl.innerHTML = '<div><span>Type</span><strong>' + escapeHtml(selected?.name || item.game || '-') + '</strong></div>' +
+      '<div><span>Status</span><strong>' + escapeHtml(stockText) + '</strong></div>' +
+      '<div><span>Jimat</span><strong>' + (saving ? 'RM' + saving.toFixed(2) : 'Harga Net') + '</strong></div>';
+  }
+  const metaEl = document.getElementById('product-modal-meta');
+  if (metaEl) {
+    const chips = [];
+    if (selected) chips.push('<span class="pm-chip"><i class="fa-solid fa-layer-group"></i>' + escapeHtml(selected.name) + '</span>');
+    if (item.promoLabel) chips.push('<span class="pm-chip hot"><i class="fa-solid fa-tag"></i>' + escapeHtml(item.promoLabel) + '</span>');
+    if (isOutOfStock(item, modalVariantId)) chips.push('<span class="pm-chip out"><i class="fa-solid fa-box-open"></i>Habis Stok</span>');
+    else if (displayItem.stock != null) chips.push('<span class="pm-chip stock"><i class="fa-solid fa-box"></i>' + displayItem.stock + ' stok</span>');
+    metaEl.innerHTML = chips.join('');
+  }
+  syncProductModalPromo(item);
+  updateModalCartBtn(item);
+}
+function selectProductVariant(variantId) {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  if (!item || !getProductVariant(item, variantId)) return;
+  modalVariantId = String(variantId);
+  modalQuantity = 1;
+  renderProductModalSelection(item);
+}
+function changeProductModalQuantity(delta) {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  if (!item) return;
+  const displayItem = effectiveProductItem(item, modalVariantId);
+  const max = Math.max(1, (getMaxPurchase(displayItem) || 20) - getCartQtyForItem(item.id, modalVariantId));
+  modalQuantity = Math.max(1, Math.min(max, modalQuantity + Number(delta || 0)));
+  renderProductModalSelection(item, false);
+}
 function openProductImage(id, options = {}) {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item || isPermanentFruitCatalogItem(item)) return;
   modalItemId = item.id;
+  const variants = productVariants(item);
+  modalVariantId = variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
+  modalQuantity = 1;
   if (!options.fromUrl) updateProductUrl(item);
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
@@ -5452,7 +5570,7 @@ function openProductImage(id, options = {}) {
     metaEl.innerHTML = chips.join('');
   }
   setupProductModalPromo(item);
-  updateModalCartBtn(item);
+  renderProductModalSelection(item);
   const modal = document.getElementById('product-modal');
   if (modal) {
     modal.classList.add('show');
@@ -5465,6 +5583,8 @@ function closeProductImage() {
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = '';
   modalItemId = null;
+  modalVariantId = '';
+  modalQuantity = 1;
   clearProductUrlItem();
   if (!document.getElementById('cart-overlay')?.classList.contains('show') && !document.getElementById('search-overlay')?.classList.contains('show')) {
     document.body.style.overflow = '';
@@ -5477,20 +5597,27 @@ async function modalAddToCart() {
   const btn = document.getElementById('product-modal-cart-btn');
   const promoCode = getProductModalPromoCode();
   if (!(await claimProductPromo(item, promoCode))) return;
-  addCart(modalItemId, btn, { promoCode });
+  addCart(modalItemId, btn, { promoCode, variantId: modalVariantId, qty: modalQuantity });
 }
 async function modalBuyNow() {
   if (!modalItemId) return;
   const itemId = modalItemId;
+  const variantId = modalVariantId;
+  const quantity = modalQuantity;
   const item = inventory.find(entry => String(entry.id) === String(itemId));
   const promoCode = getProductModalPromoCode();
   if (!item || !(await claimProductPromo(item, promoCode))) return;
   closeProductImage();
-  buyNowItem(itemId, promoCode);
+  buyNowItem(itemId, promoCode, { variantId, qty: quantity });
 }
-function buyNowItem(id, promoCode = '') {
-  const item = inventory.find(i => i.id === id);
-  if (!item || isOutOfStock(item)) { toast('Barang habis stok!', true); return; }
+function buyNowItem(id, promoCode = '', options = {}) {
+  const baseItem = inventory.find(i => i.id === id);
+  if (!baseItem) return;
+  const variantId = String(options.variantId || '');
+  if (productVariants(baseItem).length && !getProductVariant(baseItem, variantId)) { openProductImage(id); toast('Pilih type dahulu'); return; }
+  const item = effectiveProductItem(baseItem, variantId);
+  const quantity = Math.max(1, Math.floor(Number(options.qty || 1)));
+  if (isOutOfStock(baseItem, variantId)) { toast('Barang habis stok!', true); return; }
   // A redeemed code stays active for this device, including when Buy WhatsApp is pressed from a card.
   const activePromoCode = String(promoCode || '').trim().toUpperCase() || savedProductPromoCode(item);
   const promo = productPromoResult(item, activePromoCode);
@@ -5500,9 +5627,10 @@ function buyNowItem(id, promoCode = '') {
   const message = [
     'Hi H4SX, saya berminat dengan item ini:',
     '',
-    'Item: ' + item.name,
+    'Item: ' + baseItem.name + (item.variantName ? ' - ' + item.variantName : ''),
     'Game: ' + (item.game || item.gameGroup || '-'),
-    'Harga katalog: RM' + finalPrice.toFixed(2),
+    'Kuantiti: ' + quantity,
+    'Harga katalog: RM' + finalPrice.toFixed(2) + ' x ' + quantity + ' = RM' + (finalPrice * quantity).toFixed(2),
     ...(promo.valid ? ['Kod promo: ' + promo.promo.code + ' (' + promo.promo.label + ')'] : []),
     'Stok: ' + stock,
     '',
@@ -5511,7 +5639,7 @@ function buyNowItem(id, promoCode = '') {
   showConsultationConfirm({
     kicker: 'SEMAK PEMBELIAN',
     title: 'Teruskan ke WhatsApp?',
-    description: item.name + ' - RM' + finalPrice.toFixed(2) + (promo.valid ? ' selepas kod ' + promo.promo.code + '.' : '.') + ' Admin akan semak stok sebelum urusan diteruskan.',
+    description: baseItem.name + (item.variantName ? ' (' + item.variantName + ')' : '') + ' - RM' + (finalPrice * quantity).toFixed(2) + (promo.valid ? ' selepas kod ' + promo.promo.code + '.' : '.') + ' Admin akan semak stok sebelum urusan diteruskan.',
     buttonText: 'Pergi WhatsApp',
     showPaymentCatalog: isPromotedEnabled(item),
     whatsapp: phone,
@@ -5528,7 +5656,7 @@ function sendCartToWhatsApp() {
     const promo = getCartPromoResult(item, ci);
     const subtotal = promo.final * quantity;
     total += subtotal;
-    return '- ' + item.name + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' (RM' + subtotal.toFixed(2) + ')';
+    return '- ' + cartEntryName(item, ci) + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' (RM' + subtotal.toFixed(2) + ')';
   }).filter(Boolean);
   if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
   const message = [
@@ -5558,7 +5686,7 @@ async function shareCartItems() {
     const promo = getCartPromoResult(item, ci);
     const subtotal = promo.final * quantity;
     total += subtotal;
-    return (index + 1) + '. ' + item.name + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' - RM' + subtotal.toFixed(2) + '\n' + shareableProductLink(item);
+    return (index + 1) + '. ' + cartEntryName(item, ci) + (promo.valid ? ' [' + promo.promo.code + ']' : '') + ' x' + quantity + ' - RM' + subtotal.toFixed(2) + '\n' + shareableProductLink(item);
   }).filter(Boolean);
   if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
   const storeUrl = new URL(window.location.href);
