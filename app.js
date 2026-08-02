@@ -3341,6 +3341,7 @@ function showReviewShowcasePopup(item, total) {
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
     '<strong>' + escapeHtml(name) + '</strong><span class="review-popup-stars">' + stars + '</span>' +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></a>' +
+    (total > 1 ? '<span class="review-popup-controls"><button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button></span>' : '') +
     '<span class="review-popup-progress"></span>';
   void popup.offsetWidth;
   popup.classList.add('is-visible');
