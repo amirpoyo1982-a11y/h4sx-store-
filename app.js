@@ -3309,11 +3309,18 @@ function getReviewShowcasePopup() {
     renderReviews(latestReviewStatsData);
   });
   popup.addEventListener('click', event => {
-    if (!event.target.closest('.review-popup-close')) return;
+    if (event.target.closest('.review-popup-close')) {
+      event.preventDefault();
+      reviewShowcaseDismissed = true;
+      clearReviewShowcaseTimer();
+      hideReviewShowcasePopup();
+      return;
+    }
+
+    // Controls keep their own actions; every other part opens the review confirmation.
+    if (event.target.closest('.review-popup-drag, .review-popup-controls')) return;
     event.preventDefault();
-    reviewShowcaseDismissed = true;
-    clearReviewShowcaseTimer();
-    hideReviewShowcasePopup();
+    showReviewWebsiteConfirm();
   });
   popup.addEventListener('pointerdown', startReviewPopupDrag);
   window.addEventListener('resize', clampReviewPopupToViewport);
@@ -4249,27 +4256,32 @@ function paymentCatalogUrl(config = {}) {
 }
 function showConsultationConfirm(config = {}) {
   const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  const destinationUrl = String(config.destinationUrl || '').trim();
+  const isReviewDestination = config.variant === 'review';
   const oldModal = document.getElementById('consultation-confirm-modal');
   if (oldModal) oldModal.remove();
   const modal = document.createElement('div');
   modal.id = 'consultation-confirm-modal';
-  modal.className = 'consult-confirm-modal';
+  modal.className = 'consult-confirm-modal' + (isReviewDestination ? ' is-review' : '');
   const title = escapeHtml(String(config.title || 'Konsultasi H4SX'));
   const description = escapeHtml(String(config.description || 'Admin akan bantu semak pilihan dan harga semasa.'));
   const kicker = escapeHtml(String(config.kicker || 'KONSULTASI H4SX'));
   const buttonText = escapeHtml(String(config.buttonText || 'Pergi WhatsApp'));
+  const iconClass = escapeHtml(String(config.iconClass || (isReviewDestination ? 'fa-solid fa-comments' : 'fa-brands fa-whatsapp')));
+  const loadingTitle = escapeHtml(String(config.loadingTitle || (isReviewDestination ? 'Sedang membuka H4SX Review' : 'Sedang membuka WhatsApp')));
+  const loadingText = escapeHtml(String(config.loadingText || (isReviewDestination ? 'Anda akan dibawa ke laman review dalam' : 'Semakan selesai dalam')));
   const paymentUrl = paymentCatalogUrl(config);
   const paymentButton = paymentUrl
     ? '<button type="button" class="consult-confirm-payment"><i class="fa-solid fa-qrcode"></i> Lihat QR Pembayaran</button>'
     : '';
   modal.innerHTML = '<div class="consult-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="consult-confirm-title">' +
     '<button type="button" class="consult-confirm-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
-    '<div class="consult-confirm-icon"><i class="fa-brands fa-whatsapp"></i></div>' +
+    '<div class="consult-confirm-icon"><i class="' + iconClass + '"></i></div>' +
     '<span class="consult-confirm-kicker">' + kicker + '</span>' +
     '<h3 id="consult-confirm-title">' + title + '</h3>' +
     '<p>' + description + '</p>' +
-    '<div class="consult-confirm-loading" aria-live="polite" hidden><div class="consult-confirm-loader-icon"><i class="fa-brands fa-whatsapp"></i></div><div><strong>Sedang membuka WhatsApp</strong><span>Semakan selesai dalam <b>5</b> saat</span></div><div class="consult-confirm-progress"><i></i></div></div>' +
-    '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go whatsapp-buy"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div>' +
+    '<div class="consult-confirm-loading" aria-live="polite" hidden><div class="consult-confirm-loader-icon"><i class="' + iconClass + '"></i></div><div><strong>' + loadingTitle + '</strong><span>' + loadingText + ' <b>5</b> saat</span></div><div class="consult-confirm-progress"><i></i></div></div>' +
+    '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go' + (isReviewDestination ? ' review-confirm-go' : ' whatsapp-buy') + '"><i class="' + iconClass + '"></i> ' + buttonText + '</button></div>' +
   '</div>';
   const dialog = modal.querySelector('.consult-confirm-dialog');
   const loading = modal.querySelector('.consult-confirm-loading');
@@ -4293,7 +4305,7 @@ function showConsultationConfirm(config = {}) {
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
     const goButton = modal.querySelector('.consult-confirm-go');
     if (redirectTimer || !goButton) return;
-    playH4sxSound('whatsapp');
+    playH4sxSound(isReviewDestination ? 'tap' : 'whatsapp');
     dialog?.classList.add('is-loading');
     if (loading) loading.hidden = false;
     modal.querySelectorAll('.consult-confirm-actions button').forEach(button => {
@@ -4310,12 +4322,25 @@ function showConsultationConfirm(config = {}) {
     updateProgress();
     progressTimer = setInterval(updateProgress, 100);
     redirectTimer = setTimeout(() => {
-      window.location.assign('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
+      const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
+      window.location.assign(targetUrl);
     }, duration);
   });
   document.body.appendChild(modal);
   playH4sxSound('open');
   requestAnimationFrame(() => modal.classList.add('show'));
+}
+
+function showReviewWebsiteConfirm() {
+  showConsultationConfirm({
+    variant: 'review',
+    kicker: 'ULASAN PELANGGAN',
+    title: 'Buka Website Review?',
+    description: 'Anda akan dibawa ke H4SX Review untuk melihat semua rating dan ulasan pelanggan.',
+    buttonText: 'Pergi ke Review',
+    destinationUrl: 'https://review.h4sxmy.xyz/',
+    showPaymentCatalog: false
+  });
 }
 function openInventoryConsultation(id) {
   const item = inventory.find(entry => String(entry.id) === String(id));
