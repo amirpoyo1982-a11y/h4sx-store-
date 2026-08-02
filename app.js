@@ -2399,6 +2399,7 @@ const CUSTOM_VOTE_CHOICE_PREFIX = 'h4sx_custom_vote_choice_';
 const REVIEW_SHOWCASE_CONFIG_COLLECTION = 'config';
 const REVIEW_SHOWCASE_CONFIG_ID = 'review_showcase';
 const REVIEW_SHOWCASE_POSITION_KEY = 'h4sx_review_popup_position';
+const REVIEW_SHOWCASE_SIZE_KEY = 'h4sx_review_popup_compact';
 const PROMO_REDEMPTIONS_COLLECTION = 'promo_redemptions';
 const PROMO_USAGE_COLLECTION = 'promo_usage';
 const PROMO_DEVICE_KEY = 'h4sx_promo_device_id';
@@ -2418,6 +2419,10 @@ let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
 let reviewShowcaseDismissed = false;
 let reviewShowcasePaused = false;
+let reviewShowcaseCompact = false;
+try {
+  reviewShowcaseCompact = localStorage.getItem(REVIEW_SHOWCASE_SIZE_KEY) === '1';
+} catch (error) {}
 if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
@@ -3297,6 +3302,7 @@ function getReviewShowcasePopup() {
   popup = document.createElement('div');
   popup.id = 'review-showcase-popup';
   popup.className = 'review-showcase-popup';
+  popup.classList.toggle('is-compact', reviewShowcaseCompact);
   popup.setAttribute('aria-live', 'polite');
   document.body.appendChild(popup);
   restoreReviewPopupPosition(popup);
@@ -3317,10 +3323,8 @@ function getReviewShowcasePopup() {
       return;
     }
 
-    // Controls keep their own actions; every other part opens the review confirmation.
+    // Navigasi hanya melalui butang Review supaya kawalan lain tidak tersalah tekan.
     if (event.target.closest('.review-popup-drag, .review-popup-controls')) return;
-    event.preventDefault();
-    showReviewWebsiteConfirm();
   });
   popup.addEventListener('pointerdown', startReviewPopupDrag);
   window.addEventListener('resize', clampReviewPopupToViewport);
@@ -3392,19 +3396,25 @@ function showReviewShowcasePopup(item, total) {
   const imageButton = item.feedbackImg ? '<button id="review-popup-image" type="button" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image"></i></button>' : '';
   const pauseIcon = reviewShowcasePaused ? 'fa-play' : 'fa-pause';
   const pauseLabel = reviewShowcasePaused ? 'Sambung automatik' : 'Pause automatik';
+  const sizeIcon = reviewShowcaseCompact ? 'fa-expand' : 'fa-window-minimize';
+  const sizeLabel = reviewShowcaseCompact ? 'Besarkan notis' : 'Kecilkan notis';
 
   popup.classList.remove('is-visible', 'is-leaving');
   popup.classList.toggle('is-paused', reviewShowcasePaused);
+  popup.classList.toggle('is-compact', reviewShowcaseCompact);
   popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
   popup.innerHTML = '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
-    '<a class="review-popup-link" href="https://review.h4sxmy.xyz/" aria-label="Buka semua ulasan pelanggan">' +
+    '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
     '<span class="review-popup-name"><strong>' + escapeHtml(name) + '</strong><i class="fa-solid fa-circle-check" title="Pembeli disahkan"></i></span><span class="review-popup-stars">' + stars + '</span>' +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></a>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></div>' +
     '<span class="review-popup-controls">' + imageButton +
-    (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button><button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button>' : '') + '</span>' +
+    '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
+    (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
+    '<button type="button" onclick="toggleReviewShowcaseSize()" title="' + sizeLabel + '" aria-label="' + sizeLabel + '"><i class="fa-solid ' + sizeIcon + '"></i></button>' +
+    (total > 1 ? '<button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button>' : '') + '</span>' +
     '<span class="review-popup-progress"></span>';
   void popup.offsetWidth;
   popup.classList.add('is-visible');
@@ -3433,6 +3443,21 @@ function toggleReviewShowcasePause() {
   renderReviews(latestReviewStatsData);
 }
 window.toggleReviewShowcasePause = toggleReviewShowcasePause;
+
+function openReviewShowcaseWebsite() {
+  showReviewWebsiteConfirm();
+}
+window.openReviewShowcaseWebsite = openReviewShowcaseWebsite;
+
+function toggleReviewShowcaseSize() {
+  reviewShowcaseCompact = !reviewShowcaseCompact;
+  try {
+    localStorage.setItem(REVIEW_SHOWCASE_SIZE_KEY, reviewShowcaseCompact ? '1' : '0');
+  } catch (error) {}
+  renderReviews(latestReviewStatsData);
+  requestAnimationFrame(clampReviewPopupToViewport);
+}
+window.toggleReviewShowcaseSize = toggleReviewShowcaseSize;
 
 function changeReviewShowcase(direction) {
   const list = latestReviewStatsData;
