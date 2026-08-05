@@ -996,7 +996,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v2.1';
+const CHANGELOG_VERSION = 'v2.3';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -5257,7 +5257,7 @@ function changeQty(key, delta) {
   updateAddButtons();
 }
 function removeItem(key) {
-  cartItems = cartItems.filter(c => cartEntryKey(c.id, c.variantId) !== String(key));
+  cartItems = cartItems.filter(c => cartEntryKey(c.id, c.variantId) !== key);
   persistCart();
   updateBadge(); 
   renderCart();
