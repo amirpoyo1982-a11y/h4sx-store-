@@ -3555,6 +3555,7 @@ function bootStoreApp() {
   initSoundEffects();
   restoreCart();
   updateBadge();
+  initCartEventDelegation();
   startCatalogProgress();
   loadGames().then(renderGames);
   loadInv();
@@ -5311,8 +5312,9 @@ function renderCart() {
   if (shareButton) shareButton.disabled = !cartItems.length;
   if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping" style="font-size:28px;color:var(--border2);margin-bottom:10px;display:block"></i>Cart kosong</div>'; document.getElementById('cart-total').textContent = 'RM0'; return; }
   let tot = 0;
-  body.innerHTML = cartItems.map(ci => {
-    const item = inventory.find(i=>i.id===ci.id); if (!item) return '';
+  const fragment = document.createDocumentFragment();
+  cartItems.forEach(ci => {
+    const item = inventory.find(i=>i.id===ci.id); if (!item) return;
     const displayItem = effectiveProductItem(item, ci.variantId);
     const displayName = cartEntryName(item, ci);
     const key = cartEntryKey(ci.id, ci.variantId);
@@ -5320,11 +5322,32 @@ function renderCart() {
     const unitPrice = promo.final;
     const line = (unitPrice * ci.qty).toFixed(2); tot += unitPrice * ci.qty;
     const max = getMaxPurchase(displayItem); const limited = max && ci.qty >= max;
-    const plusBtn = limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" onclick="changeQty(' + JSON.stringify(key) + ',1)">+</button>';
     const promoLabel = promo.valid ? ' <span class="cart-promo-tag"><i class="fa-solid fa-ticket"></i>' + escapeHtml(promo.promo.code) + '</span>' : '';
-    return '<div class="cart-row"><img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' x ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" onclick="changeQty(' + JSON.stringify(key) + ',-1)">-</button><span class="cr-qty-num">' + ci.qty + '</span>' + plusBtn + '</div><button class="cr-del" onclick="removeItem(' + JSON.stringify(key) + ')"><i class="fa-solid fa-trash-can"></i></button></div>';
-  }).join('');
+     
+    const row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = '<img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' x ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="-1">-</button><span class="cr-qty-num">' + ci.qty + '</span>' + (limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="1">+</button>') + '</div><button class="cr-del" data-action="remove" data-key="' + escapeHtml(String(key)) + '"><i class="fa-solid fa-trash-can"></i></button></div>';
+    fragment.appendChild(row);
+  });
+  body.innerHTML = '';
+  body.appendChild(fragment);
   document.getElementById('cart-total').textContent = 'RM' + tot.toFixed(2);
+}
+function initCartEventDelegation() {
+  const body = document.getElementById('cart-body');
+  if (!body) return;
+  body.addEventListener('click', e => {
+   const btn = e.target.closest('[data-action]');
+   if (!btn) return;
+   const action = btn.dataset.action;
+   const key = btn.dataset.key;
+   if (action === 'qty') {
+     const delta = Number(btn.dataset.delta);
+     changeQty(key, delta);
+   } else if (action === 'remove') {
+     removeItem(key);
+   }
+  });
 }
 function goCO(focusPayment) {
   if (!cartItems.length) { toast('Cart is empty',true); return; }
