@@ -1262,6 +1262,20 @@ nav {
   box-shadow: 0 4px 14px var(--primary-glow);
 }
 
+/* Positioning helpers for configurable badge placement */
+.ptag-pos-top { top: 12px; bottom: auto; }
+.ptag-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
+.ptag-pos-bottom { bottom: 12px; top: auto; }
+
+.ptag-align-left { left: 12px; right: auto; }
+.ptag-align-center { left: 50%; right: auto; transform: translateX(-50%); }
+.ptag-align-right { right: 12px; left: auto; }
+
+/* Combined center both axes */
+.ptag-pos-center.ptag-align-center { transform: translate(-50%, -50%); }
+.ptag-pos-center.ptag-align-right { transform: translateY(-50%); }
+.ptag-pos-center.ptag-align-left { transform: translateY(-50%); }
+
 .pimg {
   aspect-ratio: 4/3;
   background: linear-gradient(135deg, #f8fafc, #e0f2fe);

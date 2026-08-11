@@ -4418,7 +4418,17 @@ function productCardHTML(item) {
       '<div class="pbody"><div class="pname">' + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
   }
   const oos = isOutOfStock(item);
-  const promo = item.promoLabel ? '<div class="ptag">' + escapeHtml(item.promoLabel) + '</div>' : '';
+  // Determine badge position/align with per-item override support.
+  // Per-item overrides supported fields (any of these):
+  // - productBadge: { position: 'top'|'center'|'bottom', align: 'left'|'center'|'right' }
+  // - badgePosition (string), badgeAlign (string)
+  // - promoPosition (string), promoAlign (string)
+  
+  const globalBadge = (storeConfig && storeConfig.productBadge) || {};
+  const itemBadgeObj = item && item.productBadge ? item.productBadge : null;
+  const badgePos = (itemBadgeObj && (itemBadgeObj.position || itemBadgeObj.pos)) || item.badgePosition || item.promoPosition || globalBadge.position || 'top';
+  const badgeAlign = (itemBadgeObj && (itemBadgeObj.align || itemBadgeObj.horizontalAlign)) || item.badgeAlign || item.promoAlign || globalBadge.align || 'left';
+  const promo = item.promoLabel ? '<div class="ptag ptag-pos-' + escapeHtml(String(badgePos)) + ' ptag-align-' + escapeHtml(String(badgeAlign)) + '">' + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
   if (isPromotedEnabled(item) && item.promotedBy) {
     promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
