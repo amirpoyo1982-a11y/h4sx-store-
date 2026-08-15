@@ -1956,13 +1956,7 @@ function isBloxFruitsGame(value = {}) {
   return /blox\s*fruits?/i.test(String(name || ''));
 }
 function isPermanentFruitCatalogItem(item = {}) {
-  if (!isBloxFruitsGame(item)) return false;
-  const text = [productSubcategory(item), item.name, item.game, item.gameGroup]
-    .filter(Boolean)
-    .join(' ');
-  // "Non perm" ialah buah biasa, bukan Permanent Fruit.
-  if (/\b(?:non[-\s]?perm|not[-\s]?permanent|bukan[-\s]?permanent)\b/i.test(text)) return false;
-  return /\b(permanent|perm|kekal)\b/i.test(text);
+  return false;
 }
 function catalogGames(showAllPlatforms = false) {
   const map = new Map();
@@ -4504,26 +4498,17 @@ function setProductFilter(filter) {
   renderProductGrid();
 }
 function isPermanentFruitFilter(filterId = currentProductFilter) {
-  return filterId === 'sub:' + normalizeKey('Permanent Fruit');
+  return false;
 }
 function selectPermanentFruit(itemId) {
   selectedPermanentFruitId = String(itemId || '');
   renderProductGrid();
 }
 function permanentFruitPickerHTML(items, selected) {
-  const options = items.map(item => {
-    const isSelected = String(item.id) === String(selected.id);
-    return '<option value="' + escapeHtml(item.id) + '"' + (isSelected ? ' selected' : '') + '>' +
-      escapeHtml(item.name) + ' â€” RM' + Number(item.price || 0).toFixed(2) + '</option>';
-  }).join('');
-  return '<section class="permanent-fruit-picker reveal">' +
-    '<div class="permanent-fruit-picker-icon"><i class="fa-solid fa-basket-shopping"></i></div>' +
-    '<div class="permanent-fruit-picker-copy"><b>Pilih Permanent Fruit</b><span>Pilih satu buah di bawah. Harga dan stok akan ikut pilihan anda.</span></div>' +
-    '<label class="permanent-fruit-select-wrap"><span>Permanent Fruit</span><select onchange="selectPermanentFruit(this.value)">' + options + '</select></label>' +
-  '</section>';
+  return '';
 }
 const DEFAULT_PERMANENT_FRUIT_CONFIG = {
-  active: true,
+  active: false,
   title: 'Permanent Fruit / Gamepass',
   image: 'assets/permanent-fruits/permanent-fruit-consultation.png',
   description: 'Nak beli Permanent Fruit atau Gamepass Blox Fruits? Chat admin untuk semak harga dan cara urusan.',
@@ -4535,7 +4520,7 @@ let permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG };
 
 function applyPermanentFruitConfig(data) {
   if (!data || typeof data !== 'object' || Array.isArray(data)) return;
-  permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG, ...data };
+  permanentFruitConfig = { ...DEFAULT_PERMANENT_FRUIT_CONFIG, ...data, active: false };
   if (isBloxFruitsGame(currentGame)) renderProductGrid();
 }
 
@@ -4582,37 +4567,10 @@ function openGameConsultation(gameName = '') {
 }
 
 function permanentFruitConsultationSectionHTML() {
-  if (permanentFruitConfig.active === false) return '';
-  const title = escapeHtml(String(permanentFruitConfig.title || DEFAULT_PERMANENT_FRUIT_CONFIG.title));
-  const image = escapeHtml(String(permanentFruitConfig.image || DEFAULT_PERMANENT_FRUIT_CONFIG.image));
-  const description = escapeHtml(String(permanentFruitConfig.description || DEFAULT_PERMANENT_FRUIT_CONFIG.description));
-  const buttonText = escapeHtml(String(permanentFruitConfig.buttonText || DEFAULT_PERMANENT_FRUIT_CONFIG.buttonText));
-  return '<section class="product-subsection permanent-consult-section reveal">' +
-    '<div class="product-subhead"><div><i class="fa-solid fa-crown"></i><span>Permanent Fruit / Gamepass</span></div><b>Chat Admin</b></div>' +
-    '<div class="product-subgrid">' +
-      '<article class="pc permanent-consult-card" role="button" tabindex="0" onclick="openPermanentFruitConsultation()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openPermanentFruitConsultation()}">' +
-        '<div class="pimg"><img src="' + image + '" alt="Konsultasi Permanent Fruit dan Gamepass Blox Fruits" loading="lazy"><span class="permanent-consult-badge"><i class="fa-solid fa-comments"></i> Tanya Admin</span></div>' +
-        '<div class="pbody"><div class="pname">' + title + '</div><p class="pdesc">' + description + '</p><div class="pactions"><button type="button" class="pbuy whatsapp-buy" onclick="event.stopPropagation();openPermanentFruitConsultation()"><i class="fa-brands fa-whatsapp"></i> ' + buttonText + '</button></div></div>' +
-      '</article>' +
-    '</div>' +
-  '</section>';
+  return '';
 }
 function openPermanentFruitConsultation() {
-  const fallbackMessage = [
-    'Hi H4SX, saya nak tanya Permanent Fruit / Gamepass Blox Fruits.',
-    '',
-    'Boleh semak harga dan cara urusan?'
-  ].join('\n');
-  const phone = String(permanentFruitConfig.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
-  const message = String(permanentFruitConfig.message || fallbackMessage);
-  showConsultationConfirm({
-    kicker: 'KONSULTASI H4SX',
-    title: permanentFruitConfig.title || 'Permanent Fruit / Gamepass',
-    description: permanentFruitConfig.description || 'Admin akan bantu semak pilihan dan harga semasa.',
-    buttonText: permanentFruitConfig.buttonText || 'Pergi WhatsApp',
-    whatsapp: phone,
-    message
-  });
+  return;
 }
 function renderProductSubsection(label, items) {
   const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
@@ -4633,15 +4591,6 @@ function renderProductGrid() {
   renderProductFilters();
   if (!items.length) {
     grid.innerHTML = currentProductBanner + (consultationSection || '<p class="product-empty">Tiada item untuk filter ini.</p>');
-    return;
-  }
-  if (isPermanentFruitFilter()) {
-    const selected = items.find(item => String(item.id) === String(selectedPermanentFruitId)) || items[0];
-    selectedPermanentFruitId = String(selected.id);
-    document.getElementById('pv-count').textContent = items.length + ' pilihan Permanent Fruit';
-    grid.innerHTML = currentProductBanner + permanentFruitPickerHTML(items, selected) +
-      productCardHTML(selected).replace('pc reveal"', 'pc reveal permanent-selected-card"');
-    setTimeout(initScrollReveal, 100);
     return;
   }
   const subcats = orderedProductSubcategories(items);
@@ -5029,10 +4978,7 @@ async function takeScreenshot() {
     let items = currentProductItems
       .filter(activeFilter.test)
       .sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
-    if (isPermanentFruitFilter()) {
-      const selected = items.find(item => String(item.id) === String(selectedPermanentFruitId)) || items[0];
-      items = selected ? [selected] : [];
-    }
+    /* Permanent Fruit special handling disabled. */
     if (!items.length) {
       toast('Tiada produk untuk screenshot', true);
       return;
@@ -5062,7 +5008,7 @@ async function takeScreenshot() {
       <div class="product-ss-grid">
         ${items.map(item => {
           const oos = isOutOfStock(item);
-          const posterClass = productSubcategory(item) === 'Permanent Fruit' ? ' permanent-fruit-cover' : '';
+          const posterClass = '';
           const price = Number(item.price || 0).toFixed(2);
           const oldPrice = item.originalPrice && item.originalPrice > item.price
             ? `<span class="product-ss-old">RM${escapeForHtml(item.originalPrice)}</span>`
