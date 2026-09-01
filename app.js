@@ -404,7 +404,7 @@ function helperItemLines(items, title = 'Saya jumpa item ni dalam katalog:') {
     const stock = Number(item.stock || 0) > 0 ? 'stok ' + item.stock : 'stok kena semak';
     return '- ' + item.name + ' RM' + Number(item.price || 0).toFixed(2) + ' (' + stock + ')';
   });
-  return title + '\n' + lines.join('\n') + '\n\nNak confirm stok/order, chat admin: https://wa.me/60193263016';
+  return title + '\n' + lines.join('\n') + '\n\nNak confirm stok/order, chat admin: https://wa.me/6285178259060';
 }
 function helperCheapestItems() {
   return inventory
@@ -438,19 +438,19 @@ function getLocalHelperAnswer(question) {
     return helperItemLines(foundItems);
   }
   if (asksBuy) {
-    return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/60193263016';
+    return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/6285178259060';
   }
   if (asksSafe) {
-    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/6285178259060';
   }
   if (asksTime) {
-    return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/60193263016';
+    return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/6285178259060';
   }
   if (asksReview) {
-    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/60193263016';
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/6285178259060';
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/60193263016';
+    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/6285178259060';
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
@@ -678,9 +678,9 @@ async function copyReceiptImage() {
 const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pixel-earth-low-poly-139cb0a9b41a4e088dd42ca4871a3125'; 
 // Tukar link kat atas ni je kalau nak tukar model background.
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
-const WA_NUMBER = '60193263016';
+const WA_NUMBER = '6285178259060';
 const H4SX_CHANNEL_URL = null;
-const H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/p/28055223050775063/60193263016';
+const H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/p/28055223050775063/6285178259060';
 const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
 const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
 const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
