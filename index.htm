@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
+  <meta name="h4sx-build" content="2026-07-13-update-dot-2"/>
+  <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
+  <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
+  <meta property="og:title" content="H4SX STORE | Malaysia Item Roblox">
+  <meta property="og:description" content="Semak katalog produk digital, harga dan stok terkini di H4SX STORE Malaysia.">
+  <link rel="canonical" href="https://www.h4sxmy.xyz/">
+  <meta property="og:url" content="https://www.h4sxmy.xyz/">
+  <link rel="icon" type="image/png" href="https://i.imgur.com/cLPulXQ.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.h4sxmy.xyz/#website",
+        "name": "H4SX STORE",
+        "alternateName": ["H4SX STORE Malaysia", "H4SX Malaysia"],
+        "url": "https://www.h4sxmy.xyz/"
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://www.h4sxmy.xyz/#organization",
+        "name": "H4SX STORE",
+        "alternateName": "H4SX STORE Malaysia",
+        "url": "https://www.h4sxmy.xyz/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://i.imgur.com/cLPulXQ.png"
+        }
+      }
+    ]
+  }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <link rel="preconnect" href="https://i.imgur.com">
+  <link rel="preconnect" href="https://i.ibb.co">
+  <link rel="preconnect" href="https://gist.githubusercontent.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
+  <link rel="stylesheet" href="styles.css?v=h4sx-product-variants-20260802">
+</head>
+<body>
+<div class="page-mesh" aria-hidden="true"></div>
+
+<!-- 3D EARTH BACKGROUND (hidden on white v2) -->
+<div id="earth-bg" aria-hidden="true">
+  <div id="earth-3d-container" style="width:100%; height:100%;"></div>
+  <div class="earth-overlay-glow"></div>
+</div>
+<!-- WEBSITE CLOSURE OVERLAY -->
+<div id="closure-overlay">
+  <div class="closure-container">
+    <div class="closure-icon" id="closure-icon">
+      <i class="fas fa-lock"></i>
+    </div>
+    <div class="closure-kicker"><i class="fa-solid fa-star"></i> Status Operasi Kedai</div>
+    <div class="closure-datetime-pill">
+      <i class="fa-solid fa-clock"></i>
+      <span id="closure-datetime"></span>
+    </div>
+    <h1 class="closure-title" id="closure-title">Menyemak Status Kedai</h1>
+    <div class="closure-status">
+      <span class="status-dot"></span>
+      <span id="closure-status-text">TIADA OPERASI</span>
+    </div>
+    <p class="closure-message" id="closure-message">
+      Kedai kami sedang ditutup buat sementara waktu.<br>
+      Sila datang semula pada waktu yang ditetapkan.
+    </p>
+    <div class="closure-hours-pill" id="closure-hours-pill" style="display:none">
+      <i class="fa-solid fa-clock"></i>
+      <span id="closure-hours-text"></span>
+    </div>
+    <a href="https://wa.me/6285178259060" target="_blank" class="closure-contact">
+      <i class="fa-brands fa-whatsapp"></i> Hubungi Admin
+    </a>
+  </div>
+</div>
+<header class="site-header" id="site-header">
+<div class="site-top-link">
+  <a href="https://www.h4sxmy.xyz" target="_blank">
+    <i class="fa-solid fa-globe"></i> Official Website: Ini website rasmi 
+  </a>
+</div>
+
+<div id="changelog-modal" onclick="changelogBackdrop(event)">
+  <div class="changelog-box" role="dialog" aria-labelledby="changelog-title" aria-modal="true">
+    <div class="changelog-head">
+      <div class="changelog-badge"><i class="fa-solid fa-sparkles"></i> Kemas Kini Terbaru</div>
+      <div class="changelog-title" id="changelog-title">Apa Yang Baru - H4SX STORE</div>
+      <div class="changelog-datetime" id="changelog-datetime">
+        <i class="fa-regular fa-calendar"></i>
+        <span id="changelog-date-text">26 July 2026</span>
+        <i class="fa-regular fa-clock"></i>
+        <span id="changelog-time-text">Terkini</span>
+      </div>
+      <button class="changelog-x" onclick="dismissChangelog()" aria-label="Tutup changelog"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="changelog-body" id="changelog-body">
+      <!-- Changelog will be loaded from Gist here -->
+    </div>
+    
+    <div class="changelog-foot">
+      <div class="changelog-action-row"><button class="changelog-image-btn" onclick="downloadChangelogImage()"><i class="fa-solid fa-image"></i><span><strong>Copy Image</strong><small>Salin changelog ke clipboard</small></span></button><button class="changelog-hard-refresh" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i><span><strong>Hard Refresh Update</strong><small>Tekan kalau website masih nampak versi lama</small></span></button></div><button class="changelog-ok" onclick="dismissChangelog()"><i class="fa-solid fa-check"></i> Faham, terima kasih!</button>
+    </div>
+  </div>
+</div>
+
+<script defer src="changelog-loader.js?v=v2.1-changelog-1"></script>
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
+    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
+    <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
+    <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
+    <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
+    <span class="marquee-item"><i class="fa-solid fa-gamepad"></i> Item Roblox terpilih</span>
+    <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
+    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
+    <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
+    <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
+    <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
+    <span class="marquee-item"><i class="fa-solid fa-gamepad"></i> Item Roblox terpilih</span>
+  </div>
+</div>
+<div class="site-header-nav-wrap">
+<!-- NAV -->
+<nav id="main-nav">
+  <div class="nav-inner">
+    <button class="nav-brand" onclick="showHome()">
+      <div class="nav-logo"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX" decoding="async" fetchpriority="high"></div>
+      <span class="nav-wordmark">H4SX STORE</span>
+    </button>
+    <button class="nav-store-search" type="button" onclick="openSearch()" aria-label="Cari game atau item">
+      <i class="fa-solid fa-magnifying-glass"></i><span>Cari game, item atau akaun</span><kbd>/</kbd>
+    </button>
+    <div class="nav-links">
+      <a onclick="goSection('guide')">Guide</a>
+      <a onclick="goSection('faq')">FAQ</a>
+      <a onclick="goSection('reviews')">Reviews</a>
+      <a onclick="openH4ReviewForm()">Hantar Ulasan</a>
+      <a onclick="openOrderHistory()">Histori</a>
+    </div>
+    <div class="nav-right">
+      <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="H4SX Helper"><i class="fa-brands fa-whatsapp"></i><span>Helper</span></button>
+      <button class="search-btn sound-fx-btn" id="sound-fx-btn" onclick="toggleSoundEffects()" title="Sound effect" aria-label="Tutup sound effect" aria-pressed="true"><i class="fa-solid fa-volume-high"></i><span class="sound-fx-label">Sound</span></button>
+      <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
+      <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
+      <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+      <button class="cart-btn" onclick="toggleCart()">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span id="cart-badge" class="cart-badge">0</span>
+      </button>
+      <a href="https://wa.me/6285178259060" target="_blank" class="btn-wa">
+        <i class="fa-brands fa-whatsapp"></i><span class="btn-txt"> Support</span>
+      </a>
+      <button class="nav-ham" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="storefront-tabs" aria-label="Akses pantas katalog">
+  <button type="button" onclick="showHome()"><i class="fa-solid fa-house"></i><span>Utama</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><i class="fa-solid fa-cube"></i><span>Roblox</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Free Fire')"><i class="fa-solid fa-fire"></i><span>Free Fire</span></button>
+  <button type="button" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i><span>Semak Pesanan</span></button>
+  <button type="button" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span>Hantar Ulasan</span></button>
+  <button type="button" onclick="goSection('reviews')"><i class="fa-solid fa-star"></i><span>Ulasan</span></button>
+  <button type="button" onclick="goSection('guide')"><i class="fa-solid fa-book-open"></i><span>Panduan</span></button>
+  <button type="button" onclick="goSection('faq')"><i class="fa-solid fa-circle-question"></i><span>FAQ</span></button>
+</div>
+<!-- MOBILE MENU -->
+<div id="mob-menu">
+  <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
+  <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+  <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
+  <a onclick="openH4ReviewForm();toggleMenu()"><i class="fa-solid fa-pen-to-square"></i> Hantar Ulasan</a>
+  <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
+  <a onclick="openAiHelper();toggleMenu()"><i class="fa-brands fa-whatsapp"></i> H4SX Helper</a>
+  <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
+  <a class="hard-refresh-menu" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
+  <a href="https://wa.me/6285178259060" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
+</div>
+</div>
+</header>
+<!-- SEARCH -->
+<div id="search-overlay">
+  <div class="search-box-wrap">
+    <div class="search-input-row">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="search-input" placeholder="Cari produk, game, harga, stok..." oninput="doSearch(this.value)">
+      <button class="search-close" onclick="closeSearch()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="search-hints" aria-label="Cadangan carian">
+      <button onclick="quickSearch('stok ada')"><i class="fa-solid fa-box"></i> Stok ada</button>
+      <button onclick="quickSearch('promo')"><i class="fa-solid fa-tags"></i> Promo</button>
+      <button onclick="quickSearch('murah')"><i class="fa-solid fa-coins"></i> Murah</button>
+      <button onclick="quickSearch('video')"><i class="fa-solid fa-play"></i> Video</button>
+    </div>
+  </div>
+  <div id="search-results"></div>
+</div>
+<!-- MAIN WRAP -->
+<div class="wrap">
+  <!-- HOME -->
+  <div id="home-view" style="padding-top:16px">
+    <section class="promo-hero is-hidden" id="promo-hero" aria-label="Promosi terkini">
+      <div class="promo-hero-shell">
+        <div class="promo-hero-track" id="promo-hero-track"></div>
+        <button class="promo-hero-nav promo-prev" id="promo-hero-prev" type="button" aria-label="Promosi sebelumnya">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button class="promo-hero-nav promo-next" id="promo-hero-next" type="button" aria-label="Promosi seterusnya">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div class="promo-hero-dots" id="promo-hero-dots" aria-label="Pilih promosi"></div>
+      </div>
+    </section>
+    <section class="hero">
+      <div>
+        <div class="hero-eyebrow"><span class="ey-dot"></span> H4SX DIGITAL STORE</div>
+        <h1 class="hero-h1">Beli game &amp; item digital<br><em>dengan lebih mudah.</em></h1>
+        <p class="hero-desc">Pilih kategori, cari item yang anda mahu dan semak detail sebelum teruskan urusan bersama admin.</p>
+        <div class="hero-stats">
+          <div class="hstat"><div class="hstat-n" data-target="300" data-suffix="+">300+</div><div class="hstat-l">Pembeli</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="100" data-suffix="%">100%</div><div class="hstat-l">Proses Telus</div></div>
+          <div class="hstat"><div class="hstat-n" data-target="30" data-prefix="1-" data-suffix=" min">1-30 min</div><div class="hstat-l">Masa Proses</div></div>
+        </div>
+        <div class="hero-cta-row">
+          <a class="btn-primary" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'})">Terokai Katalog <i class="fa-solid fa-arrow-right"></i></a>
+          <a class="btn-ghost btn-ai-hero" onclick="openAiHelper()"><i class="fa-brands fa-whatsapp"></i> Tanya Helper</a>
+          <button type="button" class="btn-ghost btn-share-h4sx" onclick="shareH4sxStore()"><i class="fa-solid fa-share-nodes"></i> Ajak Kawan</button>
+          <a href="https://wa.me/6285178259060" target="_blank" class="btn-ghost"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+        </div>
+        <div class="hero-proof-strip">
+          <span class="proof-pill"><i class="fa-solid fa-circle-check"></i> Pembeli Sebenar</span>
+          <span class="proof-pill"><i class="fa-solid fa-bolt"></i> Respon Pantas</span>
+          <span class="proof-pill"><i class="fa-solid fa-shield"></i> Pembayaran Jelas</span>
+        </div>
+        <div style="margin-top: 16px; padding: 10px 16px; background: white; border-radius: 12px; border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-clock" style="color: var(--primary);"></i>
+          <span id="datetime-display" style="font-size: 14px; font-weight: 600; color: var(--ink);"></span>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-vid-wrap">
+          <div class="hero-float-1"><div class="float-ic"><i class="fa-solid fa-receipt"></i></div>Maklumat pembayaran jelas</div>
+          <div class="hero-vid">
+            <video src="https://files.catbox.moe/xy85y5.mp4" autoplay loop muted playsinline></video>
+            <div class="vid-tag"><span class="vdot"></span> H4SX Official</div>
+          </div>
+          <div class="hero-float-2"><div class="float-ic">?</div>Respon admin 1-30 minit</div>
+        </div>
+      </div>
+    </section>
+    <section class="catalog-live-card reveal" aria-label="Status proses penghantaran H4SX">
+      <div class="catalog-live-head">
+        <div>
+          <span class="catalog-live-kicker"><i></i> Delivery Live</span>
+          <h2>Proses penghantaran pantas</h2>
+          <p>Status proses bergerak secara langsung sepanjang website dibuka.</p>
+        </div>
+        <div class="catalog-item-total"><strong id="catalog-item-count">0</strong><span>Jumlah item</span></div>
+      </div>
+      <div class="catalog-live-meter">
+        <div class="catalog-progress-ring" role="img" aria-label="Progress proses penghantaran">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="catalog-progress-track" cx="50" cy="50" r="40"></circle>
+            <circle class="catalog-progress-value" id="catalog-progress-value" cx="50" cy="50" r="40"></circle>
+          </svg>
+          <div><strong id="catalog-progress-text">0%</strong><span>Proses delivery</span></div>
+        </div>
+        <div class="catalog-live-note"><i class="fa-solid fa-bolt"></i><span>Proses biasanya mengambil masa 1 hingga 30 minit selepas pembayaran disahkan.</span></div>
+      </div>
+    </section>
+    <section class="trust-grid reveal" aria-label="Kepercayaan kedai">
+      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-file-invoice"></i></div><div><div class="trust-title">Resit Boleh Disemak</div><div class="trust-sub">Hantar bukti bayaran terus ke admin.</div></div></div>
+      <div class="trust-item"><div class="trust-ic"><i class="fa-brands fa-whatsapp"></i></div><div><div class="trust-title">Support WhatsApp</div><div class="trust-sub">Respon pantas ikut giliran semasa.</div></div></div>
+      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
+      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
+    </section>
+    <section class="store-tools reveal" id="store-tools" aria-label="Kalkulator harga dan mata wang">
+      <div class="store-tool currency-tool">
+        <div class="store-tool-head"><div class="store-tool-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div><strong>Penukar Mata Wang</strong><span>Kadar anggaran semasa untuk pelanggan luar negara</span></div></div>
+        <div class="currency-form">
+          <label>Jumlah<input id="currency-amount" type="number" min="0" step="0.01" value="1" inputmode="decimal" oninput="updateCurrencyConverter()"></label>
+          <label>Dari<select id="currency-from" onchange="updateCurrencyConverter()"></select></label>
+          <button class="currency-swap" type="button" onclick="swapCurrencyConverter()" aria-label="Tukar mata wang"><i class="fa-solid fa-right-left"></i></button>
+          <label>Ke<select id="currency-to" onchange="updateCurrencyConverter()"></select></label>
+        </div>
+        <div class="currency-result"><span>Anggaran diterima</span><strong id="currency-output">Memuatkan kadar...</strong></div>
+        <div class="currency-status" id="currency-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyemak kadar mata wang...</div>
+      </div>
+      <div class="store-tool price-tool">
+        <div class="store-tool-head"><div class="store-tool-icon green"><i class="fa-solid fa-calculator"></i></div><div><strong>Kalkulator Harga</strong><span>Kira jumlah item sebelum hubungi admin</span></div></div>
+        <div class="price-calculator-form">
+          <label>Harga seunit (RM)<input id="price-calculator-price" type="number" min="0" step="0.01" value="0" inputmode="decimal" oninput="updatePriceCalculator()"></label>
+          <label>Kuantiti<input id="price-calculator-qty" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="updatePriceCalculator()"></label>
+        </div>
+        <div class="currency-result price-result"><span>Jumlah anggaran</span><strong id="price-calculator-output">RM0.00</strong></div>
+        <div class="currency-status"><i class="fa-solid fa-circle-info"></i> Harga akhir disahkan bersama admin WhatsApp.</div>
+      </div>
+    </section>
+    <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
+      <div class="custom-vote-card">
+        <div class="custom-vote-head">
+          <div class="custom-vote-icon"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX STORE"></div>
+          <div><span id="custom-vote-status">UNDIAN H4SX</span><h2 id="custom-vote-title">Vote H4SX</h2><p id="custom-vote-description">Pilih cadangan anda.</p></div>
+          <div class="custom-vote-total"><strong id="custom-vote-total">0</strong><span>undi</span></div>
+        </div>
+        <div class="custom-vote-options" id="custom-vote-options"></div>
+        <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span id="custom-vote-note-text">Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
+      </div>
+    </section>
+    <div class="div"></div>
+    <section class="section-panel reveal" id="shop-section">
+      <div class="sh"><div><div class="sh-tag">H4SX MARKETPLACE</div><div class="sh-title">Cari game &amp; item anda</div></div><button class="catalog-search-link" type="button" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i> Cari item</button></div>
+      <div class="marketplace-command" aria-label="Panduan katalog">
+        <div><i class="fa-solid fa-store"></i><span><strong>Pilih game untuk mula membeli</strong><small>Stok, akaun dan item dipaparkan mengikut game pilihan anda.</small></span></div>
+        <button type="button" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Quick search</span></button>
+      </div>
+      <div class="catalog-marketplace-intro">
+        <div class="catalog-marketplace-copy"><span><i class="fa-solid fa-store"></i> KATEGORI PRODUK</span><strong>Pilih platform untuk mula membeli</strong><small>Setiap kategori akan paparkan game dan item yang memang tersedia.</small></div>
+        <button type="button" class="catalog-marketplace-search" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i><span>Cari item</span></button>
+      </div>
+      <div id="platform-filter-bar" class="platform-filter-bar" aria-label="Pilih part game"></div>
+      <div id="game-grid"></div>
+    </section>
+    <div class="div"></div>
+    <section id="guide" class="section-panel" style="margin-bottom:32px">
+      <div class="sh reveal"><div><div class="sh-tag">Panduan</div><div class="sh-title">Cara membeli</div></div></div>
+      <div class="steps-grid">
+        <div class="step reveal reveal-delay-1"><div class="step-icon"><i class="fa-solid fa-magnifying-glass"></i></div><div class="step-num-label">Langkah 01</div><div class="step-title">Pilih Item</div><p class="step-desc">Semak harga, stok dan detail item dalam katalog.</p><div class="step-bg-num">1</div></div>
+        <div class="step reveal reveal-delay-2"><div class="step-icon"><i class="fa-brands fa-whatsapp"></i></div><div class="step-num-label">Langkah 02</div><div class="step-title">Chat WhatsApp</div><p class="step-desc">Tekan Beli WhatsApp supaya admin boleh semak item dulu.</p><div class="step-bg-num">2</div></div>
+        <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-solid fa-receipt"></i></div><div class="step-num-label">Langkah 03</div><div class="step-title">Sahkan Pesanan</div><p class="step-desc">Ikut arahan bayaran rasmi daripada admin dan hantar resit.</p><div class="step-bg-num">3</div></div>
+      </div>
+    </section>
+    <div class="div"></div>
+    <section id="reviews" class="section-panel" style="margin-bottom:32px">
+      <div class="sh reveal"><div><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button><a href="https://review.h4sxmy.xyz/" target="_blank" class="review-all-btn"><i class="fa-solid fa-comments"></i><span><strong>Lihat Semua Review</strong><small>review.h4sxmy.xyz</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div>
+      <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
+        <div class="review-summary-card">
+          <span class="review-summary-label">Purata Rating</span>
+          <strong id="mainReviewAverage" aria-live="polite">Memuatkan</strong>
+          <span class="review-summary-stars review-summary-pending" id="mainReviewStars">Semak ulasan terkini...</span>
+        </div>
+        <div class="review-summary-card">
+          <span class="review-summary-label">Jumlah Ulasan</span>
+          <strong id="mainReviewCount" aria-live="polite">Memuatkan</strong>
+          <span class="review-summary-sub">Ulasan pembeli sah</span>
+        </div>
+      </div>
+      <div class="testi-grid" id="testi-grid"><div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Memuatkan ulasan pelanggan...</div></div>
+    </section>
+    <div class="h4rf-modal" id="h4rf-modal" aria-hidden="true">
+      <section class="h4rf-dialog" role="dialog" aria-modal="true" aria-labelledby="h4rf-title">
+        <header class="h4rf-head">
+          <div><span>H4SX STORE</span><h2 id="h4rf-title">Hantar Ulasan</h2><p>Gunakan kod pembelian anda. Ulasan akan muncul di H4SX Review.</p></div>
+          <div class="h4rf-head-actions"><button type="button" class="h4rf-back" onclick="returnToH4sxHome()"><i class="fa-solid fa-arrow-left"></i><span>Website H4SX</span></button><button type="button" onclick="closeH4ReviewForm()" aria-label="Tutup">&times;</button></div>
+        </header>
+        <form class="h4rf-form" id="h4rf-form">
+          <div class="h4rf-grid">
+            <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-key"></i> Kod Pengesahan Pembelian *</span><input id="h4rf-code" maxlength="30" autocomplete="off" placeholder="TAIP KOD DI SINI" required></label>
+            <label class="h4rf-field"><span><i class="fa-solid fa-user"></i> Nama / Username *</span><div class="h4rf-name-row"><input id="h4rf-name" maxlength="40" autocomplete="off" placeholder="Contoh: H4SX" required><button type="button" id="h4rf-generate">Generate</button></div></label>
+            <label class="h4rf-field"><span><i class="fa-solid fa-star"></i> Skor Perkhidmatan</span><select id="h4rf-rating"><option value="5">5 bintang - Sangat puas hati</option><option value="4">4 bintang - Baik</option><option value="3">3 bintang - Sederhana</option><option value="2">2 bintang - Kurang memuaskan</option><option value="1">1 bintang - Lemah</option></select></label>
+          </div>
+          <div class="h4rf-profile">
+            <button type="button" class="h4rf-avatar" id="h4rf-avatar" title="Pilih gambar profil"><span>H</span><img alt=""><i class="fa-solid fa-camera"></i></button>
+            <div class="h4rf-profile-options"><strong>Warna profil</strong><div class="h4rf-swatches" id="h4rf-swatches"></div><div class="h4rf-emojis" id="h4rf-emojis"></div></div>
+          </div>
+          <div class="h4rf-upload">
+            <div class="h4rf-upload-tabs"><button type="button" class="active" data-h4rf-tab="file">Galeri / Phone</button><button type="button" data-h4rf-tab="clipboard">Clipboard</button><button type="button" data-h4rf-tab="url">URL Gambar</button></div>
+            <div class="h4rf-upload-panel active" data-h4rf-panel="file"><input id="h4rf-profile-file" type="file" accept="image/*" hidden><button type="button" class="h4rf-upload-pick" id="h4rf-file-pick"><i class="fa-solid fa-image"></i> Pilih gambar profil</button></div>
+            <div class="h4rf-upload-panel" data-h4rf-panel="clipboard"><button type="button" class="h4rf-upload-pick" id="h4rf-paste"><i class="fa-solid fa-paste"></i> Paste gambar</button><small>Atau tekan Ctrl+V di sini.</small></div>
+            <div class="h4rf-upload-panel" data-h4rf-panel="url"><div class="h4rf-url-row"><input id="h4rf-profile-url" placeholder="https://i.imgur.com/gambar.png"><button type="button" id="h4rf-url-load">Muat</button></div></div>
+            <button type="button" class="h4rf-clear-image" id="h4rf-clear-profile" hidden>Buang gambar profil</button>
+          </div>
+          <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-comment-dots"></i> Ulasan anda <em>(pilihan)</em></span><textarea id="h4rf-review" rows="4" maxlength="500" placeholder="Kongsi pengalaman anda, atau tekan Cadangan."></textarea><div class="h4rf-review-tools"><button type="button" id="h4rf-suggest"><i class="fa-solid fa-wand-magic-sparkles"></i> Cadangan</button><small id="h4rf-count">0 / 500</small></div></label>
+          <div class="h4rf-feedback"><span><i class="fa-solid fa-image"></i> Gambar feedback <em>(pilihan)</em></span><input id="h4rf-feedback-file" type="file" accept="image/*" hidden><button type="button" id="h4rf-feedback-pick">Pilih gambar</button><button type="button" id="h4rf-feedback-clear" hidden>Buang</button><small id="h4rf-feedback-status"></small></div>
+          <button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button>
+        </form>
+      </section>
+    </div>
+    <div class="div"></div>
+    <section id="faq" class="section-panel" style="margin-bottom:48px">
+      <div class="sh reveal"><div><div class="sh-tag">Support</div><div class="sh-title">Soalan lazim</div></div></div>
+      <div class="faq-list">
+        <details class="faq reveal"><summary>Berapa lama masa penghantaran? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Biasanya antara 1 hingga 30 minit jika ramai boleh lebih lama selepas pembayaran disahkan.</div></details>
+        <details class="faq reveal"><summary>Adakah akaun selamat daripada hackback? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Kami utamakan proses yang telus. Semak maklumat pesanan dan hubungi admin jika perlukan pengesahan tambahan.</div></details>
+        <details class="faq reveal"><summary>Apa kaedah pembayaran yang diterima? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Tekan Beli WhatsApp dahulu. Admin akan semak item dan beri arahan bayaran rasmi melalui DuitNow QR atau TNG eWallet.</div></details>
+        <details class="faq reveal"><summary>Boleh beli beberapa item sekali gus? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Boleh! Tambah pelbagai item ke cart dan bayar sekali. Nota: Tier Gamepass hanya boleh dibeli 1x dalam satu akaun.</div></details>
+        <details class="faq reveal"><summary>Bagaimana jika ada masalah selepas bayar? <span class="faq-ic"><i class="fa-solid fa-plus"></i></span></summary><div class="faq-ans">Hubungi admin terus melalui WhatsApp bersama resit anda. Balasan dibuat mengikut waktu operasi dan giliran semasa.</div></details>
+      </div>
+    </section>
+    <footer>
+      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a> <span class="foot-dot" id="json-helper-divider" hidden>/</span> <a href="javascript:void(0)" id="json-helper-link" onclick="openJsonHelper()" style="color:var(--primary);font-weight:700;text-decoration:none;" hidden>JSON Helper</a></div>
+      <div class="foot-social">
+        <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="https://wa.me/6285178259060" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
+        <a href="https://www.roblox.com/id/users/3264062884/profile" target="_blank"><i class="fa-solid fa-gamepad"></i></a>
+      </div>
+    </footer>
+  </div>
+  <!-- PRODUCT LIST -->
+  <div id="product-view" class="hidden" style="padding-top:16px">
+    <div class="section-panel">
+      <div class="ph">
+        <button class="bk" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i></button>
+        <div><div class="ph-title" id="pv-title"></div><div class="ph-count" id="pv-count"></div></div>
+        <div class="ph-actions">
+          <button class="pss link-copy-btn" id="pv-link-btn" onclick="copyCurrentGameLink()" title="Copy link kategori"><i class="fa-solid fa-link"></i></button>
+          <button class="pss" id="pv-ss-btn" onclick="takeScreenshot()" title="Copy screenshot produk"><i class="fa-solid fa-camera"></i></button>
+        </div>
+      </div>
+      <div class="detail-note"><i class="fa-solid fa-magnifying-glass-plus"></i> Nak tengok gambar jelas? Klik mana-mana gambar item untuk buka paparan detail.</div>
+      <div id="product-filter-bar" class="product-filter-bar" aria-label="Filter produk"></div>
+      <div id="inventory-grid"></div>
+    </div>
+  </div>
+  <!-- CHECKOUT -->
+  <div id="checkout-view" class="hidden" style="padding-top:16px">
+    <div class="ph" style="margin-bottom:20px">
+      <button class="bk" onclick="backCO()"><i class="fa-solid fa-arrow-left"></i></button>
+      <div><div class="ph-title">Checkout</div><div class="ph-count">Lengkapkan maklumat & bayar</div></div>
+    </div>
+    <div class="co-grid">
+      <div>
+        <div class="co-block">
+          <div class="co-title"><span class="co-n">1</span> Roblox Username</div>
+          <label class="flabel">Pastikan username betul</label>
+          <input type="text" id="roblox-username" oninput="valCO()" placeholder="e.g. BuilderMan" class="finput">
+        </div>
+        <div class="co-block hidden" id="account-cred-block">
+          <div class="co-title"><span class="co-n">1A</span> Maklumat Login (Jika Diperlukan)</div>
+          <label class="flabel" id="login-user-label">Username login Roblox</label>
+          <input type="text" id="login-username" oninput="valCO()" placeholder="Masukkan username login" class="finput" autocomplete="off">
+          <div style="height:10px"></div>
+          <label class="flabel" id="login-pass-label">Password login Roblox</label>
+          <input type="password" id="login-password" oninput="valCO()" placeholder="Masukkan password login" class="finput" autocomplete="off">
+          <p class="credential-safety-note"><i class="fa-solid fa-shield-halved"></i> Untuk servis login sahaja. Guna kata laluan sementara dan tukar semula selepas pesanan selesai.</p>
+          <div id="backup-wrap-1" style="margin-top:10px" class="hidden">
+            <label class="flabel" id="backup1-label">Backup Code 1</label>
+            <input type="text" id="backup-code-1" oninput="valCO()" placeholder="Masukkan backup code 1" class="finput" autocomplete="off">
+          </div>
+          <div id="backup-wrap-2" style="margin-top:10px" class="hidden">
+            <label class="flabel" id="backup2-label">Backup Code 2</label>
+            <input type="text" id="backup-code-2" oninput="valCO()" placeholder="Masukkan backup code 2" class="finput" autocomplete="off">
+          </div>
+        </div>
+        <div class="warn-box">
+          <i class="fa-solid fa-triangle-exclamation wi"></i>
+          <div>
+            <div class="wt">Penting sebelum bayar</div>
+            <ul class="wl">
+              <li>Pastikan nama di QR adalah <strong id="warn-box-name" style="color:var(--sky)">"Nurwazni"</strong></li>
+              <li>Jika nama tidak betul, hubungi kami segera</li>
+              <li>Tier Gamepass hanya boleh dibeli <strong style="color:var(--sky)">1x sahaja</strong></li>
+            </ul>
+          </div>
+        </div>
+        <div class="checkout-mini-faq">
+          <div class="mini-faq-title"><i class="fa-solid fa-circle-question"></i> FAQ ringkas checkout</div>
+          <details open>
+            <summary>Username salah macam mana?</summary>
+            <p>Hubungi admin cepat sebelum proses bermula. Jika sudah diproses, order mungkin tidak boleh ditukar.</p>
+          </details>
+          <details>
+            <summary>Perlu hantar resit?</summary>
+            <p>Ya. Selepas bayar, tekan butang WhatsApp dan hantar resit bersama maklumat order.</p>
+          </details>
+          <details>
+            <summary>Berapa lama tunggu?</summary>
+            <p>Kebiasaan 1-30 minit ikut giliran dan jenis item.</p>
+          </details>
+        </div>
+        <div class="co-block">
+          <div class="co-title"><span class="co-n">2</span> Payment Method</div>
+          <div class="pay-methods">
+            <button class="pay-method-btn active" onclick="selectPay('duitnow')" id="pay-btn-duitnow">
+              <span class="pay-check"><i class="fa-solid fa-check"></i></span>
+              <div class="pay-logo-wrap"><img src="https://i.imgur.com/iehKR3z.png" alt="DuitNow" class="pay-logo-img" loading="lazy" decoding="async"></div>
+              <div class="pay-name">DuitNow QR</div><div class="pay-tag">Scan &amp; Pay</div>
+            </button>
+            <button class="pay-method-btn" onclick="selectPay('tng')" id="pay-btn-tng">
+              <span class="pay-check"><i class="fa-solid fa-check"></i></span>
+              <div class="pay-logo-wrap"><img src="https://i.imgur.com/qQMvnPo.png" alt="TNG" class="pay-logo-img" loading="lazy" decoding="async"></div>
+              <div class="pay-name">TNG eWallet</div><div class="pay-tag">Touch n Go</div>
+            </button>
+          </div>
+          <div class="pay-panel active" id="panel-duitnow">
+            <div class="qr-area">
+              <div class="qr-lbl">DuitNow QR ? Tap untuk besarkan</div>
+              <div class="qr-frame" onclick="openQR('duitnow')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR DuitNow" class="qr-blurred" loading="lazy" decoding="async"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
+              <div class="qr-name">Nurwazni</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">DuitNow QR</div>
+            </div>
+          </div>
+          <div class="pay-panel" id="panel-tng">
+            <div class="qr-area">
+              <div class="qr-lbl">TNG eWallet QR ? Tap untuk besarkan</div>
+              <div class="qr-frame" onclick="openQR('tng')"><img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR TNG" class="qr-blurred" loading="lazy" decoding="async"><div class="qr-click-text"><i class="fa-solid fa-expand"></i> Click To Scan</div></div>
+              <div class="qr-name">Nurwazni</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Touch 'n Go eWallet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="order-box">
+        <div class="order-title">Order Summary</div>
+        <div id="co-items" class="order-list"></div>
+        <div class="order-total"><span class="ot-l">Total</span><span class="ot-v" id="co-total">RM0</span></div>
+        <a href="javascript:void(0)" id="send-btn" class="btn-send dis">Enter username first</a>
+        <p class="sec-note"><i class="fa-solid fa-shield-halved"></i> Secure via WhatsApp</p>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- JSON HELPER -->
+<div id="json-helper-modal" class="json-helper-modal" onclick="if(event.target===this)closeJsonHelper()">
+  <div class="json-helper-card">
+    <div class="json-helper-head">
+      <div>
+        <div class="json-helper-kicker">Admin helper</div>
+        <h3>Generate JSON Produk</h3>
+      </div>
+      <button onclick="closeJsonHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="json-helper-grid">
+      <label>ID produk<input id="jh-id" class="finput" type="number" min="1" step="1" placeholder="Auto detect"></label>
+      <div class="json-helper-id-status" id="jh-id-status" role="status">Semak ID kosong...</div>
+      <label>Nama produk<input id="jh-name" class="finput" placeholder="Tiger Fruit"></label>
+      <label>Game<input id="jh-game" class="finput" placeholder="Blox Fruit Buah/Fruit"></label>
+      <label>Subcategory<input id="jh-sub" class="finput" placeholder="Buah/Fruit"></label>
+      <label>Platform<input id="jh-platform" class="finput" placeholder="Roblox"></label>
+      <label>Harga RM<input id="jh-price" class="finput" type="number" step="0.01" placeholder="7"></label>
+      <label>Stok<input id="jh-stock" class="finput" type="number" placeholder="3"></label>
+      <label>Badge<input id="jh-badge" class="finput" placeholder="New"></label>
+      <label class="json-helper-wide">Gambar / Video URL<input id="jh-img" class="finput" placeholder="https://i.imgur.com/..."></label>
+      <label class="json-helper-wide">Desc<textarea id="jh-desc" class="finput" rows="3" placeholder="Tulis description ringkas"></textarea></label>
+    </div>
+    <div class="json-helper-actions">
+      <button class="btn-ghost" onclick="fillJsonHelperExample()"><i class="fa-solid fa-wand-magic-sparkles"></i> Contoh</button>
+      <button class="btn-primary" onclick="generateProductJson()"><i class="fa-solid fa-code"></i> Generate</button>
+      <button class="btn-ghost" onclick="copyJsonHelperOutput()"><i class="fa-solid fa-copy"></i> Copy</button>
+    </div>
+    <textarea id="jh-output" class="json-output" rows="9" readonly placeholder="Output JSON akan keluar di sini..."></textarea>
+  </div>
+</div>
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bn-item active" onclick="showHome()"><i class="fa-solid fa-house"></i>Home</button>
+    <button class="bn-item" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
+    <button class="bn-item bn-cart" onclick="toggleCart()"><i class="fa-solid fa-bag-shopping"></i>Cart<span id="bn-badge" class="bn-badge"></span></button>
+    <button class="bn-item" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i>Histori</button>
+    <a href="https://wa.me/6285178259060" target="_blank" class="bn-item"><i class="fa-brands fa-whatsapp"></i>Support</a>
+  </div>
+</div>
+<!-- BUSINESS HOURS DISPLAY -->
+<div class="business-hours-bar">
+  <div class="bh-inner">
+    <div class="bh-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <div class="bh-text">
+      <div class="bh-title">Waktu Operasi</div>
+      <div class="bh-desc" id="business-hours-text">Menyemak waktu operasi...</div>
+    </div>
+    <div class="bh-status" id="bh-status">
+      <span class="bh-dot"></span>
+      <span id="bh-status-text">SEMAK</span>
+    </div>
+  </div>
+</div>
+<!-- BACKGROUND MUSIC -->
+<audio id="bgMusic" src="mp3" loop>
+  Your browser does not support the audio element.
+</audio>
+<button class="music-btn" id="musicBtn" title="Toggle Music">
+  <i class="fas fa-music"></i>
+</button>
+<!-- H4SX HELPER -->
+<div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
+  <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX Helper">
+    <img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async">
+    <span class="ai-float-dot"></span>
+  </button>
+  <aside class="ai-chat-panel" id="ai-helper-modal" role="dialog" aria-modal="false" aria-labelledby="ai-helper-title">
+    <div class="ai-chat-head">
+      <div class="ai-avatar"><img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async"></div>
+      <div>
+        <div class="ai-helper-kicker">H4SX Helper</div>
+        <h2 id="ai-helper-title">Tanya tentang H4SX</h2>
+      </div>
+      <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="ai-chat-status"><span></span> Helper pantas tanpa API: cara beli, stok, harga, resit & support.</div>
+    <div class="ai-helper-suggestions">
+      <button onclick="askAiPreset('Harga paling murah apa?')">Murah</button>
+      <button onclick="askAiPreset('Macam mana cara beli dekat H4SX?')">Cara beli</button>
+      <button onclick="askAiPreset('Berapa lama proses order?')">Proses</button>
+      <button onclick="askAiPreset('Lepas bayar saya kena buat apa?')">Resit</button>
+      <button onclick="askAiPreset('Beli dekat H4SX safe tak?')">Safe</button>
+      <button onclick="askAiPreset('Boleh bagi link review pelanggan?')">Review</button>
+      <button onclick="askAiPreset('Boleh bagi link channel WhatsApp H4SX?')">Channel</button>
+      <button onclick="askAiPreset('Saya nak tanya admin untuk maklumat lanjut.')">Admin</button>
+    </div>
+    <div class="ai-chat-messages" id="ai-chat-messages">
+      <div class="ai-msg ai-msg-bot">Hai, saya H4SX Helper. Tanya pasal cara beli, stok, harga, resit, checkout, review, channel WhatsApp atau link website H4SX.</div>
+    </div>
+    <div class="ai-chat-compose">
+      <textarea id="ai-helper-input" maxlength="500" placeholder="Tanya H4SX... contoh: lepas bayar kena buat apa?"></textarea>
+      <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()" aria-label="Hantar soalan"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+    <div class="ai-helper-answer" id="ai-helper-answer" hidden></div>
+  </aside>
+</div>
+<!-- CART -->
+<div class="overlay" id="cart-overlay" onclick="ocClose(event)">
+  <div class="cart-box">
+    <div class="cart-head">
+      <div class="cart-head-left"><span class="cart-heading">Your Cart</span><span class="cart-count-pill" id="cart-pill">0</span></div>
+      <div class="cart-head-right"><button class="cart-clear" onclick="clearCart()"><i class="fa-solid fa-trash"></i> Clear</button><button class="cart-x" onclick="toggleCart()"><i class="fa-solid fa-xmark"></i></button></div>
+    </div>
+    <div id="cart-body" class="cart-body"></div>
+    <div class="cart-foot">
+      <div class="ct-row"><span class="ct-l">Total</span><span class="ct-v" id="cart-total">RM0</span></div>
+      <button type="button" class="btn-cart-share" id="cart-share-btn" onclick="shareCartItems()"><i class="fa-solid fa-share-nodes"></i> Kongsi Item Dalam Cart</button>
+      <button class="btn-proc whatsapp-buy" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Troli ke WhatsApp</button>
+    </div>
+  </div>
+</div>
+<!-- QR MODAL -->
+<div class="qr-modal" id="qr-modal">
+  <div class="qr-modal-bg" onclick="closeQR()"></div>
+  <div class="qr-modal-content">
+    <button class="qr-modal-close" onclick="closeQR()"><i class="fa-solid fa-xmark"></i></button>
+    <img src="https://i.ibb.co/bRyG06zY/image.png" alt="QR" id="qr-modal-img" loading="lazy" decoding="async">
+    <div class="qr-name-large" id="qr-modal-name">Nurwazni</div>
+    <div class="qr-modal-sub" id="qr-modal-sub">DuitNow QR</div>
+  </div>
+</div>
+<!-- PRODUCT IMAGE MODAL -->
+<div class="product-modal" id="product-modal">
+  <div class="product-modal-bg" onclick="closeProductImage()"></div>
+  <div class="product-modal-content">
+    <button class="product-modal-close" onclick="closeProductImage()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="product-modal-image-wrap" id="product-modal-media"></div>
+    <div class="product-modal-info">
+      <div id="product-modal-game" class="product-modal-game"></div>
+      <div id="product-modal-name" class="product-modal-name"></div>
+      <div id="product-modal-meta" class="product-modal-meta"></div>
+      <div class="product-modal-choice" id="product-modal-choice" hidden>
+        <div class="product-modal-choice-label">Pilih Type</div>
+        <div class="product-modal-variants" id="product-modal-variants"></div>
+      </div>
+      <div class="product-modal-quantity" id="product-modal-quantity" hidden>
+        <span>Kuantiti</span>
+        <div class="pm-stepper" role="group" aria-label="Pilih kuantiti">
+          <button type="button" onclick="changeProductModalQuantity(-1)" aria-label="Kurangkan kuantiti"><i class="fa-solid fa-minus"></i></button>
+          <strong id="product-modal-quantity-value">1</strong>
+          <button type="button" onclick="changeProductModalQuantity(1)" aria-label="Tambah kuantiti"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <small id="product-modal-stock-left"></small>
+      </div>
+      <div class="product-modal-price">
+        <span id="product-modal-price"></span>
+        <span id="product-modal-price-old" class="product-modal-price-old"></span>
+      </div>
+      <div class="product-modal-promo" id="product-modal-promo" hidden>
+        <div class="product-modal-promo-head"><i class="fa-solid fa-ticket"></i><span id="product-modal-promo-title">Kod promo khas</span></div>
+        <div class="product-modal-promo-row">
+          <input type="text" id="product-modal-promo-input" autocomplete="off" autocapitalize="characters" placeholder="Masukkan kod promo">
+          <button type="button" id="product-modal-promo-apply">Guna</button>
+          <button type="button" id="product-modal-promo-cancel" class="product-modal-promo-cancel">Batal</button>
+        </div>
+        <div id="product-modal-promo-status" class="product-modal-promo-status" aria-live="polite"></div>
+        <div class="product-modal-promo-otp" id="product-modal-promo-otp" hidden>
+          <div class="product-modal-promo-otp-title"><i class="fa-solid fa-mobile-screen-button"></i> Sahkan nombor untuk aktifkan promo</div>
+          <div class="product-modal-promo-otp-row" id="product-modal-promo-phone-row">
+            <input type="tel" id="product-modal-promo-phone" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0123456789">
+            <button type="button" id="product-modal-promo-send-otp">Hantar OTP</button>
+          </div>
+          <div class="product-modal-promo-otp-row" id="product-modal-promo-code-row" hidden>
+            <input type="text" id="product-modal-promo-otp-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Masukkan 6 digit OTP">
+            <button type="button" id="product-modal-promo-verify-otp">Sahkan</button>
+          </div>
+          <div id="product-modal-promo-otp-status" class="product-modal-promo-otp-status" aria-live="polite"></div>
+          <div id="product-modal-promo-turnstile" class="product-modal-promo-turnstile" aria-hidden="true"></div>
+          <small class="product-modal-promo-turnstile-note">Dilindungi oleh Cloudflare Turnstile. <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Privasi</a></small>
+          <div id="product-modal-promo-recaptcha" class="product-modal-promo-recaptcha"></div>
+        </div>
+      </div>
+      <div class="product-modal-summary" id="product-modal-summary"></div>
+      <div class="product-modal-desc-label">Description</div>
+      <div id="product-modal-desc" class="product-modal-desc"></div>
+      <div class="product-modal-trust">
+        <div class="pm-trust-item"><i class="fa-solid fa-bolt"></i>Proses Pantas</div>
+        <div class="pm-trust-item"><i class="fa-solid fa-shield-halved"></i>Transaksi Telus</div>
+        <div class="pm-trust-item"><i class="fa-brands fa-whatsapp"></i>Bantuan Admin</div>
+      </div>
+      <div class="product-modal-actions">
+        <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
+        <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Tambah ke Troli</button>
+        <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- RECEIPT MODAL -->
+<div class="qr-modal receipt-modal" id="receipt-modal">
+  <div class="qr-modal-bg" onclick="closeReceipt()"></div>
+  <div class="qr-modal-content receipt-modal-card">
+    <button class="qr-modal-close receipt-close" onclick="closeReceipt()" aria-label="Tutup resit"><i class="fa-solid fa-xmark"></i></button>
+    <div id="receipt-content" class="receipt-card">
+      <div class="receipt-brand">
+        <div class="receipt-logo-mini">H4</div>
+        <div>
+          <h2>H4SX STORE</h2>
+          <p>Resit Pembelian</p>
+        </div>
+      </div>
+      <div class="receipt-info-panel">
+        <div class="receipt-row"><span>No. Resit</span><strong id="receipt-code"></strong></div>
+        <div class="receipt-row"><span>Tarikh & Masa</span><strong id="receipt-datetime"></strong></div>
+        <div class="receipt-row"><span>Negara</span><strong id="receipt-country">Malaysia</strong></div>
+        <div class="receipt-row"><span>Username Roblox</span><strong id="receipt-username"></strong></div>
+      </div>
+      <div class="receipt-items-wrap">
+        <h3>Item Dibeli</h3>
+        <div id="receipt-items" class="receipt-items"></div>
+      </div>
+      <div class="receipt-total-box">
+        <span>Jumlah</span>
+        <strong id="receipt-total"></strong>
+      </div>
+    </div>
+    <div class="receipt-actions">
+      <button class="receipt-action text" onclick="copyReceipt()"><i class="fa-solid fa-copy"></i><span>Salin<br>Teks</span></button>
+      <button class="receipt-action image" onclick="copyReceiptImage()"><i class="fa-solid fa-image"></i><span>Salin<br>Gambar</span></button>
+      <a href="#" id="receipt-wa-link" target="_blank" class="receipt-action wa"><i class="fa-brands fa-whatsapp"></i><span>Hantar<br>WA</span></a>
+      <button class="receipt-action download" onclick="downloadReceiptImage()"><i class="fa-solid fa-download"></i><span>Muat<br>Turun</span></button>
+    </div>
+  </div>
+</div><!-- TRANSACTION HISTORY -->
+<div id="order-history-modal" class="order-modal" onclick="if(event.target===this)closeOrderHistory()">
+  <div class="order-modal-card">
+    <button class="order-modal-close" onclick="closeOrderHistory()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-receipt"></i> H4SX STORE</div>
+    <h2>Histori Transaksi</h2>
+    <p>Masukkan nombor transaksi atau nombor WhatsApp semasa membuat order.</p>
+    <form class="order-search-form" onsubmit="findOrder(event)">
+      <input id="order-search-code" autocomplete="off" placeholder="No. transaksi atau WhatsApp" aria-label="Nombor transaksi atau WhatsApp">
+      <button type="submit">Cari</button>
+    </form>
+    <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
+    <button class="order-admin-link" onclick="openOrderAdmin()"><i class="fa-solid fa-lock"></i> Admin: masukkan transaksi</button>
+  </div>
+</div>
+
+<!-- MANUAL ORDER ADMIN -->
+<div id="order-admin-modal" class="order-modal" onclick="if(event.target===this)closeOrderAdmin()">
+  <div class="order-modal-card order-admin-card">
+    <button class="order-modal-close" onclick="closeOrderAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-shield-halved"></i> Admin sahaja</div>
+    <h2>Tambah Transaksi</h2>
+    <div id="order-admin-login">
+      <p>Log masuk akaun Firebase admin untuk simpan order.</p>
+      <form class="order-form" onsubmit="adminOrderLogin(event)">
+        <input id="order-admin-email" type="email" placeholder="Email admin" required>
+        <input id="order-admin-password" type="password" placeholder="Password" required>
+        <button type="submit" class="btn-primary">Log masuk</button>
+      </form>
+    </div>
+    <div id="order-admin-form-wrap" hidden>
+      <div class="order-admin-user"><span id="order-admin-email-display"></span><button onclick="adminOrderLogout()">Log keluar</button></div>
+      <div class="visitor-dashboard">
+        <div class="visitor-dashboard-head"><strong><i class="fa-solid fa-chart-line"></i> Pelawat Website</strong><button onclick="loadVisitorDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">&mdash;</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">&mdash;</strong></div></div>
+        <div id="visitor-history" class="visitor-history">Loading sejarah pelawat...</div>
+      </div>
+      <section class="review-showcase-admin" aria-labelledby="review-showcase-admin-title">
+        <div class="vote-admin-head">
+          <div><span>ULASAN PILIHAN</span><h3 id="review-showcase-admin-title">Notis Ulasan Automatik</h3><p>Tunjukkan notis kecil satu demi satu, bermula daripada ulasan terbaru.</p></div>
+          <button type="button" onclick="loadReviewShowcaseConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <form class="review-showcase-admin-form" onsubmit="saveReviewShowcaseSettings(event)">
+          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan ulasan di website</b></label>
+          <label>Ulasan bertukar setiap
+            <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
+          </label>
+          <label>Posisi asal notis
+            <select id="review-showcase-admin-position">
+              <option value="top-left">Kiri atas</option>
+              <option value="top-right">Kanan atas</option>
+              <option value="bottom-left">Kiri bawah</option>
+              <option value="bottom-right">Kanan bawah</option>
+            </select>
+          </label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
+          <div class="vote-admin-status" id="review-showcase-admin-status">Log masuk untuk urus paparan ulasan.</div>
+        </form>
+      </section>
+      <section class="vote-admin-panel" aria-labelledby="vote-admin-title">
+        <div class="vote-admin-head"><div><span>FIREBASE CUSTOM VOTE</span><h3 id="vote-admin-title">Tetapan Undian</h3><p>Hidupkan, tukar ayat atau pilihan vote yang pelanggan nampak.</p></div><button type="button" onclick="loadCustomVote(true)"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <form class="vote-admin-form" onsubmit="saveCustomVote(event)">
+          <label class="vote-admin-toggle"><input id="vote-admin-active" type="checkbox"><span></span><b>Paparkan undian di website</b></label>
+          <label>Tajuk undian<input id="vote-admin-title-input" maxlength="80" placeholder="Contoh: Game apa patut kami tambah?"></label>
+          <label>Penerangan<textarea id="vote-admin-description" rows="2" maxlength="180" placeholder="Tulis arahan pendek untuk pelanggan."></textarea></label>
+          <label>Pilihan jawapan <small>Satu pilihan setiap baris, minimum 2 dan maksimum 6.</small><textarea id="vote-admin-options" rows="5" maxlength="420" placeholder="Blox Fruits\nFree Fire\nGame lain"></textarea></label>
+          <label>Vote tamat pada <small>Kosongkan jika tiada masa tamat. Selepas masa ini, pelanggan hanya boleh lihat keputusan.</small><input id="vote-admin-end-at" type="datetime-local"></label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Vote</button><button type="button" class="vote-reset-btn" onclick="startNewCustomVote()"><i class="fa-solid fa-rotate"></i> Vote Baru</button><button type="button" class="vote-copy-link-btn" onclick="copyCustomVoteLink()"><i class="fa-solid fa-link"></i> Copy Link Vote</button></div>
+          <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
+        </form>
+      </section>
+      <form class="order-form" onsubmit="saveManualOrder(event)">
+        <div class="order-form-grid">
+          <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
+          <label>No. WhatsApp<input id="manual-order-phone" inputmode="tel" placeholder="0123456789" required></label>
+          <label>Nama produk<input id="manual-order-product" placeholder="Permanent Dragon" required></label>
+          <label>Harga (RM)<input id="manual-order-price" type="number" min="0" step="0.01" placeholder="130" required></label>
+          <label>Tarikh & masa transaksi<input id="manual-order-datetime" type="datetime-local" required></label>
+          <label class="order-wide">Link gambar produk <small>(atau paste gambar di bawah)</small><input id="manual-order-image" type="url" placeholder="https://.../gambar.png"></label>
+          <label>Status<select id="manual-order-status"><option value="Dalam proses">Dalam proses</option><option value="Siap">Siap</option><option value="Dibatalkan">Dibatalkan</option></select></label>
+        </div>
+        <div id="order-image-paste" class="order-image-paste" tabindex="0" onpaste="handleOrderImagePaste(event)">
+          <i class="fa-solid fa-paste"></i><strong>Paste gambar / screenshot di sini</strong><small>Tekan kotak ini, kemudian Ctrl + V. Atau pilih fail.</small>
+          <input id="manual-order-image-file" type="file" accept="image/*" onchange="handleOrderImageFile(this.files[0])">
+        </div>
+        <div id="order-image-preview" class="order-image-preview" hidden></div>
+        <div class="order-form-actions"><button type="submit" class="btn-primary" id="manual-order-save"><i class="fa-solid fa-floppy-disk"></i> Simpan transaksi</button><button type="button" class="btn-ghost" id="manual-order-cancel" onclick="resetManualOrderForm()" hidden>Batal edit</button></div>
+      </form>
+      <div class="order-admin-list-head"><strong>Transaksi terkini</strong><button onclick="loadAdminOrders()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+      <div id="order-admin-list" class="order-admin-list">Log masuk untuk lihat transaksi.</div>
+    </div>
+  </div>
+</div>
+<div id="toasts"></div>
+<script defer src="app.js?v=h4sx-product-variants-fix-20260802"></script>
+
+</body>
+</html>
+
+
