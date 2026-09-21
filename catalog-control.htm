@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=3">
+  <link rel="stylesheet" href="catalog-control.css?v=4">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=3"></script>
+  <script defer src="catalog-control.js?v=4"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -99,14 +99,14 @@
         <label>Harga RM<input id="p-price" type="number" min="0" step="0.01" required></label><label>Harga asal RM<input id="p-original-price" type="number" min="0" step="0.01"></label>
         <label>Stok<input id="p-stock" type="number" min="0" step="1"></label><label>Terjual<input id="p-sold" type="number" min="0" step="1"></label>
         <label class="wide">URL gambar / video<input id="p-img" type="url"></label>
-        <div class="wide image-upload-box" data-upload-for="product"><input id="p-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="p-image-preview"><i class="fa-solid fa-image"></i><span>Pilih gambar produk</span></div><button type="button" class="primary" id="p-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="p-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
+        <div class="wide image-upload-box" data-upload-for="product"><input id="p-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="p-image-preview"><i class="fa-solid fa-image"></i><span>Pilih gambar produk</span></div><div class="image-upload-copy"><strong>Upload gambar baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="p-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="p-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
         <label class="wide">Description<textarea id="p-desc" rows="3"></textarea></label>
       </div>
       <div id="game-fields" class="form-grid" hidden>
         <label>Nama game<input id="g-name" required></label><label>Platform<input id="g-platform" placeholder="Roblox"></label>
         <label>Badge<input id="g-badge"></label><label class="switch inline"><input id="g-oos" type="checkbox"><span></span> Soon / OOS</label>
         <label class="wide">URL cover / video<input id="g-img" type="url"></label>
-        <div class="wide image-upload-box" data-upload-for="game"><input id="g-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="g-image-preview"><i class="fa-solid fa-image"></i><span>Pilih cover game</span></div><button type="button" class="primary" id="g-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="g-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
+        <div class="wide image-upload-box" data-upload-for="game"><input id="g-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="g-image-preview"><i class="fa-solid fa-image"></i><span>Pilih cover game</span></div><div class="image-upload-copy"><strong>Upload cover baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="g-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="g-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
       </div>
       <label class="editor-label">Field tambahan (JSON)<textarea id="extra-json" class="json-editor small" spellcheck="false">{}</textarea></label>
       <div class="modal-actions"><button type="button" class="ghost" id="editor-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>

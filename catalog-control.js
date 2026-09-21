@@ -163,6 +163,35 @@ byId('g-img').addEventListener('change', event => setImagePreview('game', null, 
 byId('p-upload-imgbb').addEventListener('click', event => uploadImgBB('product', event.currentTarget));
 byId('g-upload-imgbb').addEventListener('click', event => uploadImgBB('game', event.currentTarget));
 
+document.querySelectorAll('.image-upload-box').forEach(box => {
+  const kind = box.dataset.uploadFor;
+  const input = byId(kind === 'product' ? 'p-image-file' : 'g-image-file');
+  box.addEventListener('click', event => {
+    if (event.target.closest('button') || event.target.closest('.image-upload-preview')) return;
+    input.click();
+  });
+  ['dragenter', 'dragover'].forEach(type => box.addEventListener(type, event => {
+    event.preventDefault();
+    box.classList.add('dragging');
+  }));
+  ['dragleave', 'drop'].forEach(type => box.addEventListener(type, event => {
+    event.preventDefault();
+    box.classList.remove('dragging');
+  }));
+  box.addEventListener('drop', event => selectUploadFile(kind, event.dataTransfer?.files?.[0]));
+});
+
+document.addEventListener('paste', event => {
+  if (byId('editor-modal').hidden) return;
+  const imageItem = Array.from(event.clipboardData?.items || []).find(item => item.type.startsWith('image/'));
+  if (!imageItem) return;
+  const file = imageItem.getAsFile();
+  if (!file) return;
+  event.preventDefault();
+  selectUploadFile(editorMode, file);
+  notify('Gambar daripada clipboard diterima. Tekan Upload ImgBB untuk jadikan link.');
+});
+
 async function uploadImgBB(kind, button) {
   const file = kind === 'product' ? productImageFile : gameImageFile;
   let savedKey = '';
