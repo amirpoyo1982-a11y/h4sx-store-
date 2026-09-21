@@ -192,6 +192,43 @@ document.addEventListener('paste', event => {
   notify('Gambar daripada clipboard diterima. Tekan Upload ImgBB untuk jadikan link.');
 });
 
+function readConsultation(item = {}) {
+  const source = item.consultation ?? item.konsultasi ?? item.consult;
+  const enabled = source === true || String(source).toLowerCase() === 'true' || (source && typeof source === 'object' && !Array.isArray(source));
+  const raw = source && typeof source === 'object' && !Array.isArray(source) ? source : {};
+  return {
+    enabled,
+    whatsapp: raw.whatsapp || item.whatsapp || item.phone || '',
+    buttonText: raw.buttonText || raw.button_text || item.consultationButton || '',
+    message: raw.message || raw.text || item.consultationMessage || ''
+  };
+}
+
+function syncProductConsultation() {
+  const enabled = byId('p-consultation').checked;
+  byId('p-consultation-fields').hidden = !enabled;
+  byId('p-price-field').hidden = enabled;
+  byId('p-original-price-field').hidden = enabled;
+  byId('p-price').required = !enabled;
+  if (enabled) {
+    byId('p-price').value = '';
+    byId('p-original-price').value = '';
+    if (!byId('p-badge').value.trim()) byId('p-badge').value = 'Konsultasi';
+  }
+}
+
+function syncGameConsultation() {
+  const enabled = byId('g-consultation').checked;
+  byId('g-consultation-fields').hidden = !enabled;
+  if (enabled) {
+    if (!byId('g-name').value.trim()) byId('g-name').value = 'Konsultasi WhatsApp';
+    if (!byId('g-badge').value.trim()) byId('g-badge').value = 'Konsultasi';
+  }
+}
+
+byId('p-consultation').addEventListener('change', syncProductConsultation);
+byId('g-consultation').addEventListener('change', syncGameConsultation);
+
 async function uploadImgBB(kind, button) {
   const file = kind === 'product' ? productImageFile : gameImageFile;
   let savedKey = '';
@@ -302,11 +339,17 @@ function openProductEditor(item = {}, index = null) {
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
   byId('p-img').value = item.img || item.image || item.video || ''; byId('p-desc').value = item.desc || item.description || '';
+  const consultation = readConsultation(item);
+  byId('p-consultation').checked = consultation.enabled;
+  byId('p-whatsapp').value = consultation.whatsapp;
+  byId('p-consultation-button').value = consultation.buttonText;
+  byId('p-consultation-message').value = consultation.message;
+  syncProductConsultation();
   productImageFile = null;
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description'];
+  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -319,11 +362,17 @@ function openGameEditor(item = {}, index = null) {
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-img').value = item.img || item.image || item.video || '';
+  const consultation = readConsultation(item);
+  byId('g-consultation').checked = consultation.enabled;
+  byId('g-whatsapp').value = consultation.whatsapp;
+  byId('g-consultation-button').value = consultation.buttonText;
+  byId('g-consultation-message').value = consultation.message;
+  syncGameConsultation();
   gameImageFile = null;
   byId('g-image-file').value = '';
   setImagePreview('game', null, byId('g-img').value);
   byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['name','platform','badge','badgeTitle','oos','img','image','video'];
+  const known = ['name','platform','badge','badgeTitle','oos','img','image','video','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -347,7 +396,8 @@ byId('editor-form').addEventListener('submit', async event => {
       const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
       const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
       if (duplicate) throw new Error('ID produk sudah digunakan.');
-      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:numberOrBlank(byId('p-price').value), originalPrice:numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), updatedAt:new Date().toISOString() });
+      const isConsultation = byId('p-consultation').checked;
+      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
       const next = [...products];
       if (editingKey === null) next.push(item); else next[editingKey] = item;
       await saveArray('inventory', next, 'Produk disimpan realtime.');
@@ -355,7 +405,8 @@ byId('editor-form').addEventListener('submit', async event => {
       const name = byId('g-name').value.trim();
       const duplicate = games.some((item, index) => index !== editingKey && String(item.name).toLowerCase() === name.toLowerCase());
       if (duplicate) throw new Error('Nama game sudah digunakan.');
-      const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, img:byId('g-img').value.trim(), updatedAt:new Date().toISOString() });
+      const isConsultation = byId('g-consultation').checked;
+      const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
       const next = [...games];
       if (editingKey === null) next.push(item); else next[editingKey] = item;
       await saveArray('games', next, 'Game disimpan realtime.');
