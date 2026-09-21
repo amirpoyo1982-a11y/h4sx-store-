@@ -8,6 +8,7 @@ const firebaseConfig = {
   appId: '1:416803081247:web:e201174233b953e539992a'
 };
 const ROOT = 'store';
+const IMGBB_KEY_STORAGE = 'h4sx_imgbb_api_key';
 const GIST = {
   inventory: 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/inventory.json',
   inventoryFallback: 'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json',
@@ -27,6 +28,8 @@ let editorMode = 'product';
 let editingKey = null;
 let listenersStarted = false;
 let toastTimer = null;
+let productImageFile = null;
+let gameImageFile = null;
 
 const $ = selector => document.querySelector(selector);
 const byId = id => document.getElementById(id);
@@ -112,6 +115,82 @@ byId('login-form').addEventListener('submit', async event => {
 });
 byId('logout-btn').addEventListener('click', () => auth.signOut());
 
+try { byId('imgbb-api-key').value = localStorage.getItem(IMGBB_KEY_STORAGE) || ''; } catch (error) {}
+byId('save-imgbb-key').addEventListener('click', () => {
+  const key = byId('imgbb-api-key').value.trim();
+  if (!key) return notify('Masukkan API key ImgBB dahulu.', true);
+  try { localStorage.setItem(IMGBB_KEY_STORAGE, key); }
+  catch (error) { return notify('Browser gagal menyimpan API key.', true); }
+  notify('API key ImgBB disimpan dalam browser ini.');
+});
+byId('toggle-imgbb-key').addEventListener('click', event => {
+  const input = byId('imgbb-api-key');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  event.currentTarget.querySelector('i').className = input.type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+});
+
+function setImagePreview(kind, file = null, url = '') {
+  const preview = byId(kind === 'product' ? 'p-image-preview' : 'g-image-preview');
+  if (!preview) return;
+  if (file) {
+    const objectUrl = URL.createObjectURL(file);
+    preview.innerHTML = '<img src="' + objectUrl + '" alt="Preview upload">';
+    preview.querySelector('img').addEventListener('load', () => URL.revokeObjectURL(objectUrl), {once:true});
+    return;
+  }
+  if (url) {
+    preview.innerHTML = '<img src="' + escapeHtml(url) + '" alt="Preview gambar">';
+    return;
+  }
+  preview.innerHTML = '<i class="fa-solid fa-image"></i><span>' + (kind === 'product' ? 'Pilih gambar produk' : 'Pilih cover game') + '</span>';
+}
+
+function selectUploadFile(kind, file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return notify('Sila pilih fail gambar.', true);
+  if (file.size > 32 * 1024 * 1024) return notify('Gambar melebihi had 32MB ImgBB.', true);
+  if (kind === 'product') productImageFile = file; else gameImageFile = file;
+  setImagePreview(kind, file);
+  byId(kind === 'product' ? 'p-upload-status' : 'g-upload-status').textContent = file.name + ' • ' + (file.size / 1024 / 1024).toFixed(2) + 'MB';
+}
+
+byId('p-image-preview').addEventListener('click', () => byId('p-image-file').click());
+byId('g-image-preview').addEventListener('click', () => byId('g-image-file').click());
+byId('p-image-file').addEventListener('change', event => selectUploadFile('product', event.target.files?.[0]));
+byId('g-image-file').addEventListener('change', event => selectUploadFile('game', event.target.files?.[0]));
+byId('p-img').addEventListener('change', event => setImagePreview('product', null, event.target.value.trim()));
+byId('g-img').addEventListener('change', event => setImagePreview('game', null, event.target.value.trim()));
+byId('p-upload-imgbb').addEventListener('click', event => uploadImgBB('product', event.currentTarget));
+byId('g-upload-imgbb').addEventListener('click', event => uploadImgBB('game', event.currentTarget));
+
+async function uploadImgBB(kind, button) {
+  const file = kind === 'product' ? productImageFile : gameImageFile;
+  let savedKey = '';
+  try { savedKey = localStorage.getItem(IMGBB_KEY_STORAGE) || ''; } catch (error) {}
+  const key = byId('imgbb-api-key').value.trim() || savedKey;
+  const status = byId(kind === 'product' ? 'p-upload-status' : 'g-upload-status');
+  if (!key) return notify('Simpan API key ImgBB di bahagian Tetapan dahulu.', true);
+  if (!file) return notify('Pilih gambar dahulu.', true);
+  setBusy(button, true, 'Uploading...');
+  status.textContent = 'Menghantar gambar ke ImgBB...';
+  try {
+    const form = new FormData();
+    form.append('image', file, file.name);
+    form.append('name', file.name.replace(/\.[^.]+$/, '').slice(0, 100));
+    const response = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), {method:'POST', body:form});
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data?.url) throw new Error(result?.error?.message || 'ImgBB upload gagal.');
+    const imageUrl = result.data.display_url || result.data.url;
+    byId(kind === 'product' ? 'p-img' : 'g-img').value = imageUrl;
+    setImagePreview(kind, null, imageUrl);
+    status.textContent = 'Siap • ' + imageUrl;
+    notify('Gambar berjaya diupload dan URL sudah dimasukkan.');
+  } catch (error) {
+    status.textContent = 'Upload gagal. Cuba semula.';
+    notify(error.message, true);
+  } finally { setBusy(button, false); }
+}
+
 document.querySelectorAll('.tabs button').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('.tabs button').forEach(item => item.classList.toggle('active', item === button));
   document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab));
@@ -194,6 +273,10 @@ function openProductEditor(item = {}, index = null) {
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
   byId('p-img').value = item.img || item.image || item.video || ''; byId('p-desc').value = item.desc || item.description || '';
+  productImageFile = null;
+  byId('p-image-file').value = '';
+  setImagePreview('product', null, byId('p-img').value);
+  byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
   const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
@@ -207,6 +290,10 @@ function openGameEditor(item = {}, index = null) {
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-img').value = item.img || item.image || item.video || '';
+  gameImageFile = null;
+  byId('g-image-file').value = '';
+  setImagePreview('game', null, byId('g-img').value);
+  byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
   const known = ['name','platform','badge','badgeTitle','oos','img','image','video'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
