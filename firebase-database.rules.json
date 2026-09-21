@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "store": {
+      ".read": true,
+      ".write": "auth != null",
+      "inventory": { ".validate": "newData.hasChildren()" },
+      "games": { ".validate": "newData.hasChildren()" },
+      "config": { ".validate": "newData.hasChildren()" }
+    }
+  }
+}

@@ -694,6 +694,11 @@ const INVENTORY_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json'
 ];
 const KEDAI_GIST_URL = 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/kedai.json';
+const REALTIME_STORE_ROOT = 'store';
+let realtimeDb = null;
+let realtimeGamesListening = false;
+let realtimeInventoryListening = false;
+let realtimeConfigListening = false;
 
 // === STORE CONFIG (Payment & Checkout Settings) ===
 // Edit setting kat bawah ni untuk enable/disable QR dan username
@@ -736,6 +741,14 @@ const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
 async function fetchKedaiJson() {
+  if (realtimeDb) {
+    try {
+      const snapshot = await realtimeDb.ref(REALTIME_STORE_ROOT + '/config').once('value');
+      if (snapshot.exists()) return snapshot.val();
+    } catch (error) {
+      console.warn('Realtime config read failed; using legacy fallback.', error);
+    }
+  }
   const url = KEDAI_GIST_URL;
   try { 
     console.log('Fetching kedai.json from:', url);
@@ -1747,18 +1760,28 @@ async function checkStore() {
     // Update current config with gist data
     if (normalizedConfig) {
       currentStoreConfig = { ...currentStoreConfig, ...normalizedConfig };
-      if (normalizedConfig.payment) {
-        storeConfig = {
-          ...storeConfig,
-          payment: {
-            ...(storeConfig.payment || {}),
-            ...(normalizedConfig.payment || {}),
-            duitNow: { ...(storeConfig.payment?.duitNow || {}), ...(normalizedConfig.payment?.duitNow || {}) },
-            tng: { ...(storeConfig.payment?.tng || {}), ...(normalizedConfig.payment?.tng || {}) }
-          }
-        };
-        updatePaymentUI();
+      storeConfig = {
+        ...storeConfig,
+        ...normalizedConfig,
+        payment: {
+          ...(storeConfig.payment || {}),
+          ...(normalizedConfig.payment || {}),
+          duitNow: { ...(storeConfig.payment?.duitNow || {}), ...(normalizedConfig.payment?.duitNow || {}) },
+          tng: { ...(storeConfig.payment?.tng || {}), ...(normalizedConfig.payment?.tng || {}) }
+        },
+        checkout: { ...(storeConfig.checkout || {}), ...(normalizedConfig.checkout || {}) },
+        warnBox: { ...(storeConfig.warnBox || {}), ...(normalizedConfig.warnBox || {}) }
+      };
+      if (storeConfig.payment?.duitNow) {
+        PAY_QR.duitnow.url = cleanUrl(storeConfig.payment.duitNow.qrUrl) || PAY_QR.duitnow.url;
+        PAY_QR.duitnow.name = storeConfig.payment.duitNow.accountName || PAY_QR.duitnow.name;
       }
+      if (storeConfig.payment?.tng) {
+        PAY_QR.tng.url = cleanUrl(storeConfig.payment.tng.qrUrl) || PAY_QR.tng.url;
+        PAY_QR.tng.name = storeConfig.payment.tng.accountName || PAY_QR.tng.name;
+      }
+      updatePaymentUI();
+      updateWarnBoxUI();
     }
     renderPromoBanner(currentStoreConfig);
     refreshReviewMaintenanceUi();
@@ -2029,28 +2052,45 @@ async function loadGames() {
       renderGames();
     }
   } catch(e) {}
+  const applyGames = rawData => {
+    const data = Array.isArray(rawData)
+      ? rawData
+      : (Array.isArray(rawData && rawData.games)
+        ? rawData.games
+        : (Array.isArray(rawData && rawData.value) ? rawData.value : (rawData && typeof rawData === 'object' ? Object.values(rawData) : [])));
+    if (!data.length) return false;
+    gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => {
+      const customBadge = g.badgeTitle || g.badgeText || g.titleBadge || g.label || g.badge || null;
+      const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:customBadge };
+      ['img', 'video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
+        if (game[key]) game[key] = cleanUrl(game[key]);
+      });
+      return game;
+    });
+    try { localStorage.setItem('h4sx_games_cache', JSON.stringify(gamesList)); } catch(e) {}
+    renderGames();
+    return true;
+  };
+  if (realtimeDb) {
+    try {
+      const gamesRef = realtimeDb.ref(REALTIME_STORE_ROOT + '/games');
+      const snapshot = await gamesRef.once('value');
+      if (snapshot.exists() && applyGames(snapshot.val())) {
+        if (!realtimeGamesListening) {
+          realtimeGamesListening = true;
+          gamesRef.on('value', next => { if (next.exists()) applyGames(next.val()); });
+        }
+        return;
+      }
+    } catch (error) {
+      console.warn('Realtime games read failed; using legacy fallback.', error);
+    }
+  }
   for (const url of GAMES_GIST_URLS) {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' }); if (!r.ok) continue;
       const rawData = await r.json();
-      // Terima array biasa serta format pembungkus agar Gist yang tersalah format tidak memaksa paparan cache lama.
-      const data = Array.isArray(rawData)
-        ? rawData
-        : (Array.isArray(rawData && rawData.games)
-          ? rawData.games
-          : (Array.isArray(rawData && rawData.value) ? rawData.value : []));
-      if (data.length) {
-        gamesList = data.filter(g => g && typeof g.name === 'string' && g.name.trim()).map(g => {
-          const customBadge = g.badgeTitle || g.badgeText || g.titleBadge || g.label || g.badge || null;
-          const game = { ...g, name:g.name.trim(), img:g.img||g.image||g.poster||'https://i.imgur.com/A9W8r4g.png', oos:g.oos===true||String(g.oos).toLowerCase()==='true', badge:customBadge };
-          ['img', 'video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
-            if (game[key]) game[key] = cleanUrl(game[key]);
-          });
-          return game;
-        });
-        try { localStorage.setItem('h4sx_games_cache', JSON.stringify(gamesList)); } catch(e) {}
-        return;
-      }
+      if (applyGames(rawData)) return;
     } catch(e) {}
   }
 }
@@ -2213,12 +2253,89 @@ async function loadInv() {
       renderGames();
     }
   } catch(e) {}
+  const applyInventory = data => {
+    if (!data) return false;
+    let tempConfig = null;
+    let tempInventory = [];
+    if (data.storeConfig) tempConfig = data.storeConfig;
+    if (Array.isArray(data)) {
+      if (data.length > 0 && data[0]?.storeConfig) {
+        tempConfig = data[0].storeConfig;
+        tempInventory = data.slice(1);
+      } else tempInventory = data;
+    } else if (Array.isArray(data.inventory)) tempInventory = data.inventory;
+    else if (typeof data === 'object' && !data.storeConfig) tempInventory = Object.values(data);
+
+    if (tempConfig) {
+      storeConfig = {
+        ...storeConfig,
+        ...tempConfig,
+        payment: {
+          ...(storeConfig.payment || {}), ...(tempConfig.payment || {}),
+          duitNow: { ...(storeConfig.payment?.duitNow || {}), ...(tempConfig.payment?.duitNow || {}) },
+          tng: { ...(storeConfig.payment?.tng || {}), ...(tempConfig.payment?.tng || {}) }
+        },
+        checkout: { ...(storeConfig.checkout || {}), ...(tempConfig.checkout || {}) },
+        warnBox: { ...(storeConfig.warnBox || {}), ...(tempConfig.warnBox || {}) }
+      };
+      if (storeConfig.payment?.duitNow) {
+        PAY_QR.duitnow.url = cleanUrl(storeConfig.payment.duitNow.qrUrl) || PAY_QR.duitnow.url;
+        PAY_QR.duitnow.name = storeConfig.payment.duitNow.accountName || PAY_QR.duitnow.name;
+      }
+      if (storeConfig.payment?.tng) {
+        PAY_QR.tng.url = cleanUrl(storeConfig.payment.tng.qrUrl) || PAY_QR.tng.url;
+        PAY_QR.tng.name = storeConfig.payment.tng.accountName || PAY_QR.tng.name;
+      }
+      updatePaymentUI();
+      updateWarnBoxUI();
+    }
+
+    inventory = tempInventory.map(item => {
+      const cleanedItem = { ...item };
+      ['img', 'video', 'videoUrl', 'mediaUrl', 'image', 'poster', 'posterImg', 'thumbnail', 'thumb'].forEach(key => {
+        if (cleanedItem[key]) cleanedItem[key] = cleanUrl(cleanedItem[key]);
+      });
+      if (cleanedItem.promoterPhone) {
+        cleanedItem.promoterPhone = String(cleanedItem.promoterPhone);
+        if (!cleanedItem.promoterPhone.startsWith('0') && cleanedItem.promoterPhone.length === 9) cleanedItem.promoterPhone = '0' + cleanedItem.promoterPhone;
+      }
+      return cleanedItem;
+    }).filter(item => item && item.id !== undefined && item.id !== null && item.id !== '');
+
+    if (!inventory.length) return false;
+    try {
+      localStorage.setItem('h4sx_inv_hash', JSON.stringify(inventory).length + '-' + inventory.length);
+      localStorage.setItem('h4sx_inventory_cache', JSON.stringify(inventory));
+    } catch(e) {}
+    syncInventoryGames();
+    renderGames();
+    openGameFromUrl();
+    return true;
+  };
+
+  if (realtimeDb) {
+    try {
+      const inventoryRef = realtimeDb.ref(REALTIME_STORE_ROOT + '/inventory');
+      const snapshot = await inventoryRef.once('value');
+      if (snapshot.exists() && applyInventory(snapshot.val())) {
+        if (!realtimeInventoryListening) {
+          realtimeInventoryListening = true;
+          inventoryRef.on('value', next => { if (next.exists()) applyInventory(next.val()); });
+        }
+        return;
+      }
+    } catch (error) {
+      console.warn('Realtime inventory read failed; using legacy fallback.', error);
+    }
+  }
   for (const url of INVENTORY_GIST_URLS) {
     try {
       const r = await fetch(url + '?t=' + Date.now(), { cache:'no-store' });
       if (!r.ok) continue;
       const data = await r.json();
       if (data) {
+        if (applyInventory(data)) break;
+        /* Legacy parser retained below for unusual historical Gist shapes. */
         let tempConfig = null;
         let tempInventory = [];
         
@@ -2364,6 +2481,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBOkyPe2f1tHu9OQiwHHpgfJTYM-KM7cuU",
   authDomain: "h4sx-6712c.firebaseapp.com",
   projectId: "h4sx-6712c",
+  databaseURL: "https://h4sx-6712c-default-rtdb.asia-southeast1.firebasedatabase.app",
   storageBucket: "h4sx-6712c.firebasestorage.app",
   messagingSenderId: "416803081247",
   appId: "1:416803081247:web:e201174233b953e539992a",
@@ -2422,6 +2540,7 @@ if (firebaseConfig.apiKey) {
   try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
+    realtimeDb = firebase.database();
     orderAuth = firebase.auth();
     const promoApp = firebase.apps.find(app => app.name === 'h4sx-promo-phone') || firebase.initializeApp(firebaseConfig, 'h4sx-promo-phone');
     promoDb = promoApp.firestore();
@@ -3553,6 +3672,7 @@ function bootStoreApp() {
   startCatalogProgress();
   loadGames().then(renderGames);
   loadInv();
+  startRealtimeConfigSync();
   startCountdown();
   initScrollReveal();
   runWhenIdle(loadReviews, 1200);
@@ -3562,6 +3682,15 @@ function bootStoreApp() {
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
+}
+
+function startRealtimeConfigSync() {
+  if (!realtimeDb || realtimeConfigListening) return;
+  realtimeConfigListening = true;
+  realtimeDb.ref(REALTIME_STORE_ROOT + '/config').on('value', snapshot => {
+    if (!snapshot.exists()) return;
+    checkStore().catch(error => console.warn('Realtime store config refresh failed:', error));
+  }, error => console.warn('Realtime config listener failed:', error));
 }
 
 if (document.readyState === 'loading') {

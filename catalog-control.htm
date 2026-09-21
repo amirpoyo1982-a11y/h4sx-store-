@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>H4SX Catalog Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <link rel="stylesheet" href="catalog-control.css?v=1">
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script defer src="catalog-control.js?v=1"></script>
+</head>
+<body>
+  <div id="toast" class="toast" role="status"></div>
+  <main class="shell">
+    <section id="login-view" class="login-card">
+      <div class="brand"><span>H4</span>SX</div>
+      <p class="eyebrow">CONTROL BERASINGAN</p>
+      <h1>Catalog Control</h1>
+      <p class="muted">Urus produk, game dan tetapan kedai secara realtime tanpa buka Gist.</p>
+      <form id="login-form">
+        <label>Email admin<input id="login-email" type="email" autocomplete="username" required></label>
+        <label>Password<input id="login-password" type="password" autocomplete="current-password" required></label>
+        <button class="primary" type="submit"><i class="fa-solid fa-lock-open"></i> Log masuk</button>
+      </form>
+      <p id="login-error" class="error"></p>
+    </section>
+
+    <section id="control-view" hidden>
+      <header class="topbar">
+        <div><p class="eyebrow">FIREBASE REALTIME</p><h1>Catalog Control</h1><small id="sync-status">Menyambung...</small></div>
+        <div class="top-actions"><a href="index.htm?preview=1" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Preview</a><button id="logout-btn" class="ghost"><i class="fa-solid fa-right-from-bracket"></i> Log keluar</button></div>
+      </header>
+
+      <div class="stats">
+        <article><i class="fa-solid fa-box"></i><div><strong id="product-count">0</strong><span>Produk</span></div></article>
+        <article><i class="fa-solid fa-gamepad"></i><div><strong id="game-count">0</strong><span>Game</span></div></article>
+        <article><i class="fa-solid fa-bolt"></i><div><strong>Live</strong><span>Auto update</span></div></article>
+      </div>
+
+      <nav class="tabs" aria-label="Bahagian control">
+        <button class="active" data-tab="products"><i class="fa-solid fa-boxes-stacked"></i> Produk</button>
+        <button data-tab="games"><i class="fa-solid fa-gamepad"></i> Game</button>
+        <button data-tab="settings"><i class="fa-solid fa-sliders"></i> Tetapan Gist</button>
+        <button data-tab="migration"><i class="fa-solid fa-cloud-arrow-up"></i> Import & Backup</button>
+      </nav>
+
+      <section class="panel active" data-panel="products">
+        <div class="panel-head"><div><h2>Inventory</h2><p>Edit stok, harga dan produk; perubahan keluar terus di website.</p></div><button class="primary" id="new-product"><i class="fa-solid fa-plus"></i> Produk baru</button></div>
+        <input id="product-search" class="search" placeholder="Cari nama, game atau ID...">
+        <div id="product-list" class="item-list"></div>
+      </section>
+
+      <section class="panel" data-panel="games">
+        <div class="panel-head"><div><h2>Game & kategori</h2><p>Tambah game baru, cover, badge, platform dan status Soon.</p></div><button class="primary" id="new-game"><i class="fa-solid fa-plus"></i> Game baru</button></div>
+        <input id="game-search" class="search" placeholder="Cari game atau platform...">
+        <div id="game-list" class="item-list"></div>
+      </section>
+
+      <section class="panel" data-panel="settings">
+        <div class="panel-head"><div><h2>Semua tetapan kedai</h2><p>Ini menggantikan <code>kedai.json</code>. Semua key lama kekal disokong.</p></div><button class="primary" id="save-config"><i class="fa-solid fa-floppy-disk"></i> Simpan realtime</button></div>
+        <div class="quick-settings">
+          <label class="switch"><input id="quick-open" type="checkbox"><span></span> Kedai buka</label>
+          <label class="switch"><input id="quick-maintenance" type="checkbox"><span></span> Maintenance</label>
+          <label class="switch"><input id="quick-review-maintenance" type="checkbox"><span></span> Review maintenance</label>
+          <label class="switch"><input id="quick-banner" type="checkbox"><span></span> Promo banner</label>
+        </div>
+        <label class="editor-label">JSON tetapan penuh<textarea id="config-editor" class="json-editor" spellcheck="false"></textarea></label>
+        <p class="hint">Boleh edit flash sale, announcement, payment QR, waktu operasi, banner dan semua field Gist lama.</p>
+      </section>
+
+      <section class="panel" data-panel="migration">
+        <div class="panel-head"><div><h2>Import Gist & backup</h2><p>Import sekali untuk pindahkan data sedia ada ke Firebase. Selepas itu edit dari halaman ini.</p></div></div>
+        <div class="migration-grid">
+          <article><i class="fa-brands fa-github"></i><h3>Import semua Gist</h3><p>Ambil inventory, games dan kedai semasa lalu simpan ke Realtime Database.</p><button class="primary" id="import-gist"><i class="fa-solid fa-cloud-arrow-up"></i> Import ke Firebase</button></article>
+          <article><i class="fa-solid fa-download"></i><h3>Backup Firebase</h3><p>Muat turun satu fail JSON lengkap sebelum buat perubahan besar.</p><button class="ghost" id="download-backup"><i class="fa-solid fa-download"></i> Download backup</button></article>
+          <article><i class="fa-solid fa-upload"></i><h3>Restore backup</h3><p>Pilih backup JSON yang pernah dimuat turun daripada control ini.</p><label class="file-button"><i class="fa-solid fa-upload"></i> Pilih backup<input id="restore-file" type="file" accept="application/json"></label></article>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="editor-modal" class="modal" hidden>
+    <form id="editor-form" class="modal-card">
+      <button type="button" class="modal-close" id="editor-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow" id="editor-kicker">EDITOR</p><h2 id="editor-title">Edit</h2>
+      <div id="product-fields" class="form-grid">
+        <label>ID<input id="p-id" required></label><label>Nama produk<input id="p-name" required></label>
+        <label>Game / kategori<input id="p-game" required></label><label>Platform<input id="p-platform" placeholder="Roblox"></label>
+        <label>Subcategory<input id="p-subcategory"></label><label>Badge / promo<input id="p-badge"></label>
+        <label>Harga RM<input id="p-price" type="number" min="0" step="0.01" required></label><label>Harga asal RM<input id="p-original-price" type="number" min="0" step="0.01"></label>
+        <label>Stok<input id="p-stock" type="number" min="0" step="1"></label><label>Terjual<input id="p-sold" type="number" min="0" step="1"></label>
+        <label class="wide">URL gambar / video<input id="p-img" type="url"></label><label class="wide">Description<textarea id="p-desc" rows="3"></textarea></label>
+      </div>
+      <div id="game-fields" class="form-grid" hidden>
+        <label>Nama game<input id="g-name" required></label><label>Platform<input id="g-platform" placeholder="Roblox"></label>
+        <label>Badge<input id="g-badge"></label><label class="switch inline"><input id="g-oos" type="checkbox"><span></span> Soon / OOS</label>
+        <label class="wide">URL cover / video<input id="g-img" type="url"></label>
+      </div>
+      <label class="editor-label">Field tambahan (JSON)<textarea id="extra-json" class="json-editor small" spellcheck="false">{}</textarea></label>
+      <div class="modal-actions"><button type="button" class="ghost" id="editor-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+    </form>
+  </div>
+</body>
+</html>
