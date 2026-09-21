@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v2.3';
+const CHANGELOG_VERSION = 'v3.0';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -3002,7 +3002,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=5';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=8';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -3791,6 +3791,10 @@ function getCartQtyForItem(id, variantId = null) {
   return cartItems.filter(ci => ci.id === id && (variantId === null || String(ci.variantId || '') === String(variantId || ''))).reduce((sum, ci) => sum + Number(ci.qty || 0), 0);
 }
 let productModalPromoTimer = null;
+function promoStartTimestamp(item) {
+  const timestamp = Date.parse(String(item?.promoStartsAt ?? item?.promoStartAt ?? '').trim());
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
 function promoExpiryTimestamp(item) {
   const explicit = Date.parse(String(item?.promoExpiresAt || '').trim());
   if (Number.isFinite(explicit)) return explicit;
@@ -3826,6 +3830,7 @@ function productPromoConfig(item, requestedCode = '') {
     if (!rawCode || !Number.isFinite(rawDiscount) || rawDiscount <= 0) return null;
     if (config?.active === false || config?.promoActive === false || String(config?.promoActive).toLowerCase() === 'false') return null;
     const type = String(config?.type ?? config?.promoType ?? 'percent').trim().toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+    const startsAt = promoStartTimestamp(config);
     const expiresAt = promoExpiryTimestamp(config);
     const usageLimit = Math.max(1, Math.floor(Number(config?.usageLimit ?? config?.promoUsageLimit ?? config?.promoLimit ?? 1) || 1));
     return {
@@ -3834,10 +3839,12 @@ function productPromoConfig(item, requestedCode = '') {
       type,
       label: config?.text || config?.promoText || (type === 'fixed' ? 'RM' + rawDiscount.toFixed(2) + ' off' : rawDiscount + '% off'),
       usageLimit,
+      startsAt,
       expiresAt,
       durationMs: promoDurationMs(config),
       // OTP is opt-in. Promo biasa terus boleh ditebus tanpa nombor telefon.
       requirePhone: config?.promoRequirePhone === true || String(config?.promoRequirePhone).toLowerCase() === 'true',
+      notStarted: Boolean(startsAt && Date.now() < startsAt),
       expired: Boolean(expiresAt && Date.now() >= expiresAt)
     };
   }).filter(Boolean);
@@ -3848,8 +3855,9 @@ function productPromoResult(item, suppliedCode) {
   const promo = productPromoConfig(item, entered);
   const base = Math.max(0, Number(item?.price || 0));
   const expiresAt = promo ? effectivePromoExpiry(item, promo) : 0;
+  const notStarted = Boolean(promo?.startsAt && Date.now() < promo.startsAt);
   const expired = Boolean(expiresAt && Date.now() >= expiresAt);
-  if (!promo || !entered || entered !== promo.code || expired) return { valid: false, base, final: base, promo, expiresAt, reason: expired ? 'expired' : 'invalid' };
+  if (!promo || !entered || entered !== promo.code || notStarted || expired) return { valid: false, base, final: base, promo, expiresAt, reason: notStarted ? 'not-started' : (expired ? 'expired' : 'invalid') };
   const discount = promo.type === 'fixed' ? Math.min(base, promo.amount) : base * (promo.amount / 100);
   return { valid: true, base, final: Math.max(0, base - discount), promo, expiresAt, discount };
 }
@@ -4169,10 +4177,12 @@ function syncProductModalPromo(item) {
     if (priceEl) priceEl.textContent = 'RM' + result.base.toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   } else {
-    status.innerHTML = result.reason === 'expired'
-      ? '<i class="fa-solid fa-clock"></i> Promo ini telah tamat.<span id="product-modal-promo-clock"></span>'
-      : (input.value.trim() ? 'Kod tidak sah untuk item ini.' : 'Masukkan kod untuk aktifkan harga promo.') + '<span id="product-modal-promo-clock"></span>';
-    if (input.value.trim() || result.reason === 'expired') status.classList.add('is-error');
+    status.innerHTML = result.reason === 'not-started'
+      ? '<i class="fa-solid fa-clock"></i> Promo ini belum bermula.<span id="product-modal-promo-clock"></span>'
+      : (result.reason === 'expired'
+        ? '<i class="fa-solid fa-clock"></i> Promo ini telah tamat.<span id="product-modal-promo-clock"></span>'
+        : (input.value.trim() ? 'Kod tidak sah untuk item ini.' : 'Masukkan kod untuk aktifkan harga promo.') + '<span id="product-modal-promo-clock"></span>');
+    if (input.value.trim() || result.reason === 'expired' || result.reason === 'not-started') status.classList.add('is-error');
     if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   }
@@ -4300,7 +4310,7 @@ async function claimProductPromo(item, promoCode) {
   const result = productPromoResult(item, promoCode);
   if (!promoCode) return true;
   if (!result.valid) {
-    toast(result.reason === 'expired' ? 'Promo ini telah tamat.' : 'Kod promo tidak sah.', true);
+    toast(result.reason === 'not-started' ? 'Promo ini belum bermula.' : (result.reason === 'expired' ? 'Promo ini telah tamat.' : 'Kod promo tidak sah.'), true);
     return false;
   }
   const promo = result.promo;
@@ -4360,9 +4370,9 @@ async function claimProductPromo(item, promoCode) {
         return;
       }
       const usage = usageSnapshot.exists ? (usageSnapshot.data() || {}) : {};
-      const expiry = usage.expiresAt?.toDate ? usage.expiresAt.toDate().getTime() : promo.expiresAt;
+      const expiry = promo.expiresAt;
       if (expiry && Date.now() >= expiry) throw new Error('promo-expired');
-      const maxUses = Math.max(1, Number(usage.maxUses || promo.usageLimit));
+      const maxUses = Math.max(1, Number(promo.usageLimit));
       const used = Math.max(0, Number(usage.useCount || 0));
       if (used >= maxUses) throw new Error('promo-used');
       const usagePayload = {

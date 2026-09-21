@@ -1,52 +1,44 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '30 July 2026',
-  time: 'Update hari ini',
-  version: 'v2.3',
+  date: '21 September 2026',
+  time: '11:56 PM (MYT)',
+  version: 'v3.0',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
         {
-          icon: 'fa-chart-pie',
-          text: '<strong>Status delivery live</strong> - kad hijau baharu memaparkan jumlah item sebenar daripada inventory, titik status berkelip dan progress proses penghantaran yang bergerak 20% setiap saat.'
+          icon: 'fa-fire-flame-curved',
+          text: '<strong>Firebase Realtime Database</strong> - inventory, senarai game dan tetapan kedai kini dikemas kini secara langsung tanpa perlu edit Gist dan refresh manual.'
         },
         {
-          icon: 'fa-qrcode',
-          text: '<strong>QR pembayaran dalam popup WhatsApp</strong> - pelanggan kini boleh pilih untuk lihat katalog QR pembayaran sebelum terus chat admin atau promoter.'
+          icon: 'fa-sliders',
+          text: '<strong>Catalog Control dalam website</strong> - admin boleh tambah, edit, duplicate dan padam produk atau game terus daripada panel admin yang sama.'
         },
         {
-          icon: 'fa-user-tag',
-          text: '<strong>Promoter boleh dimatikan per produk</strong> - tetapkan <code>"promoted": false</code> dalam inventory untuk sembunyikan label Promoted by dan gunakan urusan admin biasa.'
+          icon: 'fa-ticket',
+          text: '<strong>Promo Code Manager</strong> - cipta kod untuk mana-mana produk, pilih peratus atau potongan RM, tetapkan kuota pelanggan, waktu mula, waktu tamat dan tempoh penggunaan selepas redeem.'
         },
         {
-          icon: 'fa-cart-shopping',
-          text: '<strong>Cart kekal selepas refresh</strong> - item yang sudah dimasukkan ke troli kini disimpan pada browser pelanggan, jadi tidak hilang apabila website di-refresh atau dibuka semula pada peranti yang sama.'
+          icon: 'fa-image',
+          text: '<strong>Upload gambar melalui ImgBB</strong> - admin boleh pilih fail, drag-and-drop atau terus tekan Ctrl + V; URL gambar dimasukkan secara automatik.'
         },
         {
-          icon: 'fa-hashtag',
-          text: '<strong>Auto ID JSON Helper</strong> - helper admin kini mengesan nombor ID produk yang kosong dan terus mencadangkan ID paling awal, contohnya ID 4 jika susunan ialah 1, 2, 3 dan 5.'
+          icon: 'fa-xmark',
+          text: '<strong>Butang buang gambar</strong> - gambar yang tersalah pilih atau URL lama boleh dikosongkan terus melalui butang X sebelum item disimpan.'
         },
         {
-          icon: 'fa-bullhorn',
-          text: '<strong>Announcement dari Gist</strong> - admin kini boleh hidupkan notis baharu melalui kedai.json dengan tajuk, mesej, gambar, button, link dan tempoh sembunyi sendiri.'
+          icon: 'fa-wand-magic-sparkles',
+          text: '<strong>Ambil ID kosong</strong> - editor produk kini boleh mencari dan mengisi nombor ID paling kecil yang belum digunakan secara automatik.'
         },
         {
           icon: 'fa-headset',
-          text: '<strong>Kad konsultasi inventory</strong> - admin boleh tambah satu card konsultasi dalam inventory setiap game untuk urusan Gamepass, item khas atau pakej yang perlu semakan dahulu.'
+          text: '<strong>Editor konsultasi WhatsApp</strong> - nombor, teks butang dan mesej WhatsApp kini boleh diedit terus untuk produk dan game.'
         },
         {
-          icon: 'fa-whatsapp',
-          text: '<strong>Popup WhatsApp konsultasi</strong> - pelanggan kini dapat pilihan Cancel atau Pergi WhatsApp sebelum chat admin, dengan paparan ringan dan tidak menggelapkan skrin.'
-        },
-        {
-          icon: 'fa-globe',
-          text: '<strong>Domain rasmi baharu</strong> - website utama kini di <strong>www.h4sxmy.xyz</strong> dan laman ulasan di <strong>review.h4sxmy.xyz</strong>.'
-        },
-        {
-          icon: 'fa-link',
-          text: '<strong>Gist game lebih tahan</strong> - pembaca game kini menyokong struktur data biasa atau dibungkus supaya katalog tidak mudah kembali kepada cache lama.'
+          icon: 'fa-gamepad',
+          text: '<strong>Katalog Firebase lengkap</strong> - data produk dan game lama sudah dipindahkan ke pangkalan data realtime dan kekal serasi dengan paparan kedai.'
         }
       ]
     },
@@ -55,26 +47,16 @@ const CHANGELOG_DATA = {
       title: 'Diperbaiki Hari Ini',
       items: [
         {
-          icon: 'fa-box-open',
-          text: '<strong>Item Non Perm</strong> - item dengan nama Non perm tidak lagi tersalah ditapis sebagai Permanent Fruit dan akan muncul semula dalam katalog Blox Fruits.'
+          icon: 'fa-tag',
+          text: '<strong>Konsultasi tidak perlukan harga</strong> - apabila mod Konsultasi WhatsApp diaktifkan, ruangan harga tidak lagi diwajibkan.'
         },
         {
-          icon: 'fa-rotate',
-          text: '<strong>Cache katalog</strong> - versi skrip dinaikkan supaya browser lebih cepat menerima pembetulan katalog selepas website dikemaskini.'
+          icon: 'fa-clock',
+          text: '<strong>Masa promo dipatuhi</strong> - kod belum boleh digunakan sebelum waktu mula dan akan ditolak secara automatik selepas waktu tamat.'
         },
         {
-          icon: 'fa-calendar-check',
-          text: '<strong>Tarikh changelog</strong> - simbol masa lama yang mengelirukan dibuang dan paparan release dikemas kini kepada versi v2.1.'
-        }
-      ]
-    },
-    {
-      type: 'removed',
-      title: 'Dibuang Hari Ini',
-      items: [
-        {
-          icon: 'fa-trash',
-          text: '<strong>Padanan Permanent yang terlalu luas</strong> - filter lama tidak lagi menyembunyikan item hanya kerana nama mengandungi perkataan Non perm.'
+          icon: 'fa-users',
+          text: '<strong>Had promo boleh dikemas kini</strong> - perubahan kuota dalam panel digunakan pada transaksi Firebase seterusnya tanpa tersekat pada nilai lama.'
         }
       ]
     }

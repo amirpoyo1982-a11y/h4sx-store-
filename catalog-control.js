@@ -30,6 +30,7 @@ let listenersStarted = false;
 let toastTimer = null;
 let productImageFile = null;
 let gameImageFile = null;
+let editingPromoCode = '';
 
 const $ = selector => document.querySelector(selector);
 const byId = id => document.getElementById(id);
@@ -63,6 +64,7 @@ function startListeners() {
   database.ref(ROOT + '/inventory').on('value', snapshot => {
     products = asArray(snapshot.val());
     renderProducts();
+    renderPromos();
     byId('product-count').textContent = products.length;
     markSynced();
   }, realtimeError);
@@ -162,6 +164,19 @@ byId('p-img').addEventListener('change', event => setImagePreview('product', nul
 byId('g-img').addEventListener('change', event => setImagePreview('game', null, event.target.value.trim()));
 byId('p-upload-imgbb').addEventListener('click', event => uploadImgBB('product', event.currentTarget));
 byId('g-upload-imgbb').addEventListener('click', event => uploadImgBB('game', event.currentTarget));
+
+function clearEditorImage(kind) {
+  const isProduct = kind === 'product';
+  if (isProduct) productImageFile = null; else gameImageFile = null;
+  byId(isProduct ? 'p-image-file' : 'g-image-file').value = '';
+  byId(isProduct ? 'p-img' : 'g-img').value = '';
+  byId(isProduct ? 'p-upload-status' : 'g-upload-status').textContent = 'Gambar dibuang daripada borang. Tekan Simpan untuk sahkan.';
+  setImagePreview(kind);
+  notify('Gambar dibuang daripada borang.');
+}
+
+byId('p-remove-image').addEventListener('click', () => clearEditorImage('product'));
+byId('g-remove-image').addEventListener('click', () => clearEditorImage('game'));
 
 document.querySelectorAll('.image-upload-box').forEach(box => {
   const kind = box.dataset.uploadFor;
@@ -288,16 +303,164 @@ function renderGames() {
   }).join('') : '<div class="empty">Belum ada game.</div>';
 }
 
+function promoSources(item) {
+  if (Array.isArray(item?.promoCodes) && item.promoCodes.length) return item.promoCodes;
+  const code = item?.promoCode || item?.discountCode || item?.code;
+  if (!code) return [];
+  return [{
+    code,
+    discount: item.promoDiscount ?? item.discount,
+    type: item.promoType ?? item.type,
+    usageLimit: item.promoUsageLimit ?? item.promoLimit ?? item.usageLimit,
+    promoStartsAt: item.promoStartsAt ?? item.promoStartAt,
+    promoExpiresAt: item.promoExpiresAt,
+    promoDurationMinutes: item.promoDurationMinutes,
+    promoRequirePhone: item.promoRequirePhone,
+    active: item.promoActive
+  }];
+}
+
+function promoGroups() {
+  const map = new Map();
+  products.forEach((product, productIndex) => promoSources(product).forEach(source => {
+    const code = String(source?.code || source?.promoCode || '').trim().toUpperCase();
+    if (!code) return;
+    const merged = { ...product, ...source, code };
+    if (!map.has(code)) map.set(code, { code, config: merged, targetIndices: [] });
+    map.get(code).targetIndices.push(productIndex);
+  }));
+  return Array.from(map.values()).sort((a, b) => a.code.localeCompare(b.code));
+}
+
+function promoDateValue(value) {
+  const timestamp = Date.parse(String(value || ''));
+  if (!Number.isFinite(timestamp)) return '';
+  const date = new Date(timestamp - new Date(timestamp).getTimezoneOffset() * 60000);
+  return date.toISOString().slice(0, 16);
+}
+
+function renderPromos() {
+  const list = byId('promo-list');
+  if (!list) return;
+  const groups = promoGroups();
+  list.innerHTML = groups.length ? groups.map(group => {
+    const config = group.config;
+    const amount = Number(config.discount ?? config.promoDiscount ?? 0);
+    const type = String(config.type ?? config.promoType ?? 'percent').toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+    const limit = Math.max(1, Number(config.usageLimit ?? config.promoUsageLimit ?? config.promoLimit ?? 1));
+    const starts = Date.parse(String(config.promoStartsAt ?? config.promoStartAt ?? ''));
+    const expires = Date.parse(String(config.promoExpiresAt || ''));
+    const active = !(config.active === false || config.promoActive === false || String(config.active).toLowerCase() === 'false');
+    const now = Date.now();
+    const status = !active ? 'Tidak aktif' : (Number.isFinite(starts) && now < starts ? 'Belum mula' : (Number.isFinite(expires) && now >= expires ? 'Tamat' : 'Aktif'));
+    const targetNames = group.targetIndices.map(index => products[index]?.name || ('#' + products[index]?.id)).join(', ');
+    const encoded = encodeURIComponent(group.code);
+    return '<article class="item-row promo-row"><span class="item-placeholder"><i class="fa-solid fa-ticket"></i></span><div class="item-copy"><strong>' + escapeHtml(group.code) + '<em class="promo-status' + (status === 'Aktif' ? '' : ' off') + '">' + status + '</em></strong><span>' + (type === 'fixed' ? 'RM' + amount.toFixed(2) : amount + '%') + ' • Had ' + limit + ' orang • ' + group.targetIndices.length + ' produk</span><span>' + escapeHtml(targetNames) + '</span></div><div class="row-actions"><button data-action="edit-promo" data-code="' + encoded + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="danger" data-action="delete-promo" data-code="' + encoded + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+  }).join('') : '<div class="empty">Belum ada promo code. Tekan “Promo baru” untuk buat satu.</div>';
+}
+
+function openPromoEditor(code = '') {
+  const group = code ? promoGroups().find(item => item.code === code) : null;
+  const config = group?.config || {};
+  editingPromoCode = group?.code || '';
+  byId('promo-title').textContent = group ? 'Edit ' + group.code : 'Promo baru';
+  byId('promo-code').value = group?.code || '';
+  byId('promo-type').value = String(config.type ?? config.promoType ?? 'percent').toLowerCase() === 'fixed' ? 'fixed' : 'percent';
+  byId('promo-discount').value = config.discount ?? config.promoDiscount ?? '';
+  byId('promo-limit').value = config.usageLimit ?? config.promoUsageLimit ?? config.promoLimit ?? 1;
+  byId('promo-starts').value = promoDateValue(config.promoStartsAt ?? config.promoStartAt);
+  byId('promo-expires').value = promoDateValue(config.promoExpiresAt);
+  byId('promo-duration').value = config.promoDurationMinutes ?? config.durationMinutes ?? '';
+  byId('promo-active').checked = !(config.active === false || config.promoActive === false || String(config.active).toLowerCase() === 'false');
+  byId('promo-phone').checked = config.promoRequirePhone === true || String(config.promoRequirePhone).toLowerCase() === 'true';
+  const selected = new Set(group?.targetIndices || []);
+  byId('promo-products').innerHTML = products.map((product, index) => '<option value="' + index + '"' + (selected.has(index) ? ' selected' : '') + '>#' + escapeHtml(product.id) + ' — ' + escapeHtml(product.name || 'Tanpa nama') + '</option>').join('');
+  byId('promo-modal').hidden = false;
+}
+
+function closePromoEditor() {
+  byId('promo-modal').hidden = true;
+  editingPromoCode = '';
+}
+
+function clearLegacyPromo(item, code) {
+  const directCode = String(item.promoCode || item.discountCode || item.code || '').trim().toUpperCase();
+  if (directCode !== code) return;
+  ['promoCode','discountCode','promoDiscount','discount','promoUsageLimit','promoLimit','usageLimit','promoExpiresAt','promoStartsAt','promoStartAt','promoDurationMinutes','promoRequirePhone','promoActive'].forEach(key => delete item[key]);
+}
+
+async function removePromo(code) {
+  const next = JSON.parse(JSON.stringify(products));
+  next.forEach(item => {
+    if (Array.isArray(item.promoCodes)) {
+      item.promoCodes = item.promoCodes.filter(entry => String(entry?.code || entry?.promoCode || '').trim().toUpperCase() !== code);
+      if (!item.promoCodes.length) delete item.promoCodes;
+    }
+    clearLegacyPromo(item, code);
+  });
+  await saveArray('inventory', next, 'Promo ' + code + ' dipadam.');
+}
+
 byId('product-search').addEventListener('input', renderProducts);
 byId('game-search').addEventListener('input', renderGames);
 byId('new-product').addEventListener('click', () => openProductEditor());
 byId('new-game').addEventListener('click', () => openGameEditor());
+byId('new-promo').addEventListener('click', () => openPromoEditor());
+byId('promo-close').addEventListener('click', closePromoEditor);
+byId('promo-cancel').addEventListener('click', closePromoEditor);
+byId('promo-modal').addEventListener('click', event => { if (event.target === byId('promo-modal')) closePromoEditor(); });
+byId('promo-select-all').addEventListener('click', () => Array.from(byId('promo-products').options).forEach(option => { option.selected = true; }));
+byId('promo-clear-all').addEventListener('click', () => Array.from(byId('promo-products').options).forEach(option => { option.selected = false; }));
+
+byId('promo-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const code = byId('promo-code').value.trim().toUpperCase().replace(/\s+/g, '');
+  const discount = Number(byId('promo-discount').value);
+  const type = byId('promo-type').value;
+  const targetIndices = Array.from(byId('promo-products').selectedOptions).map(option => Number(option.value));
+  if (!code) return notify('Masukkan kod promo.', true);
+  if (!targetIndices.length) return notify('Pilih sekurang-kurangnya satu produk.', true);
+  if (!Number.isFinite(discount) || discount <= 0 || (type === 'percent' && discount > 100)) return notify('Nilai diskaun tidak sah.', true);
+  const startsValue = byId('promo-starts').value;
+  const expiresValue = byId('promo-expires').value;
+  const startsAt = startsValue ? new Date(startsValue).toISOString() : '';
+  const expiresAt = expiresValue ? new Date(expiresValue).toISOString() : '';
+  if (startsAt && expiresAt && Date.parse(expiresAt) <= Date.parse(startsAt)) return notify('Waktu tamat mesti selepas waktu mula.', true);
+  if (!editingPromoCode && promoGroups().some(group => group.code === code)) return notify('Kod promo ini sudah ada. Tekan ikon pensel untuk edit.', true);
+  const promo = compact({ code, type, discount, usageLimit:Math.max(1, Math.floor(Number(byId('promo-limit').value) || 1)), active:byId('promo-active').checked, promoStartsAt:startsAt, promoExpiresAt:expiresAt, promoDurationMinutes:numberOrBlank(byId('promo-duration').value), promoRequirePhone:byId('promo-phone').checked });
+  const next = JSON.parse(JSON.stringify(products));
+  const oldCode = editingPromoCode || code;
+  next.forEach(item => {
+    if (Array.isArray(item.promoCodes)) item.promoCodes = item.promoCodes.filter(entry => String(entry?.code || entry?.promoCode || '').trim().toUpperCase() !== oldCode && String(entry?.code || entry?.promoCode || '').trim().toUpperCase() !== code);
+    clearLegacyPromo(item, oldCode);
+  });
+  targetIndices.forEach(index => {
+    const item = next[index];
+    if (!item) return;
+    item.promoCodes = Array.isArray(item.promoCodes) ? item.promoCodes : [];
+    item.promoCodes.push(promo);
+    item.promoActive = true;
+  });
+  const button = event.submitter;
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await saveArray('inventory', next, 'Promo ' + code + ' disimpan realtime.');
+    closePromoEditor();
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
 
 document.addEventListener('click', async event => {
   const actionButton = event.target.closest('[data-action]');
   if (!actionButton) return;
   const index = Number(actionButton.dataset.index);
   const action = actionButton.dataset.action;
+  if (action === 'edit-promo') return openPromoEditor(decodeURIComponent(actionButton.dataset.code || ''));
+  if (action === 'delete-promo') {
+    const code = decodeURIComponent(actionButton.dataset.code || '');
+    if (confirm('Padam promo "' + code + '" daripada semua produk?')) await removePromo(code);
+    return;
+  }
   if (action === 'edit-product') openProductEditor(products[index], index);
   if (action === 'duplicate-product') {
     const copy = JSON.parse(JSON.stringify(products[index]));
@@ -327,6 +490,12 @@ function nextProductId() {
   while (used.has(id)) id++;
   return id;
 }
+
+byId('p-next-id').addEventListener('click', () => {
+  const id = nextProductId();
+  byId('p-id').value = id;
+  notify('ID kosong #' + id + ' sudah dipilih.');
+});
 
 function openProductEditor(item = {}, index = null) {
   editorMode = 'product'; editingKey = index;

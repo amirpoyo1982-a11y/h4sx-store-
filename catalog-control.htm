@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=5">
+  <link rel="stylesheet" href="catalog-control.css?v=8">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=5"></script>
+  <script defer src="catalog-control.js?v=8"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -45,6 +45,7 @@
       <nav class="tabs" aria-label="Bahagian control">
         <button class="active" data-tab="products"><i class="fa-solid fa-boxes-stacked"></i> Produk</button>
         <button data-tab="games"><i class="fa-solid fa-gamepad"></i> Game</button>
+        <button data-tab="promos"><i class="fa-solid fa-ticket"></i> Promo Code</button>
         <button data-tab="settings"><i class="fa-solid fa-sliders"></i> Tetapan Kedai</button>
         <button data-tab="migration"><i class="fa-solid fa-cloud-arrow-up"></i> Import & Backup</button>
       </nav>
@@ -59,6 +60,11 @@
         <div class="panel-head"><div><h2>Game & kategori</h2><p>Tambah game baru, cover, badge, platform dan status Soon.</p></div><button class="primary" id="new-game"><i class="fa-solid fa-plus"></i> Game baru</button></div>
         <input id="game-search" class="search" placeholder="Cari game atau platform...">
         <div id="game-list" class="item-list"></div>
+      </section>
+
+      <section class="panel" data-panel="promos">
+        <div class="panel-head"><div><h2>Promo Code</h2><p>Buat kod untuk satu atau banyak produk, tetapkan diskaun, kuota dan masa tamat.</p></div><button class="primary" id="new-promo"><i class="fa-solid fa-plus"></i> Promo baru</button></div>
+        <div id="promo-list" class="item-list"></div>
       </section>
 
       <section class="panel" data-panel="settings">
@@ -88,12 +94,32 @@
     </section>
   </main>
 
+  <div id="promo-modal" class="modal" hidden>
+    <form id="promo-form" class="modal-card">
+      <button type="button" class="modal-close" id="promo-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">PROMO CODE</p><h2 id="promo-title">Promo baru</h2>
+      <div class="form-grid">
+        <label>Kod promo<input id="promo-code" maxlength="40" required placeholder="CONTOH20"></label>
+        <label>Jenis diskaun<select id="promo-type"><option value="percent">Peratus (%)</option><option value="fixed">Potongan RM</option></select></label>
+        <label>Nilai diskaun<input id="promo-discount" type="number" min="0.01" step="0.01" required placeholder="20"></label>
+        <label>Had pengguna<input id="promo-limit" type="number" min="1" step="1" required value="1"></label>
+        <label>Mula pada<input id="promo-starts" type="datetime-local"></label>
+        <label>Tamat pada<input id="promo-expires" type="datetime-local"></label>
+        <label class="wide">Tempoh boleh digunakan selepas redeem (minit)<input id="promo-duration" type="number" min="0" step="1" placeholder="Contoh: 10"></label>
+        <div class="wide promo-switches"><label class="switch"><input id="promo-active" type="checkbox" checked><span></span> Aktif</label><label class="switch"><input id="promo-phone" type="checkbox"><span></span> Wajib sahkan telefon</label></div>
+        <div class="wide promo-targets-head"><strong>Pilih produk/app untuk promosi</strong><div><button type="button" class="ghost" id="promo-select-all">Pilih semua</button><button type="button" class="ghost" id="promo-clear-all">Kosongkan</button></div></div>
+        <label class="wide"><select id="promo-products" class="promo-products" multiple size="9" required></select><small>Tekan Ctrl untuk pilih beberapa produk pada komputer.</small></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="ghost" id="promo-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan promo realtime</button></div>
+    </form>
+  </div>
+
   <div id="editor-modal" class="modal" hidden>
     <form id="editor-form" class="modal-card">
       <button type="button" class="modal-close" id="editor-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
       <p class="eyebrow" id="editor-kicker">EDITOR</p><h2 id="editor-title">Edit</h2>
       <div id="product-fields" class="form-grid">
-        <label>ID<input id="p-id" required></label><label>Nama produk<input id="p-name" required></label>
+        <label>ID Produk<div class="input-action-row"><input id="p-id" required><button type="button" class="ghost" id="p-next-id" title="Cari nombor ID yang belum digunakan"><i class="fa-solid fa-wand-magic-sparkles"></i> Ambil ID kosong</button></div></label><label>Nama produk<input id="p-name" required></label>
         <label>Game / kategori<input id="p-game" required></label><label>Platform<input id="p-platform" placeholder="Roblox"></label>
         <label>Subcategory<input id="p-subcategory"></label><label>Badge / promo<input id="p-badge"></label>
         <label id="p-price-field">Harga RM<input id="p-price" type="number" min="0" step="0.01" required></label><label id="p-original-price-field">Harga asal RM<input id="p-original-price" type="number" min="0" step="0.01"></label>
@@ -101,7 +127,7 @@
         <label class="switch inline wide consultation-toggle"><input id="p-consultation" type="checkbox"><span></span> Konsultasi WhatsApp — tak perlu harga</label>
         <div id="p-consultation-fields" class="consultation-fields wide" hidden><label>Nombor WhatsApp<input id="p-whatsapp" inputmode="tel" placeholder="6285178259060"></label><label>Teks butang<input id="p-consultation-button" placeholder="Konsultasi WhatsApp"></label><label class="wide">Mesej WhatsApp<textarea id="p-consultation-message" rows="2" placeholder="Hi H4SX, saya nak tanya produk ini."></textarea></label></div>
         <label class="wide">URL gambar / video<input id="p-img" type="url"></label>
-        <div class="wide image-upload-box" data-upload-for="product"><input id="p-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="p-image-preview"><i class="fa-solid fa-image"></i><span>Pilih gambar produk</span></div><div class="image-upload-copy"><strong>Upload gambar baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="p-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="p-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
+        <div class="wide image-upload-box" data-upload-for="product"><input id="p-image-file" type="file" accept="image/*"><button type="button" class="image-remove" id="p-remove-image" title="Buang gambar" aria-label="Buang gambar"><i class="fa-solid fa-xmark"></i></button><div class="image-upload-preview" id="p-image-preview"><i class="fa-solid fa-image"></i><span>Pilih gambar produk</span></div><div class="image-upload-copy"><strong>Upload gambar baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="p-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="p-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
         <label class="wide">Description<textarea id="p-desc" rows="3"></textarea></label>
       </div>
       <div id="game-fields" class="form-grid" hidden>
@@ -110,7 +136,7 @@
         <label class="switch inline wide consultation-toggle"><input id="g-consultation" type="checkbox"><span></span> Jadikan konsultasi WhatsApp</label>
         <div id="g-consultation-fields" class="consultation-fields wide" hidden><label>Nombor WhatsApp<input id="g-whatsapp" inputmode="tel" placeholder="6285178259060"></label><label>Teks butang<input id="g-consultation-button" placeholder="Chat WhatsApp"></label><label class="wide">Mesej WhatsApp<textarea id="g-consultation-message" rows="2" placeholder="Hi H4SX, saya nak tanya game ini."></textarea></label></div>
         <label class="wide">URL cover / video<input id="g-img" type="url"></label>
-        <div class="wide image-upload-box" data-upload-for="game"><input id="g-image-file" type="file" accept="image/*"><div class="image-upload-preview" id="g-image-preview"><i class="fa-solid fa-image"></i><span>Pilih cover game</span></div><div class="image-upload-copy"><strong>Upload cover baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="g-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="g-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
+        <div class="wide image-upload-box" data-upload-for="game"><input id="g-image-file" type="file" accept="image/*"><button type="button" class="image-remove" id="g-remove-image" title="Buang gambar" aria-label="Buang gambar"><i class="fa-solid fa-xmark"></i></button><div class="image-upload-preview" id="g-image-preview"><i class="fa-solid fa-image"></i><span>Pilih cover game</span></div><div class="image-upload-copy"><strong>Upload cover baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="g-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="g-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
       </div>
       <label class="editor-label">Field tambahan (JSON)<textarea id="extra-json" class="json-editor small" spellcheck="false">{}</textarea></label>
       <div class="modal-actions"><button type="button" class="ghost" id="editor-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
