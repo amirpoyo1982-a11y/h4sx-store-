@@ -48,7 +48,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-product-variants-20260802">
+  <link rel="stylesheet" href="styles.css?v=h4sx-firebase-control-20260921">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -784,6 +784,10 @@
     </div>
     <div id="order-admin-form-wrap" hidden>
       <div class="order-admin-user"><span id="order-admin-email-display"></span><button onclick="adminOrderLogout()">Log keluar</button></div>
+      <section class="catalog-admin-launch">
+        <div><span>FIREBASE REALTIME</span><h3>Produk & Game</h3><p>Tambah dan edit barang, harga, stok, gambar serta kategori game terus dalam website ini.</p></div>
+        <button type="button" class="btn-primary" onclick="openCatalogControl()"><i class="fa-solid fa-boxes-stacked"></i> Buka Catalog Control</button>
+      </section>
       <div class="visitor-dashboard">
         <div class="visitor-dashboard-head"><strong><i class="fa-solid fa-chart-line"></i> Pelawat Website</strong><button onclick="loadVisitorDashboard()"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
         <div class="visitor-stats"><div><small>Jumlah pelawat</small><strong id="visitor-total">&mdash;</strong></div><div><small>Aktif sekarang</small><strong id="visitor-active">&mdash;</strong></div></div>
@@ -845,8 +849,15 @@
     </div>
   </div>
 </div>
+<!-- IN-WEBSITE FIREBASE CATALOG CONTROL -->
+<div id="catalog-control-overlay" class="catalog-control-overlay" hidden>
+  <div class="catalog-control-shell">
+    <header><div><span>ADMIN WEBSITE</span><strong>Firebase Catalog Control</strong></div><button type="button" onclick="closeCatalogControl()" aria-label="Tutup Catalog Control"><i class="fa-solid fa-xmark"></i></button></header>
+    <iframe id="catalog-control-frame" title="Firebase Catalog Control" loading="lazy"></iframe>
+  </div>
+</div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-product-variants-fix-20260802"></script>
+<script defer src="app.js?v=h4sx-firebase-control-20260921"></script>
 
 </body>
 </html>

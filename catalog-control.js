@@ -17,6 +17,7 @@ const GIST = {
 };
 
 firebase.initializeApp(firebaseConfig);
+if (new URLSearchParams(location.search).get('embedded') === '1') document.body.classList.add('embedded-control');
 const auth = firebase.auth();
 const database = firebase.database();
 let products = [];

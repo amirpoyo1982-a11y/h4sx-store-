@@ -2993,6 +2993,28 @@ function openOrderAdmin() {
   syncOrderAdminUI();
   setDefaultManualOrderDate();
 }
+
+function openCatalogControl() {
+  if (!orderAuth?.currentUser) {
+    toast('Log masuk admin dahulu untuk urus katalog.', true);
+    return;
+  }
+  const overlay = document.getElementById('catalog-control-overlay');
+  const frame = document.getElementById('catalog-control-frame');
+  if (!overlay || !frame) return;
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1';
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCatalogControl() {
+  const overlay = document.getElementById('catalog-control-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  setTimeout(() => { overlay.hidden = true; }, 180);
+  if (!document.getElementById('order-admin-modal')?.classList.contains('show')) document.body.style.overflow = '';
+}
 function closeOrderAdmin() { document.getElementById('order-admin-modal')?.classList.remove('show'); }
 function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
