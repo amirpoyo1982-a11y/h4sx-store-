@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '6:45 PM (MYT)',
-  version: 'v3.7',
+  time: '7:03 PM (MYT)',
+  version: 'v3.8',
   sections: [
     {
       type: 'added',
@@ -58,6 +58,10 @@ const CHANGELOG_DATA = {
       type: 'fixed',
       title: 'Diperbaiki Hari Ini',
       items: [
+        {
+          icon: 'fa-thumbtack',
+          text: '<strong>Pin dan posisi kini jelas berfungsi</strong> - cache Catalog Control dibersihkan dan produk Pin, Atas serta Bawah kini dipaparkan dalam seksyen tersendiri tanpa tersekat oleh subcategory.'
+        },
         {
           icon: 'fa-eye-slash',
           text: '<strong>Butiran promo dirahsiakan</strong> - peratus diskaun dan had pelanggan tidak lagi dipaparkan sebelum kod berjaya ditebus.'

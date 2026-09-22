@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.7';
+const CHANGELOG_VERSION = 'v3.8';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -3011,7 +3011,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=9';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=11';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -4791,7 +4791,7 @@ function openPermanentFruitConsultation() {
   return;
 }
 function renderProductSubsection(label, items) {
-  const icon = /buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked');
+  const icon = /pin/i.test(label) ? 'fa-thumbtack' : (/atas/i.test(label) ? 'fa-arrow-up' : (/bawah/i.test(label) ? 'fa-arrow-down' : (/buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked'))));
   return '<section class="product-subsection reveal">' +
     '<div class="product-subhead"><div><i class="fa-solid ' + icon + '"></i><span>' + escapeHtml(label) + '</span></div><b>' + items.length + ' item</b></div>' +
     '<div class="product-subgrid">' + items.map(productCardHTML).join('') + '</div>' +
@@ -4811,12 +4811,23 @@ function renderProductGrid() {
     grid.innerHTML = currentProductBanner + (consultationSection || '<p class="product-empty">Tiada item untuk filter ini.</p>');
     return;
   }
-  const subcats = orderedProductSubcategories(items);
-  if (currentProductFilter === 'all' && subcats.length > 1) {
-    grid.innerHTML = currentProductBanner + consultationSection + subcats.map(sub => {
-      const groupItems = items.filter(item => productSubcategory(item) === sub);
-      return renderProductSubsection(sub, groupItems);
-    }).join('');
+  if (currentProductFilter === 'all') {
+    const pinnedItems = items.filter(isProductPinned);
+    const regularItems = items.filter(item => !isProductPinned(item));
+    const topItems = regularItems.filter(item => productDisplayPosition(item) === 'top');
+    const middleItems = regularItems.filter(item => productDisplayPosition(item) === 'middle');
+    const bottomItems = regularItems.filter(item => productDisplayPosition(item) === 'bottom');
+    const sections = [];
+    if (pinnedItems.length) sections.push(renderProductSubsection('Produk Pin', pinnedItems));
+    if (topItems.length) sections.push(renderProductSubsection('Posisi Atas', topItems));
+    const middleSubcats = orderedProductSubcategories(middleItems);
+    if (middleSubcats.length > 1) {
+      middleSubcats.forEach(sub => sections.push(renderProductSubsection(sub, middleItems.filter(item => productSubcategory(item) === sub))));
+    } else if (middleItems.length) {
+      sections.push(renderProductSubsection(middleSubcats[0] || 'Posisi Tengah', middleItems));
+    }
+    if (bottomItems.length) sections.push(renderProductSubsection('Posisi Bawah', bottomItems));
+    grid.innerHTML = currentProductBanner + consultationSection + sections.join('');
   } else {
     grid.innerHTML = currentProductBanner + consultationSection + items.map(productCardHTML).join('');
   }
