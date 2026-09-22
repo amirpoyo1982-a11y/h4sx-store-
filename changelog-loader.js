@@ -10,11 +10,11 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-cart-shopping',
-          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan pesanan seperti aliran marketplace Itemku.'
+          text: '<strong>Troli belanja H4SX</strong> - cart kini mempunyai pilihan item, pilih semua, kawalan kuantiti, subtotal dan ringkasan pesanan yang lebih mudah digunakan.'
         },
         {
           icon: 'fa-table-columns',
-          text: '<strong>Layout marketplace baharu</strong> - kedudukan hero, katalog, pilihan game, status kedai dan kad produk disusun semula dengan rupa yang jelas berbeza tanpa mengubah warna atau fungsi sedia ada.'
+          text: '<strong>Layout katalog H4SX baharu</strong> - kedudukan hero, katalog, pilihan game, status kedai dan kad produk disusun semula tanpa mengubah warna atau fungsi sedia ada.'
         },
         {
           icon: 'fa-thumbtack',

@@ -3171,7 +3171,7 @@ details.faq[open] .faq-ic {
   .product-modal-promo-otp-row button { min-width: 78px; font-size: 10px; }
 }
 
-/* Marketplace cart inspired by Itemku's select-and-checkout flow. */
+/* H4SX cart select-and-checkout flow. */
 .market-layout-v2 #cart-overlay {
   align-items: center;
   justify-content: center;
@@ -8039,7 +8039,7 @@ body {
   #shop-section #game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
 }
 
-/* Itemku-style platform choice: image card first, then reveal the selected game's catalog. */
+/* H4SX platform choice: image card first, then reveal the selected game's catalog. */
 #shop-section .catalog-marketplace-intro { display: none !important; }
 #shop-section .platform-filter-bar {
   grid-template-columns: repeat(2, minmax(180px, 214px)) !important;
