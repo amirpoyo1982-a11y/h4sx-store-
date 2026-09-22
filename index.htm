@@ -48,7 +48,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-firebase-control-20260921">
+  <link rel="stylesheet" href="styles.css?v=h4sx-roblox-profile-20260922">
 </head>
 <body>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -118,7 +118,7 @@
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=v3.0-firebase-promo"></script>
+<script defer src="changelog-loader.js?v=v3.2-roblox-profile"></script>
 <!-- MARQUEE -->
 <div class="marquee-wrap">
   <div class="marquee-track">
@@ -440,7 +440,8 @@
         <div class="co-block">
           <div class="co-title"><span class="co-n">1</span> Roblox Username</div>
           <label class="flabel">Pastikan username betul</label>
-          <input type="text" id="roblox-username" oninput="valCO()" placeholder="e.g. BuilderMan" class="finput">
+          <input type="text" id="roblox-username" oninput="handleRobloxUsernameInput()" placeholder="e.g. BuilderMan" class="finput" autocomplete="off" maxlength="20">
+          <div id="roblox-profile-check" class="roblox-profile-check" hidden aria-live="polite"></div>
         </div>
         <div class="co-block hidden" id="account-cred-block">
           <div class="co-title"><span class="co-n">1A</span> Maklumat Login (Jika Diperlukan)</div>
@@ -857,7 +858,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-auto-product-id-20260921"></script>
+<script defer src="app.js?v=h4sx-roblox-profile-20260922"></script>
 
 </body>
 </html>

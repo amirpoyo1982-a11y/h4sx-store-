@@ -507,6 +507,7 @@ function openProductEditor(item = {}, index = null) {
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
+  byId('p-roblox-lookup').checked = item.robloxUsernameLookup === true || String(item.robloxUsernameLookup).toLowerCase() === 'true';
   byId('p-img').value = item.img || item.image || item.video || ''; byId('p-desc').value = item.desc || item.description || '';
   const consultation = readConsultation(item);
   byId('p-consultation').checked = consultation.enabled;
@@ -518,7 +519,7 @@ function openProductEditor(item = {}, index = null) {
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
+  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -566,7 +567,7 @@ byId('editor-form').addEventListener('submit', async event => {
       const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
       if (duplicate) throw new Error('ID produk sudah digunakan.');
       const isConsultation = byId('p-consultation').checked;
-      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
       const next = [...products];
       if (editingKey === null) next.push(item); else next[editingKey] = item;
       await saveArray('inventory', next, 'Produk disimpan realtime.');

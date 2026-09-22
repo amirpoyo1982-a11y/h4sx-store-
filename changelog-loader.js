@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '21 September 2026',
-  time: '11:56 PM (MYT)',
-  version: 'v3.0',
+  date: '22 September 2026',
+  time: '4:41 PM (MYT)',
+  version: 'v3.2',
   sections: [
     {
       type: 'added',
@@ -33,6 +33,10 @@ const CHANGELOG_DATA = {
           text: '<strong>Ambil ID kosong</strong> - editor produk kini boleh mencari dan mengisi nombor ID paling kecil yang belum digunakan secara automatik.'
         },
         {
+          icon: 'fa-user-check',
+          text: '<strong>Semakan profil Roblox per item</strong> - admin boleh aktifkan pengesanan untuk produk pilihan sahaja; username tepat terus disahkan, manakala carian seperti Adam memaparkan beberapa profil untuk dipilih bersama avatar, display name, ID dan pautan sebenar.'
+        },
+        {
           icon: 'fa-headset',
           text: '<strong>Editor konsultasi WhatsApp</strong> - nombor, teks butang dan mesej WhatsApp kini boleh diedit terus untuk produk dan game.'
         },
@@ -57,6 +61,18 @@ const CHANGELOG_DATA = {
         {
           icon: 'fa-users',
           text: '<strong>Had promo boleh dikemas kini</strong> - perubahan kuota dalam panel digunakan pada transaksi Firebase seterusnya tanpa tersekat pada nilai lama.'
+        },
+        {
+          icon: 'fa-hourglass-start',
+          text: '<strong>Countdown bermula selepas redeem</strong> - tempoh penggunaan peribadi tidak lagi berjalan atau dipaparkan sebelum pelanggan menekan butang Guna.'
+        },
+        {
+          icon: 'fa-rotate',
+          text: '<strong>Harga promo kekal selepas refresh</strong> - status redeem pada peranti dipulihkan semula dan harga diskaun dipaparkan sehingga tempohnya tamat.'
+        },
+        {
+          icon: 'fa-unlock',
+          text: '<strong>Input promo tidak terkunci</strong> - apabila satu kod tamat, pelanggan masih boleh mengosongkan input dan mencuba kod lain.'
         }
       ]
     }

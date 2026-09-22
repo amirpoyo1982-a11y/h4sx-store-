@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.0';
+const CHANGELOG_VERSION = 'v3.2';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -2550,6 +2550,15 @@ if (firebaseConfig.apiKey) {
     console.error("Firebase init error:", e);
   }
 }
+if (promoAuth) {
+  promoAuth.onAuthStateChanged(() => {
+    if (!inventory.length) return;
+    if (currentGame) renderProductGrid();
+    renderCart();
+    const modalItem = inventory.find(item => String(item.id) === String(modalItemId));
+    if (modalItem) syncProductModalPromo(modalItem);
+  });
+}
 
 function voteEscape(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[char]));
@@ -3002,7 +3011,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=8';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=9';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -3797,10 +3806,7 @@ function promoStartTimestamp(item) {
 }
 function promoExpiryTimestamp(item) {
   const explicit = Date.parse(String(item?.promoExpiresAt || '').trim());
-  if (Number.isFinite(explicit)) return explicit;
-  const started = Date.parse(String(item?.promoStartsAt ?? item?.promoStartAt ?? '').trim());
-  const duration = promoDurationMs(item);
-  return Number.isFinite(started) && duration ? started + duration : 0;
+  return Number.isFinite(explicit) ? explicit : 0;
 }
 function promoDurationMs(item) {
   // A duration on a promoCodes entry overrides the item-wide fallback duration.
@@ -4091,15 +4097,20 @@ function promoDraftStorageKey(item) {
 function savedProductPromoCode(item) {
   const saved = storedProductPromoCode(item);
   const result = productPromoResult(item, saved);
-  return result.valid && promoPhoneReady(item, result.promo) ? saved : '';
+  const redeemed = result.valid && promoRedeemedOnThisDevice(item, result.promo);
+  if (saved && (!result.valid || !redeemed)) {
+    localStorage.removeItem(promoDraftStorageKey(item));
+    return '';
+  }
+  return redeemed && promoPhoneReady(item, result.promo) ? saved : '';
 }
 function storedProductPromoCode(item) {
   return String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
 }
 function saveProductPromoDraft(item, code) {
   const result = productPromoResult(item, code);
-  if (result.valid) localStorage.setItem(promoDraftStorageKey(item), result.promo.code);
-  else if (!String(code || '').trim() || result.reason === 'expired') localStorage.removeItem(promoDraftStorageKey(item));
+  if (result.valid && promoRedeemedOnThisDevice(item, result.promo)) localStorage.setItem(promoDraftStorageKey(item), result.promo.code);
+  else if (!String(code || '').trim() || result.reason === 'expired' || result.reason === 'not-started') localStorage.removeItem(promoDraftStorageKey(item));
   return result;
 }
 function cancelProductPromo(item) {
@@ -4120,6 +4131,15 @@ function cancelProductPromo(item) {
   syncProductPromoCard(item);
   syncProductModalPromo(item);
   toast('Kod promo dibatalkan. Anda boleh cuba kod lain.', false);
+}
+function expireProductPromo(item) {
+  if (!item?.id) return;
+  localStorage.removeItem(promoDraftStorageKey(item));
+  cartItems.forEach(cartItem => {
+    if (String(cartItem.id) === String(item.id)) delete cartItem.promoCode;
+  });
+  saveCart();
+  renderCart();
 }
 function syncProductPromoCard(item) {
   if (!item?.id) return;
@@ -4165,15 +4185,20 @@ function syncProductModalPromo(item) {
   wrap.hidden = !promo;
   if (!promo) return;
   if (title) title.textContent = 'Kod promo: ' + promo.label + ' - terhad ' + promo.usageLimit + ' pelanggan';
-  const needsPhone = result.valid && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneVerificationReady(item, result.promo);
+  const redeemed = result.valid && promoRedeemedOnThisDevice(item, result.promo);
+  const needsPhone = result.valid && !redeemed && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneVerificationReady(item, result.promo);
   status.className = 'product-modal-promo-status';
-  if (result.valid && !needsPhone) {
+  if (result.valid && redeemed) {
     status.classList.add('is-valid');
-    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Kod sah. Jimat RM' + result.discount.toFixed(2) + '.<span id="product-modal-promo-clock"></span>';
+    status.innerHTML = '<i class="fa-solid fa-circle-check"></i> Promo aktif. Jimat RM' + result.discount.toFixed(2) + '.<span id="product-modal-promo-clock"></span>';
     if (priceEl) priceEl.textContent = 'RM' + result.final.toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = 'RM' + result.base.toFixed(2);
-  } else if (result.valid) {
+  } else if (needsPhone) {
     status.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i> Kod sah. Sahkan nombor telefon untuk aktifkan harga promo.<span id="product-modal-promo-clock"></span>';
+    if (priceEl) priceEl.textContent = 'RM' + result.base.toFixed(2);
+    if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
+  } else if (result.valid) {
+    status.innerHTML = '<i class="fa-solid fa-ticket"></i> Kod sah. Tekan Guna untuk redeem dan mulakan tempoh promo.<span id="product-modal-promo-clock"></span>';
     if (priceEl) priceEl.textContent = 'RM' + result.base.toFixed(2);
     if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   } else {
@@ -4188,7 +4213,7 @@ function syncProductModalPromo(item) {
   }
   const expiresAt = effectivePromoExpiry(item, promo);
   const clock = document.getElementById('product-modal-promo-clock');
-  if (clock && expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(expiresAt - Date.now()) + '</strong>';
+  if (clock && redeemed && expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(expiresAt - Date.now()) + '</strong>';
 }
 function setupProductModalPromo(item) {
   const wrap = document.getElementById('product-modal-promo');
@@ -4197,7 +4222,8 @@ function setupProductModalPromo(item) {
   const cancel = document.getElementById('product-modal-promo-cancel');
   if (!wrap || !input || !apply) return;
   if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
-  input.value = storedProductPromoCode(item);
+  input.value = savedProductPromoCode(item);
+  input.disabled = false;
   setupProductPromoOtp(item);
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => {
@@ -4230,14 +4256,18 @@ function setupProductModalPromo(item) {
     if (claimed) saveProductPromoDraft(item, code);
     sync();
     syncProductPromoCard(item);
-    if (claimed && !productModalPromoTimer) {
+    const claimedPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
+    const claimedExpiry = effectivePromoExpiry(item, claimedPromo);
+    if (claimed && claimedExpiry && !productModalPromoTimer) {
       productModalPromoTimer = setInterval(() => {
         if (modalItemId !== item.id) return;
         const activePromo = productPromoConfig(item, input.value);
         const activeExpiry = effectivePromoExpiry(item, activePromo);
         if (activeExpiry && Date.now() >= activeExpiry) {
-          input.disabled = true;
-          apply.disabled = true;
+          expireProductPromo(item);
+          input.value = '';
+          input.disabled = false;
+          apply.disabled = false;
           syncProductModalPromo(item);
           syncProductPromoCard(item);
           clearInterval(productModalPromoTimer);
@@ -4247,29 +4277,32 @@ function setupProductModalPromo(item) {
         }
       }, 1000);
     }
-    const nextPromo = productPromoConfig(item, input.value);
-    apply.disabled = Boolean(effectivePromoExpiry(item, nextPromo) && Date.now() >= effectivePromoExpiry(item, nextPromo));
+    const nextPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
+    apply.disabled = Boolean(nextPromo && effectivePromoExpiry(item, nextPromo) && Date.now() >= effectivePromoExpiry(item, nextPromo));
   };
-  const promo = productPromoConfig(item, input.value);
+  const promo = input.value.trim() ? productPromoConfig(item, input.value) : null;
   const initialExpiry = effectivePromoExpiry(item, promo);
-  input.disabled = Boolean(initialExpiry && Date.now() >= initialExpiry);
+  const initialRedeemed = promo && promoRedeemedOnThisDevice(item, promo);
+  input.disabled = false;
   apply.disabled = Boolean(initialExpiry && Date.now() >= initialExpiry);
   sync();
-  if (initialExpiry && Date.now() < initialExpiry) {
+  if (initialRedeemed && initialExpiry && Date.now() < initialExpiry) {
     productModalPromoTimer = setInterval(() => {
       if (modalItemId !== item.id) return;
-      const nextPromo = productPromoConfig(item, input.value);
+      const nextPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
       const nextExpiry = effectivePromoExpiry(item, nextPromo);
       if (nextExpiry && Date.now() >= nextExpiry) {
-        input.disabled = true;
-        apply.disabled = true;
+        expireProductPromo(item);
+        input.value = '';
+        input.disabled = false;
+        apply.disabled = false;
         sync();
         syncProductPromoCard(item);
         clearInterval(productModalPromoTimer);
         productModalPromoTimer = null;
       } else {
         const clock = document.getElementById('product-modal-promo-clock');
-        if (clock && nextExpiry) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(nextExpiry - Date.now()) + '</strong>';
+        if (clock && nextExpiry && promoRedeemedOnThisDevice(item, nextPromo)) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(nextExpiry - Date.now()) + '</strong>';
       }
     }, 1000);
   }
@@ -4297,6 +4330,13 @@ function promoRedemptionState(item, promo) {
     if (parsed && typeof parsed === 'object') return parsed;
   } catch (_) {}
   return { deviceId: raw, expiresAt: 0 };
+}
+function promoRedeemedOnThisDevice(item, promo) {
+  const state = promoRedemptionState(item, promo);
+  if (!state) return false;
+  const user = promoPhoneUser();
+  if (state.userId && user?.uid) return state.userId === user.uid;
+  return Boolean(state.deviceId && state.deviceId === getPromoDeviceId());
 }
 function effectivePromoExpiry(item, promo) {
   if (!promo) return 0;
@@ -5466,6 +5506,107 @@ function initCartEventDelegation() {
    }
   });
 }
+let robloxLookupTimer = null;
+let robloxLookupSequence = 0;
+let robloxProfileState = { status:'idle', username:'', user:null };
+
+function productRequiresRobloxLookup(item) {
+  const value = item?.robloxUsernameLookup ?? item?.verifyRobloxUsername ?? item?.robloxProfileLookup;
+  return value === true || String(value).toLowerCase() === 'true';
+}
+function checkoutRequiresRobloxLookup() {
+  return cartItems.some(cartItem => productRequiresRobloxLookup(inventory.find(item => String(item.id) === String(cartItem.id))));
+}
+function renderRobloxProfileCheck() {
+  const box = document.getElementById('roblox-profile-check');
+  if (!box) return;
+  const required = checkoutRequiresRobloxLookup();
+  box.hidden = !required || robloxProfileState.status === 'idle';
+  if (box.hidden) { box.innerHTML = ''; return; }
+  if (robloxProfileState.status === 'loading') {
+    box.className = 'roblox-profile-check is-loading';
+    box.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i><span><strong>Mencari profil Roblox...</strong><small>Semak username dengan Roblox</small></span>';
+    return;
+  }
+  if (robloxProfileState.status === 'error') {
+    box.className = 'roblox-profile-check is-error';
+    box.innerHTML = '<i class="fa-solid fa-circle-xmark"></i><span><strong>Profil tidak dijumpai</strong><small>' + escapeHtml(robloxProfileState.error || 'Periksa ejaan username dan cuba lagi.') + '</small></span>';
+    return;
+  }
+  if (robloxProfileState.status === 'choices') {
+    box.className = 'roblox-profile-check is-choices';
+    box.innerHTML = '<div class="roblox-profile-choice-title"><i class="fa-solid fa-users"></i><span><strong>Pilih profil Roblox yang betul</strong><small>Carian “' + escapeHtml(robloxProfileState.query || '') + '” menjumpai beberapa akaun</small></span></div><div class="roblox-profile-options">' + robloxProfileState.users.map((user, index) => {
+      const avatar = user.avatarUrl ? '<img src="' + escapeHtml(user.avatarUrl) + '" alt="">' : '<i class="fa-solid fa-user"></i>';
+      return '<button type="button" data-roblox-profile-index="' + index + '">' + avatar + '<span><strong>' + escapeHtml(user.displayName) + '</strong><small>@' + escapeHtml(user.username) + ' • ID ' + escapeHtml(user.id) + '</small></span><i class="fa-solid fa-chevron-right"></i></button>';
+    }).join('') + '</div>';
+    box.querySelectorAll('[data-roblox-profile-index]').forEach(button => button.addEventListener('click', () => {
+      const user = robloxProfileState.users[Number(button.dataset.robloxProfileIndex)];
+      if (!user) return;
+      const input = document.getElementById('roblox-username');
+      if (input) input.value = user.username;
+      robloxProfileState = { status:'found', username:user.username.toLowerCase(), user };
+      renderRobloxProfileCheck();
+      valCO();
+    }));
+    return;
+  }
+  const user = robloxProfileState.user;
+  if (!user) return;
+  box.className = 'roblox-profile-check is-found';
+  const avatar = user.avatarUrl ? '<img src="' + escapeHtml(user.avatarUrl) + '" alt="Avatar Roblox">' : '<i class="fa-solid fa-user"></i>';
+  const verified = user.hasVerifiedBadge ? ' <i class="fa-solid fa-circle-check roblox-verified" title="Verified"></i>' : '';
+  box.innerHTML = avatar + '<span><strong>' + escapeHtml(user.displayName) + verified + '</strong><small>@' + escapeHtml(user.username) + ' • ID ' + escapeHtml(user.id) + '</small></span><a href="' + escapeHtml(user.profileUrl) + '" target="_blank" rel="noopener">Buka profil <i class="fa-solid fa-arrow-up-right-from-square"></i></a>';
+}
+function resetRobloxProfileLookup() {
+  if (robloxLookupTimer) clearTimeout(robloxLookupTimer);
+  robloxLookupTimer = null;
+  robloxLookupSequence++;
+  robloxProfileState = { status:'idle', username:'', user:null };
+  renderRobloxProfileCheck();
+}
+async function lookupRobloxUsername(username) {
+  const sequence = ++robloxLookupSequence;
+  robloxProfileState = { status:'loading', username, user:null };
+  renderRobloxProfileCheck();
+  valCO();
+  try {
+    const response = await fetch('/api/roblox-user?username=' + encodeURIComponent(username), { headers:{ Accept:'application/json' } });
+    const payload = await response.json().catch(() => ({}));
+    if (sequence !== robloxLookupSequence) return;
+    const users = Array.isArray(payload.users) ? payload.users : (payload.user ? [payload.user] : []);
+    if (!response.ok || !payload.success || !users.length) throw new Error(payload.error || 'Profil Roblox tidak dijumpai.');
+    const input = document.getElementById('roblox-username');
+    if (!input || input.value.trim().toLowerCase() !== username.toLowerCase()) return;
+    if (payload.exact || users.length === 1) {
+      input.value = users[0].username;
+      robloxProfileState = { status:'found', username:users[0].username.toLowerCase(), user:users[0] };
+    } else {
+      robloxProfileState = { status:'choices', username:username.toLowerCase(), query:username, users, user:null };
+    }
+  } catch (error) {
+    if (sequence !== robloxLookupSequence) return;
+    robloxProfileState = { status:'error', username:username.toLowerCase(), user:null, error:error.message };
+  }
+  renderRobloxProfileCheck();
+  valCO();
+}
+function handleRobloxUsernameInput() {
+  const input = document.getElementById('roblox-username');
+  const username = input?.value.trim() || '';
+  if (!checkoutRequiresRobloxLookup()) { resetRobloxProfileLookup(); valCO(); return; }
+  if (robloxLookupTimer) clearTimeout(robloxLookupTimer);
+  robloxLookupSequence++;
+  if (!username) {
+    robloxProfileState = { status:'idle', username:'', user:null };
+  } else if (!/^[A-Za-z0-9_]{3,20}$/.test(username)) {
+    robloxProfileState = { status:'error', username:username.toLowerCase(), user:null, error:'Username mesti 3–20 aksara: huruf, nombor atau underscore.' };
+  } else {
+    robloxProfileState = { status:'loading', username:username.toLowerCase(), user:null };
+    robloxLookupTimer = setTimeout(() => lookupRobloxUsername(username), 550);
+  }
+  renderRobloxProfileCheck();
+  valCO();
+}
 function goCO(focusPayment) {
   if (!cartItems.length) { toast('Cart is empty',true); return; }
   document.getElementById('cart-overlay').classList.remove('show');
@@ -5484,10 +5625,13 @@ function goCO(focusPayment) {
   
   // Show/hide Roblox username field based on config and if it's promoted item
   const usernameBlock = document.getElementById('roblox-username')?.closest('.co-block');
-  const usernameRequired = !isPromotedItem && (storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false);
+  const robloxLookupRequired = checkoutRequiresRobloxLookup();
+  const usernameRequired = !isPromotedItem && (robloxLookupRequired || storeConfig.checkout?.requireRobloxUsername !== false);
   if (usernameBlock) {
     usernameBlock.style.display = usernameRequired ? '' : 'none';
   }
+  if (robloxLookupRequired && usernameRequired) handleRobloxUsernameInput();
+  else resetRobloxProfileLookup();
   
   // Show/hide payment methods (QR) based on if it's promoted item
   const paymentSection = document.querySelector('.pay-methods');
@@ -5556,8 +5700,10 @@ function valCO() {
   
   let tot = 0; cartItems.forEach(ci => { const it = inventory.find(i=>i.id===ci.id); if (it) tot += getCartUnitPrice(it, ci) * ci.qty; });
   // Check if username is required based on config and if it's promoted item
-  const usernameRequired = !isPromotedItem && (storeConfig.checkout && storeConfig.checkout.requireRobloxUsername !== false);
-  const usernameOk = !usernameRequired || u.length >= 3;
+  const robloxLookupRequired = checkoutRequiresRobloxLookup();
+  const usernameRequired = !isPromotedItem && (robloxLookupRequired || storeConfig.checkout?.requireRobloxUsername !== false);
+  const profileMatches = robloxProfileState.status === 'found' && robloxProfileState.username === u.toLowerCase();
+  const usernameOk = !usernameRequired || (u.length >= 3 && (!robloxLookupRequired || profileMatches));
   const loginOk = !checkoutReq.requireLogin || loginUser.length >= 3;
   const passOk = !checkoutReq.requirePassword || loginPass.length >= 3;
   const backup1Ok = checkoutReq.backupCodeCount < 1 || backup1.length >= 3;
@@ -5568,7 +5714,11 @@ function valCO() {
     b.href = 'javascript:void(0)';
   } else {
     b.classList.add('dis');
-    if (!usernameOk) b.innerHTML = 'Enter username first';
+    if (!usernameOk && robloxLookupRequired && robloxProfileState.status === 'loading') b.innerHTML = 'Sedang semak profil Roblox...';
+    else if (!usernameOk && robloxLookupRequired && robloxProfileState.status === 'choices') b.innerHTML = 'Pilih profil Roblox yang betul';
+    else if (!usernameOk && robloxLookupRequired && robloxProfileState.status === 'error') b.innerHTML = 'Username Roblox tidak dijumpai';
+    else if (!usernameOk && robloxLookupRequired) b.innerHTML = 'Masukkan username Roblox yang sah';
+    else if (!usernameOk) b.innerHTML = 'Enter username first';
     else if (!loginOk) b.innerHTML = 'Isi login username';
     else if (!passOk) b.innerHTML = 'Isi login password';
     else if (!backup1Ok) b.innerHTML = 'Isi backup code 1';
