@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '7:26 PM (MYT)',
-  version: 'v3.9',
+  time: '9:55 PM (MYT)',
+  version: 'v4.0',
   sections: [
     {
       type: 'added',
@@ -10,7 +10,7 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-cart-shopping',
-          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan.'
+          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan pesanan seperti aliran marketplace Itemku.'
         },
         {
           icon: 'fa-table-columns',
@@ -62,6 +62,14 @@ const CHANGELOG_DATA = {
       type: 'fixed',
       title: 'Diperbaiki Hari Ini',
       items: [
+        {
+          icon: 'fa-floppy-disk',
+          text: '<strong>Catalog Control tidak lagi tersangkut</strong> - butang Simpan, Import dan Backup sentiasa dipulihkan selepas operasi; operasi Firebase mempunyai timeout serta mesej sambungan yang jelas.'
+        },
+        {
+          icon: 'fa-panorama',
+          text: '<strong>Banner desktop dibesarkan</strong> - banner promo kini menggunakan lebar penuh container PC dengan tinggi yang lebih jelas sambil kekal responsif di telefon.'
+        },
         {
           icon: 'fa-thumbtack',
           text: '<strong>Pin dan posisi kini jelas berfungsi</strong> - cache Catalog Control dibersihkan dan produk Pin, Atas serta Bawah kini dipaparkan dalam seksyen tersendiri tanpa tersekat oleh subcategory.'

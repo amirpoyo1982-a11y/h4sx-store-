@@ -9,6 +9,7 @@ const firebaseConfig = {
 };
 const ROOT = 'store';
 const IMGBB_KEY_STORAGE = 'h4sx_imgbb_api_key';
+const OPERATION_TIMEOUT_MS = 20000;
 const GIST = {
   inventory: 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/inventory.json',
   inventoryFallback: 'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/inventory.json',
@@ -49,13 +50,52 @@ function notify(message, bad = false) {
 function setBusy(button, busy, label = '') {
   if (!button) return;
   if (busy) {
-    button.dataset.original = button.innerHTML;
+    if (button.dataset.busy !== 'true') button.dataset.original = button.innerHTML;
+    button.dataset.busy = 'true';
+    button.setAttribute('aria-busy', 'true');
     button.disabled = true;
     button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> ' + (label || 'Tunggu...');
   } else {
     button.disabled = false;
     if (button.dataset.original) button.innerHTML = button.dataset.original;
+    delete button.dataset.busy;
+    button.removeAttribute('aria-busy');
   }
+}
+
+function withTimeout(operation, label = 'Operasi', timeout = OPERATION_TIMEOUT_MS) {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(label + ' mengambil masa terlalu lama. Semak internet dan cuba semula.')), timeout);
+  });
+  return Promise.race([Promise.resolve(operation), timeoutPromise]).finally(() => clearTimeout(timer));
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = OPERATION_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    return await fetch(url, {...options, signal:controller.signal});
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('Sambungan mengambil masa terlalu lama. Semak internet dan cuba semula.');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function storeMetaUpdates() {
+  return {
+    'meta/updatedAt': firebase.database.ServerValue.TIMESTAMP,
+    'meta/updatedBy': auth.currentUser?.email || 'admin'
+  };
+}
+
+async function saveStorePath(path, value, message) {
+  if (!auth.currentUser) throw new Error('Sesi admin sudah tamat. Log masuk semula.');
+  const updates = {...storeMetaUpdates(), [path]:value};
+  await withTimeout(database.ref(ROOT).update(updates), 'Simpan Firebase');
+  if (message) notify(message);
 }
 
 function startListeners() {
@@ -110,7 +150,7 @@ byId('login-form').addEventListener('submit', async event => {
   byId('login-error').textContent = '';
   setBusy(button, true, 'Log masuk...');
   try {
-    await auth.signInWithEmailAndPassword(byId('login-email').value.trim(), byId('login-password').value);
+    await withTimeout(auth.signInWithEmailAndPassword(byId('login-email').value.trim(), byId('login-password').value), 'Log masuk Firebase');
   } catch (error) {
     byId('login-error').textContent = error.code === 'auth/invalid-credential' ? 'Email atau password tak betul.' : error.message;
   } finally { setBusy(button, false); }
@@ -258,7 +298,7 @@ async function uploadImgBB(kind, button) {
     const form = new FormData();
     form.append('image', file, file.name);
     form.append('name', file.name.replace(/\.[^.]+$/, '').slice(0, 100));
-    const response = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), {method:'POST', body:form});
+    const response = await fetchWithTimeout('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), {method:'POST', body:form}, 45000);
     const result = await response.json();
     if (!response.ok || !result.success || !result.data?.url) throw new Error(result?.error?.message || 'ImgBB upload gagal.');
     const imageUrl = result.data.display_url || result.data.url;
@@ -403,6 +443,17 @@ async function removePromo(code) {
   await saveArray('inventory', next, 'Promo ' + code + ' dipadam.');
 }
 
+async function runButtonOperation(button, label, operation) {
+  setBusy(button, true, label);
+  try {
+    await operation();
+  } catch (error) {
+    notify(error?.message || 'Operasi gagal. Cuba semula.', true);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
 byId('product-search').addEventListener('input', renderProducts);
 byId('game-search').addEventListener('input', renderGames);
 byId('new-product').addEventListener('click', () => openProductEditor());
@@ -460,29 +511,34 @@ document.addEventListener('click', async event => {
   if (action === 'edit-promo') return openPromoEditor(decodeURIComponent(actionButton.dataset.code || ''));
   if (action === 'delete-promo') {
     const code = decodeURIComponent(actionButton.dataset.code || '');
-    if (confirm('Padam promo "' + code + '" daripada semua produk?')) await removePromo(code);
+    if (confirm('Padam promo "' + code + '" daripada semua produk?')) {
+      await runButtonOperation(actionButton, 'Memadam...', () => removePromo(code));
+    }
     return;
   }
-  if (action === 'edit-product') openProductEditor(products[index], index);
+  if (action === 'edit-product') return openProductEditor(products[index], index);
   if (action === 'duplicate-product') {
+    if (!products[index]) return notify('Produk tidak dijumpai. Tunggu sync selesai dan cuba semula.', true);
     const copy = JSON.parse(JSON.stringify(products[index]));
     copy.id = nextProductId();
     copy.name = (copy.name || 'Produk') + ' Copy';
-    openProductEditor(copy, null);
+    return openProductEditor(copy, null);
   }
   if (action === 'delete-product' && confirm('Padam produk "' + (products[index]?.name || '') + '"?')) {
     const next = products.filter((_, i) => i !== index);
-    await saveArray('inventory', next, 'Produk dipadam.');
+    await runButtonOperation(actionButton, 'Memadam...', () => saveArray('inventory', next, 'Produk dipadam.'));
+    return;
   }
-  if (action === 'edit-game') openGameEditor(games[index], index);
+  if (action === 'edit-game') return openGameEditor(games[index], index);
   if (action === 'duplicate-game') {
+    if (!games[index]) return notify('Game tidak dijumpai. Tunggu sync selesai dan cuba semula.', true);
     const copy = JSON.parse(JSON.stringify(games[index]));
     copy.name = (copy.name || 'Game') + ' Copy';
-    openGameEditor(copy, null);
+    return openGameEditor(copy, null);
   }
   if (action === 'delete-game' && confirm('Padam game "' + (games[index]?.name || '') + '"?')) {
     const next = games.filter((_, i) => i !== index);
-    await saveArray('games', next, 'Game dipadam.');
+    await runButtonOperation(actionButton, 'Memadam...', () => saveArray('games', next, 'Game dipadam.'));
   }
 });
 
@@ -595,9 +651,7 @@ function compact(object) {
 }
 
 async function saveArray(path, value, message) {
-  await database.ref(ROOT + '/' + path).set(value);
-  await database.ref(ROOT + '/meta').update({updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:auth.currentUser?.email || 'admin'});
-  notify(message);
+  await saveStorePath(path, value, message);
 }
 
 function writeConfigEditor() {
@@ -620,21 +674,20 @@ function writeConfigEditor() {
 }));
 
 byId('save-config').addEventListener('click', async event => {
+  const button = event.currentTarget;
   let value;
   try { value = JSON.parse(byId('config-editor').value || '{}'); }
   catch (error) { notify('JSON tetapan tidak sah: ' + error.message, true); return; }
   if (!value || Array.isArray(value) || typeof value !== 'object') { notify('Tetapan mesti object JSON.', true); return; }
-  setBusy(event.currentTarget, true, 'Menyimpan...');
+  setBusy(button, true, 'Menyimpan...');
   try {
-    await database.ref(ROOT + '/config').set(value);
-    await database.ref(ROOT + '/meta').update({updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:auth.currentUser?.email || 'admin'});
-    notify('Tetapan kedai disimpan realtime.');
+    await saveStorePath('config', value, 'Tetapan kedai disimpan realtime.');
   } catch (error) { notify(error.message, true); }
-  finally { setBusy(event.currentTarget, false); }
+  finally { setBusy(button, false); }
 });
 
 async function fetchJson(url) {
-  const response = await fetch(url + '?t=' + Date.now(), {cache:'no-store'});
+  const response = await fetchWithTimeout(url + '?t=' + Date.now(), {cache:'no-store'}, 25000);
   if (!response.ok) throw new Error('Gagal baca ' + url + ' (' + response.status + ')');
   return response.json();
 }
@@ -667,7 +720,8 @@ function mergeConfig(base, override) {
 
 byId('import-gist').addEventListener('click', async event => {
   if (!confirm('Import akan menggantikan data Firebase store sekarang dengan data Gist. Teruskan?')) return;
-  setBusy(event.currentTarget, true, 'Mengimport...');
+  const button = event.currentTarget;
+  setBusy(button, true, 'Mengimport...');
   try {
     let inventoryRaw;
     try { inventoryRaw = await fetchJson(GIST.inventory); } catch (error) { inventoryRaw = await fetchJson(GIST.inventoryFallback); }
@@ -681,16 +735,17 @@ byId('import-gist').addEventListener('click', async event => {
       meta: {migratedAt:firebase.database.ServerValue.TIMESTAMP, updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:auth.currentUser?.email || 'admin', source:'GitHub Gist migration'}
     };
     if (!payload.inventory.length || !payload.games.length) throw new Error('Gist inventory/game kosong; import dibatalkan.');
-    await database.ref(ROOT).set(payload);
+    await withTimeout(database.ref(ROOT).set(payload), 'Import Firebase', 35000);
     notify('Import siap. Website sekarang baca Firebase realtime.');
   } catch (error) { notify(error.message, true); }
-  finally { setBusy(event.currentTarget, false); }
+  finally { setBusy(button, false); }
 });
 
 byId('download-backup').addEventListener('click', async event => {
-  setBusy(event.currentTarget, true, 'Menyiapkan...');
+  const button = event.currentTarget;
+  setBusy(button, true, 'Menyiapkan...');
   try {
-    const snapshot = await database.ref(ROOT).once('value');
+    const snapshot = await withTimeout(database.ref(ROOT).once('value'), 'Muat turun backup');
     const blob = new Blob([JSON.stringify(snapshot.val() || {}, null, 2)], {type:'application/json'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -699,7 +754,7 @@ byId('download-backup').addEventListener('click', async event => {
     setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     notify('Backup dimuat turun.');
   } catch (error) { notify(error.message, true); }
-  finally { setBusy(event.currentTarget, false); }
+  finally { setBusy(button, false); }
 });
 
 byId('restore-file').addEventListener('change', async event => {
@@ -708,7 +763,7 @@ byId('restore-file').addEventListener('change', async event => {
   try {
     const data = JSON.parse(await file.text());
     if (!data || typeof data !== 'object' || !data.inventory || !data.games || !data.config) throw new Error('Format backup tidak lengkap.');
-    await database.ref(ROOT).set(data);
+    await withTimeout(database.ref(ROOT).set(data), 'Pulihkan backup Firebase', 35000);
     notify('Backup berjaya dipulihkan.');
   } catch (error) { notify(error.message, true); }
   event.target.value = '';

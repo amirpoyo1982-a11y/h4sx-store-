@@ -9003,6 +9003,16 @@ html.review-submit-direct .wrap {
 }
 
 .market-layout-v2 #home-view > .promo-hero { order: 1; }
+.market-layout-v2 .promo-hero {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+.market-layout-v2 .promo-hero-shell {
+  width: 100%;
+  min-height: 250px;
+  max-height: 390px;
+}
 .market-layout-v2 #home-view > .hero { order: 2; }
 .market-layout-v2 #home-view > #shop-section { order: 3; }
 .market-layout-v2 #home-view > .catalog-live-card { order: 4; grid-column: 1; margin: 0; min-height: 100%; }
