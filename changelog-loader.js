@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '5:03 PM (MYT)',
-  version: 'v3.4',
+  time: '5:31 PM (MYT)',
+  version: 'v3.5',
   sections: [
     {
       type: 'added',
@@ -50,6 +50,10 @@ const CHANGELOG_DATA = {
       type: 'fixed',
       title: 'Diperbaiki Hari Ini',
       items: [
+        {
+          icon: 'fa-eye-slash',
+          text: '<strong>Butiran promo dirahsiakan</strong> - peratus diskaun dan had pelanggan tidak lagi dipaparkan sebelum kod berjaya ditebus.'
+        },
         {
           icon: 'fa-tag',
           text: '<strong>Konsultasi tidak perlukan harga</strong> - apabila mod Konsultasi WhatsApp diaktifkan, ruangan harga tidak lagi diwajibkan.'

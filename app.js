@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.4';
+const CHANGELOG_VERSION = 'v3.5';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -4184,8 +4184,8 @@ function syncProductModalPromo(item) {
   const promo = result.promo || productPromoConfig(item);
   wrap.hidden = !promo;
   if (!promo) return;
-  if (title) title.textContent = 'Kod promo: ' + promo.label + ' - terhad ' + promo.usageLimit + ' pelanggan';
   const redeemed = result.valid && promoRedeemedOnThisDevice(item, result.promo);
+  if (title) title.textContent = redeemed ? 'Kod promo aktif' : 'Ada kod promo?';
   const needsPhone = result.valid && !redeemed && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneVerificationReady(item, result.promo);
   status.className = 'product-modal-promo-status';
   if (result.valid && redeemed) {
