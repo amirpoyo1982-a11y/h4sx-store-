@@ -1,13 +1,17 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '7:03 PM (MYT)',
-  version: 'v3.8',
+  time: '7:26 PM (MYT)',
+  version: 'v3.9',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
+        {
+          icon: 'fa-cart-shopping',
+          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan pesanan seperti aliran marketplace Itemku.'
+        },
         {
           icon: 'fa-table-columns',
           text: '<strong>Layout marketplace baharu</strong> - kedudukan hero, katalog, pilihan game, status kedai dan kad produk disusun semula dengan rupa yang jelas berbeza tanpa mengubah warna atau fungsi sedia ada.'

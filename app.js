@@ -735,6 +735,7 @@ const PAY_QR = {
   tng:     { url:'https://i.ibb.co/bRyG06zY/image.png', name:'Nurwazni', sub:"Touch 'n Go eWallet", wa:'TNG eWallet' }
 };
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
+let cartSelectedKeys = new Set();
 let modalVariantId = '', modalQuantity = 1;
 let catalogProgressTimer = null;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
@@ -1009,7 +1010,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.8';
+const CHANGELOG_VERSION = 'v3.9';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -5443,6 +5444,7 @@ function changeQty(key, delta) {
 }
 function removeItem(key) {
   cartItems = cartItems.filter(c => cartEntryKey(c.id, c.variantId) !== key);
+  cartSelectedKeys.delete(String(key));
   persistCart();
   updateBadge(); 
   renderCart();
@@ -5450,7 +5452,8 @@ function removeItem(key) {
 }
 function clearCart() { 
   if (!cartItems.length) return; 
-  cartItems=[]; 
+  cartItems=[];
+  cartSelectedKeys.clear();
   persistCart();
   updateBadge(); 
   renderCart(); 
@@ -5488,15 +5491,53 @@ function restoreCart() {
     cartItems = [];
   }
 }
-function toggleCart() { document.getElementById('cart-overlay').classList.toggle('show'); renderCart(); }
+function selectedCartItems() {
+  return cartItems.filter(item => cartSelectedKeys.has(cartEntryKey(item.id, item.variantId)));
+}
+function toggleCartSelectAll(checked) {
+  cartSelectedKeys = checked ? new Set(cartItems.map(item => cartEntryKey(item.id, item.variantId))) : new Set();
+  renderCart();
+}
+function toggleCartItemSelection(key, checked) {
+  if (checked) cartSelectedKeys.add(String(key));
+  else cartSelectedKeys.delete(String(key));
+  renderCart();
+}
+function toggleCart() {
+  const overlay = document.getElementById('cart-overlay');
+  const opening = !overlay.classList.contains('show');
+  if (opening) cartSelectedKeys = new Set(cartItems.map(item => cartEntryKey(item.id, item.variantId)));
+  overlay.classList.toggle('show');
+  renderCart();
+}
 function ocClose(e) { if (e.target===document.getElementById('cart-overlay')) toggleCart(); }
 function renderCart() {
   const body = document.getElementById('cart-body');
   const shareButton = document.getElementById('cart-share-btn');
-  if (shareButton) shareButton.disabled = !cartItems.length;
-  if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping" style="font-size:28px;color:var(--border2);margin-bottom:10px;display:block"></i>Cart kosong</div>'; document.getElementById('cart-total').textContent = 'RM0'; return; }
+  const checkoutButton = document.getElementById('cart-checkout-btn');
+  const validKeys = new Set(cartItems.map(item => cartEntryKey(item.id, item.variantId)));
+  cartSelectedKeys = new Set([...cartSelectedKeys].filter(key => validKeys.has(key)));
+  const selected = selectedCartItems();
+  if (shareButton) shareButton.disabled = !selected.length;
+  if (checkoutButton) checkoutButton.disabled = !selected.length;
+  const selectedCount = selected.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+  const allCheckbox = document.getElementById('cart-select-all');
+  if (allCheckbox) {
+    allCheckbox.checked = !!cartItems.length && selected.length === cartItems.length;
+    allCheckbox.indeterminate = selected.length > 0 && selected.length < cartItems.length;
+    allCheckbox.disabled = !cartItems.length;
+  }
+  const selectedLabel = document.getElementById('cart-selected-count');
+  const summaryCount = document.getElementById('cart-summary-count');
+  if (selectedLabel) selectedLabel.textContent = selectedCount + ' dipilih';
+  if (summaryCount) summaryCount.textContent = selectedCount;
+  if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping"></i><strong>Troli masih kosong</strong><span>Tambah item daripada katalog untuk mula membeli.</span></div>'; document.getElementById('cart-total').textContent = 'RM0.00'; return; }
   let tot = 0;
   const fragment = document.createDocumentFragment();
+  const storeHead = document.createElement('div');
+  storeHead.className = 'cart-store-head';
+  storeHead.innerHTML = '<div class="cart-store-logo"><i class="fa-solid fa-store"></i></div><div><strong>H4SX STORE</strong><span><i class="fa-solid fa-circle-check"></i> Penjual rasmi • Stok disemak admin</span></div>';
+  fragment.appendChild(storeHead);
   cartItems.forEach(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return;
     const displayItem = effectiveProductItem(item, ci.variantId);
@@ -5504,13 +5545,15 @@ function renderCart() {
     const key = cartEntryKey(ci.id, ci.variantId);
     const promo = getCartPromoResult(item, ci);
     const unitPrice = promo.final;
-    const line = (unitPrice * ci.qty).toFixed(2); tot += unitPrice * ci.qty;
+    const line = (unitPrice * ci.qty).toFixed(2);
+    const selectedItem = cartSelectedKeys.has(String(key));
+    if (selectedItem) tot += unitPrice * ci.qty;
     const max = getMaxPurchase(displayItem); const limited = max && ci.qty >= max;
     const promoLabel = promo.valid ? ' <span class="cart-promo-tag"><i class="fa-solid fa-ticket"></i>' + escapeHtml(promo.promo.code) + '</span>' : '';
      
     const row = document.createElement('div');
-    row.className = 'cart-row';
-    row.innerHTML = '<img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' x ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="-1">-</button><span class="cr-qty-num">' + ci.qty + '</span>' + (limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="1">+</button>') + '</div><button class="cr-del" data-action="remove" data-key="' + escapeHtml(String(key)) + '"><i class="fa-solid fa-trash-can"></i></button></div>';
+    row.className = 'cart-row' + (selectedItem ? ' is-selected' : '');
+    row.innerHTML = '<label class="cart-item-check" title="Pilih item"><input type="checkbox" data-action="select-item" data-key="' + escapeHtml(String(key)) + '"' + (selectedItem ? ' checked' : '') + '><span></span></label><img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-unit">Harga seunit <strong>RM' + unitPrice.toFixed(2) + '</strong></div><div class="cr-mobile-subtotal">Subtotal RM' + line + '</div></div><div class="cr-controls"><div class="cr-subtotal"><small>Subtotal</small><strong>RM' + line + '</strong></div><div class="cr-qty"><button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="-1">−</button><span class="cr-qty-num">' + ci.qty + '</span>' + (limited ? '<button class="cr-qty-btn" disabled>+</button>' : '<button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="1">+</button>') + '</div></div><button class="cr-del" data-action="remove" data-key="' + escapeHtml(String(key)) + '" title="Buang item"><i class="fa-solid fa-trash-can"></i></button>';
     fragment.appendChild(row);
   });
   body.innerHTML = '';
@@ -5528,6 +5571,8 @@ function initCartEventDelegation() {
    if (action === 'qty') {
      const delta = Number(btn.dataset.delta);
      changeQty(key, delta);
+   } else if (action === 'select-item') {
+     toggleCartItemSelection(key, btn.checked);
    } else if (action === 'remove') {
      removeItem(key);
    }
@@ -6077,9 +6122,10 @@ function buyNowItem(id, promoCode = '', options = {}) {
   });
 }
 function sendCartToWhatsApp() {
-  if (!cartItems.length) { toast('Troli masih kosong', true); return; }
+  const checkoutItems = selectedCartItems();
+  if (!checkoutItems.length) { toast('Pilih sekurang-kurangnya satu item', true); return; }
   let total = 0;
-  const lines = cartItems.map(ci => {
+  const lines = checkoutItems.map(ci => {
     const item = inventory.find(entry => entry.id === ci.id);
     if (!item) return '';
     const quantity = Math.max(1, Number(ci.qty || 1));
@@ -6107,9 +6153,10 @@ function sendCartToWhatsApp() {
   });
 }
 async function shareCartItems() {
-  if (!cartItems.length) { toast('Troli masih kosong', true); return; }
+  const checkoutItems = selectedCartItems();
+  if (!checkoutItems.length) { toast('Pilih sekurang-kurangnya satu item', true); return; }
   let total = 0;
-  const lines = cartItems.map((ci, index) => {
+  const lines = checkoutItems.map((ci, index) => {
     const item = inventory.find(entry => entry.id === ci.id);
     if (!item) return '';
     const quantity = Math.max(1, Number(ci.qty || 1));
