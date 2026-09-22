@@ -10,7 +10,7 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-cart-shopping',
-          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan pesanan seperti aliran marketplace Itemku.'
+          text: '<strong>Troli gaya marketplace</strong> - cart kini mempunyai pilihan item, pilih semua, kumpulan penjual, kawalan kuantiti, subtotal dan ringkasan.'
         },
         {
           icon: 'fa-table-columns',
