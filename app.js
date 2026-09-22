@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.3';
+const CHANGELOG_VERSION = 'v3.4';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -5510,6 +5510,37 @@ let robloxLookupTimer = null;
 let robloxLookupSequence = 0;
 let robloxProfileState = { status:'idle', username:'', user:null };
 
+function robloxApiErrorText(value, fallback = 'Profil Roblox tidak dijumpai.') {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (value && typeof value === 'object') {
+    const nested = value.message || value.error || value.code;
+    if (typeof nested === 'string' && nested.trim()) return nested.trim();
+  }
+  return fallback;
+}
+async function fetchRobloxProfiles(username) {
+  const encoded = encodeURIComponent(username);
+  const endpoints = [
+    '/api/roblox-user?username=' + encoded,
+    '/api/verify-turnstile?action=roblox-user&username=' + encoded
+  ];
+  let lastError = 'Servis semakan Roblox belum tersedia.';
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, { headers:{ Accept:'application/json' } });
+      const raw = await response.text();
+      let payload = {};
+      try { payload = raw ? JSON.parse(raw) : {}; }
+      catch (_) { payload = { error:raw }; }
+      if (response.ok && payload.success) return payload;
+      lastError = robloxApiErrorText(payload.error, response.status === 404 ? 'Endpoint semakan Roblox belum dipublish.' : lastError);
+    } catch (error) {
+      lastError = robloxApiErrorText(error, lastError);
+    }
+  }
+  throw new Error(lastError);
+}
+
 function productRequiresRobloxLookup(item) {
   const value = item?.robloxUsernameLookup ?? item?.verifyRobloxUsername ?? item?.robloxProfileLookup;
   return value === true || String(value).toLowerCase() === 'true';
@@ -5570,11 +5601,10 @@ async function lookupRobloxUsername(username) {
   renderRobloxProfileCheck();
   valCO();
   try {
-    const response = await fetch('/api/roblox-user?username=' + encodeURIComponent(username), { headers:{ Accept:'application/json' } });
-    const payload = await response.json().catch(() => ({}));
+    const payload = await fetchRobloxProfiles(username);
     if (sequence !== robloxLookupSequence) return;
     const users = Array.isArray(payload.users) ? payload.users : (payload.user ? [payload.user] : []);
-    if (!response.ok || !payload.success || !users.length) throw new Error(payload.error || 'Profil Roblox tidak dijumpai.');
+    if (!users.length) throw new Error(robloxApiErrorText(payload.error));
     const input = document.getElementById('roblox-username');
     if (!input || input.value.trim().toLowerCase() !== username.toLowerCase()) return;
     if (payload.exact || users.length === 1) {
@@ -5935,11 +5965,10 @@ function showRobloxUsernamePrompt(item, onConfirmed) {
     continueButton.disabled = true;
     results.innerHTML = '<div class="roblox-modal-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Mencari profil Roblox...</div>';
     try {
-      const response = await fetch('/api/roblox-user?username=' + encodeURIComponent(query), { headers:{ Accept:'application/json' } });
-      const payload = await response.json().catch(() => ({}));
+      const payload = await fetchRobloxProfiles(query);
       if (current !== sequence) return;
       const users = Array.isArray(payload.users) ? payload.users : (payload.user ? [payload.user] : []);
-      if (!response.ok || !payload.success || !users.length) throw new Error(payload.error || 'Profil Roblox tidak dijumpai.');
+      if (!users.length) throw new Error(robloxApiErrorText(payload.error));
       if (payload.exact || users.length === 1) { selectUser(users[0]); return; }
       results.innerHTML = '<div class="roblox-modal-status"><i class="fa-solid fa-users"></i> Pilih profil yang betul</div><div class="roblox-profile-options">' + users.map((user, index) => {
         const avatar = user.avatarUrl ? '<img src="' + escapeHtml(user.avatarUrl) + '" alt="">' : '<i class="fa-solid fa-user"></i>';

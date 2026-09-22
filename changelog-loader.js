@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '4:52 PM (MYT)',
-  version: 'v3.3',
+  time: '5:03 PM (MYT)',
+  version: 'v3.4',
   sections: [
     {
       type: 'added',
@@ -73,6 +73,10 @@ const CHANGELOG_DATA = {
         {
           icon: 'fa-unlock',
           text: '<strong>Input promo tidak terkunci</strong> - apabila satu kod tamat, pelanggan masih boleh mengosongkan input dan mencuba kod lain.'
+        },
+        {
+          icon: 'fa-server',
+          text: '<strong>Fallback API profil Roblox</strong> - semakan username kini mencuba endpoint utama dan endpoint Vercel sedia ada; ralat objek tidak lagi dipaparkan sebagai [object Object].'
         }
       ]
     }
