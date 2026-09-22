@@ -1,8 +1,8 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '4:41 PM (MYT)',
-  version: 'v3.2',
+  time: '4:52 PM (MYT)',
+  version: 'v3.3',
   sections: [
     {
       type: 'added',
@@ -34,7 +34,7 @@ const CHANGELOG_DATA = {
         },
         {
           icon: 'fa-user-check',
-          text: '<strong>Semakan profil Roblox per item</strong> - admin boleh aktifkan pengesanan untuk produk pilihan sahaja; username tepat terus disahkan, manakala carian seperti Adam memaparkan beberapa profil untuk dipilih bersama avatar, display name, ID dan pautan sebenar.'
+          text: '<strong>Semakan profil Roblox per item</strong> - admin boleh aktifkan pengesanan untuk produk pilihan sahaja; butang Beli WhatsApp kini meminta username dahulu, username tepat terus disahkan, dan carian seperti Adam memaparkan beberapa profil untuk dipilih.'
         },
         {
           icon: 'fa-headset',

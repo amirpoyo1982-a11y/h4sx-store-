@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.2';
+const CHANGELOG_VERSION = 'v3.3';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -5900,9 +5900,91 @@ async function modalBuyNow() {
   closeProductImage();
   buyNowItem(itemId, promoCode, { variantId, qty: quantity });
 }
+function showRobloxUsernamePrompt(item, onConfirmed) {
+  document.getElementById('roblox-username-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.id = 'roblox-username-modal';
+  modal.className = 'roblox-username-modal';
+  modal.innerHTML = '<div class="roblox-username-dialog" role="dialog" aria-modal="true" aria-labelledby="roblox-username-title">' +
+    '<button type="button" class="roblox-username-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
+    '<div class="roblox-username-icon"><i class="fa-solid fa-user-check"></i></div>' +
+    '<span class="roblox-username-kicker">SEMAK AKAUN ROBLOX</span>' +
+    '<h3 id="roblox-username-title">Masukkan username dahulu</h3>' +
+    '<p>Item <strong>' + escapeHtml(item.name || 'ini') + '</strong> memerlukan profil Roblox yang betul sebelum ke WhatsApp.</p>' +
+    '<label>Username atau nama Roblox<input type="text" class="roblox-username-modal-input" maxlength="20" autocomplete="off" placeholder="Contoh: Builderman atau Adam"></label>' +
+    '<div class="roblox-username-modal-results" aria-live="polite"></div>' +
+    '<div class="roblox-username-modal-actions"><button type="button" class="roblox-username-cancel">Cancel</button><button type="button" class="roblox-username-continue" disabled><i class="fa-brands fa-whatsapp"></i> Teruskan</button></div>' +
+  '</div>';
+  const input = modal.querySelector('.roblox-username-modal-input');
+  const results = modal.querySelector('.roblox-username-modal-results');
+  const continueButton = modal.querySelector('.roblox-username-continue');
+  let selectedUser = null;
+  let timer = null;
+  let sequence = 0;
+  const close = () => { if (timer) clearTimeout(timer); sequence++; modal.remove(); };
+  const selectUser = user => {
+    selectedUser = user;
+    input.value = user.username;
+    continueButton.disabled = false;
+    const avatar = user.avatarUrl ? '<img src="' + escapeHtml(user.avatarUrl) + '" alt="Avatar Roblox">' : '<i class="fa-solid fa-user"></i>';
+    results.innerHTML = '<div class="roblox-modal-selected">' + avatar + '<span><strong>' + escapeHtml(user.displayName) + '</strong><small>@' + escapeHtml(user.username) + ' • ID ' + escapeHtml(user.id) + '</small></span><i class="fa-solid fa-circle-check"></i></div>';
+  };
+  const search = async query => {
+    const current = ++sequence;
+    selectedUser = null;
+    continueButton.disabled = true;
+    results.innerHTML = '<div class="roblox-modal-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Mencari profil Roblox...</div>';
+    try {
+      const response = await fetch('/api/roblox-user?username=' + encodeURIComponent(query), { headers:{ Accept:'application/json' } });
+      const payload = await response.json().catch(() => ({}));
+      if (current !== sequence) return;
+      const users = Array.isArray(payload.users) ? payload.users : (payload.user ? [payload.user] : []);
+      if (!response.ok || !payload.success || !users.length) throw new Error(payload.error || 'Profil Roblox tidak dijumpai.');
+      if (payload.exact || users.length === 1) { selectUser(users[0]); return; }
+      results.innerHTML = '<div class="roblox-modal-status"><i class="fa-solid fa-users"></i> Pilih profil yang betul</div><div class="roblox-profile-options">' + users.map((user, index) => {
+        const avatar = user.avatarUrl ? '<img src="' + escapeHtml(user.avatarUrl) + '" alt="">' : '<i class="fa-solid fa-user"></i>';
+        return '<button type="button" data-modal-roblox-index="' + index + '">' + avatar + '<span><strong>' + escapeHtml(user.displayName) + '</strong><small>@' + escapeHtml(user.username) + ' • ID ' + escapeHtml(user.id) + '</small></span><i class="fa-solid fa-chevron-right"></i></button>';
+      }).join('') + '</div>';
+      results.querySelectorAll('[data-modal-roblox-index]').forEach(button => button.addEventListener('click', () => selectUser(users[Number(button.dataset.modalRobloxIndex)])));
+    } catch (error) {
+      if (current !== sequence) return;
+      results.innerHTML = '<div class="roblox-modal-status is-error"><i class="fa-solid fa-circle-xmark"></i> ' + escapeHtml(error.message) + '</div>';
+    }
+  };
+  input.addEventListener('input', () => {
+    if (timer) clearTimeout(timer);
+    sequence++;
+    selectedUser = null;
+    continueButton.disabled = true;
+    const query = input.value.trim();
+    if (!query) { results.innerHTML = ''; return; }
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(query)) {
+      results.innerHTML = '<div class="roblox-modal-status is-error"><i class="fa-solid fa-circle-xmark"></i> Gunakan 3–20 huruf, nombor atau underscore.</div>';
+      return;
+    }
+    results.innerHTML = '<div class="roblox-modal-status"><i class="fa-solid fa-keyboard"></i> Tunggu sebentar...</div>';
+    timer = setTimeout(() => search(query), 500);
+  });
+  modal.addEventListener('click', event => { if (event.target === modal) close(); });
+  modal.querySelector('.roblox-username-close').addEventListener('click', close);
+  modal.querySelector('.roblox-username-cancel').addEventListener('click', close);
+  continueButton.addEventListener('click', () => {
+    if (!selectedUser) return;
+    const profile = selectedUser;
+    close();
+    onConfirmed(profile);
+  });
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+  setTimeout(() => input.focus(), 80);
+}
 function buyNowItem(id, promoCode = '', options = {}) {
   const baseItem = inventory.find(i => i.id === id);
   if (!baseItem) return;
+  if (productRequiresRobloxLookup(baseItem) && !options.robloxProfile) {
+    showRobloxUsernamePrompt(baseItem, robloxProfile => buyNowItem(id, promoCode, { ...options, robloxProfile }));
+    return;
+  }
   const variantId = String(options.variantId || '');
   if (productVariants(baseItem).length && !getProductVariant(baseItem, variantId)) { openProductImage(id); toast('Pilih type dahulu'); return; }
   const item = effectiveProductItem(baseItem, variantId);
@@ -5914,6 +5996,7 @@ function buyNowItem(id, promoCode = '', options = {}) {
   const finalPrice = promo.final;
   const phone = String(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
   const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
+  const robloxProfile = options.robloxProfile || null;
   const message = [
     'Hi H4SX, saya berminat dengan item ini:',
     '',
@@ -5922,6 +6005,7 @@ function buyNowItem(id, promoCode = '', options = {}) {
     'Kuantiti: ' + quantity,
     'Harga katalog: RM' + finalPrice.toFixed(2) + ' x ' + quantity + ' = RM' + (finalPrice * quantity).toFixed(2),
     ...(promo.valid ? ['Kod promo: ' + promo.promo.code + ' (' + promo.promo.label + ')'] : []),
+    ...(robloxProfile ? ['Username Roblox: @' + robloxProfile.username, 'Display Name: ' + robloxProfile.displayName, 'Roblox ID: ' + robloxProfile.id, 'Profil: ' + robloxProfile.profileUrl] : []),
     'Stok: ' + stock,
     '',
     'Boleh bantu semak dan teruskan urusan?'
