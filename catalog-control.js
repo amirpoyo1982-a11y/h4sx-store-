@@ -286,7 +286,9 @@ function renderProducts() {
     const media = image && !/\.(mp4|webm|mov)(\?|#|$)/i.test(image)
       ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
       : '<span class="item-placeholder"><i class="fa-solid fa-box"></i></span>';
-    return '<article class="item-row">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>#' + escapeHtml(item.id) + ' • ' + escapeHtml(item.game || item.gameGroup || '-') + ' • <b>RM' + Number(item.price || 0).toFixed(2) + '</b> • Stok ' + escapeHtml(item.stock ?? '-') + '</span></div><div class="row-actions"><button data-action="edit-product" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-product" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-product" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+    const position = {top:'Atas', middle:'Tengah', bottom:'Bawah'}[item.displayPosition] || 'Tengah';
+    const pin = item.pinned === true || String(item.pinned).toLowerCase() === 'true' ? ' • <b><i class="fa-solid fa-thumbtack"></i> Pin</b>' : '';
+    return '<article class="item-row">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>#' + escapeHtml(item.id) + ' • ' + escapeHtml(item.game || item.gameGroup || '-') + ' • <b>RM' + Number(item.price || 0).toFixed(2) + '</b> • Stok ' + escapeHtml(item.stock ?? '-') + ' • Posisi ' + position + pin + '</span></div><div class="row-actions"><button data-action="edit-product" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-product" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-product" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
   }).join('') : '<div class="empty">Belum ada produk.</div>';
 }
 
@@ -505,6 +507,8 @@ function openProductEditor(item = {}, index = null) {
   byId('p-id').value = item.id ?? nextProductId(); byId('p-name').value = item.name || '';
   byId('p-game').value = item.game || item.gameGroup || ''; byId('p-platform').value = item.platform || '';
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
+  byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
+  byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
   byId('p-roblox-lookup').checked = item.robloxUsernameLookup === true || String(item.robloxUsernameLookup).toLowerCase() === 'true';
@@ -519,7 +523,7 @@ function openProductEditor(item = {}, index = null) {
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup'];
+  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -567,7 +571,7 @@ byId('editor-form').addEventListener('submit', async event => {
       const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
       if (duplicate) throw new Error('ID produk sudah digunakan.');
       const isConsultation = byId('p-consultation').checked;
-      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
       const next = [...products];
       if (editingKey === null) next.push(item); else next[editingKey] = item;
       await saveArray('inventory', next, 'Produk disimpan realtime.');

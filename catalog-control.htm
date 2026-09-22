@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=9">
+  <link rel="stylesheet" href="catalog-control.css?v=10">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=9"></script>
+  <script defer src="catalog-control.js?v=10"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -122,6 +122,7 @@
         <label>ID Produk<div class="input-action-row"><input id="p-id" required><button type="button" class="ghost" id="p-next-id" title="Cari nombor ID yang belum digunakan"><i class="fa-solid fa-wand-magic-sparkles"></i> Ambil ID kosong</button></div></label><label>Nama produk<input id="p-name" required></label>
         <label>Game / kategori<input id="p-game" required></label><label>Platform<input id="p-platform" placeholder="Roblox"></label>
         <label>Subcategory<input id="p-subcategory"></label><label>Badge / promo<input id="p-badge"></label>
+        <label>Posisi produk<select id="p-display-position"><option value="top">Atas</option><option value="middle" selected>Tengah (default)</option><option value="bottom">Bawah</option></select></label><label class="switch inline"><input id="p-pinned" type="checkbox"><span></span> Pin paling depan</label>
         <label id="p-price-field">Harga RM<input id="p-price" type="number" min="0" step="0.01" required></label><label id="p-original-price-field">Harga asal RM<input id="p-original-price" type="number" min="0" step="0.01"></label>
         <label>Stok<input id="p-stock" type="number" min="0" step="1"></label><label>Terjual<input id="p-sold" type="number" min="0" step="1"></label>
         <label class="switch inline wide roblox-lookup-toggle"><input id="p-roblox-lookup" type="checkbox"><span></span> Semak dan paparkan profil username Roblox semasa checkout</label>

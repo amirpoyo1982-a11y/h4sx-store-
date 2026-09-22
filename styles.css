@@ -1262,6 +1262,22 @@ nav {
   box-shadow: 0 4px 14px var(--primary-glow);
 }
 
+.product-pinned-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  margin-bottom: 7px;
+  padding: 4px 8px;
+  border: 1px solid rgba(14, 165, 233, .25);
+  border-radius: 999px;
+  background: rgba(14, 165, 233, .08);
+  color: var(--sky);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .7px;
+}
+
 /* Positioning helpers for configurable badge placement */
 .ptag-pos-top { top: 12px; bottom: auto; }
 .ptag-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
@@ -8768,3 +8784,219 @@ html.review-submit-direct .wrap {
 .roblox-profile-check.is-choices{display:block}.roblox-profile-choice-title{display:flex;align-items:center;gap:10px;margin-bottom:9px}.roblox-profile-choice-title>i{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:rgba(14,165,233,.1);color:var(--sky)}.roblox-profile-choice-title strong,.roblox-profile-choice-title small{display:block}.roblox-profile-choice-title small{color:var(--muted);margin-top:2px}.roblox-profile-options{display:grid;gap:6px}.roblox-profile-options button{width:100%;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:9px;align-items:center;padding:8px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--ink);text-align:left;cursor:pointer}.roblox-profile-options button:hover{border-color:var(--sky);background:rgba(14,165,233,.05)}.roblox-profile-options button>img,.roblox-profile-options button>i:first-child{width:40px;height:40px;border-radius:9px;object-fit:cover;display:grid;place-items:center;background:var(--bg3);color:var(--sky)}.roblox-profile-options button strong,.roblox-profile-options button small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.roblox-profile-options button small{color:var(--muted);margin-top:1px}.roblox-profile-options button>i:last-child{color:var(--muted)}
 .roblox-username-modal{position:fixed;inset:0;z-index:10020;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(218,240,252,.72);backdrop-filter:blur(12px);opacity:0;visibility:hidden;transition:.2s}.roblox-username-modal.show{opacity:1;visibility:visible}.roblox-username-dialog{position:relative;width:min(500px,96vw);max-height:90vh;overflow:auto;padding:28px;background:#fff;border:1px solid rgba(14,165,233,.35);border-radius:22px;box-shadow:0 24px 70px rgba(15,23,42,.2);text-align:center}.roblox-username-close{position:absolute;right:13px;top:13px;width:36px;height:36px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--ink);cursor:pointer}.roblox-username-icon{width:56px;height:56px;margin:0 auto 12px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(135deg,var(--sky),#2563eb);color:#fff;font-size:21px;box-shadow:0 10px 28px rgba(14,165,233,.25)}.roblox-username-kicker{display:block;color:var(--sky);font-size:10px;font-weight:800;letter-spacing:1.5px}.roblox-username-dialog h3{margin:7px 0 6px;font-size:22px}.roblox-username-dialog>p{color:var(--muted);font-size:13px;line-height:1.65;margin-bottom:16px}.roblox-username-dialog>label{display:grid;gap:7px;text-align:left;font-size:12px;font-weight:800}.roblox-username-dialog input{width:100%;padding:12px 13px;border:1px solid var(--border2);border-radius:11px;background:var(--bg3);color:var(--ink);font:inherit;outline:none}.roblox-username-dialog input:focus{border-color:var(--sky);box-shadow:0 0 0 3px rgba(14,165,233,.12)}.roblox-username-modal-results{display:grid;gap:8px;margin-top:12px;text-align:left}.roblox-modal-status{padding:11px;border-radius:10px;background:var(--bg3);color:var(--muted);font-size:12px}.roblox-modal-status.is-error{background:var(--red-bg);color:var(--red)}.roblox-modal-selected{display:grid;grid-template-columns:52px minmax(0,1fr) auto;align-items:center;gap:11px;padding:10px;border:1px solid var(--green-bdr);border-radius:12px;background:var(--green-bg)}.roblox-modal-selected>img,.roblox-modal-selected>i:first-child{width:52px;height:52px;border-radius:11px;object-fit:cover;display:grid;place-items:center;background:#fff;color:var(--sky)}.roblox-modal-selected strong,.roblox-modal-selected small{display:block}.roblox-modal-selected small{color:var(--muted);margin-top:2px}.roblox-modal-selected>i:last-child{color:var(--green);font-size:20px}.roblox-username-modal-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:9px;margin-top:16px}.roblox-username-modal-actions button{border:0;border-radius:11px;padding:12px;font:800 13px inherit;cursor:pointer}.roblox-username-cancel{background:var(--bg3);color:var(--ink);border:1px solid var(--border2)!important}.roblox-username-continue{background:linear-gradient(135deg,#25d366,#16a34a);color:#fff}.roblox-username-continue:disabled{opacity:.45;cursor:not-allowed}@media(max-width:520px){.roblox-username-dialog{padding:23px 16px 18px}.roblox-username-modal-actions{grid-template-columns:1fr}.roblox-username-modal-actions .roblox-username-continue{grid-row:1}}
 .roblox-profile-check{margin-top:11px;padding:12px;border:1px solid var(--border2);border-radius:13px;background:var(--surface2);display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:11px;align-items:center}.roblox-profile-check[hidden]{display:none!important}.roblox-profile-check>img,.roblox-profile-check>i:first-child{width:48px;height:48px;border-radius:11px;object-fit:cover;display:grid;place-items:center;background:rgba(14,165,233,.1);color:var(--sky);font-size:20px}.roblox-profile-check span{min-width:0}.roblox-profile-check strong,.roblox-profile-check small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.roblox-profile-check small{color:var(--muted);margin-top:2px}.roblox-profile-check>a{color:var(--sky);font-size:11px;font-weight:800;text-decoration:none;white-space:nowrap}.roblox-profile-check.is-found{border-color:rgba(34,197,94,.38);background:rgba(34,197,94,.06)}.roblox-profile-check.is-error{border-color:var(--red-bdr);background:var(--red-bg)}.roblox-profile-check.is-error>i:first-child{color:var(--red);background:rgba(239,68,68,.12)}.roblox-verified{color:#168cff;font-size:12px}@media(max-width:520px){.roblox-profile-check{grid-template-columns:44px minmax(0,1fr)}.roblox-profile-check>img,.roblox-profile-check>i:first-child{width:44px;height:44px}.roblox-profile-check>a{grid-column:2}}
+
+/* Marketplace layout v2: new composition, existing colours and behaviour. */
+.market-layout-v2 .wrap {
+  max-width: 1460px;
+}
+
+.market-layout-v2 #shop-section,
+.market-layout-v2 #product-view,
+.market-layout-v2 #guide,
+.market-layout-v2 #reviews,
+.market-layout-v2 #faq {
+  scroll-margin-top: 150px;
+}
+
+.market-layout-v2 #home-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.market-layout-v2 #home-view > .promo-hero,
+.market-layout-v2 #home-view > .hero,
+.market-layout-v2 #home-view > #shop-section,
+.market-layout-v2 #home-view > .store-tools,
+.market-layout-v2 #home-view > .custom-vote,
+.market-layout-v2 #home-view > #guide,
+.market-layout-v2 #home-view > #reviews,
+.market-layout-v2 #home-view > .h4rf-modal,
+.market-layout-v2 #home-view > #faq,
+.market-layout-v2 #home-view > footer {
+  grid-column: 1 / -1;
+}
+
+.market-layout-v2 #home-view > .promo-hero { order: 1; }
+.market-layout-v2 #home-view > .hero { order: 2; }
+.market-layout-v2 #home-view > #shop-section { order: 3; }
+.market-layout-v2 #home-view > .catalog-live-card { order: 4; grid-column: 1; margin: 0; min-height: 100%; }
+.market-layout-v2 #home-view > .trust-grid { order: 4; grid-column: 2; margin: 0; min-height: 100%; }
+.market-layout-v2 #home-view > .store-tools { order: 5; }
+.market-layout-v2 #home-view > .custom-vote { order: 6; }
+.market-layout-v2 #home-view > #guide { order: 7; }
+.market-layout-v2 #home-view > #reviews,
+.market-layout-v2 #home-view > .h4rf-modal { order: 8; }
+.market-layout-v2 #home-view > #faq { order: 9; }
+.market-layout-v2 #home-view > footer { order: 10; }
+.market-layout-v2 #home-view > .div { display: none; }
+
+.market-layout-v2 .hero {
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr) !important;
+  min-height: 560px;
+  padding: 30px !important;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(135deg, var(--card) 0%, var(--card) 54%, var(--bg2) 100%) !important;
+}
+
+.market-layout-v2 .hero > div:first-child {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  padding: 22px 22px 22px 34px;
+}
+
+.market-layout-v2 .hero-right {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.market-layout-v2 .hero-vid-wrap,
+.market-layout-v2 .hero-vid {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+}
+
+.market-layout-v2 .hero-vid { border-radius: 22px; }
+.market-layout-v2 .hero-vid video { width: 100%; height: 100%; min-height: 480px; aspect-ratio: auto; object-fit: cover; }
+.market-layout-v2 .hero-h1 { font-size: clamp(38px, 4vw, 62px); }
+.market-layout-v2 .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); }
+.market-layout-v2 .hstat { padding: 13px 10px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg2); }
+
+.market-layout-v2 #shop-section {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr;
+  gap: 14px 24px;
+  padding: 28px !important;
+}
+
+.market-layout-v2 #shop-section > .sh,
+.market-layout-v2 #shop-section > .marketplace-command,
+.market-layout-v2 #shop-section > .catalog-marketplace-intro,
+.market-layout-v2 #shop-section > .platform-filter-bar {
+  grid-column: 1;
+  margin: 0 !important;
+}
+
+.market-layout-v2 #shop-section > .sh { align-items: flex-start; }
+.market-layout-v2 #shop-section .sh-title { font-size: clamp(25px, 2.4vw, 36px); }
+.market-layout-v2 #shop-section .catalog-search-link { display: none; }
+.market-layout-v2 #shop-section > .marketplace-command,
+.market-layout-v2 #shop-section > .catalog-marketplace-intro {
+  display: grid;
+  padding: 15px;
+  border-radius: 15px;
+}
+.market-layout-v2 #shop-section > .marketplace-command > button,
+.market-layout-v2 #shop-section > .catalog-marketplace-intro > button { width: 100%; justify-content: center; }
+.market-layout-v2 #shop-section > .platform-filter-bar { align-content: start; }
+
+.market-layout-v2 #shop-section > #game-grid {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-content: start;
+  gap: 14px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.market-layout-v2 #shop-section #game-grid .gc {
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center !important;
+  min-width: 0 !important;
+  padding: 10px !important;
+  text-align: left;
+}
+.market-layout-v2 #shop-section #game-grid .gc-icon-wrap { width: 112px; aspect-ratio: 1 / 1; }
+.market-layout-v2 #shop-section #game-grid .gc-name { min-height: 0; padding: 10px 12px; place-items: center start; text-align: left; font-size: .78rem; }
+
+.market-layout-v2 .trust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.market-layout-v2 .trust-item { min-height: 116px; padding: 18px; border-radius: 16px; }
+
+@media (min-width: 981px) {
+  .market-layout-v2 #product-view .section-panel {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 16px 24px;
+    align-items: start;
+    padding: 28px !important;
+  }
+  .market-layout-v2 #product-view .ph,
+  .market-layout-v2 #product-view .detail-note { grid-column: 1 / -1; }
+  .market-layout-v2 #product-filter-bar {
+    grid-column: 1;
+    position: sticky;
+    top: 126px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    max-height: calc(100vh - 150px);
+    padding: 12px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg2);
+  }
+  .market-layout-v2 #product-filter-bar button { width: 100%; justify-content: flex-start; }
+  .market-layout-v2 #inventory-grid {
+    grid-column: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+  .market-layout-v2 #inventory-grid .product-subsection { grid-column: 1 / -1; }
+  .market-layout-v2 #inventory-grid .product-subgrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .market-layout-v2 #inventory-grid .pc,
+  .market-layout-v2 #inventory-grid .product-subgrid .pc {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    min-height: 230px;
+  }
+  .market-layout-v2 #inventory-grid .pc > .pimg { height: 100%; min-height: 230px; aspect-ratio: auto; border-radius: inherit; }
+  .market-layout-v2 #inventory-grid .pc > .pbody { min-width: 0; }
+}
+
+@media (max-width: 980px) {
+  .market-layout-v2 #home-view { display: block; }
+  .market-layout-v2 #home-view > * { margin-bottom: 16px !important; }
+  .market-layout-v2 .hero {
+    display: flex !important;
+    flex-direction: column;
+    min-height: 0;
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+  .market-layout-v2 .hero-right { order: -1; width: 100%; }
+  .market-layout-v2 .hero > div:first-child { padding: 22px 4px 6px; }
+  .market-layout-v2 .hero-vid video { min-height: 0; aspect-ratio: 16 / 10; }
+  .market-layout-v2 #shop-section { display: block; padding: 18px !important; }
+  .market-layout-v2 #shop-section > * { margin-bottom: 14px !important; }
+  .market-layout-v2 #shop-section > #game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .market-layout-v2 #shop-section #game-grid .gc { display: block !important; text-align: center; }
+  .market-layout-v2 #shop-section #game-grid .gc-icon-wrap { width: 100%; }
+  .market-layout-v2 #shop-section #game-grid .gc-name { place-items: center; text-align: center; }
+}
+
+@media (max-width: 560px) {
+  .market-layout-v2 .hero-h1 { font-size: clamp(32px, 10vw, 44px); }
+  .market-layout-v2 .hero-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .market-layout-v2 .hstat { padding: 10px 5px; }
+  .market-layout-v2 .hero-cta-row { display: grid; grid-template-columns: 1fr 1fr; }
+  .market-layout-v2 .hero-cta-row > * { width: 100%; justify-content: center; text-align: center; }
+  .market-layout-v2 .trust-grid { grid-template-columns: 1fr 1fr; }
+  .market-layout-v2 .trust-item { min-height: 0; padding: 13px; }
+}

@@ -1,13 +1,21 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '22 September 2026',
-  time: '5:31 PM (MYT)',
-  version: 'v3.5',
+  time: '6:45 PM (MYT)',
+  version: 'v3.7',
   sections: [
     {
       type: 'added',
       title: 'Ditambah Hari Ini',
       items: [
+        {
+          icon: 'fa-table-columns',
+          text: '<strong>Layout marketplace baharu</strong> - kedudukan hero, katalog, pilihan game, status kedai dan kad produk disusun semula dengan rupa yang jelas berbeza tanpa mengubah warna atau fungsi sedia ada.'
+        },
+        {
+          icon: 'fa-thumbtack',
+          text: '<strong>Pin dan posisi produk</strong> - admin boleh pin produk paling depan atau menetapkan susunan Atas, Tengah dan Bawah terus daripada editor produk.'
+        },
         {
           icon: 'fa-fire-flame-curved',
           text: '<strong>Firebase Realtime Database</strong> - inventory, senarai game dan tetapan kedai kini dikemas kini secara langsung tanpa perlu edit Gist dan refresh manual.'

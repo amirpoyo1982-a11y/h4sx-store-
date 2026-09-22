@@ -1009,7 +1009,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v3.5';
+const CHANGELOG_VERSION = 'v3.7';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -4604,13 +4604,30 @@ function openInventoryConsultation(id) {
   if (!config || !config.active) return;
   showConsultationConfirm({ ...config, title: item.name || 'Konsultasi H4SX', description: item.desc || 'Admin akan bantu semak pilihan dan harga semasa.' });
 }
+function isProductPinned(item) {
+  return item && (item.pinned === true || String(item.pinned).toLowerCase() === 'true');
+}
+function productDisplayPosition(item) {
+  const value = String(item && item.displayPosition || 'middle').toLowerCase();
+  return ['top', 'middle', 'bottom'].includes(value) ? value : 'middle';
+}
+function sortProductsForDisplay(items) {
+  const rank = { top: 0, middle: 1, bottom: 2 };
+  return items.map((item, index) => ({ item, index })).sort((a, b) =>
+    Number(isProductPinned(b.item)) - Number(isProductPinned(a.item)) ||
+    rank[productDisplayPosition(a.item)] - rank[productDisplayPosition(b.item)] ||
+    isOutOfStock(a.item) - isOutOfStock(b.item) ||
+    a.index - b.index
+  ).map(entry => entry.item);
+}
 function productCardHTML(item) {
   const consultation = inventoryConsultationConfig(item);
+  const pinnedLabel = isProductPinned(item) ? '<div class="product-pinned-label"><i class="fa-solid fa-thumbtack"></i> PIN</div>' : '';
   if (consultation && consultation.active) {
     const badge = '<div class="ptag consultation-item-badge"><i class="fa-solid fa-headset"></i> ' + escapeHtml(consultation.label) + '</div>';
     return '<div class="pc reveal consultation-inventory-card" id="product-' + item.id + '">' + badge +
       '<div class="pimg" role="button" tabindex="0" onclick="openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')}">' + renderMediaHTML(item, 'card') + '</div>' +
-      '<div class="pbody"><div class="pname">' + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
+      '<div class="pbody">' + pinnedLabel + '<div class="pname">' + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
   }
   const oos = isOutOfStock(item);
   // Determine badge position/align with per-item override support.
@@ -4658,7 +4675,7 @@ function productCardHTML(item) {
   const buyAction = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -4884,8 +4901,7 @@ function openGame(name, options = {}) {
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
   let items = inventory.filter(i => gameGroupName(i) === name && !isPermanentFruitCatalogItem(i));
-  // Sort items: in-stock first, out-of-stock last
-  items.sort((a, b) => isOutOfStock(a) - isOutOfStock(b));
+  items = sortProductsForDisplay(items);
   document.getElementById('pv-title').textContent = name;
   document.getElementById('pv-count').textContent = items.length + ' item tersedia';
   const grid = document.getElementById('inventory-grid');
