@@ -9391,7 +9391,9 @@ html.review-submit-direct .wrap {
     margin-inline: auto;
   }
   .market-layout-v2 #product-view .product-subsection .product-subgrid {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 220px)) !important;
+    justify-content: start;
+    align-items: start;
     gap: 12px !important;
   }
   .market-layout-v2 #product-view .product-subsection .pc {
