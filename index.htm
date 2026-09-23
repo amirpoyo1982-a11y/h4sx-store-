@@ -6,11 +6,18 @@
   <meta name="h4sx-build" content="2026-07-13-update-dot-2"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="H4SX">
   <meta property="og:title" content="H4SX STORE | Malaysia Item Roblox">
   <meta property="og:description" content="Semak katalog produk digital, harga dan stok terkini di H4SX STORE Malaysia.">
   <link rel="canonical" href="https://www.h4sxmy.xyz/">
   <meta property="og:url" content="https://www.h4sxmy.xyz/">
   <link rel="icon" type="image/png" href="https://i.imgur.com/cLPulXQ.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/h4sx-app-192.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -48,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-product-spotlight-20260923">
+  <link rel="stylesheet" href="styles.css?v=h4sx-pwa-install-20260924">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -857,8 +864,9 @@
     <iframe id="catalog-control-frame" title="Firebase Catalog Control" loading="lazy"></iframe>
   </div>
 </div>
+<button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-product-spotlight-20260923"></script>
+<script defer src="app.js?v=h4sx-pwa-install-20260924"></script>
 
 </body>
 </html>

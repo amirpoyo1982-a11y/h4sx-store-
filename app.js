@@ -3775,8 +3775,59 @@ function runWhenIdle(fn, timeout = 1800) {
   else setTimeout(fn, Math.min(timeout, 1000));
 }
 
+let deferredPwaInstallPrompt = null;
+function pwaIsInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function pwaIsIos() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function syncPwaInstallButton() {
+  const button = document.getElementById('pwa-install-btn');
+  if (!button) return;
+  button.hidden = pwaIsInstalled();
+}
+async function installH4sxApp() {
+  if (pwaIsInstalled()) return;
+  if (deferredPwaInstallPrompt) {
+    const prompt = deferredPwaInstallPrompt;
+    deferredPwaInstallPrompt = null;
+    prompt.prompt();
+    const choice = await prompt.userChoice;
+    if (choice?.outcome === 'accepted') toast('H4SX App sedang dipasang.');
+    syncPwaInstallButton();
+    return;
+  }
+  if (pwaIsIos()) {
+    toast('iPhone/iPad: tekan Share, kemudian pilih Add to Home Screen.');
+    return;
+  }
+  toast('Tekan menu browser dan pilih Install app atau Add to Home screen.');
+}
+function initPwaInstall() {
+  const button = document.getElementById('pwa-install-btn');
+  if (button) button.addEventListener('click', installH4sxApp);
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredPwaInstallPrompt = event;
+    syncPwaInstallButton();
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredPwaInstallPrompt = null;
+    syncPwaInstallButton();
+    toast('H4SX App berjaya dipasang!');
+  });
+  syncPwaInstallButton();
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('./sw.js', { scope:'./' })
+      .then(registration => registration.update())
+      .catch(error => console.warn('PWA service worker gagal didaftarkan:', error));
+  }
+}
+
 function bootStoreApp() {
   cleanHardRefreshParam();
+  initPwaInstall();
   initSoundEffects();
   restoreCart();
   updateBadge();

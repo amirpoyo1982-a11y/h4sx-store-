@@ -1,0 +1,35 @@
+{
+  "name": "H4SX STORE",
+  "short_name": "H4SX",
+  "description": "Katalog rasmi H4SX STORE untuk item digital dan servis permainan.",
+  "lang": "ms",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#06101f",
+  "theme_color": "#0ea5e9",
+  "categories": ["shopping", "games"],
+  "icons": [
+    {
+      "src": "assets/icons/h4sx-app-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/h4sx-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/h4sx-app-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
