@@ -650,12 +650,19 @@ function compact(object) {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== '' && value !== null && value !== undefined));
 }
 
+function normalizeAdminWhatsAppNumber(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = '60' + digits.slice(1);
+  return /^\d{8,15}$/.test(digits) ? digits : '';
+}
+
 async function saveArray(path, value, message) {
   await saveStorePath(path, value, message);
 }
 
 function writeConfigEditor() {
   byId('config-editor').value = JSON.stringify(storeConfig, null, 2);
+  byId('main-whatsapp-number').value = storeConfig.whatsapp_number || storeConfig.whatsappNumber || storeConfig.contact?.whatsapp || storeConfig.support?.whatsapp || '';
   byId('quick-open').checked = storeConfig.bukakedai !== false && String(storeConfig.bukakedai).toLowerCase() !== 'false';
   byId('quick-maintenance').checked = storeConfig.maintenance === true || String(storeConfig.maintenance).toLowerCase() === 'true';
   byId('quick-review-maintenance').checked = storeConfig.review_maintenance === true || String(storeConfig.review_maintenance).toLowerCase() === 'true';
@@ -674,6 +681,21 @@ function writeConfigEditor() {
     byId('config-editor').value = JSON.stringify(current, null, 2);
   } catch (error) { notify('Betulkan JSON dahulu sebelum guna quick toggle.', true); }
 }));
+
+byId('save-main-whatsapp').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const number = normalizeAdminWhatsAppNumber(byId('main-whatsapp-number').value);
+  if (!number) { notify('Masukkan nombor WhatsApp yang sah, contoh 60123456789.', true); return; }
+  byId('main-whatsapp-number').value = number;
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await saveStorePath('config/whatsapp_number', number, 'Nombor WhatsApp seluruh website sudah ditukar.');
+    const current = JSON.parse(byId('config-editor').value || '{}');
+    current.whatsapp_number = number;
+    byId('config-editor').value = JSON.stringify(current, null, 2);
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
 
 byId('save-config').addEventListener('click', async event => {
   const button = event.currentTarget;

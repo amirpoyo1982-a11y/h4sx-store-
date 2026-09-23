@@ -404,7 +404,7 @@ function helperItemLines(items, title = 'Saya jumpa item ni dalam katalog:') {
     const stock = Number(item.stock || 0) > 0 ? 'stok ' + item.stock : 'stok kena semak';
     return '- ' + item.name + ' RM' + Number(item.price || 0).toFixed(2) + ' (' + stock + ')';
   });
-  return title + '\n' + lines.join('\n') + '\n\nNak confirm stok/order, chat admin: https://wa.me/6285178259060';
+  return title + '\n' + lines.join('\n') + '\n\nNak confirm stok/order, chat admin: https://wa.me/' + WA_NUMBER;
 }
 function helperCheapestItems() {
   return inventory
@@ -438,19 +438,19 @@ function getLocalHelperAnswer(question) {
     return helperItemLines(foundItems);
   }
   if (asksBuy) {
-    return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/6285178259060';
+    return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   if (asksSafe) {
-    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/6285178259060';
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   if (asksTime) {
-    return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/6285178259060';
+    return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/' + WA_NUMBER;
   }
   if (asksReview) {
-    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/6285178259060';
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/' + WA_NUMBER;
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/6285178259060';
+    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
@@ -678,9 +678,10 @@ async function copyReceiptImage() {
 const BACKGROUND_3D_URL = 'https://sketchfab.com/3d-models/free-downloadable-pixel-earth-low-poly-139cb0a9b41a4e088dd42ca4871a3125'; 
 // Tukar link kat atas ni je kalau nak tukar model background.
 const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
-const WA_NUMBER = '6285178259060';
+const DEFAULT_WA_NUMBER = '6285178259060';
+let WA_NUMBER = DEFAULT_WA_NUMBER;
 const H4SX_CHANNEL_URL = null;
-const H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/6285178259060';
+let H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/' + DEFAULT_WA_NUMBER;
 const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
 const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
 const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
@@ -703,6 +704,7 @@ let realtimeConfigListening = false;
 // === STORE CONFIG (Payment & Checkout Settings) ===
 // Edit setting kat bawah ni untuk enable/disable QR dan username
 let storeConfig = {
+  whatsapp_number: DEFAULT_WA_NUMBER,
   payment: {
     duitNow: {
       enabled: true,
@@ -726,6 +728,35 @@ let storeConfig = {
     enabled: true
   }
 };
+
+function normalizePrimaryWhatsAppNumber(value, fallback = DEFAULT_WA_NUMBER) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = '60' + digits.slice(1);
+  return /^\d{8,15}$/.test(digits) ? digits : fallback;
+}
+
+function configuredPrimaryWhatsAppNumber(config = storeConfig) {
+  return config?.whatsapp_number
+    || config?.whatsappNumber
+    || config?.contact?.whatsapp
+    || config?.support?.whatsapp
+    || DEFAULT_WA_NUMBER;
+}
+
+function applyPrimaryWhatsAppNumber(config = storeConfig) {
+  const previous = WA_NUMBER;
+  WA_NUMBER = normalizePrimaryWhatsAppNumber(configuredPrimaryWhatsAppNumber(config), previous || DEFAULT_WA_NUMBER);
+  H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/' + WA_NUMBER;
+  document.querySelectorAll('a[href*="wa.me/"]').forEach(link => {
+    try {
+      const url = new URL(link.href, window.location.href);
+      const current = String(url.pathname || '').replace(/\D/g, '');
+      if (current !== previous && current !== DEFAULT_WA_NUMBER) return;
+      url.pathname = '/' + WA_NUMBER;
+      link.href = url.toString();
+    } catch (error) {}
+  });
+}
 
 let activePayMethod = 'duitnow';
 let spamCounts = {};
@@ -1861,6 +1892,7 @@ async function checkStore() {
       }
       updatePaymentUI();
       updateWarnBoxUI();
+      applyPrimaryWhatsAppNumber(storeConfig);
     }
     renderPromoBanner(currentStoreConfig);
     updateProductSpotlight();
@@ -2368,6 +2400,7 @@ async function loadInv() {
       }
       updatePaymentUI();
       updateWarnBoxUI();
+      applyPrimaryWhatsAppNumber(storeConfig);
     }
 
     inventory = tempInventory.map(item => {
@@ -2460,6 +2493,7 @@ async function loadInv() {
           }
           updatePaymentUI();
           updateWarnBoxUI();
+          applyPrimaryWhatsAppNumber(storeConfig);
         }
         
         // Clean inventory items
@@ -3092,7 +3126,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=13';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=14';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -3827,6 +3861,7 @@ function initPwaInstall() {
 
 function bootStoreApp() {
   cleanHardRefreshParam();
+  applyPrimaryWhatsAppNumber(storeConfig);
   initPwaInstall();
   initSoundEffects();
   restoreCart();
@@ -4640,7 +4675,8 @@ function isPromotedProduct(item) {
 function paymentCatalogUrl(config = {}) {
   if (config.showPaymentCatalog === false) return '';
   const customUrl = config.paymentCatalogUrl || config.paymentCatalog || storeConfig?.payment?.catalogUrl;
-  return String(customUrl || H4SX_PAYMENT_CATALOG_URL).trim();
+  const value = String(customUrl || H4SX_PAYMENT_CATALOG_URL).trim();
+  return value.replace(new RegExp('(https?://(?:www\\.)?wa\\.me/)' + DEFAULT_WA_NUMBER + '(?=\\D|$)', 'i'), '$1' + WA_NUMBER);
 }
 function showConsultationConfirm(config = {}) {
   const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
