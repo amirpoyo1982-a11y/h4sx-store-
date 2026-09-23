@@ -812,6 +812,84 @@ let promoBannerIndex = 0;
 let promoBannerSlides = [];
 let promoBannerTimer = null;
 let promoBannerIntervalDelay = 5500;
+let productSpotlightTimer = null;
+let productSpotlightIndex = 0;
+let productSpotlightDismissed = false;
+
+function productSpotlightIsEnabled(config = currentStoreConfig) {
+  const value = config.product_spotlight_enabled ?? config.productSpotlightEnabled;
+  return value === undefined ? true : flagOn(value);
+}
+
+function productSpotlightItems() {
+  return inventory.filter(item => item && item.id !== undefined && item.name && productPosterUrl(item)
+    && !item.consultation && !isOutOfStock(item) && !isPermanentFruitCatalogItem(item));
+}
+
+function productSpotlightPrice(item) {
+  const prices = productVariants(item).map(variant => Number(variant.price)).filter(price => Number.isFinite(price) && price >= 0);
+  const value = prices.length ? Math.min(...prices) : Number(item.price || 0);
+  return (prices.length ? 'Dari ' : '') + 'RM' + value.toFixed(2);
+}
+
+function ensureProductSpotlight() {
+  let root = document.getElementById('product-spotlight');
+  if (root) return root;
+  root = document.createElement('aside');
+  root.id = 'product-spotlight';
+  root.className = 'product-spotlight';
+  root.hidden = true;
+  root.setAttribute('aria-live', 'polite');
+  document.body.appendChild(root);
+  return root;
+}
+
+function hideProductSpotlight(dismiss = false) {
+  const root = document.getElementById('product-spotlight');
+  if (dismiss) productSpotlightDismissed = true;
+  if (!root) return;
+  root.classList.remove('show');
+  setTimeout(() => { if (!root.classList.contains('show')) root.hidden = true; }, 260);
+}
+
+function openSpotlightProduct(id) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  if (!item) return;
+  hideProductSpotlight();
+  openGame(gameGroupName(item), { itemId:item.id });
+}
+
+function showNextProductSpotlight() {
+  if (productSpotlightDismissed || !productSpotlightIsEnabled()) return;
+  const blockingOverlay = ['product-modal','cart-overlay','search-overlay','changelog-modal']
+    .some(id => document.getElementById(id)?.classList.contains('show'))
+    || document.getElementById('h4sx-announcement-modal');
+  if (blockingOverlay) { hideProductSpotlight(); return; }
+  const items = productSpotlightItems();
+  if (!items.length) return;
+  const item = items[productSpotlightIndex % items.length];
+  productSpotlightIndex += 1;
+  const root = ensureProductSpotlight();
+  root.innerHTML = '<button type="button" class="product-spotlight-close" aria-label="Tutup Pilihan H4SX"><i class="fa-solid fa-xmark"></i></button>'
+    + '<button type="button" class="product-spotlight-main"><span class="product-spotlight-image"><img src="' + escapeHtml(productPosterUrl(item)) + '" alt="' + escapeHtml(item.name) + '" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><i class="fa-solid fa-gamepad" hidden></i></span>'
+    + '<span><small><i class="fa-solid fa-wand-magic-sparkles"></i> PILIHAN H4SX</small><strong>' + escapeHtml(item.name) + '</strong>'
+    + '<em>' + escapeHtml(gameGroupName(item)) + ' · ' + escapeHtml(productSpotlightPrice(item)) + '</em><b>Tengok item <i class="fa-solid fa-arrow-right"></i></b></span></button>';
+  root.querySelector('.product-spotlight-close').onclick = event => { event.stopPropagation(); hideProductSpotlight(true); };
+  root.querySelector('.product-spotlight-main').onclick = () => openSpotlightProduct(item.id);
+  root.hidden = false;
+  requestAnimationFrame(() => root.classList.add('show'));
+}
+
+function updateProductSpotlight() {
+  clearTimeout(productSpotlightTimer);
+  hideProductSpotlight();
+  if (productSpotlightDismissed || !productSpotlightIsEnabled() || !productSpotlightItems().length) return;
+  const cycle = () => {
+    showNextProductSpotlight();
+    productSpotlightTimer = setTimeout(cycle, 14000);
+  };
+  productSpotlightTimer = setTimeout(cycle, 4500);
+}
 let promoDragState = null;
 function getPromoBannerSlides(config = currentStoreConfig) {
   const active = flagOn(config.promo_banner_active)
@@ -1785,6 +1863,7 @@ async function checkStore() {
       updateWarnBoxUI();
     }
     renderPromoBanner(currentStoreConfig);
+    updateProductSpotlight();
     refreshReviewMaintenanceUi();
   }
   kedaiConfigLoaded = true;
@@ -2311,6 +2390,7 @@ async function loadInv() {
     syncInventoryGames();
     renderGames();
     openGameFromUrl();
+    updateProductSpotlight();
     return true;
   };
 
@@ -3012,7 +3092,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=12';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=13';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
