@@ -9157,10 +9157,23 @@ html.review-submit-direct .wrap {
   .market-layout-v2 #inventory-grid .pc,
   .market-layout-v2 #inventory-grid .product-subgrid .pc {
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr);
-    min-height: 230px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    min-height: 0;
   }
-  .market-layout-v2 #inventory-grid .pc > .pimg { height: 100%; min-height: 230px; aspect-ratio: auto; border-radius: inherit; }
+  .market-layout-v2 #inventory-grid .pc > .pimg {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+    border-radius: 14px 14px 0 0;
+  }
+  .market-layout-v2 #inventory-grid .pc .pimg img,
+  .market-layout-v2 #inventory-grid .pc .pimg video {
+    object-fit: contain;
+    object-position: center;
+    transform: none;
+  }
   .market-layout-v2 #inventory-grid .pc > .pbody { min-width: 0; }
 }
 
