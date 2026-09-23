@@ -9299,11 +9299,81 @@ html.review-submit-direct .wrap {
     padding: 20px;
   }
   .market-layout-v2 #cart-overlay .cart-box {
-    width: min(420px, calc(100vw - 40px));
-    max-width: 420px;
+    width: min(340px, calc(100vw - 40px));
+    max-width: 340px;
     height: auto;
-    max-height: min(720px, calc(100vh - 40px));
-    border-radius: 18px;
+    max-height: min(560px, calc(100vh - 40px));
+    border-radius: 16px;
+  }
+  .market-layout-v2 #cart-overlay .cart-head {
+    padding: 10px 12px;
+  }
+  .market-layout-v2 #cart-overlay .cart-heading {
+    font-size: 17px;
+  }
+  .market-layout-v2 #cart-overlay .cart-clear {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+  .market-layout-v2 #cart-overlay .cart-x {
+    width: 30px;
+    height: 30px;
+  }
+  .market-layout-v2 #cart-overlay .cart-body {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .market-layout-v2 #cart-overlay .cart-row {
+    grid-template-columns: 48px minmax(0, 1fr) 24px;
+    gap: 6px 8px;
+    padding: 7px;
+    border-radius: 10px;
+  }
+  .market-layout-v2 #cart-overlay .cr-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+  }
+  .market-layout-v2 #cart-overlay .cr-n {
+    font-size: 11px;
+  }
+  .market-layout-v2 #cart-overlay .cr-p {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+  .market-layout-v2 #cart-overlay .cr-qty-btn {
+    width: 23px;
+    height: 23px;
+  }
+  .market-layout-v2 #cart-overlay .cr-qty-num {
+    min-width: 24px;
+    padding: 0 4px;
+    font-size: 11px;
+  }
+  .market-layout-v2 #cart-overlay .cr-del {
+    width: 24px;
+    height: 24px;
+  }
+  .market-layout-v2 #cart-overlay .cart-foot {
+    padding: 9px 10px 11px;
+  }
+  .market-layout-v2 #cart-overlay .ct-row {
+    margin-bottom: 8px;
+  }
+  .market-layout-v2 #cart-overlay .ct-l {
+    font-size: 10px;
+  }
+  .market-layout-v2 #cart-overlay .ct-v {
+    font-size: 20px;
+  }
+  .market-layout-v2 #cart-overlay .btn-cart-share {
+    margin-bottom: 6px;
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+  .market-layout-v2 #cart-overlay .btn-proc {
+    padding: 10px;
+    font-size: 11px;
   }
 }
 @media (max-width: 820px) {
