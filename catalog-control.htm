@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=13">
+  <link rel="stylesheet" href="catalog-control.css?v=14">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=14"></script>
+  <script defer src="catalog-control.js?v=15"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -70,8 +70,8 @@
       <section class="panel" data-panel="settings">
         <div class="panel-head"><div><h2>Semua tetapan kedai</h2><p>Ini menggantikan <code>kedai.json</code>. Semua key lama kekal disokong.</p></div><button class="primary" id="save-config"><i class="fa-solid fa-floppy-disk"></i> Simpan realtime</button></div>
         <div class="whatsapp-settings">
-          <div><span>WHATSAPP UTAMA</span><h3>Tukar nombor seluruh website</h3><p>Ubah sekali. Semua link support, checkout, helper dan konsultasi tanpa nombor khas akan ikut nombor ini.</p></div>
-          <label>Nombor WhatsApp admin<div class="key-input"><input id="main-whatsapp-number" inputmode="tel" autocomplete="tel" placeholder="Contoh: 60123456789"><button type="button" class="primary" id="save-main-whatsapp"><i class="fa-brands fa-whatsapp"></i> Simpan nombor</button></div><small>Guna format negara tanpa simbol +. Nombor 01… akan ditukar kepada 60… secara automatik.</small></label>
+          <div><span>WHATSAPP UTAMA</span><h3>Tukar link seluruh website</h3><p>Ubah sekali. Semua link support, checkout, helper dan konsultasi tanpa link khas akan ikut tetapan ini.</p></div>
+          <label>Nombor atau link WhatsApp<div class="key-input"><input id="main-whatsapp-number" type="text" inputmode="url" autocomplete="url" placeholder="https://wa.me/H4SXMY"><button type="button" class="primary" id="save-main-whatsapp"><i class="fa-brands fa-whatsapp"></i> Simpan link</button></div><small>Boleh masukkan 01…, 601…, H4SXMY atau link penuh seperti https://wa.me/H4SXMY.</small></label>
         </div>
         <div class="imgbb-settings">
           <div><span>IMAGE HOSTING</span><h3>ImgBB API</h3><p>Key disimpan dalam browser admin ini sahaja dan tidak dihantar ke Firebase atau GitHub.</p></div>

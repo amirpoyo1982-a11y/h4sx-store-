@@ -729,14 +729,21 @@ let storeConfig = {
   }
 };
 
-function normalizePrimaryWhatsAppNumber(value, fallback = DEFAULT_WA_NUMBER) {
-  let digits = String(value || '').replace(/\D/g, '');
-  if (digits.startsWith('0')) digits = '60' + digits.slice(1);
-  return /^\d{8,15}$/.test(digits) ? digits : fallback;
+function normalizeWhatsAppTarget(value, fallback = DEFAULT_WA_NUMBER) {
+  const raw = String(value || '').trim();
+  const linkMatch = raw.match(/https?:\/\/(?:www\.)?wa\.me\/([a-z0-9._-]+)/i);
+  if (linkMatch) return linkMatch[1];
+  let target = raw.replace(/^@/, '').replace(/\D/g, '');
+  if (target.startsWith('0')) target = '60' + target.slice(1);
+  if (/^\d{8,15}$/.test(target)) return target;
+  target = raw.replace(/^@/, '');
+  return /^[a-z0-9._-]{3,64}$/i.test(target) ? target : fallback;
 }
 
-function configuredPrimaryWhatsAppNumber(config = storeConfig) {
-  return config?.whatsapp_number
+function configuredPrimaryWhatsAppTarget(config = storeConfig) {
+  return config?.whatsapp_link
+    || config?.whatsappLink
+    || config?.whatsapp_number
     || config?.whatsappNumber
     || config?.contact?.whatsapp
     || config?.support?.whatsapp
@@ -745,14 +752,14 @@ function configuredPrimaryWhatsAppNumber(config = storeConfig) {
 
 function applyPrimaryWhatsAppNumber(config = storeConfig) {
   const previous = WA_NUMBER;
-  WA_NUMBER = normalizePrimaryWhatsAppNumber(configuredPrimaryWhatsAppNumber(config), previous || DEFAULT_WA_NUMBER);
+  WA_NUMBER = normalizeWhatsAppTarget(configuredPrimaryWhatsAppTarget(config), previous || DEFAULT_WA_NUMBER);
   H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/' + WA_NUMBER;
   document.querySelectorAll('a[href*="wa.me/"]').forEach(link => {
     try {
       const url = new URL(link.href, window.location.href);
-      const current = String(url.pathname || '').replace(/\D/g, '');
-      if (current !== previous && current !== DEFAULT_WA_NUMBER) return;
-      url.pathname = '/' + WA_NUMBER;
+      const current = decodeURIComponent(String(url.pathname || '')).replace(/^\/+|\/+$/g, '').split('/')[0];
+      if (current.toLowerCase() !== String(previous).toLowerCase() && current !== DEFAULT_WA_NUMBER) return;
+      url.pathname = '/' + encodeURIComponent(WA_NUMBER);
       link.href = url.toString();
     } catch (error) {}
   });
@@ -3126,7 +3133,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=14';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=15';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -4679,7 +4686,7 @@ function paymentCatalogUrl(config = {}) {
   return value.replace(new RegExp('(https?://(?:www\\.)?wa\\.me/)' + DEFAULT_WA_NUMBER + '(?=\\D|$)', 'i'), '$1' + WA_NUMBER);
 }
 function showConsultationConfirm(config = {}) {
-  const phone = String(config.whatsapp || WA_NUMBER).replace(/\D/g, '') || WA_NUMBER;
+  const phone = normalizeWhatsAppTarget(config.whatsapp || WA_NUMBER, WA_NUMBER);
   const destinationUrl = String(config.destinationUrl || '').trim();
   const isReviewDestination = config.variant === 'review';
   const oldModal = document.getElementById('consultation-confirm-modal');
@@ -6244,7 +6251,7 @@ function buyNowItem(id, promoCode = '', options = {}) {
   const activePromoCode = String(promoCode || '').trim().toUpperCase() || savedProductPromoCode(item);
   const promo = productPromoResult(item, activePromoCode);
   const finalPrice = promo.final;
-  const phone = String(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER).replace(/\D/g, '');
+  const phone = normalizeWhatsAppTarget(isPromotedProduct(item) ? item.promoterPhone : WA_NUMBER, WA_NUMBER);
   const stock = item.stock == null ? 'Semak dengan admin' : (Number(item.stock) > 0 ? item.stock + ' stok' : 'Habis stok');
   const robloxProfile = options.robloxProfile || null;
   const message = [

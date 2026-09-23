@@ -650,10 +650,15 @@ function compact(object) {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== '' && value !== null && value !== undefined));
 }
 
-function normalizeAdminWhatsAppNumber(value) {
-  let digits = String(value || '').replace(/\D/g, '');
+function normalizeAdminWhatsAppLink(value) {
+  const raw = String(value || '').trim();
+  const linkMatch = raw.match(/https?:\/\/(?:www\.)?wa\.me\/([a-z0-9._-]+)/i);
+  if (linkMatch) return 'https://wa.me/' + linkMatch[1];
+  let digits = raw.replace(/\D/g, '');
   if (digits.startsWith('0')) digits = '60' + digits.slice(1);
-  return /^\d{8,15}$/.test(digits) ? digits : '';
+  if (/^\d{8,15}$/.test(digits)) return 'https://wa.me/' + digits;
+  const target = raw.replace(/^@/, '');
+  return /^[a-z0-9._-]{3,64}$/i.test(target) ? 'https://wa.me/' + target : '';
 }
 
 async function saveArray(path, value, message) {
@@ -662,7 +667,7 @@ async function saveArray(path, value, message) {
 
 function writeConfigEditor() {
   byId('config-editor').value = JSON.stringify(storeConfig, null, 2);
-  byId('main-whatsapp-number').value = storeConfig.whatsapp_number || storeConfig.whatsappNumber || storeConfig.contact?.whatsapp || storeConfig.support?.whatsapp || '';
+  byId('main-whatsapp-number').value = storeConfig.whatsapp_link || storeConfig.whatsappLink || storeConfig.whatsapp_number || storeConfig.whatsappNumber || storeConfig.contact?.whatsapp || storeConfig.support?.whatsapp || '';
   byId('quick-open').checked = storeConfig.bukakedai !== false && String(storeConfig.bukakedai).toLowerCase() !== 'false';
   byId('quick-maintenance').checked = storeConfig.maintenance === true || String(storeConfig.maintenance).toLowerCase() === 'true';
   byId('quick-review-maintenance').checked = storeConfig.review_maintenance === true || String(storeConfig.review_maintenance).toLowerCase() === 'true';
@@ -684,14 +689,14 @@ function writeConfigEditor() {
 
 byId('save-main-whatsapp').addEventListener('click', async event => {
   const button = event.currentTarget;
-  const number = normalizeAdminWhatsAppNumber(byId('main-whatsapp-number').value);
-  if (!number) { notify('Masukkan nombor WhatsApp yang sah, contoh 60123456789.', true); return; }
-  byId('main-whatsapp-number').value = number;
+  const link = normalizeAdminWhatsAppLink(byId('main-whatsapp-number').value);
+  if (!link) { notify('Masukkan nombor atau link WhatsApp yang sah.', true); return; }
+  byId('main-whatsapp-number').value = link;
   setBusy(button, true, 'Menyimpan...');
   try {
-    await saveStorePath('config/whatsapp_number', number, 'Nombor WhatsApp seluruh website sudah ditukar.');
+    await saveStorePath('config/whatsapp_link', link, 'Link WhatsApp seluruh website sudah ditukar.');
     const current = JSON.parse(byId('config-editor').value || '{}');
-    current.whatsapp_number = number;
+    current.whatsapp_link = link;
     byId('config-editor').value = JSON.stringify(current, null, 2);
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
