@@ -9383,3 +9383,54 @@ html.review-submit-direct .wrap {
   .market-layout-v2 #cart-overlay .cart-foot { padding: 13px 14px max(14px,env(safe-area-inset-bottom)); }
   .market-layout-v2 #cart-overlay .btn-cart-share { display: block; }
 }
+
+@media (min-width: 821px) {
+  .market-layout-v2 #product-view .section-panel {
+    width: min(1320px, calc(100vw - 40px));
+    max-width: 1320px;
+    margin-inline: auto;
+  }
+  .market-layout-v2 #inventory-grid .product-subgrid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 12px !important;
+  }
+  .market-layout-v2 #inventory-grid .pc {
+    border-radius: 16px;
+  }
+  .market-layout-v2 #inventory-grid .pc > .pimg {
+    aspect-ratio: 16 / 9;
+    min-height: 0;
+    border-radius: 16px 16px 0 0;
+  }
+  .market-layout-v2 #inventory-grid .pc > .pbody {
+    padding: 11px;
+  }
+  .market-layout-v2 #inventory-grid .pname {
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .market-layout-v2 #inventory-grid .psold {
+    margin-bottom: 5px;
+    font-size: 10px;
+  }
+  .market-layout-v2 #inventory-grid .pdesc {
+    margin-bottom: 7px;
+    font-size: 10px;
+  }
+  .market-layout-v2 #inventory-grid .pfoot {
+    gap: 7px;
+    padding-top: 8px;
+  }
+  .market-layout-v2 #inventory-grid .pprice {
+    font-size: 17px;
+  }
+  .market-layout-v2 #inventory-grid .pactions {
+    gap: 6px;
+  }
+  .market-layout-v2 #inventory-grid .padd,
+  .market-layout-v2 #inventory-grid .pbuy {
+    height: 36px;
+    border-radius: 10px;
+    font-size: 10px;
+  }
+}
