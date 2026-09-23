@@ -48,7 +48,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-desktop-full-product-20260923">
+  <link rel="stylesheet" href="styles.css?v=h4sx-classic-full-cart-20260923">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -630,23 +630,14 @@
 <div class="overlay" id="cart-overlay" onclick="ocClose(event)">
   <div class="cart-box">
     <div class="cart-head">
-      <div class="cart-head-left"><span class="cart-kicker">H4SX STORE</span><span class="cart-heading">Troli Belanja</span><span class="cart-count-pill" id="cart-pill">0</span></div>
+      <div class="cart-head-left"><span class="cart-heading">Troli Belanja</span><span class="cart-count-pill" id="cart-pill">0</span></div>
       <div class="cart-head-right"><button class="cart-clear" onclick="clearCart()"><i class="fa-solid fa-trash"></i> Kosongkan</button><button class="cart-x" onclick="toggleCart()" aria-label="Tutup troli"><i class="fa-solid fa-xmark"></i></button></div>
     </div>
-    <div class="cart-layout">
-      <section class="cart-list-panel">
-        <div class="cart-select-bar"><label><input id="cart-select-all" type="checkbox" onchange="toggleCartSelectAll(this.checked)"><span>Pilih semua item</span></label><strong id="cart-selected-count">0 dipilih</strong></div>
-        <div id="cart-body" class="cart-body"></div>
-      </section>
-      <aside class="cart-foot">
-        <div class="cart-summary-title">Ringkasan Pesanan</div>
-        <div class="cart-summary-line"><span>Item dipilih</span><strong id="cart-summary-count">0</strong></div>
-        <div class="cart-summary-line"><span>Yuran platform</span><strong>RM0.00</strong></div>
-        <div class="ct-row"><span class="ct-l">Jumlah</span><span class="ct-v" id="cart-total">RM0</span></div>
-        <div class="cart-safe-note"><i class="fa-solid fa-shield-halved"></i><span>Admin akan semak stok dan jumlah akhir sebelum pembayaran.</span></div>
-        <button type="button" class="btn-cart-share" id="cart-share-btn" onclick="shareCartItems()"><i class="fa-solid fa-share-nodes"></i> Kongsi item dipilih</button>
-        <button class="btn-proc whatsapp-buy" id="cart-checkout-btn" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Beli item dipilih</button>
-      </aside>
+    <div id="cart-body" class="cart-body"></div>
+    <div class="cart-foot">
+      <div class="ct-row"><span class="ct-l">Jumlah</span><span class="ct-v" id="cart-total">RM0</span></div>
+      <button type="button" class="btn-cart-share" id="cart-share-btn" onclick="shareCartItems()"><i class="fa-solid fa-share-nodes"></i> Kongsi Item Dalam Cart</button>
+      <button class="btn-proc whatsapp-buy" id="cart-checkout-btn" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Troli ke WhatsApp</button>
     </div>
   </div>
 </div>
@@ -867,7 +858,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-admin-stability-banner-20260922"></script>
+<script defer src="app.js?v=h4sx-classic-full-cart-20260923"></script>
 
 </body>
 </html>

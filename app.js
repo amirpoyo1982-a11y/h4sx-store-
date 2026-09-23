@@ -5492,6 +5492,7 @@ function restoreCart() {
   }
 }
 function selectedCartItems() {
+  if (!document.getElementById('cart-select-all')) return cartItems;
   return cartItems.filter(item => cartSelectedKeys.has(cartEntryKey(item.id, item.variantId)));
 }
 function toggleCartSelectAll(checked) {
@@ -5515,29 +5516,11 @@ function renderCart() {
   const body = document.getElementById('cart-body');
   const shareButton = document.getElementById('cart-share-btn');
   const checkoutButton = document.getElementById('cart-checkout-btn');
-  const validKeys = new Set(cartItems.map(item => cartEntryKey(item.id, item.variantId)));
-  cartSelectedKeys = new Set([...cartSelectedKeys].filter(key => validKeys.has(key)));
-  const selected = selectedCartItems();
-  if (shareButton) shareButton.disabled = !selected.length;
-  if (checkoutButton) checkoutButton.disabled = !selected.length;
-  const selectedCount = selected.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-  const allCheckbox = document.getElementById('cart-select-all');
-  if (allCheckbox) {
-    allCheckbox.checked = !!cartItems.length && selected.length === cartItems.length;
-    allCheckbox.indeterminate = selected.length > 0 && selected.length < cartItems.length;
-    allCheckbox.disabled = !cartItems.length;
-  }
-  const selectedLabel = document.getElementById('cart-selected-count');
-  const summaryCount = document.getElementById('cart-summary-count');
-  if (selectedLabel) selectedLabel.textContent = selectedCount + ' dipilih';
-  if (summaryCount) summaryCount.textContent = selectedCount;
-  if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping"></i><strong>Troli masih kosong</strong><span>Tambah item daripada katalog untuk mula membeli.</span></div>'; document.getElementById('cart-total').textContent = 'RM0.00'; return; }
+  if (shareButton) shareButton.disabled = !cartItems.length;
+  if (checkoutButton) checkoutButton.disabled = !cartItems.length;
+  if (!cartItems.length) { body.innerHTML = '<div class="cart-empty"><i class="fa-solid fa-bag-shopping" style="font-size:28px;color:var(--border2);margin-bottom:10px;display:block"></i>Cart kosong</div>'; document.getElementById('cart-total').textContent = 'RM0.00'; return; }
   let tot = 0;
   const fragment = document.createDocumentFragment();
-  const storeHead = document.createElement('div');
-  storeHead.className = 'cart-store-head';
-  storeHead.innerHTML = '<div class="cart-store-logo"><i class="fa-solid fa-store"></i></div><div><strong>H4SX STORE</strong><span><i class="fa-solid fa-circle-check"></i> Penjual rasmi • Stok disemak admin</span></div>';
-  fragment.appendChild(storeHead);
   cartItems.forEach(ci => {
     const item = inventory.find(i=>i.id===ci.id); if (!item) return;
     const displayItem = effectiveProductItem(item, ci.variantId);
@@ -5546,14 +5529,13 @@ function renderCart() {
     const promo = getCartPromoResult(item, ci);
     const unitPrice = promo.final;
     const line = (unitPrice * ci.qty).toFixed(2);
-    const selectedItem = cartSelectedKeys.has(String(key));
-    if (selectedItem) tot += unitPrice * ci.qty;
+    tot += unitPrice * ci.qty;
     const max = getMaxPurchase(displayItem); const limited = max && ci.qty >= max;
     const promoLabel = promo.valid ? ' <span class="cart-promo-tag"><i class="fa-solid fa-ticket"></i>' + escapeHtml(promo.promo.code) + '</span>' : '';
      
     const row = document.createElement('div');
-    row.className = 'cart-row' + (selectedItem ? ' is-selected' : '');
-    row.innerHTML = '<label class="cart-item-check" title="Pilih item"><input type="checkbox" data-action="select-item" data-key="' + escapeHtml(String(key)) + '"' + (selectedItem ? ' checked' : '') + '><span></span></label><img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-unit">Harga seunit <strong>RM' + unitPrice.toFixed(2) + '</strong></div><div class="cr-mobile-subtotal">Subtotal RM' + line + '</div></div><div class="cr-controls"><div class="cr-subtotal"><small>Subtotal</small><strong>RM' + line + '</strong></div><div class="cr-qty"><button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="-1">−</button><span class="cr-qty-num">' + ci.qty + '</span>' + (limited ? '<button class="cr-qty-btn" disabled>+</button>' : '<button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="1">+</button>') + '</div></div><button class="cr-del" data-action="remove" data-key="' + escapeHtml(String(key)) + '" title="Buang item"><i class="fa-solid fa-trash-can"></i></button>';
+    row.className = 'cart-row';
+    row.innerHTML = '<img class="cr-img" src="' + escapeHtml(productPosterUrl(displayItem)) + '" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'"><div class="cr-i"><div class="cr-n">' + escapeHtml(displayName) + promoLabel + '</div><div class="cr-p">RM' + unitPrice.toFixed(2) + ' x ' + ci.qty + ' = <strong style="color:var(--sky)">RM' + line + '</strong></div></div><div class="cr-qty"><button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="-1">−</button><span class="cr-qty-num">' + ci.qty + '</span>' + (limited ? '<button class="cr-qty-btn" disabled style="opacity:.4;cursor:not-allowed">+</button>' : '<button class="cr-qty-btn" data-action="qty" data-key="' + escapeHtml(String(key)) + '" data-delta="1">+</button>') + '</div><button class="cr-del" data-action="remove" data-key="' + escapeHtml(String(key)) + '" title="Buang item"><i class="fa-solid fa-trash-can"></i></button>';
     fragment.appendChild(row);
   });
   body.innerHTML = '';
