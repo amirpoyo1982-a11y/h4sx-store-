@@ -3087,7 +3087,19 @@ details.faq[open] .faq-ic {
   text-overflow: ellipsis;
 }
 .product-modal-desc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.product-modal-desc-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px; }
+.product-modal-desc-head .product-modal-desc-label { margin-bottom:0; }
+.product-modal-desc-head button,
+.pdesc-copy {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  border:1px solid rgba(14,165,233,.28); border-radius:9px; background:#eefaff; color:#087dbb;
+  font:inherit; font-size:10px; font-weight:800; cursor:pointer; transition:.2s ease;
+}
+.product-modal-desc-head button { padding:7px 9px; white-space:nowrap; }
+.product-modal-desc-head button:hover,
+.pdesc-copy:hover { color:#fff; background:linear-gradient(135deg,#079de1,#16c49b); transform:translateY(-1px); }
 .product-modal-desc { font-size: 14px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; margin-bottom: 4px; }
+.pdesc-copy { width:max-content; max-width:100%; padding:6px 9px; margin:-1px 0 9px; }
 .product-modal-meta {
   display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
 }

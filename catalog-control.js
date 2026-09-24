@@ -368,10 +368,42 @@ function promoGroups() {
     const code = String(source?.code || source?.promoCode || '').trim().toUpperCase();
     if (!code) return;
     const merged = { ...product, ...source, code };
-    if (!map.has(code)) map.set(code, { code, config: merged, targetIndices: [] });
-    map.get(code).targetIndices.push(productIndex);
+    if (!map.has(code)) map.set(code, { code, config: merged, targetIndices: [], targets: [] });
+    const group = map.get(code);
+    group.targetIndices.push(productIndex);
+    group.targets.push({
+      productIndex,
+      variantIds: Array.isArray(source?.variantIds) ? source.variantIds.map(value => String(value)).filter(Boolean) : []
+    });
   }));
   return Array.from(map.values()).sort((a, b) => a.code.localeCompare(b.code));
+}
+
+function promoProductVariants(product) {
+  const source = Array.isArray(product?.variants) ? product.variants : (Array.isArray(product?.types) ? product.types : []);
+  return source.filter(Boolean).map((variant, index) => ({
+    id: String(variant.id ?? variant.value ?? variant.name ?? index),
+    name: String(variant.name ?? variant.label ?? ('Pilihan ' + (index + 1)))
+  }));
+}
+
+function promoTargetKey(productIndex, variantId = '') {
+  return String(productIndex) + '::' + String(variantId || '');
+}
+
+function promoTargetValue(productIndex, variantId = '') {
+  return JSON.stringify({ productIndex, variantId: String(variantId || '') });
+}
+
+function parsePromoTarget(value) {
+  try {
+    const parsed = JSON.parse(value);
+    const productIndex = Number(parsed.productIndex);
+    if (!Number.isInteger(productIndex) || !products[productIndex]) return null;
+    return { productIndex, variantId: String(parsed.variantId || '') };
+  } catch (error) {
+    return null;
+  }
 }
 
 function promoDateValue(value) {
@@ -395,9 +427,16 @@ function renderPromos() {
     const active = !(config.active === false || config.promoActive === false || String(config.active).toLowerCase() === 'false');
     const now = Date.now();
     const status = !active ? 'Tidak aktif' : (Number.isFinite(starts) && now < starts ? 'Belum mula' : (Number.isFinite(expires) && now >= expires ? 'Tamat' : 'Aktif'));
-    const targetNames = group.targetIndices.map(index => products[index]?.name || ('#' + products[index]?.id)).join(', ');
+    const targetNames = group.targets.map(target => {
+      const product = products[target.productIndex];
+      const productName = product?.name || ('#' + product?.id);
+      if (!target.variantIds.length) return productName + ' (semua variant)';
+      const variants = promoProductVariants(product);
+      const names = target.variantIds.map(id => variants.find(variant => variant.id === id)?.name || id);
+      return productName + ' (' + names.join(', ') + ')';
+    }).join(', ');
     const encoded = encodeURIComponent(group.code);
-    return '<article class="item-row promo-row"><span class="item-placeholder"><i class="fa-solid fa-ticket"></i></span><div class="item-copy"><strong>' + escapeHtml(group.code) + '<em class="promo-status' + (status === 'Aktif' ? '' : ' off') + '">' + status + '</em></strong><span>' + (type === 'fixed' ? 'RM' + amount.toFixed(2) : amount + '%') + ' • Had ' + limit + ' orang • ' + group.targetIndices.length + ' produk</span><span>' + escapeHtml(targetNames) + '</span></div><div class="row-actions"><button data-action="edit-promo" data-code="' + encoded + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="danger" data-action="delete-promo" data-code="' + encoded + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+    return '<article class="item-row promo-row"><span class="item-placeholder"><i class="fa-solid fa-ticket"></i></span><div class="item-copy"><strong>' + escapeHtml(group.code) + '<em class="promo-status' + (status === 'Aktif' ? '' : ' off') + '">' + status + '</em></strong><span>' + (type === 'fixed' ? 'RM' + amount.toFixed(2) : amount + '%') + ' • Had ' + limit + ' orang • ' + group.targets.length + ' sasaran</span><span>' + escapeHtml(targetNames) + '</span></div><div class="row-actions"><button data-action="edit-promo" data-code="' + encoded + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="danger" data-action="delete-promo" data-code="' + encoded + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
   }).join('') : '<div class="empty">Belum ada promo code. Tekan “Promo baru” untuk buat satu.</div>';
 }
 
@@ -415,8 +454,21 @@ function openPromoEditor(code = '') {
   byId('promo-duration').value = config.promoDurationMinutes ?? config.durationMinutes ?? '';
   byId('promo-active').checked = !(config.active === false || config.promoActive === false || String(config.active).toLowerCase() === 'false');
   byId('promo-phone').checked = config.promoRequirePhone === true || String(config.promoRequirePhone).toLowerCase() === 'true';
-  const selected = new Set(group?.targetIndices || []);
-  byId('promo-products').innerHTML = products.map((product, index) => '<option value="' + index + '"' + (selected.has(index) ? ' selected' : '') + '>#' + escapeHtml(product.id) + ' — ' + escapeHtml(product.name || 'Tanpa nama') + '</option>').join('');
+  const selected = new Set();
+  (group?.targets || []).forEach(target => {
+    if (target.variantIds.length) target.variantIds.forEach(variantId => selected.add(promoTargetKey(target.productIndex, variantId)));
+    else selected.add(promoTargetKey(target.productIndex));
+  });
+  byId('promo-products').innerHTML = products.map((product, index) => {
+    const variants = promoProductVariants(product);
+    const allKey = promoTargetKey(index);
+    const allOption = '<option value="' + escapeHtml(promoTargetValue(index)) + '"' + (selected.has(allKey) ? ' selected' : '') + '>#' + escapeHtml(product.id) + ' — ' + escapeHtml(product.name || 'Tanpa nama') + (variants.length ? ' — SEMUA VARIANT' : '') + '</option>';
+    const variantOptions = variants.map(variant => {
+      const key = promoTargetKey(index, variant.id);
+      return '<option value="' + escapeHtml(promoTargetValue(index, variant.id)) + '"' + (selected.has(key) ? ' selected' : '') + '>　↳ ' + escapeHtml(variant.name) + ' sahaja</option>';
+    }).join('');
+    return allOption + variantOptions;
+  }).join('');
   byId('promo-modal').hidden = false;
 }
 
@@ -470,9 +522,9 @@ byId('promo-form').addEventListener('submit', async event => {
   const code = byId('promo-code').value.trim().toUpperCase().replace(/\s+/g, '');
   const discount = Number(byId('promo-discount').value);
   const type = byId('promo-type').value;
-  const targetIndices = Array.from(byId('promo-products').selectedOptions).map(option => Number(option.value));
+  const selectedTargets = Array.from(byId('promo-products').selectedOptions).map(option => parsePromoTarget(option.value)).filter(Boolean);
   if (!code) return notify('Masukkan kod promo.', true);
-  if (!targetIndices.length) return notify('Pilih sekurang-kurangnya satu produk.', true);
+  if (!selectedTargets.length) return notify('Pilih sekurang-kurangnya satu produk atau variant.', true);
   if (!Number.isFinite(discount) || discount <= 0 || (type === 'percent' && discount > 100)) return notify('Nilai diskaun tidak sah.', true);
   const startsValue = byId('promo-starts').value;
   const expiresValue = byId('promo-expires').value;
@@ -487,11 +539,19 @@ byId('promo-form').addEventListener('submit', async event => {
     if (Array.isArray(item.promoCodes)) item.promoCodes = item.promoCodes.filter(entry => String(entry?.code || entry?.promoCode || '').trim().toUpperCase() !== oldCode && String(entry?.code || entry?.promoCode || '').trim().toUpperCase() !== code);
     clearLegacyPromo(item, oldCode);
   });
-  targetIndices.forEach(index => {
+  const targetScopes = new Map();
+  selectedTargets.forEach(target => {
+    if (!targetScopes.has(target.productIndex)) targetScopes.set(target.productIndex, new Set());
+    const scope = targetScopes.get(target.productIndex);
+    if (!target.variantId) { scope.clear(); scope.add(''); }
+    else if (!scope.has('')) scope.add(target.variantId);
+  });
+  targetScopes.forEach((variantSet, index) => {
     const item = next[index];
     if (!item) return;
     item.promoCodes = Array.isArray(item.promoCodes) ? item.promoCodes : [];
-    item.promoCodes.push(promo);
+    const variantIds = Array.from(variantSet).filter(Boolean);
+    item.promoCodes.push(compact({ ...promo, variantIds: variantIds.length ? variantIds : null }));
     item.promoActive = true;
   });
   const button = event.submitter;

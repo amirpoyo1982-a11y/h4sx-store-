@@ -12,7 +12,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=15"></script>
+  <script defer src="catalog-control.js?v=16"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -112,8 +112,8 @@
         <label>Tamat pada<input id="promo-expires" type="datetime-local"></label>
         <label class="wide">Tempoh boleh digunakan selepas redeem (minit)<input id="promo-duration" type="number" min="0" step="1" placeholder="Contoh: 10"></label>
         <div class="wide promo-switches"><label class="switch"><input id="promo-active" type="checkbox" checked><span></span> Aktif</label><label class="switch"><input id="promo-phone" type="checkbox"><span></span> Wajib sahkan telefon</label></div>
-        <div class="wide promo-targets-head"><strong>Pilih produk/app untuk promosi</strong><div><button type="button" class="ghost" id="promo-select-all">Pilih semua</button><button type="button" class="ghost" id="promo-clear-all">Kosongkan</button></div></div>
-        <label class="wide"><select id="promo-products" class="promo-products" multiple size="9" required></select><small>Tekan Ctrl untuk pilih beberapa produk pada komputer.</small></label>
+        <div class="wide promo-targets-head"><strong>Pilih produk atau variant untuk promosi</strong><div><button type="button" class="ghost" id="promo-select-all">Pilih semua</button><button type="button" class="ghost" id="promo-clear-all">Kosongkan</button></div></div>
+        <label class="wide"><select id="promo-products" class="promo-products" multiple size="12" required></select><small>Pilih “SEMUA VARIANT” untuk seluruh item, atau pilih variant A/B/C secara berasingan. Tekan Ctrl untuk beberapa pilihan pada komputer.</small></label>
       </div>
       <div class="modal-actions"><button type="button" class="ghost" id="promo-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan promo realtime</button></div>
     </form>

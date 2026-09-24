@@ -1614,6 +1614,23 @@ function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
   copyProductLinkById(modalItemId);
 }
+async function copyProductDescriptionById(id, useSelectedVariant = false) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  if (!item) { toast('Barang tidak jumpa', true); return; }
+  const displayItem = useSelectedVariant ? effectiveProductItem(item, modalVariantId) : item;
+  const description = String(displayItem?.desc || displayItem?.description || item.desc || item.description || '').trim();
+  if (!description) { toast('Description item ini kosong.', true); return; }
+  try {
+    await navigator.clipboard.writeText(description);
+    toast('Description disalin!');
+  } catch (error) {
+    window.prompt('Copy description item:', description);
+  }
+}
+function copyModalProductDescription() {
+  if (!modalItemId) { toast('Buka barang dulu', true); return; }
+  copyProductDescriptionById(modalItemId, true);
+}
 function shareableProductLink(item) {
   const url = new URL(productLink(item));
   url.searchParams.delete('preview');
@@ -4004,6 +4021,10 @@ function productPromoConfig(item, requestedCode = '') {
   const requested = String(requestedCode || '').trim().toUpperCase();
   const sources = Array.isArray(item?.promoCodes) && item.promoCodes.length ? item.promoCodes : [item];
   const promos = sources.map(source => {
+    const allowedVariantIds = Array.isArray(source?.variantIds)
+      ? source.variantIds.map(value => String(value)).filter(Boolean)
+      : [];
+    if (allowedVariantIds.length && !allowedVariantIds.includes(String(item?.variantId || ''))) return null;
     const config = { ...item, ...(source || {}) };
     const rawCode = String(config?.code ?? config?.promoCode ?? config?.discountCode ?? '').trim();
     const rawDiscount = Number(config?.discount ?? config?.promoDiscount ?? 0);
@@ -4187,12 +4208,14 @@ function setupProductPromoOtp(item) {
   const otpInput = document.getElementById('product-modal-promo-otp-code');
   const verifyButton = document.getElementById('product-modal-promo-verify-otp');
   if (!panel || !phoneInput || !sendButton || !otpInput || !verifyButton) return;
+  const activeItem = () => modalEffectiveItem(item);
   clearPromoOtpSession();
   panel.hidden = true;
   setPromoOtpStatus('');
   otpInput.oninput = () => { otpInput.value = otpInput.value.replace(/\D/g, '').slice(0, 6); };
   sendButton.onclick = async () => {
-    const result = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
+    const promoItem = activeItem();
+    const result = productPromoResult(promoItem, document.getElementById('product-modal-promo-input')?.value);
     if (!result.valid) { setPromoOtpStatus('Masukkan kod promo yang sah dahulu.', 'error'); return; }
     const phone = normalizePromoPhoneNumber(phoneInput.value);
     if (!/^\+\d{8,15}$/.test(phone)) { setPromoOtpStatus('Masukkan nombor telefon yang betul.', 'error'); return; }
@@ -4201,14 +4224,14 @@ function setupProductPromoOtp(item) {
       setPromoOtpStatus('Menghantar OTP ke ' + phone + '...');
       const verifier = await ensurePromoRecaptcha();
       promoPhoneConfirmation = await promoAuth.signInWithPhoneNumber(phone, verifier);
-      showPromoOtpPanel(item, result.promo);
+      showPromoOtpPanel(promoItem, result.promo);
       setPromoOtpStatus('OTP sudah dihantar. Masukkan 6 digit untuk sahkan.', 'success');
       setTimeout(() => otpInput.focus(), 40);
     } catch (error) {
       console.warn('Promo phone OTP error:', error);
       if (promoRecaptchaVerifier) { try { promoRecaptchaVerifier.clear(); } catch (_) {} promoRecaptchaVerifier = null; }
       clearPromoOtpSession();
-      showPromoOtpPanel(item, result.promo);
+      showPromoOtpPanel(promoItem, result.promo);
       const errorCode = String(error?.code || error?.message || '');
       let message = 'OTP tidak dapat dihantar. Cuba semula sebentar lagi.';
       if (errorCode.includes('turnstile-secret-missing')) {
@@ -4241,11 +4264,12 @@ function setupProductPromoOtp(item) {
       await promoPhoneConfirmation.confirm(code);
       setPromoOtpStatus('Semakan keselamatan terakhir...');
       await verifyPromoTurnstile();
-      const verifiedPromo = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value).promo;
-      markPromoOtpVerified(item, verifiedPromo);
+      const promoItem = activeItem();
+      const verifiedPromo = productPromoResult(promoItem, document.getElementById('product-modal-promo-input')?.value).promo;
+      markPromoOtpVerified(promoItem, verifiedPromo);
       clearPromoOtpSession();
-      const current = productPromoResult(item, document.getElementById('product-modal-promo-input')?.value);
-      showPromoOtpPanel(item, current.promo);
+      const current = productPromoResult(promoItem, document.getElementById('product-modal-promo-input')?.value);
+      showPromoOtpPanel(promoItem, current.promo);
       syncProductModalPromo(item);
       setPromoOtpStatus('Nombor disahkan. Tekan Guna untuk aktifkan promo.', 'success');
     } catch (error) {
@@ -4396,17 +4420,19 @@ function setupProductModalPromo(item) {
   const cancel = document.getElementById('product-modal-promo-cancel');
   if (!wrap || !input || !apply) return;
   if (productModalPromoTimer) { clearInterval(productModalPromoTimer); productModalPromoTimer = null; }
-  input.value = savedProductPromoCode(item);
+  const activeItem = () => modalEffectiveItem(item);
+  input.value = savedProductPromoCode(activeItem());
   input.disabled = false;
   setupProductPromoOtp(item);
   const sync = () => syncProductModalPromo(item);
   input.oninput = () => {
     input.value = input.value.toUpperCase().replace(/\s+/g, '');
-    const candidate = productPromoResult(item, input.value);
+    const promoItem = activeItem();
+    const candidate = productPromoResult(promoItem, input.value);
     sync();
     // Surface OTP as soon as a valid protected code is typed, not only after pressing Guna.
-    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneVerificationReady(item, candidate.promo)) {
-      showPromoOtpPanel(item, candidate.promo, true);
+    if (candidate.valid && promoPhoneVerificationRequired(promoItem, candidate.promo) && !promoPhoneVerificationReady(promoItem, candidate.promo)) {
+      showPromoOtpPanel(promoItem, candidate.promo, true);
       setPromoOtpStatus('Sahkan nombor telefon untuk aktifkan harga promo.');
     } else if (!input.value.trim()) {
       clearPromoOtpSession();
@@ -4418,25 +4444,27 @@ function setupProductModalPromo(item) {
   input.onkeydown = event => { if (event.key === 'Enter') { event.preventDefault(); sync(); } };
   if (cancel) cancel.onclick = () => cancelProductPromo(item);
   apply.onclick = async () => {
+    const promoItem = activeItem();
     const code = input.value;
-    const candidate = productPromoResult(item, code);
-    if (candidate.valid && promoPhoneVerificationRequired(item, candidate.promo) && !promoPhoneVerificationReady(item, candidate.promo)) {
-      showPromoOtpPanel(item, candidate.promo, true);
+    const candidate = productPromoResult(promoItem, code);
+    if (candidate.valid && promoPhoneVerificationRequired(promoItem, candidate.promo) && !promoPhoneVerificationReady(promoItem, candidate.promo)) {
+      showPromoOtpPanel(promoItem, candidate.promo, true);
       setPromoOtpStatus('Sahkan nombor telefon dahulu untuk guna kod ini.');
       return;
     }
     apply.disabled = true;
-    const claimed = await claimProductPromo(item, code);
-    if (claimed) saveProductPromoDraft(item, code);
+    const claimed = await claimProductPromo(promoItem, code);
+    if (claimed) saveProductPromoDraft(promoItem, code);
     sync();
     syncProductPromoCard(item);
-    const claimedPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
-    const claimedExpiry = effectivePromoExpiry(item, claimedPromo);
+    const claimedPromo = input.value.trim() ? productPromoConfig(promoItem, input.value) : null;
+    const claimedExpiry = effectivePromoExpiry(promoItem, claimedPromo);
     if (claimed && claimedExpiry && !productModalPromoTimer) {
       productModalPromoTimer = setInterval(() => {
         if (modalItemId !== item.id) return;
-        const activePromo = productPromoConfig(item, input.value);
-        const activeExpiry = effectivePromoExpiry(item, activePromo);
+        const timerItem = activeItem();
+        const activePromo = productPromoConfig(timerItem, input.value);
+        const activeExpiry = effectivePromoExpiry(timerItem, activePromo);
         if (activeExpiry && Date.now() >= activeExpiry) {
           expireProductPromo(item);
           input.value = '';
@@ -4451,20 +4479,23 @@ function setupProductModalPromo(item) {
         }
       }, 1000);
     }
-    const nextPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
-    apply.disabled = Boolean(nextPromo && effectivePromoExpiry(item, nextPromo) && Date.now() >= effectivePromoExpiry(item, nextPromo));
+    const nextItem = activeItem();
+    const nextPromo = input.value.trim() ? productPromoConfig(nextItem, input.value) : null;
+    apply.disabled = Boolean(nextPromo && effectivePromoExpiry(nextItem, nextPromo) && Date.now() >= effectivePromoExpiry(nextItem, nextPromo));
   };
-  const promo = input.value.trim() ? productPromoConfig(item, input.value) : null;
-  const initialExpiry = effectivePromoExpiry(item, promo);
-  const initialRedeemed = promo && promoRedeemedOnThisDevice(item, promo);
+  const initialItem = activeItem();
+  const promo = input.value.trim() ? productPromoConfig(initialItem, input.value) : null;
+  const initialExpiry = effectivePromoExpiry(initialItem, promo);
+  const initialRedeemed = promo && promoRedeemedOnThisDevice(initialItem, promo);
   input.disabled = false;
   apply.disabled = Boolean(initialExpiry && Date.now() >= initialExpiry);
   sync();
   if (initialRedeemed && initialExpiry && Date.now() < initialExpiry) {
     productModalPromoTimer = setInterval(() => {
       if (modalItemId !== item.id) return;
-      const nextPromo = input.value.trim() ? productPromoConfig(item, input.value) : null;
-      const nextExpiry = effectivePromoExpiry(item, nextPromo);
+      const timerItem = activeItem();
+      const nextPromo = input.value.trim() ? productPromoConfig(timerItem, input.value) : null;
+      const nextExpiry = effectivePromoExpiry(timerItem, nextPromo);
       if (nextExpiry && Date.now() >= nextExpiry) {
         expireProductPromo(item);
         input.value = '';
@@ -4850,7 +4881,8 @@ function productCardHTML(item) {
   const buyAction = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -6032,8 +6064,10 @@ function renderProductModalSelection(item, refreshMedia = true) {
   modalQuantity = Math.max(1, Math.min(modalQuantity, max));
   const quantityValue = document.getElementById('product-modal-quantity-value');
   const stockLeft = document.getElementById('product-modal-stock-left');
+  const descEl = document.getElementById('product-modal-desc');
   if (quantityValue) quantityValue.textContent = modalQuantity;
   if (stockLeft) stockLeft.textContent = displayItem.stock == null ? '' : Math.max(0, Number(displayItem.stock) - getCartQtyForItem(item.id, modalVariantId)) + ' barang tersedia';
+  if (descEl) descEl.textContent = displayItem.desc || displayItem.description || item.desc || item.description || 'Tiada description.';
   if (refreshMedia) {
     const mediaWrap = document.getElementById('product-modal-media');
     if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(displayItem, 'modal');
@@ -6068,6 +6102,8 @@ function selectProductVariant(variantId) {
   if (!item || !getProductVariant(item, variantId)) return;
   modalVariantId = String(variantId);
   modalQuantity = 1;
+  const promoInput = document.getElementById('product-modal-promo-input');
+  if (promoInput) promoInput.value = '';
   renderProductModalSelection(item);
 }
 function changeProductModalQuantity(delta) {
