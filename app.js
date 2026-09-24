@@ -1614,17 +1614,50 @@ function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
   copyProductLinkById(modalItemId);
 }
+async function copyTextWithFallback(text) {
+  const value = String(text || '');
+  if (!value) return false;
+  try {
+    if (window.isSecureContext && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch (error) {
+    console.warn('Clipboard API blocked, trying fallback:', error);
+  }
+  const previousFocus = document.activeElement;
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.setAttribute('aria-hidden', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '0';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.focus({ preventScroll: true });
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+  let copied = false;
+  try { copied = document.execCommand('copy'); }
+  catch (error) { console.warn('Legacy clipboard fallback blocked:', error); }
+  textarea.remove();
+  if (previousFocus?.focus) {
+    try { previousFocus.focus({ preventScroll: true }); } catch (error) {}
+  }
+  return copied;
+}
 async function copyProductDescriptionById(id, useSelectedVariant = false) {
   const item = inventory.find(entry => String(entry.id) === String(id));
   if (!item) { toast('Barang tidak jumpa', true); return; }
   const displayItem = useSelectedVariant ? effectiveProductItem(item, modalVariantId) : item;
   const description = String(displayItem?.desc || displayItem?.description || item.desc || item.description || '').trim();
   if (!description) { toast('Description item ini kosong.', true); return; }
-  try {
-    await navigator.clipboard.writeText(description);
-    toast('Description disalin!');
-  } catch (error) {
-    window.prompt('Copy description item:', description);
+  const copied = await copyTextWithFallback(description);
+  if (copied) toast('Description berjaya disalin!');
+  else {
+    toast('Browser block clipboard. Tekan lama pada teks untuk copy.', true);
+    window.prompt('Tekan lama dan copy description ini:', description);
   }
 }
 function copyModalProductDescription() {
