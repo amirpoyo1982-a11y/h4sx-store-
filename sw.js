@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20260925-v10';
+const CACHE_NAME = 'h4sx-pwa-20260925-v11';
 const APP_SHELL = [
   './',
   './index.htm',

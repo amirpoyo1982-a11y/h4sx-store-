@@ -1,110 +1,80 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '22 September 2026',
-  time: '9:55 PM (MYT)',
-  version: 'v4.0',
+  date: '25 September 2026',
+  time: '9:04 PM (MYT)',
+  version: 'v5.0',
   sections: [
     {
       type: 'added',
-      title: 'Ditambah Hari Ini',
+      title: 'Ciri Baharu',
       items: [
         {
           icon: 'fa-cart-shopping',
-          text: '<strong>Troli belanja H4SX</strong> - cart kini mempunyai pilihan item, pilih semua, kawalan kuantiti, subtotal dan ringkasan pesanan yang lebih mudah digunakan.'
-        },
-        {
-          icon: 'fa-table-columns',
-          text: '<strong>Layout katalog H4SX baharu</strong> - kedudukan hero, katalog, pilihan game, status kedai dan kad produk disusun semula tanpa mengubah warna atau fungsi sedia ada.'
-        },
-        {
-          icon: 'fa-thumbtack',
-          text: '<strong>Pin dan posisi produk</strong> - admin boleh pin produk paling depan atau menetapkan susunan Atas, Tengah dan Bawah terus daripada editor produk.'
-        },
-        {
-          icon: 'fa-fire-flame-curved',
-          text: '<strong>Firebase Realtime Database</strong> - inventory, senarai game dan tetapan kedai kini dikemas kini secara langsung tanpa perlu edit Gist dan refresh manual.'
-        },
-        {
-          icon: 'fa-sliders',
-          text: '<strong>Catalog Control dalam website</strong> - admin boleh tambah, edit, duplicate dan padam produk atau game terus daripada panel admin yang sama.'
+          text: '<strong>Troli belanja lebih lengkap</strong> - pilih beberapa item, ubah kuantiti, lihat subtotal dan hantar ringkasan pesanan dengan lebih mudah.'
         },
         {
           icon: 'fa-ticket',
-          text: '<strong>Promo Code Manager</strong> - cipta kod untuk mana-mana produk, pilih peratus atau potongan RM, tetapkan kuota pelanggan, waktu mula, waktu tamat dan tempoh penggunaan selepas redeem.'
+          text: '<strong>Promo untuk pilihan produk tertentu</strong> - kod diskaun kini boleh digunakan pada pilihan atau variasi yang layak sahaja.'
         },
         {
-          icon: 'fa-image',
-          text: '<strong>Upload gambar melalui ImgBB</strong> - admin boleh pilih fail, drag-and-drop atau terus tekan Ctrl + V; URL gambar dimasukkan secara automatik.'
+          icon: 'fa-link',
+          text: '<strong>Link terus ke tebus kod</strong> - pautan promo boleh membuka produk berkaitan dan mengisi kod secara automatik.'
         },
         {
-          icon: 'fa-xmark',
-          text: '<strong>Butang buang gambar</strong> - gambar yang tersalah pilih atau URL lama boleh dikosongkan terus melalui butang X sebelum item disimpan.'
-        },
-        {
-          icon: 'fa-wand-magic-sparkles',
-          text: '<strong>Ambil ID kosong</strong> - editor produk kini boleh mencari dan mengisi nombor ID paling kecil yang belum digunakan secara automatik.'
+          icon: 'fa-copy',
+          text: '<strong>Salin deskripsi produk</strong> - butang salin disediakan supaya maklumat produk boleh disalin dengan satu tekan.'
         },
         {
           icon: 'fa-user-check',
-          text: '<strong>Semakan profil Roblox per item</strong> - admin boleh aktifkan pengesanan untuk produk pilihan sahaja; butang Beli WhatsApp kini meminta username dahulu, username tepat terus disahkan, dan carian seperti Adam memaparkan beberapa profil untuk dipilih.'
+          text: '<strong>Semakan profil Roblox</strong> - produk terpilih akan meminta username dan menunjukkan profil untuk disahkan sebelum meneruskan pesanan.'
         },
         {
-          icon: 'fa-headset',
-          text: '<strong>Editor konsultasi WhatsApp</strong> - nombor, teks butang dan mesej WhatsApp kini boleh diedit terus untuk produk dan game.'
+          icon: 'fa-download',
+          text: '<strong>Pasang H4SX sebagai app</strong> - website kini boleh dipasang pada PC atau telefon yang menyokong pemasangan web app.'
         },
         {
-          icon: 'fa-gamepad',
-          text: '<strong>Katalog Firebase lengkap</strong> - data produk dan game lama sudah dipindahkan ke pangkalan data realtime dan kekal serasi dengan paparan kedai.'
+          icon: 'fa-thumbtack',
+          text: '<strong>Susunan produk lebih teratur</strong> - produk penting boleh muncul lebih awal dan katalog kini lebih mudah dilayari.'
         }
       ]
     },
     {
       type: 'fixed',
-      title: 'Diperbaiki Hari Ini',
+      title: 'Penambahbaikan',
       items: [
         {
-          icon: 'fa-floppy-disk',
-          text: '<strong>Catalog Control tidak lagi tersangkut</strong> - butang Simpan, Import dan Backup sentiasa dipulihkan selepas operasi; operasi Firebase mempunyai timeout serta mesej sambungan yang jelas.'
+          icon: 'fa-bolt',
+          text: '<strong>Website lebih ringan</strong> - kod lama dan permintaan rangkaian yang tidak diperlukan telah dibersihkan untuk mengurangkan kelewatan.'
         },
         {
           icon: 'fa-panorama',
-          text: '<strong>Banner desktop dibesarkan</strong> - banner promo kini menggunakan lebar penuh container PC dengan tinggi yang lebih jelas sambil kekal responsif di telefon.'
-        },
-        {
-          icon: 'fa-thumbtack',
-          text: '<strong>Pin dan posisi kini jelas berfungsi</strong> - cache Catalog Control dibersihkan dan produk Pin, Atas serta Bawah kini dipaparkan dalam seksyen tersendiri tanpa tersekat oleh subcategory.'
-        },
-        {
-          icon: 'fa-eye-slash',
-          text: '<strong>Butiran promo dirahsiakan</strong> - peratus diskaun dan had pelanggan tidak lagi dipaparkan sebelum kod berjaya ditebus.'
-        },
-        {
-          icon: 'fa-tag',
-          text: '<strong>Konsultasi tidak perlukan harga</strong> - apabila mod Konsultasi WhatsApp diaktifkan, ruangan harga tidak lagi diwajibkan.'
+          text: '<strong>Paparan banner responsif</strong> - banner lebih jelas pada komputer dan kekal sesuai pada skrin telefon.'
         },
         {
           icon: 'fa-clock',
-          text: '<strong>Masa promo dipatuhi</strong> - kod belum boleh digunakan sebelum waktu mula dan akan ditolak secara automatik selepas waktu tamat.'
-        },
-        {
-          icon: 'fa-users',
-          text: '<strong>Had promo boleh dikemas kini</strong> - perubahan kuota dalam panel digunakan pada transaksi Firebase seterusnya tanpa tersekat pada nilai lama.'
-        },
-        {
-          icon: 'fa-hourglass-start',
-          text: '<strong>Countdown bermula selepas redeem</strong> - tempoh penggunaan peribadi tidak lagi berjalan atau dipaparkan sebelum pelanggan menekan butang Guna.'
+          text: '<strong>Promo lebih stabil</strong> - masa mula, masa tamat, kuota dan tempoh selepas tebus kini dipatuhi dengan betul.'
         },
         {
           icon: 'fa-rotate',
-          text: '<strong>Harga promo kekal selepas refresh</strong> - status redeem pada peranti dipulihkan semula dan harga diskaun dipaparkan sehingga tempohnya tamat.'
+          text: '<strong>Harga promo kekal selepas refresh</strong> - diskaun yang masih aktif tidak hilang apabila halaman dimuatkan semula.'
         },
         {
-          icon: 'fa-unlock',
-          text: '<strong>Input promo tidak terkunci</strong> - apabila satu kod tamat, pelanggan masih boleh mengosongkan input dan mencuba kod lain.'
+          icon: 'fa-mobile-screen',
+          text: '<strong>Kad produk lebih kemas</strong> - saiz produk dikecilkan dan gambar dikekalkan jelas pada komputer serta telefon.'
+        }
+      ]
+    },
+    {
+      type: 'removed',
+      title: 'Dibuang',
+      items: [
+        {
+          icon: 'fa-calculator',
+          text: '<strong>Kalkulator harga dan penukar mata wang</strong> - dibuang daripada halaman utama kerana tidak penting dan menambah beban pada website.'
         },
         {
-          icon: 'fa-server',
-          text: '<strong>Fallback API profil Roblox</strong> - semakan username kini mencuba endpoint utama dan endpoint Vercel sedia ada; ralat objek tidak lagi dipaparkan sebagai [object Object].'
+          icon: 'fa-code',
+          text: '<strong>Kod lama yang tidak digunakan</strong> - fungsi serta gaya berkaitan telah dibersihkan supaya website lebih kemas.'
         }
       ]
     }
