@@ -682,10 +682,6 @@ const DEFAULT_WA_NUMBER = '6285178259060';
 let WA_NUMBER = DEFAULT_WA_NUMBER;
 const H4SX_CHANNEL_URL = null;
 let H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/' + DEFAULT_WA_NUMBER;
-const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
-const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
-const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
-const CURRENCY_FALLBACK_RATES = { MYR: 1, IDR: 4350 };
 const GAMES_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/92b41c9122c025c2536e68353a82ee0f/raw/games.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/games.json'
@@ -6913,99 +6909,6 @@ function startMojibakeRepair() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMojibakeRepair, { once: true });
 else startMojibakeRepair();
-
-let h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
-let h4sxCurrencyUpdatedAt = 0;
-
-function currencyName(code) {
-  try {
-    const names = new Intl.DisplayNames(['ms-MY'], { type: 'currency' });
-    return code + ' - ' + names.of(code);
-  } catch (error) {
-    return code;
-  }
-}
-
-function populateCurrencySelects() {
-  const from = document.getElementById('currency-from');
-  const to = document.getElementById('currency-to');
-  if (!from || !to) return;
-  const previousFrom = from.value || 'MYR';
-  const previousTo = to.value || 'IDR';
-  const options = Object.keys(h4sxCurrencyRates).sort().map(code => '<option value="' + code + '">' + currencyName(code) + '</option>').join('');
-  from.innerHTML = options;
-  to.innerHTML = options;
-  from.value = h4sxCurrencyRates[previousFrom] ? previousFrom : 'MYR';
-  to.value = h4sxCurrencyRates[previousTo] ? previousTo : (h4sxCurrencyRates.IDR ? 'IDR' : 'MYR');
-}
-
-function formatCurrencyValue(code, amount) {
-  try {
-    return new Intl.NumberFormat('ms-MY', { style: 'currency', currency: code, maximumFractionDigits: code === 'IDR' ? 0 : 2 }).format(amount);
-  } catch (error) {
-    return code + ' ' + Number(amount || 0).toFixed(2);
-  }
-}
-
-function updateCurrencyConverter() {
-  const amount = Math.max(0, Number(document.getElementById('currency-amount')?.value || 0));
-  const from = document.getElementById('currency-from')?.value || 'MYR';
-  const to = document.getElementById('currency-to')?.value || 'IDR';
-  const output = document.getElementById('currency-output');
-  const status = document.getElementById('currency-status');
-  const fromRate = h4sxCurrencyRates[from] || 1;
-  const toRate = h4sxCurrencyRates[to] || 1;
-  const converted = amount * (toRate / fromRate);
-  if (output) output.textContent = formatCurrencyValue(to, converted);
-  if (status) status.innerHTML = '<i class="fa-solid fa-chart-line"></i> 1 ' + from + ' = ' + formatCurrencyValue(to, toRate / fromRate) + ' · Kadar anggaran sahaja';
-}
-
-function swapCurrencyConverter() {
-  const from = document.getElementById('currency-from');
-  const to = document.getElementById('currency-to');
-  if (!from || !to) return;
-  const current = from.value;
-  from.value = to.value;
-  to.value = current;
-  updateCurrencyConverter();
-}
-
-function updatePriceCalculator() {
-  const price = Math.max(0, Number(document.getElementById('price-calculator-price')?.value || 0));
-  const qty = Math.max(1, Math.floor(Number(document.getElementById('price-calculator-qty')?.value || 1)));
-  const output = document.getElementById('price-calculator-output');
-  if (output) output.textContent = formatCurrencyValue('MYR', price * qty);
-}
-
-async function initCurrencyTools() {
-  const status = document.getElementById('currency-status');
-  if (!status) return;
-  try {
-    const cached = JSON.parse(localStorage.getItem(CURRENCY_CACHE_KEY) || 'null');
-    if (cached?.rates && cached?.updatedAt && Date.now() - cached.updatedAt < CURRENCY_CACHE_MAX_AGE) {
-      h4sxCurrencyRates = cached.rates;
-      h4sxCurrencyUpdatedAt = cached.updatedAt;
-    } else {
-      const response = await fetch(CURRENCY_API_URL, { cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok || data.result !== 'success' || !data.rates?.IDR) throw new Error('rate-unavailable');
-      h4sxCurrencyRates = { ...data.rates, MYR: 1 };
-      h4sxCurrencyUpdatedAt = Date.now();
-      localStorage.setItem(CURRENCY_CACHE_KEY, JSON.stringify({ rates: h4sxCurrencyRates, updatedAt: h4sxCurrencyUpdatedAt }));
-    }
-    populateCurrencySelects();
-    updateCurrencyConverter();
-  } catch (error) {
-    h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
-    populateCurrencySelects();
-    updateCurrencyConverter();
-    if (status) status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Kadar live tidak dapat dimuatkan. Anggaran MYR / IDR dipaparkan.';
-  }
-  updatePriceCalculator();
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCurrencyTools, { once: true });
-else initCurrencyTools();
 
 // Share the current store view without carrying preview or cache-buster parameters.
 async function shareH4sxStore() {

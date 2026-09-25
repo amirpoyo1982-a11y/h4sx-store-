@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=h4sx-direct-promo-20260925">
+  <link rel="stylesheet" href="styles.css?v=h4sx-clean-store-20260925">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -297,28 +297,6 @@
       <div class="trust-item"><div class="trust-ic"><i class="fa-brands fa-whatsapp"></i></div><div><div class="trust-title">Support WhatsApp</div><div class="trust-sub">Respon pantas ikut giliran semasa.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
-    </section>
-    <section class="store-tools reveal" id="store-tools" aria-label="Kalkulator harga dan mata wang">
-      <div class="store-tool currency-tool">
-        <div class="store-tool-head"><div class="store-tool-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div><strong>Penukar Mata Wang</strong><span>Kadar anggaran semasa untuk pelanggan luar negara</span></div></div>
-        <div class="currency-form">
-          <label>Jumlah<input id="currency-amount" type="number" min="0" step="0.01" value="1" inputmode="decimal" oninput="updateCurrencyConverter()"></label>
-          <label>Dari<select id="currency-from" onchange="updateCurrencyConverter()"></select></label>
-          <button class="currency-swap" type="button" onclick="swapCurrencyConverter()" aria-label="Tukar mata wang"><i class="fa-solid fa-right-left"></i></button>
-          <label>Ke<select id="currency-to" onchange="updateCurrencyConverter()"></select></label>
-        </div>
-        <div class="currency-result"><span>Anggaran diterima</span><strong id="currency-output">Memuatkan kadar...</strong></div>
-        <div class="currency-status" id="currency-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyemak kadar mata wang...</div>
-      </div>
-      <div class="store-tool price-tool">
-        <div class="store-tool-head"><div class="store-tool-icon green"><i class="fa-solid fa-calculator"></i></div><div><strong>Kalkulator Harga</strong><span>Kira jumlah item sebelum hubungi admin</span></div></div>
-        <div class="price-calculator-form">
-          <label>Harga seunit (RM)<input id="price-calculator-price" type="number" min="0" step="0.01" value="0" inputmode="decimal" oninput="updatePriceCalculator()"></label>
-          <label>Kuantiti<input id="price-calculator-qty" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="updatePriceCalculator()"></label>
-        </div>
-        <div class="currency-result price-result"><span>Jumlah anggaran</span><strong id="price-calculator-output">RM0.00</strong></div>
-        <div class="currency-status"><i class="fa-solid fa-circle-info"></i> Harga akhir disahkan bersama admin WhatsApp.</div>
-      </div>
     </section>
     <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
       <div class="custom-vote-card">
@@ -866,7 +844,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=h4sx-direct-promo-20260925"></script>
+<script defer src="app.js?v=h4sx-clean-store-20260925"></script>
 
 </body>
 </html>

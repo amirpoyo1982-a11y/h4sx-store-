@@ -1962,36 +1962,6 @@ nav {
   .h4sx-announcement-message { font-size: 13px; }
 }
 
-.store-tools {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin: 0 0 26px;
-}
-.store-tool {
-  padding: 18px;
-  border: 1px solid #d8ebf7;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 9px 20px rgba(30,93,131,.06);
-}
-.store-tool-head { display: flex; align-items: center; gap: 11px; margin-bottom: 16px; }
-.store-tool-head strong { display: block; color: #0b2949; font-size: .96rem; }
-.store-tool-head span { display: block; margin-top: 3px; color: #69809a; font-size: .7rem; line-height: 1.35; }
-.store-tool-icon { width: 39px; height: 39px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #0ea5e9, #18b8cd); }
-.store-tool-icon.green { background: linear-gradient(135deg, #25d366, #128c47); }
-.currency-form { display: grid; grid-template-columns: minmax(92px, 1fr) minmax(112px, 1.15fr) 35px minmax(112px, 1.15fr); gap: 8px; align-items: end; }
-.currency-form label, .price-calculator-form label { display: grid; gap: 5px; color: #52708e; font-size: .66rem; font-weight: 850; }
-.currency-form input, .currency-form select, .price-calculator-form input { width: 100%; height: 39px; padding: 0 9px; border: 1px solid #c8e4f5; border-radius: 9px; color: #123252; background: #f9fdff; font: inherit; font-size: .74rem; outline: none; }
-.currency-form input:focus, .currency-form select:focus, .price-calculator-form input:focus { border-color: #15a8df; box-shadow: 0 0 0 3px rgba(14,165,233,.1); }
-.currency-swap { width: 35px; height: 39px; border: 1px solid #bfe4f6; border-radius: 9px; color: #0789c9; background: #effaff; cursor: pointer; }
-.currency-result { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 11px 12px; border-radius: 10px; background: linear-gradient(135deg, #eefaff, #f2fff7); }
-.currency-result span { color: #52708e; font-size: .68rem; font-weight: 800; }
-.currency-result strong { color: #087ebc; font-size: 1.12rem; line-height: 1; }
-.price-result strong { color: #16874d; }
-.currency-status { display: flex; align-items: flex-start; gap: 6px; margin-top: 9px; color: #6c8199; font-size: .63rem; font-weight: 700; line-height: 1.45; }
-.currency-status i { margin-top: 1px; color: #0b9bd5; }
-.price-calculator-form { display: grid; grid-template-columns: 1.35fr .8fr; gap: 8px; }
 .custom-vote { margin: 0 0 26px; }
 .custom-vote.is-hidden { display: none; }
 .custom-vote-card { padding: 20px; border: 1px solid #ccebf7; border-radius: 16px; background: linear-gradient(135deg, #ffffff 0%, #effaff 100%); box-shadow: 0 11px 24px rgba(14, 116, 162, .08); }
@@ -2040,10 +2010,6 @@ nav {
 .custom-vote.is-direct-link .custom-vote-card { animation: voteDirectPulse 1.85s ease-out; }
 @keyframes voteDirectPulse { 0% { box-shadow: 0 0 0 0 rgba(14,165,233,.42); } 60% { box-shadow: 0 0 0 13px rgba(14,165,233,0); } 100% { box-shadow: 0 0 0 0 rgba(14,165,233,0); } }
 .vote-admin-status { color: #688398; font-size: 10px; font-weight: 700; }.vote-admin-status.error { color: #d64a55; }.vote-admin-status.success { color: #07895b; }
-@media (max-width: 820px) {
-  .store-tools { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
-}
-
 /* Optional rotating product spotlight controlled by Firebase store config. */
 .product-spotlight {
   position: fixed; z-index: 88; left: 20px; bottom: 20px; width: min(350px,calc(100vw - 32px));
@@ -2088,10 +2054,6 @@ nav {
   .pwa-install-btn span { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 @media (max-width: 440px) {
-  .store-tool { padding: 14px; }
-  .currency-form { grid-template-columns: 1fr 1fr; }
-  .currency-swap { grid-column: 1 / -1; width: 100%; height: 32px; }
-  .price-calculator-form { grid-template-columns: 1fr 1fr; }
   .custom-vote-card { padding: 15px; }
   .custom-vote-head { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 9px; }
   .custom-vote-icon { width: 40px; height: 40px; border-radius: 11px; }
@@ -8213,7 +8175,6 @@ body {
 #home-view > .catalog-live-card { order: 3; width: 100%; margin: 0 0 18px; }
 #home-view > #shop-section { order: 3; margin-top: 0; }
 #home-view > .trust-grid { order: 4; margin-top: 18px; }
-#home-view > .store-tools { order: 5; margin-top: 18px; }
 #home-view > .custom-vote { order: 6; margin-top: 18px; }
 #home-view > #guide { order: 7; margin-top: 24px; }
 #home-view > #reviews { order: 8; margin-top: 24px; }
@@ -8274,7 +8235,6 @@ body {
   #home-view .btn-ghost { display: none !important; }
   #home-view > #shop-section { margin-top: 0; }
   #home-view > .trust-grid,
-  #home-view > .store-tools,
   #home-view > .custom-vote,
   #home-view > #guide,
   #home-view > #reviews,
@@ -9048,7 +9008,6 @@ html.review-submit-direct .wrap {
 .market-layout-v2 #home-view > .promo-hero,
 .market-layout-v2 #home-view > .hero,
 .market-layout-v2 #home-view > #shop-section,
-.market-layout-v2 #home-view > .store-tools,
 .market-layout-v2 #home-view > .custom-vote,
 .market-layout-v2 #home-view > #guide,
 .market-layout-v2 #home-view > #reviews,
@@ -9073,7 +9032,6 @@ html.review-submit-direct .wrap {
 .market-layout-v2 #home-view > #shop-section { order: 3; }
 .market-layout-v2 #home-view > .catalog-live-card { order: 4; grid-column: 1; margin: 0; min-height: 100%; }
 .market-layout-v2 #home-view > .trust-grid { order: 4; grid-column: 2; margin: 0; min-height: 100%; }
-.market-layout-v2 #home-view > .store-tools { order: 5; }
 .market-layout-v2 #home-view > .custom-vote { order: 6; }
 .market-layout-v2 #home-view > #guide { order: 7; }
 .market-layout-v2 #home-view > #reviews,
