@@ -1122,7 +1122,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v5.0';
+const CHANGELOG_VERSION = 'v5.1';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -3450,8 +3450,32 @@ async function findOrder(event) {
       }
     }
     if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi atau WhatsApp dengan admin.'; return; }
-    box.innerHTML = records.map(item => { const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : ''; return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>No. transaksi: ' + escapeHtml(item.code || '') + '</small><small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>'; }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
+    box.innerHTML = records.map(item => {
+      const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : '';
+      const invoiceCode = escapeHtml(item.code || '');
+      const invoice = '<span class="order-invoice-line"><small>No. transaksi: <b>' + invoiceCode + '</b></small><button class="order-copy-code" type="button" data-code="' + invoiceCode + '" onclick="copyInvoiceCode(this.dataset.code,this)" aria-label="Salin nombor transaksi"><i class="fa-regular fa-copy"></i><span>Copy</span></button></span>';
+      return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong>' + invoice + '<small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
+    }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
+}
+
+async function copyInvoiceCode(code, button) {
+  const value = normaliseOrderCode(code);
+  if (!value) return toast('Nombor transaksi tidak tersedia.', true);
+  const copied = await copyTextWithFallback(value);
+  if (!copied) return toast('Tak dapat salin nombor transaksi.', true);
+  toast('Nombor transaksi ' + value + ' berjaya disalin!');
+  if (!button) return;
+  const label = button.querySelector('span');
+  const icon = button.querySelector('i');
+  if (label) label.textContent = 'Copied';
+  if (icon) icon.className = 'fa-solid fa-check';
+  button.classList.add('copied');
+  setTimeout(() => {
+    if (label) label.textContent = 'Copy';
+    if (icon) icon.className = 'fa-regular fa-copy';
+    button.classList.remove('copied');
+  }, 1600);
 }
 if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);
 

@@ -1,13 +1,17 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
   date: '25 September 2026',
-  time: '9:04 PM (MYT)',
-  version: 'v5.0',
+  time: '9:53 PM (MYT)',
+  version: 'v5.1',
   sections: [
     {
       type: 'added',
       title: 'Ciri Baharu',
       items: [
+        {
+          icon: 'fa-copy',
+          text: '<strong>Salin nombor transaksi</strong> - pelanggan kini boleh menyalin nombor invoice terus daripada setiap rekod dalam Histori Transaksi.'
+        },
         {
           icon: 'fa-cart-shopping',
           text: '<strong>Troli belanja lebih lengkap</strong> - pilih beberapa item, ubah kuantiti, lihat subtotal dan hantar ringkasan pesanan dengan lebih mudah.'
