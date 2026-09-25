@@ -1503,10 +1503,12 @@ function updateGameUrl(name) {
       url.searchParams.set('game', gameSlug(name));
       url.searchParams.set('part', normalizeKey(activePlatform));
       url.searchParams.delete('item');
+      url.searchParams.delete('promo');
     } else {
       url.searchParams.delete('game');
       url.searchParams.delete('part');
       url.searchParams.delete('item');
+      url.searchParams.delete('promo');
     }
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -1525,6 +1527,14 @@ function getItemFromUrl() {
   try {
     const url = new URL(window.location.href);
     return (url.searchParams.get('item') || '').trim();
+  } catch(e) {
+    return '';
+  }
+}
+function getPromoFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return (url.searchParams.get('promo') || '').trim().toUpperCase().replace(/\s+/g, '');
   } catch(e) {
     return '';
   }
@@ -1561,6 +1571,50 @@ function openGameFromUrl() {
   openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute });
   return true;
 }
+let handledPromoRoute = '';
+let invalidPromoRouteNotified = '';
+function findPromoRouteTarget(code) {
+  const requested = String(code || '').trim().toUpperCase();
+  if (!requested) return null;
+  for (const item of inventory) {
+    const variants = productVariants(item);
+    const candidates = variants.length
+      ? variants.map(variant => ({ item: effectiveProductItem(item, variant.id), variantId: variant.id }))
+      : [{ item, variantId: '' }];
+    for (const candidate of candidates) {
+      const promo = productPromoConfig(candidate.item, requested);
+      if (promo?.code === requested) return { item, variantId: candidate.variantId, promo };
+    }
+  }
+  return null;
+}
+function openPromoFromUrl() {
+  const code = getPromoFromUrl();
+  if (!code) return false;
+  const target = findPromoRouteTarget(code);
+  if (!target) return false;
+  const routeKey = code + '::' + String(target.item.id) + '::' + target.variantId;
+  if (handledPromoRoute === routeKey && String(modalItemId || '') === String(target.item.id)) return true;
+  handledPromoRoute = routeKey;
+  activePlatform = inferPlatform(target.item, gameGroupName(target.item));
+  openGame(gameGroupName(target.item), {
+    fromUrl: true,
+    itemId: target.item.id,
+    variantId: target.variantId,
+    promoCode: code
+  });
+  return true;
+}
+function openCatalogRouteFromUrl() {
+  const promoCode = getPromoFromUrl();
+  if (!promoCode) return openGameFromUrl();
+  if (openPromoFromUrl()) return true;
+  if (invalidPromoRouteNotified !== promoCode) {
+    invalidPromoRouteNotified = promoCode;
+    toast('Kod promo ' + promoCode + ' tidak dijumpai atau tidak aktif.', true);
+  }
+  return false;
+}
 function currentGameLink() {
   const url = new URL(window.location.href);
   url.searchParams.set('game', gameSlug(currentGame));
@@ -1574,6 +1628,7 @@ function productLink(item) {
   url.searchParams.set('game', gameSlug(gameName));
   url.searchParams.set('part', normalizeKey(inferPlatform(item, gameName)));
   url.searchParams.set('item', String(item.id));
+  url.searchParams.delete('promo');
   return url.toString();
 }
 function updateProductUrl(item) {
@@ -1586,6 +1641,7 @@ function clearProductUrlItem() {
   try {
     const url = new URL(window.location.href);
     url.searchParams.delete('item');
+    url.searchParams.delete('promo');
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
 }
@@ -2479,7 +2535,7 @@ async function loadInv() {
     } catch(e) {}
     syncInventoryGames();
     renderGames();
-    openGameFromUrl();
+    openCatalogRouteFromUrl();
     updateProductSpotlight();
     return true;
   };
@@ -2580,7 +2636,7 @@ async function loadInv() {
           try { localStorage.setItem('h4sx_inventory_cache', JSON.stringify(inventory)); } catch(e) {}
           syncInventoryGames();
           renderGames();
-          openGameFromUrl();
+          openCatalogRouteFromUrl();
           break; 
         }
       }
@@ -2593,7 +2649,7 @@ async function loadInv() {
   }
   syncInventoryGames();
   renderGames();
-  openGameFromUrl();
+  openCatalogRouteFromUrl();
 }
 
 // Update payment UI based on config
@@ -5171,7 +5227,11 @@ function openGame(name, options = {}) {
   setTimeout(() => {
     renderProductGrid();
     if (options.itemId != null && options.itemId !== '') {
-      setTimeout(() => openProductImage(options.itemId, { fromUrl: true }), 80);
+      setTimeout(() => openProductImage(options.itemId, {
+        fromUrl: true,
+        variantId: options.variantId,
+        promoCode: options.promoCode
+      }), 80);
     }
   }, 90);
 }
@@ -6152,7 +6212,8 @@ function openProductImage(id, options = {}) {
   if (!item || isPermanentFruitCatalogItem(item)) return;
   modalItemId = item.id;
   const variants = productVariants(item);
-  modalVariantId = variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
+  const requestedVariant = variants.find(variant => variant.id === String(options.variantId || ''));
+  modalVariantId = requestedVariant?.id || variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
   modalQuantity = 1;
   if (!options.fromUrl) updateProductUrl(item);
   const mediaWrap = document.getElementById('product-modal-media');
@@ -6188,6 +6249,15 @@ function openProductImage(id, options = {}) {
   }
   setupProductModalPromo(item);
   renderProductModalSelection(item);
+  if (options.promoCode) {
+    const promoInput = document.getElementById('product-modal-promo-input');
+    if (promoInput) {
+      promoInput.value = String(options.promoCode).trim().toUpperCase();
+      syncProductModalPromo(item);
+      setTimeout(() => { promoInput.focus(); promoInput.select(); }, 180);
+      toast('Kod ' + promoInput.value + ' sudah diisi. Tekan Guna untuk redeem.');
+    }
+  }
   const modal = document.getElementById('product-modal');
   if (modal) {
     modal.classList.add('show');
@@ -6392,7 +6462,7 @@ async function shareCartItems() {
   }).filter(Boolean);
   if (!lines.length) { toast('Item dalam troli tidak dijumpai', true); return; }
   const storeUrl = new URL(window.location.href);
-  ['preview', 'refresh', 'game', 'part', 'item'].forEach(param => storeUrl.searchParams.delete(param));
+  ['preview', 'refresh', 'game', 'part', 'item', 'promo'].forEach(param => storeUrl.searchParams.delete(param));
   const text = ['Pilihan item saya dari H4SX STORE:', '', ...lines, '', 'Jumlah katalog: RM' + total.toFixed(2)].join('\n');
   await shareStoreContent({
     title: 'Cart H4SX STORE',
