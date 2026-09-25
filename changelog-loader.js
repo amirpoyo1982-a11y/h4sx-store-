@@ -1,44 +1,32 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '25 September 2026',
-  time: '9:53 PM (MYT)',
-  version: 'v5.1',
+  date: '26 September 2026',
+  time: '12:45 AM (MYT)',
+  version: 'v5.3',
   sections: [
     {
       type: 'added',
       title: 'Ciri Baharu',
       items: [
         {
-          icon: 'fa-copy',
-          text: '<strong>Salin nombor transaksi</strong> - pelanggan kini boleh menyalin nombor invoice terus daripada setiap rekod dalam Histori Transaksi.'
+          icon: 'fa-receipt',
+          text: '<strong>Salin nombor transaksi</strong> terus daripada rekod pembelian.'
         },
         {
           icon: 'fa-cart-shopping',
-          text: '<strong>Troli belanja lebih lengkap</strong> - pilih beberapa item, ubah kuantiti, lihat subtotal dan hantar ringkasan pesanan dengan lebih mudah.'
-        },
-        {
-          icon: 'fa-ticket',
-          text: '<strong>Promo untuk pilihan produk tertentu</strong> - kod diskaun kini boleh digunakan pada pilihan atau variasi yang layak sahaja.'
+          text: '<strong>Troli lebih lengkap</strong> dengan pilihan item, kuantiti dan ringkasan pesanan.'
         },
         {
           icon: 'fa-link',
-          text: '<strong>Link terus ke tebus kod</strong> - pautan promo boleh membuka produk berkaitan dan mengisi kod secara automatik.'
+          text: '<strong>Pautan promo terus</strong> membuka produk dan mengisi kod secara automatik.'
         },
         {
           icon: 'fa-copy',
-          text: '<strong>Salin deskripsi produk</strong> - butang salin disediakan supaya maklumat produk boleh disalin dengan satu tekan.'
+          text: '<strong>Salin deskripsi produk</strong> dengan satu tekan.'
         },
         {
-          icon: 'fa-user-check',
-          text: '<strong>Semakan profil Roblox</strong> - produk terpilih akan meminta username dan menunjukkan profil untuk disahkan sebelum meneruskan pesanan.'
-        },
-        {
-          icon: 'fa-download',
-          text: '<strong>Pasang H4SX sebagai app</strong> - website kini boleh dipasang pada PC atau telefon yang menyokong pemasangan web app.'
-        },
-        {
-          icon: 'fa-thumbtack',
-          text: '<strong>Susunan produk lebih teratur</strong> - produk penting boleh muncul lebih awal dan katalog kini lebih mudah dilayari.'
+          icon: 'fa-eye-slash',
+          text: '<strong>Ruang ulasan boleh dipapar atau disorok</strong> tanpa membuang butang hantar dan salin pautan.'
         }
       ]
     },
@@ -48,23 +36,19 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-bolt',
-          text: '<strong>Website lebih ringan</strong> - kod lama dan permintaan rangkaian yang tidak diperlukan telah dibersihkan untuk mengurangkan kelewatan.'
-        },
-        {
-          icon: 'fa-panorama',
-          text: '<strong>Paparan banner responsif</strong> - banner lebih jelas pada komputer dan kekal sesuai pada skrin telefon.'
-        },
-        {
-          icon: 'fa-clock',
-          text: '<strong>Promo lebih stabil</strong> - masa mula, masa tamat, kuota dan tempoh selepas tebus kini dipatuhi dengan betul.'
-        },
-        {
-          icon: 'fa-rotate',
-          text: '<strong>Harga promo kekal selepas refresh</strong> - diskaun yang masih aktif tidak hilang apabila halaman dimuatkan semula.'
+          text: '<strong>Website lebih ringan</strong> selepas fungsi lama dan proses latar yang tidak diperlukan dibersihkan.'
         },
         {
           icon: 'fa-mobile-screen',
-          text: '<strong>Kad produk lebih kemas</strong> - saiz produk dikecilkan dan gambar dikekalkan jelas pada komputer serta telefon.'
+          text: '<strong>Susun atur responsif</strong> kini lebih kemas pada komputer dan telefon.'
+        },
+        {
+          icon: 'fa-clock',
+          text: '<strong>Promo lebih stabil</strong> termasuk masa, kuota dan harga selepas halaman dimuat semula.'
+        },
+        {
+          icon: 'fa-store',
+          text: '<strong>Status waktu operasi diperbaharui</strong> dengan paparan yang lebih kemas dan jelas.'
         }
       ]
     },
@@ -73,12 +57,16 @@ const CHANGELOG_DATA = {
       title: 'Dibuang',
       items: [
         {
-          icon: 'fa-calculator',
-          text: '<strong>Kalkulator harga dan penukar mata wang</strong> - dibuang daripada halaman utama kerana tidak penting dan menambah beban pada website.'
+          icon: 'fa-truck-fast',
+          text: '<strong>Paparan Delivery Live</strong> telah dibuang untuk menjadikan halaman utama lebih ringkas.'
         },
         {
           icon: 'fa-code',
-          text: '<strong>Kod lama yang tidak digunakan</strong> - fungsi serta gaya berkaitan telah dibersihkan supaya website lebih kemas.'
+          text: '<strong>Alat bantuan lama</strong> yang tidak digunakan telah dibersihkan.'
+        },
+        {
+          icon: 'fa-grip-lines',
+          text: '<strong>Bar teks bergerak lama</strong> telah dibuang daripada bahagian atas website.'
         }
       ]
     }

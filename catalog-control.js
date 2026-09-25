@@ -731,16 +731,18 @@ function writeConfigEditor() {
   byId('quick-open').checked = storeConfig.bukakedai !== false && String(storeConfig.bukakedai).toLowerCase() !== 'false';
   byId('quick-maintenance').checked = storeConfig.maintenance === true || String(storeConfig.maintenance).toLowerCase() === 'true';
   byId('quick-review-maintenance').checked = storeConfig.review_maintenance === true || String(storeConfig.review_maintenance).toLowerCase() === 'true';
+  byId('quick-reviews-area').checked = storeConfig.reviews_section_visible !== false && String(storeConfig.reviews_section_visible).toLowerCase() !== 'false';
   byId('quick-banner').checked = storeConfig.promo_banner_active === true || String(storeConfig.promo_banner_active).toLowerCase() === 'true';
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
 }
 
-['quick-open','quick-maintenance','quick-review-maintenance','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
+['quick-open','quick-maintenance','quick-review-maintenance','quick-reviews-area','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
   try {
     const current = JSON.parse(byId('config-editor').value || '{}');
     current.bukakedai = byId('quick-open').checked;
     current.maintenance = byId('quick-maintenance').checked;
     current.review_maintenance = byId('quick-review-maintenance').checked;
+    current.reviews_section_visible = byId('quick-reviews-area').checked;
     current.promo_banner_active = byId('quick-banner').checked;
     current.product_spotlight_enabled = byId('quick-spotlight').checked;
     byId('config-editor').value = JSON.stringify(current, null, 2);

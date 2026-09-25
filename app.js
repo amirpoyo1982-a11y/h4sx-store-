@@ -771,7 +771,6 @@ const PAY_QR = {
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
 let cartSelectedKeys = new Set();
 let modalVariantId = '', modalQuantity = 1;
-let catalogProgressTimer = null;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
@@ -1122,7 +1121,7 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v5.1';
+const CHANGELOG_VERSION = 'v5.3';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
@@ -1772,6 +1771,7 @@ let currentStoreConfig = {
   bukakedai: true,
   maintenance: false,
   review_maintenance: false,
+  reviews_section_visible: true,
   review_maintenance_message: 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
   promo_banner_active: false,
   promo_banner_interval: 5500,
@@ -1941,11 +1941,23 @@ function shouldStoreCloseAutomatically(config) {
   return { closed: false, reason: "" };
 }
 
+function updateBusinessClock() {
+  const liveTimeEl = document.getElementById('bh-live-time');
+  if (!liveTimeEl) return;
+  liveTimeEl.textContent = new Intl.DateTimeFormat('ms-MY', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  }).format(new Date());
+}
+
 function updateBusinessHoursDisplay(config, isOpen) {
   const hoursTextEl = document.getElementById('business-hours-text');
   const statusTextEl = document.getElementById('bh-status-text');
   const statusDotEl = document.querySelector('.bh-dot');
   const statusEl = document.getElementById('bh-status');
+  updateBusinessClock();
   
   if (hoursTextEl && config.business_hours_text) {
     hoursTextEl.textContent = config.business_hours_text;
@@ -2005,6 +2017,7 @@ async function checkStore() {
     }
     renderPromoBanner(currentStoreConfig);
     updateProductSpotlight();
+    applyReviewAreaVisibility();
     refreshReviewMaintenanceUi();
   }
   kedaiConfigLoaded = true;
@@ -3253,12 +3266,8 @@ function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
   const login = document.getElementById('order-admin-login');
   const form = document.getElementById('order-admin-form-wrap');
-  const jsonHelperLink = document.getElementById('json-helper-link');
-  const jsonHelperDivider = document.getElementById('json-helper-divider');
   if (login) login.hidden = !!user;
   if (form) form.hidden = !user;
-  if (jsonHelperLink) jsonHelperLink.hidden = !user;
-  if (jsonHelperDivider) jsonHelperDivider.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
   if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); loadReviewShowcaseConfig(); }
@@ -3564,6 +3573,26 @@ function isReviewMaintenanceActive(config = currentStoreConfig) {
     || flagOn(config.ulasan_maintenance)
     || flagOn(config.reviews_maintenance);
 }
+function isReviewAreaVisible(config = currentStoreConfig) {
+  const value = config.reviews_section_visible ?? config.review_section_visible ?? config.show_reviews_section;
+  return value === undefined ? true : !flagOff(value);
+}
+function applyReviewAreaVisibility() {
+  const section = document.getElementById('reviews');
+  if (!section) return true;
+  const visible = isReviewAreaVisible();
+  section.classList.toggle('reviews-actions-only', !visible);
+  section.setAttribute('data-review-content-visible', visible ? 'true' : 'false');
+  if (!visible) {
+    clearReviewShowcaseTimer();
+    hideReviewShowcasePopup();
+    if (unsubscribeReviews) {
+      unsubscribeReviews();
+      unsubscribeReviews = null;
+    }
+  }
+  return visible;
+}
 function showReviewMaintenanceNotice() {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
@@ -3605,6 +3634,7 @@ function updateMainReviewStats(list = []) {
   ).join('');
 }
 function refreshReviewMaintenanceUi() {
+  if (!applyReviewAreaVisibility()) return;
   if (isReviewMaintenanceActive()) {
     showReviewMaintenanceNotice();
     return;
@@ -3623,6 +3653,7 @@ async function loadReviews() {
     grid.innerHTML = '<div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Checking review status...</div>';
     await checkStore();
   }
+  if (!applyReviewAreaVisibility()) return;
   if (!db) {
     updateMainReviewStats([]);
     grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
@@ -3861,12 +3892,17 @@ function changeReviewShowcase(direction) {
 window.changeReviewShowcase = changeReviewShowcase;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearReviewShowcaseTimer();
-  else if (reviewShowcaseConfig.active && latestReviewStatsData.length) renderReviews(latestReviewStatsData);
+  else if (isReviewAreaVisible() && reviewShowcaseConfig.active && latestReviewStatsData.length) renderReviews(latestReviewStatsData);
 });
 
 function renderReviews(list = []) {
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
+  if (!isReviewAreaVisible()) {
+    clearReviewShowcaseTimer();
+    hideReviewShowcasePopup();
+    return;
+  }
   updateMainReviewStats(list);
   clearReviewShowcaseTimer();
 
@@ -4000,11 +4036,12 @@ function bootStoreApp() {
   restoreCart();
   updateBadge();
   initCartEventDelegation();
-  startCatalogProgress();
   loadGames().then(renderGames);
   loadInv();
   startRealtimeConfigSync();
   startCountdown();
+  updateBusinessClock();
+  window.setInterval(updateBusinessClock, 30000);
   initScrollReveal();
   runWhenIdle(loadReviews, 1200);
   runWhenIdle(animateCounters, 1600);
@@ -4020,7 +4057,9 @@ function startRealtimeConfigSync() {
   realtimeConfigListening = true;
   realtimeDb.ref(REALTIME_STORE_ROOT + '/config').on('value', snapshot => {
     if (!snapshot.exists()) return;
-    checkStore().catch(error => console.warn('Realtime store config refresh failed:', error));
+    checkStore().then(() => {
+      if (isReviewAreaVisible() && db && !unsubscribeReviews) loadReviews();
+    }).catch(error => console.warn('Realtime store config refresh failed:', error));
   }, error => console.warn('Realtime config listener failed:', error));
 }
 
@@ -5197,30 +5236,7 @@ function renderGames() {
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
-  updateCatalogLiveCard();
   initScrollReveal();
-}
-function updateCatalogLiveCard() {
-  const total = inventory.filter(item => item && item.id && !isPermanentFruitCatalogItem(item) && !item.consultation).length;
-  const count = document.getElementById('catalog-item-count');
-  if (count) count.textContent = total;
-}
-function startCatalogProgress() {
-  const ring = document.getElementById('catalog-progress-value');
-  const text = document.getElementById('catalog-progress-text');
-  if (!ring || !text || catalogProgressTimer) return;
-  const circumference = 2 * Math.PI * 40;
-  let progress = 0;
-  const paint = () => {
-    ring.style.strokeDashoffset = String(circumference * (1 - (progress / 100)));
-    text.textContent = progress + '%';
-  };
-  ring.style.strokeDasharray = String(circumference);
-  paint();
-  catalogProgressTimer = window.setInterval(() => {
-    progress = progress >= 100 ? 0 : progress + 20;
-    paint();
-  }, 1000);
 }
 function openGame(name, options = {}) {
   currentGame = name;
@@ -5322,126 +5338,10 @@ function doSearch(q) {
     return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
-function openJsonHelper() {
-  if (!orderAuth?.currentUser) return toast('JSON Helper hanya untuk admin. Sila log masuk dahulu.', true);
-  const modal = document.getElementById('json-helper-modal');
-  if (!modal) return;
-  refreshJsonHelperId(true);
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => document.getElementById('jh-name')?.focus(), 80);
-}
-function closeJsonHelper() {
-  const modal = document.getElementById('json-helper-modal');
-  if (!modal) return;
-  modal.classList.remove('show');
-  document.body.style.overflow = '';
-}
-function jhValue(id) {
-  return (document.getElementById(id)?.value || '').trim();
-}
-function getUsedInventoryIds() {
-  return new Set(inventory
-    .map(item => Number(item?.id))
-    .filter(id => Number.isSafeInteger(id) && id > 0));
-}
-function getNextInventoryId() {
-  const usedIds = getUsedInventoryIds();
-  let id = 1;
-  while (usedIds.has(id)) id += 1;
-  return id;
-}
-function getMissingInventoryIds(limit = 6) {
-  const usedIds = getUsedInventoryIds();
-  const highestId = Math.max(0, ...usedIds);
-  const missing = [];
-  for (let id = 1; id <= highestId && missing.length < limit; id += 1) {
-    if (!usedIds.has(id)) missing.push(id);
-  }
-  return missing;
-}
-function refreshJsonHelperId(force = false) {
-  const input = document.getElementById('jh-id');
-  const status = document.getElementById('jh-id-status');
-  const suggestedId = getNextInventoryId();
-  const missing = getMissingInventoryIds();
-  if (input && (force || !input.value.trim())) input.value = suggestedId;
-  if (status) {
-    const gapText = missing.length ? 'ID kosong dikesan: <strong>' + missing.join(', ') + '</strong>.' : 'Tiada ID tertinggal dalam senarai semasa.';
-    status.innerHTML = 'Auto pilih ID <strong>' + suggestedId + '</strong>. ' + gapText;
-  }
-  return suggestedId;
-}
-function fillJsonHelperExample() {
-  const values = {
-    'jh-name': 'Tiger Fruit',
-    'jh-game': 'Blox Fruit Buah/Fruit',
-    'jh-sub': 'Buah/Fruit',
-    'jh-platform': 'Roblox',
-    'jh-price': '7',
-    'jh-stock': '3',
-    'jh-badge': 'New',
-    'jh-img': 'https://i.imgur.com/QJefiGX.png',
-    'jh-desc': 'Via trade. Ready stock.'
-  };
-  Object.entries(values).forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-  });
-  refreshJsonHelperId(false);
-  generateProductJson();
-}
-function generateProductJson() {
-  const productId = Number(jhValue('jh-id'));
-  const usedIds = getUsedInventoryIds();
-  if (!Number.isSafeInteger(productId) || productId < 1) {
-    toast('Masukkan ID produk yang sah.', true);
-    refreshJsonHelperId(false);
-    return false;
-  }
-  if (usedIds.has(productId)) {
-    toast('ID ' + productId + ' sudah digunakan. Pilih ID kosong yang dicadang.', true);
-    refreshJsonHelperId(false);
-    return false;
-  }
-  const price = Number(jhValue('jh-price'));
-  const stock = Number(jhValue('jh-stock'));
-  const obj = {
-    id: productId,
-    name: jhValue('jh-name') || 'Nama Produk',
-    game: jhValue('jh-game') || 'Nama Game',
-    platform: jhValue('jh-platform') || 'Roblox',
-    subcategory: jhValue('jh-sub') || undefined,
-    img: jhValue('jh-img') || 'https://i.imgur.com/xxxx.png',
-    price: Number.isFinite(price) ? price : 0,
-    stock: Number.isFinite(stock) ? stock : 0,
-    badge: jhValue('jh-badge') || undefined,
-    desc: jhValue('jh-desc') || '',
-    updatedAt: new Date().toISOString().slice(0, 10)
-  };
-  Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
-  const out = document.getElementById('jh-output');
-  if (out) out.value = JSON.stringify(obj, null, 2);
-  return true;
-}
-async function copyJsonHelperOutput() {
-  const out = document.getElementById('jh-output');
-  if (!out) return;
-  if (!out.value.trim() && !generateProductJson()) return;
-  try {
-    await navigator.clipboard.writeText(out.value);
-    toast('JSON produk sudah copy', false);
-  } catch (err) {
-    out.select();
-    document.execCommand('copy');
-    toast('JSON produk sudah copy', false);
-  }
-}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeSearch(); closeQR(); closeProductImage();
     closeAiHelper();
-    closeJsonHelper();
     if (document.getElementById('changelog-modal')?.classList.contains('show')) dismissChangelog();
   }
 });
