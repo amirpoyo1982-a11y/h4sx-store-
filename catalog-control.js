@@ -188,7 +188,7 @@ function startListeners() {
   database.ref(ROOT + '/games').on('value', snapshot => {
     games = asArray(snapshot.val());
     renderGames();
-    refreshProductClassificationOptions();
+    refreshClassificationOptions();
     byId('game-count').textContent = games.length;
     markSynced();
   }, realtimeError);
@@ -493,6 +493,34 @@ function promoDateValue(value) {
   return date.toISOString().slice(0, 16);
 }
 
+function promoRedeemLink(code) {
+  const url = new URL('index.htm', location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('promo', String(code || '').trim().toUpperCase());
+  url.searchParams.set('redeem', '1');
+  return url.toString();
+}
+
+async function copyTextValue(value) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch (error) {}
+  }
+  const input = document.createElement('textarea');
+  input.value = value;
+  input.setAttribute('readonly', '');
+  input.style.position = 'fixed';
+  input.style.opacity = '0';
+  document.body.appendChild(input);
+  input.select();
+  const copied = document.execCommand('copy');
+  input.remove();
+  if (!copied) throw new Error('Browser tidak membenarkan copy automatik.');
+}
+
 function renderPromos() {
   const list = byId('promo-list');
   if (!list) return;
@@ -516,7 +544,7 @@ function renderPromos() {
       return productName + ' (' + names.join(', ') + ')';
     }).join(', ');
     const encoded = encodeURIComponent(group.code);
-    return '<article class="item-row promo-row"><span class="item-placeholder"><i class="fa-solid fa-ticket"></i></span><div class="item-copy"><strong>' + escapeHtml(group.code) + '<em class="promo-status' + (status === 'Aktif' ? '' : ' off') + '">' + status + '</em></strong><span>' + (type === 'fixed' ? 'RM' + amount.toFixed(2) : amount + '%') + ' • Had ' + limit + ' orang • ' + group.targets.length + ' sasaran</span><span>' + escapeHtml(targetNames) + '</span></div><div class="row-actions"><button data-action="edit-promo" data-code="' + encoded + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="danger" data-action="delete-promo" data-code="' + encoded + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+    return '<article class="item-row promo-row"><span class="item-placeholder"><i class="fa-solid fa-ticket"></i></span><div class="item-copy"><strong>' + escapeHtml(group.code) + '<em class="promo-status' + (status === 'Aktif' ? '' : ' off') + '">' + status + '</em></strong><span>' + (type === 'fixed' ? 'RM' + amount.toFixed(2) : amount + '%') + ' • Had ' + limit + ' orang • ' + group.targets.length + ' sasaran</span><span>' + escapeHtml(targetNames) + '</span></div><div class="row-actions"><button class="publish" data-action="copy-promo-link" data-code="' + encoded + '" title="Copy link auto redeem"><i class="fa-solid fa-link"></i></button><button data-action="edit-promo" data-code="' + encoded + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="danger" data-action="delete-promo" data-code="' + encoded + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
   }).join('') : '<div class="empty">Belum ada promo code. Tekan “Promo baru” untuk buat satu.</div>';
 }
 
@@ -665,6 +693,14 @@ document.addEventListener('click', async event => {
     }
     return;
   }
+  if (action === 'copy-promo-link') {
+    const code = decodeURIComponent(actionButton.dataset.code || '');
+    try {
+      await copyTextValue(promoRedeemLink(code));
+      notify('Link auto redeem ' + code + ' sudah dicopy.');
+    } catch (error) { notify(error.message, true); }
+    return;
+  }
   if (action === 'edit-promo') return openPromoEditor(decodeURIComponent(actionButton.dataset.code || ''));
   if (action === 'delete-promo') {
     const code = decodeURIComponent(actionButton.dataset.code || '');
@@ -772,13 +808,10 @@ function uniqueTextOptions(values) {
   });
 }
 
-function fillAutoSelect(select, values, currentValue, placeholder) {
-  const current = String(currentValue || '').trim();
-  const options = uniqueTextOptions(values);
-  if (current && !options.some(value => value.toLocaleLowerCase() === current.toLocaleLowerCase())) options.unshift(current);
-  select.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' + options.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join('');
-  const exact = options.find(value => value.toLocaleLowerCase() === current.toLocaleLowerCase());
-  select.value = exact || '';
+function fillDataList(id, values) {
+  const list = byId(id);
+  if (!list) return;
+  list.innerHTML = uniqueTextOptions(values).map(value => '<option value="' + escapeHtml(value) + '"></option>').join('');
 }
 
 function selectedProductGame() {
@@ -786,23 +819,32 @@ function selectedProductGame() {
   return games.find(game => String(game.name || '').trim().toLocaleLowerCase() === selected) || null;
 }
 
-function refreshProductClassificationOptions(gameValue = byId('p-game').value, platformValue = byId('p-platform').value) {
+function refreshClassificationOptions() {
   const gameNames = games.map(game => game.name);
-  fillAutoSelect(byId('p-game'), gameNames, gameValue, games.length ? 'Pilih game / kategori' : 'Tambah game dahulu');
-  const selectedGame = selectedProductGame();
-  const platforms = uniqueTextOptions([selectedGame?.platform, ...games.map(game => game.platform)]);
-  const effectivePlatform = String(platformValue || selectedGame?.platform || '').trim();
-  fillAutoSelect(byId('p-platform'), platforms, effectivePlatform, platforms.length ? 'Pilih platform' : 'Tiada platform ditetapkan');
+  const platforms = games.map(game => game.platform);
+  fillDataList('p-game-options', gameNames);
+  fillDataList('g-name-options', gameNames);
+  fillDataList('p-platform-options', platforms);
+  fillDataList('g-platform-options', platforms);
 }
 
 function syncPlatformFromProductGame() {
   const selectedGame = selectedProductGame();
   const detectedPlatform = String(selectedGame?.platform || '').trim();
-  const platforms = uniqueTextOptions([detectedPlatform, ...games.map(game => game.platform)]);
-  fillAutoSelect(byId('p-platform'), platforms, detectedPlatform, platforms.length ? 'Pilih platform' : 'Tiada platform ditetapkan');
+  if (detectedPlatform) byId('p-platform').value = detectedPlatform;
 }
 
-byId('p-game').addEventListener('change', syncPlatformFromProductGame);
+byId('p-game').addEventListener('input', syncPlatformFromProductGame);
+
+function setEditorMode(mode) {
+  const productActive = mode === 'product';
+  const productFields = byId('product-fields');
+  const gameFields = byId('game-fields');
+  productFields.hidden = !productActive;
+  gameFields.hidden = productActive;
+  productFields.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = !productActive; });
+  gameFields.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = productActive; });
+}
 
 function showItemPreview(mode, item) {
   const image = item.img || item.image || item.poster || '';
@@ -863,9 +905,12 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   activeDraftId = draftId;
   byId('editor-kicker').textContent = index === null ? 'PRODUK BARU' : 'EDIT PRODUK';
   byId('editor-title').textContent = item.name || 'Produk baru';
-  byId('product-fields').hidden = false; byId('game-fields').hidden = true;
+  setEditorMode('product');
+  refreshClassificationOptions();
   byId('p-id').value = item.id ?? nextProductId(); byId('p-name').value = item.name || '';
-  refreshProductClassificationOptions(item.game || item.gameGroup || '', item.platform || '');
+  byId('p-game').value = item.game || item.gameGroup || '';
+  byId('p-platform').value = item.platform || '';
+  if (!byId('p-platform').value) syncPlatformFromProductGame();
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
   byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
   byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
@@ -893,7 +938,8 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   activeDraftId = draftId;
   byId('editor-kicker').textContent = index === null ? 'GAME BARU' : 'EDIT GAME';
   byId('editor-title').textContent = item.name || 'Game baru';
-  byId('product-fields').hidden = true; byId('game-fields').hidden = false;
+  setEditorMode('game');
+  refreshClassificationOptions();
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-img').value = item.img || item.image || item.video || '';

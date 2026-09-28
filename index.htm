@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=helper-buttons-only-20260929">
+  <link rel="stylesheet" href="styles.css?v=review-form-redesign-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -315,29 +315,38 @@
     <div class="h4rf-modal" id="h4rf-modal" aria-hidden="true">
       <section class="h4rf-dialog" role="dialog" aria-modal="true" aria-labelledby="h4rf-title">
         <header class="h4rf-head">
-          <div><span>H4SX STORE</span><h2 id="h4rf-title">Hantar Ulasan</h2><p>Gunakan kod pembelian anda. Ulasan akan muncul di H4SX Review.</p></div>
+          <div class="h4rf-head-main"><div class="h4rf-head-icon"><i class="fa-solid fa-star"></i></div><div><span>H4SX STORE • CUSTOMER REVIEW</span><h2 id="h4rf-title">Kongsi pengalaman anda</h2><p>Masukkan kod pembelian dan ceritakan pengalaman anda bersama kami.</p></div></div>
           <div class="h4rf-head-actions"><button type="button" class="h4rf-back" onclick="returnToH4sxHome()"><i class="fa-solid fa-arrow-left"></i><span>Website H4SX</span></button><button type="button" onclick="closeH4ReviewForm()" aria-label="Tutup">&times;</button></div>
         </header>
         <form class="h4rf-form" id="h4rf-form">
-          <div class="h4rf-grid">
-            <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-key"></i> Kod Pengesahan Pembelian *</span><input id="h4rf-code" maxlength="30" autocomplete="off" placeholder="TAIP KOD DI SINI" required></label>
-            <label class="h4rf-field"><span><i class="fa-solid fa-user"></i> Nama / Username *</span><div class="h4rf-name-row"><input id="h4rf-name" maxlength="40" autocomplete="off" placeholder="Contoh: H4SX" required><button type="button" id="h4rf-generate">Generate</button></div></label>
-            <label class="h4rf-field"><span><i class="fa-solid fa-star"></i> Skor Perkhidmatan</span><select id="h4rf-rating"><option value="5">5 bintang - Sangat puas hati</option><option value="4">4 bintang - Baik</option><option value="3">3 bintang - Sederhana</option><option value="2">2 bintang - Kurang memuaskan</option><option value="1">1 bintang - Lemah</option></select></label>
-          </div>
-          <div class="h4rf-profile">
-            <button type="button" class="h4rf-avatar" id="h4rf-avatar" title="Pilih gambar profil"><span>H</span><img alt=""><i class="fa-solid fa-camera"></i></button>
-            <div class="h4rf-profile-options"><strong>Warna profil</strong><div class="h4rf-swatches" id="h4rf-swatches"></div><div class="h4rf-emojis" id="h4rf-emojis"></div></div>
-          </div>
-          <div class="h4rf-upload">
-            <div class="h4rf-upload-tabs"><button type="button" class="active" data-h4rf-tab="file">Galeri / Phone</button><button type="button" data-h4rf-tab="clipboard">Clipboard</button><button type="button" data-h4rf-tab="url">URL Gambar</button></div>
-            <div class="h4rf-upload-panel active" data-h4rf-panel="file"><input id="h4rf-profile-file" type="file" accept="image/*" hidden><button type="button" class="h4rf-upload-pick" id="h4rf-file-pick"><i class="fa-solid fa-image"></i> Pilih gambar profil</button></div>
-            <div class="h4rf-upload-panel" data-h4rf-panel="clipboard"><button type="button" class="h4rf-upload-pick" id="h4rf-paste"><i class="fa-solid fa-paste"></i> Paste gambar</button><small>Atau tekan Ctrl+V di sini.</small></div>
-            <div class="h4rf-upload-panel" data-h4rf-panel="url"><div class="h4rf-url-row"><input id="h4rf-profile-url" placeholder="https://i.imgur.com/gambar.png"><button type="button" id="h4rf-url-load">Muat</button></div></div>
-            <button type="button" class="h4rf-clear-image" id="h4rf-clear-profile" hidden>Buang gambar profil</button>
-          </div>
-          <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-comment-dots"></i> Ulasan anda <em>(pilihan)</em></span><textarea id="h4rf-review" rows="4" maxlength="500" placeholder="Kongsi pengalaman anda, atau tekan Cadangan."></textarea><div class="h4rf-review-tools"><button type="button" id="h4rf-suggest"><i class="fa-solid fa-wand-magic-sparkles"></i> Cadangan</button><small id="h4rf-count">0 / 500</small></div></label>
-          <div class="h4rf-feedback"><span><i class="fa-solid fa-image"></i> Gambar feedback <em>(pilihan)</em></span><input id="h4rf-feedback-file" type="file" accept="image/*" hidden><button type="button" id="h4rf-feedback-pick">Pilih gambar</button><button type="button" id="h4rf-feedback-clear" hidden>Buang</button><small id="h4rf-feedback-status"></small></div>
-          <button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button>
+          <section class="h4rf-section h4rf-identity-section">
+            <div class="h4rf-section-title"><b>1</b><div><strong>Sahkan pembelian</strong><small>Kod ini memastikan ulasan datang daripada pembeli sebenar.</small></div></div>
+            <div class="h4rf-grid">
+              <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-key"></i> Kod Pengesahan Pembelian *</span><input id="h4rf-code" maxlength="30" autocomplete="off" placeholder="Contoh: H4SX-XXXXXX" required></label>
+              <label class="h4rf-field"><span><i class="fa-solid fa-user"></i> Nama / Username *</span><div class="h4rf-name-row"><input id="h4rf-name" maxlength="40" autocomplete="off" placeholder="Contoh: H4SX" required><button type="button" id="h4rf-generate"><i class="fa-solid fa-dice"></i><span>Rawak</span></button></div></label>
+              <label class="h4rf-field"><span><i class="fa-solid fa-star"></i> Skor Perkhidmatan</span><select id="h4rf-rating"><option value="5">★★★★★ • Sangat puas hati</option><option value="4">★★★★☆ • Baik</option><option value="3">★★★☆☆ • Sederhana</option><option value="2">★★☆☆☆ • Kurang memuaskan</option><option value="1">★☆☆☆☆ • Lemah</option></select></label>
+            </div>
+          </section>
+          <section class="h4rf-section h4rf-profile-section">
+            <div class="h4rf-section-title"><b>2</b><div><strong>Profil ulasan</strong><small>Pilih warna, emoji atau gambar yang anda suka.</small></div></div>
+            <div class="h4rf-profile">
+              <button type="button" class="h4rf-avatar" id="h4rf-avatar" title="Pilih gambar profil"><span>H</span><img alt=""><i class="fa-solid fa-camera"></i></button>
+              <div class="h4rf-profile-options"><strong>Gaya profil</strong><div class="h4rf-swatches" id="h4rf-swatches"></div><div class="h4rf-emojis" id="h4rf-emojis"></div></div>
+            </div>
+            <div class="h4rf-upload">
+              <div class="h4rf-upload-tabs"><button type="button" class="active" data-h4rf-tab="file"><i class="fa-solid fa-mobile-screen"></i> Galeri</button><button type="button" data-h4rf-tab="clipboard"><i class="fa-solid fa-paste"></i> Clipboard</button><button type="button" data-h4rf-tab="url"><i class="fa-solid fa-link"></i> URL</button></div>
+              <div class="h4rf-upload-panel active" data-h4rf-panel="file"><input id="h4rf-profile-file" type="file" accept="image/*" hidden><button type="button" class="h4rf-upload-pick" id="h4rf-file-pick"><i class="fa-solid fa-image"></i> Pilih gambar profil</button></div>
+              <div class="h4rf-upload-panel" data-h4rf-panel="clipboard"><button type="button" class="h4rf-upload-pick" id="h4rf-paste"><i class="fa-solid fa-paste"></i> Paste gambar</button><small>Atau tekan Ctrl+V di sini.</small></div>
+              <div class="h4rf-upload-panel" data-h4rf-panel="url"><div class="h4rf-url-row"><input id="h4rf-profile-url" placeholder="https://i.imgur.com/gambar.png"><button type="button" id="h4rf-url-load">Muat</button></div></div>
+              <button type="button" class="h4rf-clear-image" id="h4rf-clear-profile" hidden><i class="fa-solid fa-trash"></i> Buang gambar profil</button>
+            </div>
+          </section>
+          <section class="h4rf-section h4rf-review-section">
+            <div class="h4rf-section-title"><b>3</b><div><strong>Ceritakan pengalaman</strong><small>Teks dan gambar feedback adalah pilihan.</small></div></div>
+            <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-comment-dots"></i> Ulasan anda <em>(pilihan)</em></span><textarea id="h4rf-review" rows="4" maxlength="500" placeholder="Contoh: Servis cepat, urusan mudah dan seller sangat membantu."></textarea><div class="h4rf-review-tools"><button type="button" id="h4rf-suggest"><i class="fa-solid fa-wand-magic-sparkles"></i> Cadangan ayat</button><small id="h4rf-count">0 / 500</small></div></label>
+            <div class="h4rf-feedback"><span><i class="fa-solid fa-image"></i> Gambar feedback <em>(pilihan)</em></span><input id="h4rf-feedback-file" type="file" accept="image/*" hidden><button type="button" id="h4rf-feedback-pick"><i class="fa-solid fa-cloud-arrow-up"></i> Pilih gambar</button><button type="button" id="h4rf-feedback-clear" hidden><i class="fa-solid fa-trash"></i> Buang</button><small id="h4rf-feedback-status"></small></div>
+          </section>
+          <div class="h4rf-submit-wrap"><span><i class="fa-solid fa-shield-heart"></i> Ulasan anda akan disemak sebelum dipaparkan.</span><button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button></div>
         </form>
       </section>
     </div>
@@ -772,7 +781,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=health-scan-fix-20260929"></script>
+<script defer src="app.js?v=promo-auto-redeem-link-20260929"></script>
 
 </body>
 </html>

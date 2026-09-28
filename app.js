@@ -1488,6 +1488,14 @@ function getPromoFromUrl() {
     return '';
   }
 }
+function shouldAutoRedeemPromoFromUrl() {
+  try {
+    const value = new URL(window.location.href).searchParams.get('redeem');
+    return ['1', 'true', 'yes', 'auto'].includes(String(value || '').trim().toLowerCase());
+  } catch(e) {
+    return false;
+  }
+}
 function findGameByRoute(value) {
   const target = String(value || '').trim().toLowerCase();
   if (!target) return '';
@@ -1550,7 +1558,8 @@ function openPromoFromUrl() {
     fromUrl: true,
     itemId: target.item.id,
     variantId: target.variantId,
-    promoCode: code
+    promoCode: code,
+    autoRedeem: shouldAutoRedeemPromoFromUrl()
   });
   return true;
 }
@@ -3202,7 +3211,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=20';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=22';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -5220,7 +5229,8 @@ function openGame(name, options = {}) {
       setTimeout(() => openProductImage(options.itemId, {
         fromUrl: true,
         variantId: options.variantId,
-        promoCode: options.promoCode
+        promoCode: options.promoCode,
+        autoRedeem: options.autoRedeem
       }), 80);
     }
   }, 90);
@@ -6128,8 +6138,16 @@ function openProductImage(id, options = {}) {
     if (promoInput) {
       promoInput.value = String(options.promoCode).trim().toUpperCase();
       syncProductModalPromo(item);
-      setTimeout(() => { promoInput.focus(); promoInput.select(); }, 180);
-      toast('Kod ' + promoInput.value + ' sudah diisi. Tekan Guna untuk redeem.');
+      if (options.autoRedeem) {
+        toast('Kod ' + promoInput.value + ' dijumpai. Mengaktifkan promo...');
+        setTimeout(() => {
+          const apply = document.getElementById('product-modal-promo-apply');
+          if (apply && !apply.disabled) apply.click();
+        }, 260);
+      } else {
+        setTimeout(() => { promoInput.focus(); promoInput.select(); }, 180);
+        toast('Kod ' + promoInput.value + ' sudah diisi. Tekan Guna untuk redeem.');
+      }
     }
   }
   const modal = document.getElementById('product-modal');
