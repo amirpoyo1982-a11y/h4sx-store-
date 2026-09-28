@@ -597,10 +597,6 @@ const GIST_ID = '5ed3872290715d7833e788c7b0014f79';
 const WA_NUMBER = '6285178259060';
 const H4SX_CHANNEL_URL = null;
 const H4SX_PAYMENT_CATALOG_URL = 'https://wa.me/6285178259060';
-const CURRENCY_API_URL = 'https://open.er-api.com/v6/latest/MYR';
-const CURRENCY_CACHE_KEY = 'h4sx_currency_rates_myr_v1';
-const CURRENCY_CACHE_MAX_AGE = 18 * 60 * 60 * 1000;
-const CURRENCY_FALLBACK_RATES = { MYR: 1, IDR: 4350 };
 const GAMES_GIST_URLS = [
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/92b41c9122c025c2536e68353a82ee0f/raw/games.json',
   'https://gist.githubusercontent.com/amirpoyo1982-a11y/9bcbef00866205608fb46fc7a0ef5235/raw/games.json'
@@ -653,7 +649,6 @@ const PAY_QR = {
 let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
 let cartSelectedKeys = new Set();
 let modalVariantId = '', modalQuantity = 1;
-let catalogProgressTimer = null;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
@@ -2443,7 +2438,7 @@ let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
 let customVoteEndTimer = null;
 let customVoteDirectLinkHandled = false;
-let reviewShowcaseConfig = { active:false, intervalSeconds:6, position:'top-left' };
+let reviewShowcaseConfig = { active:false, sectionVisible:false, intervalSeconds:6, position:'top-left' };
 let reviewShowcaseConfigUnsubscribe = null;
 let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
@@ -2763,9 +2758,17 @@ function normaliseReviewShowcaseConfig(data = {}) {
   const positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
   return {
     active: data.active === true,
+    sectionVisible: data.sectionVisible === true,
     intervalSeconds: Math.min(30, Math.max(3, Number.isFinite(interval) ? interval : 6)),
     position: positions.includes(data.position) ? data.position : 'top-left'
   };
+}
+
+function applyReviewSectionVisibility() {
+  const section = document.getElementById('reviews');
+  if (!section) return;
+  section.classList.toggle('reviews-list-hidden', !reviewShowcaseConfig.sectionVisible);
+  section.setAttribute('data-review-list-visible', reviewShowcaseConfig.sectionVisible ? 'true' : 'false');
 }
 
 function setReviewShowcaseAdminStatus(text, type = '') {
@@ -2777,17 +2780,17 @@ function setReviewShowcaseAdminStatus(text, type = '') {
 
 function syncReviewShowcaseAdmin() {
   const active = document.getElementById('review-showcase-admin-active');
+  const sectionActive = document.getElementById('review-section-admin-active');
   const interval = document.getElementById('review-showcase-admin-interval');
   const position = document.getElementById('review-showcase-admin-position');
   if (active) active.checked = reviewShowcaseConfig.active;
+  if (sectionActive) sectionActive.checked = reviewShowcaseConfig.sectionVisible;
   if (interval) interval.value = String(reviewShowcaseConfig.intervalSeconds);
   if (position) position.value = reviewShowcaseConfig.position;
   if (!orderAuth?.currentUser) setReviewShowcaseAdminStatus('Log masuk sebagai admin untuk urus paparan ulasan.');
   else setReviewShowcaseAdminStatus(
-    reviewShowcaseConfig.active
-      ? `Paparan aktif dan bertukar setiap ${reviewShowcaseConfig.intervalSeconds} saat.`
-      : 'Paparan ulasan sedang dimatikan.',
-    reviewShowcaseConfig.active ? 'success' : ''
+    `${reviewShowcaseConfig.sectionVisible ? 'Senarai ulasan dipaparkan' : 'Senarai ulasan disorok'}; notis ${reviewShowcaseConfig.active ? `aktif setiap ${reviewShowcaseConfig.intervalSeconds} saat` : 'dimatikan'}.`,
+    (reviewShowcaseConfig.active || reviewShowcaseConfig.sectionVisible) ? 'success' : ''
   );
 }
 
@@ -2803,6 +2806,7 @@ function loadReviewShowcaseConfig(force = false) {
       reviewShowcaseConfig = normaliseReviewShowcaseConfig(snapshot.exists ? snapshot.data() : {});
       reviewShowcaseIndex = 0;
       syncReviewShowcaseAdmin();
+      applyReviewSectionVisibility();
       applyReviewPopupDefaultPosition();
       renderReviews(latestReviewStatsData);
     }, error => {
@@ -2815,6 +2819,7 @@ async function saveReviewShowcaseSettings(event) {
   event?.preventDefault();
   if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
   const active = document.getElementById('review-showcase-admin-active')?.checked === true;
+  const sectionVisible = document.getElementById('review-section-admin-active')?.checked === true;
   const intervalSeconds = Math.min(30, Math.max(3, Number.parseInt(document.getElementById('review-showcase-admin-interval')?.value, 10) || 6));
   const positionInput = document.getElementById('review-showcase-admin-position')?.value || 'top-left';
   const position = ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(positionInput) ? positionInput : 'top-left';
@@ -2822,12 +2827,16 @@ async function saveReviewShowcaseSettings(event) {
     setReviewShowcaseAdminStatus('Menyimpan tetapan...');
     await db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID).set({
       active,
+      sectionVisible,
       intervalSeconds,
       position,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: orderAuth.currentUser.email || 'admin'
     }, { merge:true });
-    setReviewShowcaseAdminStatus(active ? `Paparan aktif setiap ${intervalSeconds} saat.` : 'Paparan ulasan dimatikan.', active ? 'success' : '');
+    setReviewShowcaseAdminStatus(
+      `${sectionVisible ? 'Senarai ulasan dipaparkan' : 'Senarai ulasan disorok'}; notis ${active ? `aktif setiap ${intervalSeconds} saat` : 'dimatikan'}.`,
+      (active || sectionVisible) ? 'success' : ''
+    );
     toast('Tetapan paparan ulasan berjaya disimpan.');
   } catch (error) {
     console.error('Review showcase save error:', error);
@@ -2946,12 +2955,8 @@ function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
   const login = document.getElementById('order-admin-login');
   const form = document.getElementById('order-admin-form-wrap');
-  const jsonHelperLink = document.getElementById('json-helper-link');
-  const jsonHelperDivider = document.getElementById('json-helper-divider');
   if (login) login.hidden = !!user;
   if (form) form.hidden = !user;
-  if (jsonHelperLink) jsonHelperLink.hidden = !user;
-  if (jsonHelperDivider) jsonHelperDivider.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
   if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); loadReviewShowcaseConfig(); }
@@ -3617,7 +3622,6 @@ function bootStoreApp() {
   restoreCart();
   updateBadge();
   initCartEventDelegation();
-  startCatalogProgress();
   loadGames().then(renderGames);
   loadInv();
   startRealtimeConfigSync();
@@ -4798,30 +4802,7 @@ function renderGames() {
     if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
   }).join('');
-  updateCatalogLiveCard();
   initScrollReveal();
-}
-function updateCatalogLiveCard() {
-  const total = inventory.filter(item => item && item.id && !isPermanentFruitCatalogItem(item) && !item.consultation).length;
-  const count = document.getElementById('catalog-item-count');
-  if (count) count.textContent = total;
-}
-function startCatalogProgress() {
-  const ring = document.getElementById('catalog-progress-value');
-  const text = document.getElementById('catalog-progress-text');
-  if (!ring || !text || catalogProgressTimer) return;
-  const circumference = 2 * Math.PI * 40;
-  let progress = 0;
-  const paint = () => {
-    ring.style.strokeDashoffset = String(circumference * (1 - (progress / 100)));
-    text.textContent = progress + '%';
-  };
-  ring.style.strokeDasharray = String(circumference);
-  paint();
-  catalogProgressTimer = window.setInterval(() => {
-    progress = progress >= 100 ? 0 : progress + 20;
-    paint();
-  }, 1000);
 }
 function openGame(name, options = {}) {
   currentGame = name;
@@ -4919,126 +4900,10 @@ function doSearch(q) {
     return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
-function openJsonHelper() {
-  if (!orderAuth?.currentUser) return toast('JSON Helper hanya untuk admin. Sila log masuk dahulu.', true);
-  const modal = document.getElementById('json-helper-modal');
-  if (!modal) return;
-  refreshJsonHelperId(true);
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => document.getElementById('jh-name')?.focus(), 80);
-}
-function closeJsonHelper() {
-  const modal = document.getElementById('json-helper-modal');
-  if (!modal) return;
-  modal.classList.remove('show');
-  document.body.style.overflow = '';
-}
-function jhValue(id) {
-  return (document.getElementById(id)?.value || '').trim();
-}
-function getUsedInventoryIds() {
-  return new Set(inventory
-    .map(item => Number(item?.id))
-    .filter(id => Number.isSafeInteger(id) && id > 0));
-}
-function getNextInventoryId() {
-  const usedIds = getUsedInventoryIds();
-  let id = 1;
-  while (usedIds.has(id)) id += 1;
-  return id;
-}
-function getMissingInventoryIds(limit = 6) {
-  const usedIds = getUsedInventoryIds();
-  const highestId = Math.max(0, ...usedIds);
-  const missing = [];
-  for (let id = 1; id <= highestId && missing.length < limit; id += 1) {
-    if (!usedIds.has(id)) missing.push(id);
-  }
-  return missing;
-}
-function refreshJsonHelperId(force = false) {
-  const input = document.getElementById('jh-id');
-  const status = document.getElementById('jh-id-status');
-  const suggestedId = getNextInventoryId();
-  const missing = getMissingInventoryIds();
-  if (input && (force || !input.value.trim())) input.value = suggestedId;
-  if (status) {
-    const gapText = missing.length ? 'ID kosong dikesan: <strong>' + missing.join(', ') + '</strong>.' : 'Tiada ID tertinggal dalam senarai semasa.';
-    status.innerHTML = 'Auto pilih ID <strong>' + suggestedId + '</strong>. ' + gapText;
-  }
-  return suggestedId;
-}
-function fillJsonHelperExample() {
-  const values = {
-    'jh-name': 'Tiger Fruit',
-    'jh-game': 'Blox Fruit Buah/Fruit',
-    'jh-sub': 'Buah/Fruit',
-    'jh-platform': 'Roblox',
-    'jh-price': '7',
-    'jh-stock': '3',
-    'jh-badge': 'New',
-    'jh-img': 'https://i.imgur.com/QJefiGX.png',
-    'jh-desc': 'Via trade. Ready stock.'
-  };
-  Object.entries(values).forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = value;
-  });
-  refreshJsonHelperId(false);
-  generateProductJson();
-}
-function generateProductJson() {
-  const productId = Number(jhValue('jh-id'));
-  const usedIds = getUsedInventoryIds();
-  if (!Number.isSafeInteger(productId) || productId < 1) {
-    toast('Masukkan ID produk yang sah.', true);
-    refreshJsonHelperId(false);
-    return false;
-  }
-  if (usedIds.has(productId)) {
-    toast('ID ' + productId + ' sudah digunakan. Pilih ID kosong yang dicadang.', true);
-    refreshJsonHelperId(false);
-    return false;
-  }
-  const price = Number(jhValue('jh-price'));
-  const stock = Number(jhValue('jh-stock'));
-  const obj = {
-    id: productId,
-    name: jhValue('jh-name') || 'Nama Produk',
-    game: jhValue('jh-game') || 'Nama Game',
-    platform: jhValue('jh-platform') || 'Roblox',
-    subcategory: jhValue('jh-sub') || undefined,
-    img: jhValue('jh-img') || 'https://i.imgur.com/xxxx.png',
-    price: Number.isFinite(price) ? price : 0,
-    stock: Number.isFinite(stock) ? stock : 0,
-    badge: jhValue('jh-badge') || undefined,
-    desc: jhValue('jh-desc') || '',
-    updatedAt: new Date().toISOString().slice(0, 10)
-  };
-  Object.keys(obj).forEach(key => obj[key] === undefined && delete obj[key]);
-  const out = document.getElementById('jh-output');
-  if (out) out.value = JSON.stringify(obj, null, 2);
-  return true;
-}
-async function copyJsonHelperOutput() {
-  const out = document.getElementById('jh-output');
-  if (!out) return;
-  if (!out.value.trim() && !generateProductJson()) return;
-  try {
-    await navigator.clipboard.writeText(out.value);
-    toast('JSON produk sudah copy', false);
-  } catch (err) {
-    out.select();
-    document.execCommand('copy');
-    toast('JSON produk sudah copy', false);
-  }
-}
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeSearch(); closeQR(); closeProductImage();
     closeAiHelper();
-    closeJsonHelper();
     if (document.getElementById('changelog-modal')?.classList.contains('show')) dismissChangelog();
   }
 });
@@ -6534,99 +6399,6 @@ function startMojibakeRepair() {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMojibakeRepair, { once: true });
 else startMojibakeRepair();
-
-let h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
-let h4sxCurrencyUpdatedAt = 0;
-
-function currencyName(code) {
-  try {
-    const names = new Intl.DisplayNames(['ms-MY'], { type: 'currency' });
-    return code + ' - ' + names.of(code);
-  } catch (error) {
-    return code;
-  }
-}
-
-function populateCurrencySelects() {
-  const from = document.getElementById('currency-from');
-  const to = document.getElementById('currency-to');
-  if (!from || !to) return;
-  const previousFrom = from.value || 'MYR';
-  const previousTo = to.value || 'IDR';
-  const options = Object.keys(h4sxCurrencyRates).sort().map(code => '<option value="' + code + '">' + currencyName(code) + '</option>').join('');
-  from.innerHTML = options;
-  to.innerHTML = options;
-  from.value = h4sxCurrencyRates[previousFrom] ? previousFrom : 'MYR';
-  to.value = h4sxCurrencyRates[previousTo] ? previousTo : (h4sxCurrencyRates.IDR ? 'IDR' : 'MYR');
-}
-
-function formatCurrencyValue(code, amount) {
-  try {
-    return new Intl.NumberFormat('ms-MY', { style: 'currency', currency: code, maximumFractionDigits: code === 'IDR' ? 0 : 2 }).format(amount);
-  } catch (error) {
-    return code + ' ' + Number(amount || 0).toFixed(2);
-  }
-}
-
-function updateCurrencyConverter() {
-  const amount = Math.max(0, Number(document.getElementById('currency-amount')?.value || 0));
-  const from = document.getElementById('currency-from')?.value || 'MYR';
-  const to = document.getElementById('currency-to')?.value || 'IDR';
-  const output = document.getElementById('currency-output');
-  const status = document.getElementById('currency-status');
-  const fromRate = h4sxCurrencyRates[from] || 1;
-  const toRate = h4sxCurrencyRates[to] || 1;
-  const converted = amount * (toRate / fromRate);
-  if (output) output.textContent = formatCurrencyValue(to, converted);
-  if (status) status.innerHTML = '<i class="fa-solid fa-chart-line"></i> 1 ' + from + ' = ' + formatCurrencyValue(to, toRate / fromRate) + ' · Kadar anggaran sahaja';
-}
-
-function swapCurrencyConverter() {
-  const from = document.getElementById('currency-from');
-  const to = document.getElementById('currency-to');
-  if (!from || !to) return;
-  const current = from.value;
-  from.value = to.value;
-  to.value = current;
-  updateCurrencyConverter();
-}
-
-function updatePriceCalculator() {
-  const price = Math.max(0, Number(document.getElementById('price-calculator-price')?.value || 0));
-  const qty = Math.max(1, Math.floor(Number(document.getElementById('price-calculator-qty')?.value || 1)));
-  const output = document.getElementById('price-calculator-output');
-  if (output) output.textContent = formatCurrencyValue('MYR', price * qty);
-}
-
-async function initCurrencyTools() {
-  const status = document.getElementById('currency-status');
-  if (!status) return;
-  try {
-    const cached = JSON.parse(localStorage.getItem(CURRENCY_CACHE_KEY) || 'null');
-    if (cached?.rates && cached?.updatedAt && Date.now() - cached.updatedAt < CURRENCY_CACHE_MAX_AGE) {
-      h4sxCurrencyRates = cached.rates;
-      h4sxCurrencyUpdatedAt = cached.updatedAt;
-    } else {
-      const response = await fetch(CURRENCY_API_URL, { cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok || data.result !== 'success' || !data.rates?.IDR) throw new Error('rate-unavailable');
-      h4sxCurrencyRates = { ...data.rates, MYR: 1 };
-      h4sxCurrencyUpdatedAt = Date.now();
-      localStorage.setItem(CURRENCY_CACHE_KEY, JSON.stringify({ rates: h4sxCurrencyRates, updatedAt: h4sxCurrencyUpdatedAt }));
-    }
-    populateCurrencySelects();
-    updateCurrencyConverter();
-  } catch (error) {
-    h4sxCurrencyRates = { ...CURRENCY_FALLBACK_RATES };
-    populateCurrencySelects();
-    updateCurrencyConverter();
-    if (status) status.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Kadar live tidak dapat dimuatkan. Anggaran MYR / IDR dipaparkan.';
-  }
-  updatePriceCalculator();
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCurrencyTools, { once: true });
-else initCurrencyTools();
 
 // Share the current store view without carrying preview or cache-buster parameters.
 async function shareH4sxStore() {

@@ -48,7 +48,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=faq-presets-20260929">
+  <link rel="stylesheet" href="styles.css?v=cleanup-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -118,24 +118,7 @@
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=v4.0-brand-cleanup"></script>
-<!-- MARQUEE -->
-<div class="marquee-wrap">
-  <div class="marquee-track">
-    <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
-    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
-    <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
-    <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
-    <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
-    <span class="marquee-item"><i class="fa-solid fa-gamepad"></i> Item Roblox terpilih</span>
-    <span class="marquee-item"><i class="fa-solid fa-shield-halved"></i> Pembelian lebih selamat</span>
-    <span class="marquee-item"><i class="fa-solid fa-bolt"></i> Proses pantas 1-30 minit</span>
-    <span class="marquee-item"><i class="fa-solid fa-star"></i> 300+ pelanggan berpuas hati</span>
-    <span class="marquee-item"><i class="fa-brands fa-whatsapp"></i> Bantuan terus melalui WhatsApp</span>
-    <span class="marquee-item"><i class="fa-solid fa-lock"></i> Semak detail sebelum bayar</span>
-    <span class="marquee-item"><i class="fa-solid fa-gamepad"></i> Item Roblox terpilih</span>
-  </div>
-</div>
+<script defer src="changelog-loader.js?v=cleanup-20260929"></script>
 <div class="site-header-nav-wrap">
 <!-- NAV -->
 <nav id="main-nav">
@@ -265,53 +248,11 @@
         </div>
       </div>
     </section>
-    <section class="catalog-live-card reveal" aria-label="Status proses penghantaran H4SX">
-      <div class="catalog-live-head">
-        <div>
-          <span class="catalog-live-kicker"><i></i> Delivery Live</span>
-          <h2>Proses penghantaran pantas</h2>
-          <p>Status proses bergerak secara langsung sepanjang website dibuka.</p>
-        </div>
-        <div class="catalog-item-total"><strong id="catalog-item-count">0</strong><span>Jumlah item</span></div>
-      </div>
-      <div class="catalog-live-meter">
-        <div class="catalog-progress-ring" role="img" aria-label="Progress proses penghantaran">
-          <svg viewBox="0 0 100 100" aria-hidden="true">
-            <circle class="catalog-progress-track" cx="50" cy="50" r="40"></circle>
-            <circle class="catalog-progress-value" id="catalog-progress-value" cx="50" cy="50" r="40"></circle>
-          </svg>
-          <div><strong id="catalog-progress-text">0%</strong><span>Proses delivery</span></div>
-        </div>
-        <div class="catalog-live-note"><i class="fa-solid fa-bolt"></i><span>Proses biasanya mengambil masa 1 hingga 30 minit selepas pembayaran disahkan.</span></div>
-      </div>
-    </section>
     <section class="trust-grid reveal" aria-label="Kepercayaan kedai">
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-file-invoice"></i></div><div><div class="trust-title">Resit Boleh Disemak</div><div class="trust-sub">Hantar bukti bayaran terus ke admin.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-brands fa-whatsapp"></i></div><div><div class="trust-title">Support WhatsApp</div><div class="trust-sub">Respon pantas ikut giliran semasa.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
       <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
-    </section>
-    <section class="store-tools reveal" id="store-tools" aria-label="Kalkulator harga dan mata wang">
-      <div class="store-tool currency-tool">
-        <div class="store-tool-head"><div class="store-tool-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></div><div><strong>Penukar Mata Wang</strong><span>Kadar anggaran semasa untuk pelanggan luar negara</span></div></div>
-        <div class="currency-form">
-          <label>Jumlah<input id="currency-amount" type="number" min="0" step="0.01" value="1" inputmode="decimal" oninput="updateCurrencyConverter()"></label>
-          <label>Dari<select id="currency-from" onchange="updateCurrencyConverter()"></select></label>
-          <button class="currency-swap" type="button" onclick="swapCurrencyConverter()" aria-label="Tukar mata wang"><i class="fa-solid fa-right-left"></i></button>
-          <label>Ke<select id="currency-to" onchange="updateCurrencyConverter()"></select></label>
-        </div>
-        <div class="currency-result"><span>Anggaran diterima</span><strong id="currency-output">Memuatkan kadar...</strong></div>
-        <div class="currency-status" id="currency-status"><i class="fa-solid fa-circle-notch fa-spin"></i> Menyemak kadar mata wang...</div>
-      </div>
-      <div class="store-tool price-tool">
-        <div class="store-tool-head"><div class="store-tool-icon green"><i class="fa-solid fa-calculator"></i></div><div><strong>Kalkulator Harga</strong><span>Kira jumlah item sebelum hubungi admin</span></div></div>
-        <div class="price-calculator-form">
-          <label>Harga seunit (RM)<input id="price-calculator-price" type="number" min="0" step="0.01" value="0" inputmode="decimal" oninput="updatePriceCalculator()"></label>
-          <label>Kuantiti<input id="price-calculator-qty" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="updatePriceCalculator()"></label>
-        </div>
-        <div class="currency-result price-result"><span>Jumlah anggaran</span><strong id="price-calculator-output">RM0.00</strong></div>
-        <div class="currency-status"><i class="fa-solid fa-circle-info"></i> Harga akhir disahkan bersama admin WhatsApp.</div>
-      </div>
     </section>
     <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
       <div class="custom-vote-card">
@@ -348,8 +289,8 @@
       </div>
     </section>
     <div class="div"></div>
-    <section id="reviews" class="section-panel" style="margin-bottom:32px">
-      <div class="sh reveal"><div><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button><a href="https://review.h4sxmy.xyz/" target="_blank" class="review-all-btn"><i class="fa-solid fa-comments"></i><span><strong>Lihat Semua Review</strong><small>review.h4sxmy.xyz</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div>
+    <section id="reviews" class="section-panel reviews-list-hidden" style="margin-bottom:32px">
+      <div class="sh reveal"><div class="review-section-heading"><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button></div></div>
       <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
         <div class="review-summary-card">
           <span class="review-summary-label">Purata Rating</span>
@@ -405,7 +346,7 @@
       </div>
     </section>
     <footer>
-      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a> <span class="foot-dot" id="json-helper-divider" hidden>/</span> <a href="javascript:void(0)" id="json-helper-link" onclick="openJsonHelper()" style="color:var(--primary);font-weight:700;text-decoration:none;" hidden>JSON Helper</a></div>
+      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a></div>
       <div class="foot-social">
         <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
         <a href="https://wa.me/6285178259060" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
@@ -528,37 +469,6 @@
     </div>
   </div>
 </div>
-<!-- JSON HELPER -->
-<div id="json-helper-modal" class="json-helper-modal" onclick="if(event.target===this)closeJsonHelper()">
-  <div class="json-helper-card">
-    <div class="json-helper-head">
-      <div>
-        <div class="json-helper-kicker">Admin helper</div>
-        <h3>Generate JSON Produk</h3>
-      </div>
-      <button onclick="closeJsonHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-    <div class="json-helper-grid">
-      <label>ID produk<input id="jh-id" class="finput" type="number" min="1" step="1" placeholder="Auto detect"></label>
-      <div class="json-helper-id-status" id="jh-id-status" role="status">Semak ID kosong...</div>
-      <label>Nama produk<input id="jh-name" class="finput" placeholder="Tiger Fruit"></label>
-      <label>Game<input id="jh-game" class="finput" placeholder="Blox Fruit Buah/Fruit"></label>
-      <label>Subcategory<input id="jh-sub" class="finput" placeholder="Buah/Fruit"></label>
-      <label>Platform<input id="jh-platform" class="finput" placeholder="Roblox"></label>
-      <label>Harga RM<input id="jh-price" class="finput" type="number" step="0.01" placeholder="7"></label>
-      <label>Stok<input id="jh-stock" class="finput" type="number" placeholder="3"></label>
-      <label>Badge<input id="jh-badge" class="finput" placeholder="New"></label>
-      <label class="json-helper-wide">Gambar / Video URL<input id="jh-img" class="finput" placeholder="https://i.imgur.com/..."></label>
-      <label class="json-helper-wide">Desc<textarea id="jh-desc" class="finput" rows="3" placeholder="Tulis description ringkas"></textarea></label>
-    </div>
-    <div class="json-helper-actions">
-      <button class="btn-ghost" onclick="fillJsonHelperExample()"><i class="fa-solid fa-wand-magic-sparkles"></i> Contoh</button>
-      <button class="btn-primary" onclick="generateProductJson()"><i class="fa-solid fa-code"></i> Generate</button>
-      <button class="btn-ghost" onclick="copyJsonHelperOutput()"><i class="fa-solid fa-copy"></i> Copy</button>
-    </div>
-    <textarea id="jh-output" class="json-output" rows="9" readonly placeholder="Output JSON akan keluar di sini..."></textarea>
-  </div>
-</div>
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="bottom-nav-inner">
@@ -572,9 +482,10 @@
 <!-- BUSINESS HOURS DISPLAY -->
 <div class="business-hours-bar">
   <div class="bh-inner">
-    <div class="bh-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <div class="bh-icon"><i class="fa-solid fa-store"></i></div>
     <div class="bh-text">
-      <div class="bh-title">Waktu Operasi</div>
+      <div class="bh-kicker">STATUS KEDAI</div>
+      <div class="bh-title">Waktu Operasi H4SX</div>
       <div class="bh-desc" id="business-hours-text">Menyemak waktu operasi...</div>
     </div>
     <div class="bh-status" id="bh-status">
@@ -804,7 +715,8 @@
           <button type="button" onclick="loadReviewShowcaseConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
         <form class="review-showcase-admin-form" onsubmit="saveReviewShowcaseSettings(event)">
-          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan ulasan di website</b></label>
+          <label class="vote-admin-toggle"><input id="review-section-admin-active" type="checkbox"><span></span><b>Paparkan senarai ulasan di halaman utama</b></label>
+          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan notis ulasan automatik</b></label>
           <label>Ulasan bertukar setiap
             <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
           </label>
@@ -862,7 +774,7 @@
   </div>
 </div>
 <div id="toasts"></div>
-<script defer src="app.js?v=faq-presets-hotfix-20260929"></script>
+<script defer src="app.js?v=cleanup-20260929"></script>
 
 </body>
 </html>

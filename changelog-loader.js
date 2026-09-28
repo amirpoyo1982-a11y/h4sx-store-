@@ -1,54 +1,34 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '26 September 2026',
-  time: '12:45 AM (MYT)',
-  version: 'v5.3',
+  date: '29 September 2026',
+  time: '2:05 AM (MYT)',
+  version: 'v5.4',
   sections: [
     {
       type: 'added',
-      title: 'Ciri Baharu',
+      title: 'Baharu',
       items: [
         {
-          icon: 'fa-receipt',
-          text: '<strong>Salin nombor transaksi</strong> terus daripada rekod pembelian.'
-        },
-        {
-          icon: 'fa-cart-shopping',
-          text: '<strong>Troli lebih lengkap</strong> dengan pilihan item, kuantiti dan ringkasan pesanan.'
+          icon: 'fa-eye',
+          text: '<strong>Kawalan paparan ulasan</strong> membolehkan senarai review ditunjuk atau disorok.'
         },
         {
           icon: 'fa-link',
-          text: '<strong>Pautan promo terus</strong> membuka produk dan mengisi kod secara automatik.'
-        },
-        {
-          icon: 'fa-copy',
-          text: '<strong>Salin deskripsi produk</strong> dengan satu tekan.'
-        },
-        {
-          icon: 'fa-eye-slash',
-          text: '<strong>Ruang ulasan boleh dipapar atau disorok</strong> tanpa membuang butang hantar dan salin pautan.'
+          text: '<strong>Hantar dan salin pautan ulasan</strong> kekal tersedia walaupun senarai review disorok.'
         }
       ]
     },
     {
       type: 'fixed',
-      title: 'Penambahbaikan',
+      title: 'Dikemas Kini',
       items: [
         {
-          icon: 'fa-bolt',
-          text: '<strong>Website lebih ringan</strong> selepas fungsi lama dan proses latar yang tidak diperlukan dibersihkan.'
-        },
-        {
-          icon: 'fa-mobile-screen',
-          text: '<strong>Susun atur responsif</strong> kini lebih kemas pada komputer dan telefon.'
-        },
-        {
           icon: 'fa-clock',
-          text: '<strong>Promo lebih stabil</strong> termasuk masa, kuota dan harga selepas halaman dimuat semula.'
+          text: '<strong>Waktu operasi</strong> kini lebih kemas, jelas dan mesra telefon.'
         },
         {
-          icon: 'fa-store',
-          text: '<strong>Status waktu operasi diperbaharui</strong> dengan paparan yang lebih kemas dan jelas.'
+          icon: 'fa-window-maximize',
+          text: '<strong>Changelog lebih kecil</strong> supaya mudah dibaca tanpa menutup terlalu banyak skrin.'
         }
       ]
     },
@@ -58,15 +38,11 @@ const CHANGELOG_DATA = {
       items: [
         {
           icon: 'fa-truck-fast',
-          text: '<strong>Paparan Delivery Live</strong> telah dibuang untuk menjadikan halaman utama lebih ringkas.'
-        },
-        {
-          icon: 'fa-code',
-          text: '<strong>Alat bantuan lama</strong> yang tidak digunakan telah dibersihkan.'
+          text: '<strong>Delivery Live</strong>, penukar mata wang dan kalkulator harga dibuang.'
         },
         {
           icon: 'fa-grip-lines',
-          text: '<strong>Bar teks bergerak lama</strong> telah dibuang daripada bahagian atas website.'
+          text: '<strong>Bar teks bergerak</strong> serta alat lama yang tidak diperlukan dibersihkan.'
         }
       ]
     }
