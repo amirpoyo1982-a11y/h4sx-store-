@@ -808,10 +808,18 @@ function uniqueTextOptions(values) {
   });
 }
 
-function fillDataList(id, values) {
-  const list = byId(id);
-  if (!list) return;
-  list.innerHTML = uniqueTextOptions(values).map(value => '<option value="' + escapeHtml(value) + '"></option>').join('');
+function fillChoicePicker(id, values, placeholder) {
+  const picker = byId(id);
+  if (!picker) return;
+  picker.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' + uniqueTextOptions(values).map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join('');
+}
+
+function selectPickerValue(id, value) {
+  const picker = byId(id);
+  if (!picker) return;
+  const wanted = String(value || '').trim().toLocaleLowerCase();
+  const option = Array.from(picker.options).find(item => item.value.trim().toLocaleLowerCase() === wanted);
+  picker.value = option?.value || '';
 }
 
 function selectedProductGame() {
@@ -822,19 +830,50 @@ function selectedProductGame() {
 function refreshClassificationOptions() {
   const gameNames = games.map(game => game.name);
   const platforms = games.map(game => game.platform);
-  fillDataList('p-game-options', gameNames);
-  fillDataList('g-name-options', gameNames);
-  fillDataList('p-platform-options', platforms);
-  fillDataList('g-platform-options', platforms);
+  fillChoicePicker('p-game-picker', gameNames, 'Pilih game...');
+  fillChoicePicker('g-name-picker', gameNames, 'Pilih game...');
+  fillChoicePicker('p-platform-picker', platforms, 'Pilih platform...');
+  fillChoicePicker('g-platform-picker', platforms, 'Pilih platform...');
+  syncClassificationPickers();
+}
+
+function syncClassificationPickers() {
+  selectPickerValue('p-game-picker', byId('p-game').value);
+  selectPickerValue('p-platform-picker', byId('p-platform').value);
+  selectPickerValue('g-name-picker', byId('g-name').value);
+  selectPickerValue('g-platform-picker', byId('g-platform').value);
 }
 
 function syncPlatformFromProductGame() {
   const selectedGame = selectedProductGame();
   const detectedPlatform = String(selectedGame?.platform || '').trim();
-  if (detectedPlatform) byId('p-platform').value = detectedPlatform;
+  if (detectedPlatform) {
+    byId('p-platform').value = detectedPlatform;
+    selectPickerValue('p-platform-picker', detectedPlatform);
+  }
 }
 
-byId('p-game').addEventListener('input', syncPlatformFromProductGame);
+byId('p-game').addEventListener('input', () => {
+  selectPickerValue('p-game-picker', byId('p-game').value);
+  syncPlatformFromProductGame();
+});
+byId('p-platform').addEventListener('input', () => selectPickerValue('p-platform-picker', byId('p-platform').value));
+byId('g-name').addEventListener('input', () => selectPickerValue('g-name-picker', byId('g-name').value));
+byId('g-platform').addEventListener('input', () => selectPickerValue('g-platform-picker', byId('g-platform').value));
+byId('p-game-picker').addEventListener('change', event => {
+  if (!event.currentTarget.value) return;
+  byId('p-game').value = event.currentTarget.value;
+  syncPlatformFromProductGame();
+});
+byId('p-platform-picker').addEventListener('change', event => {
+  if (event.currentTarget.value) byId('p-platform').value = event.currentTarget.value;
+});
+byId('g-name-picker').addEventListener('change', event => {
+  if (event.currentTarget.value) byId('g-name').value = event.currentTarget.value;
+});
+byId('g-platform-picker').addEventListener('change', event => {
+  if (event.currentTarget.value) byId('g-platform').value = event.currentTarget.value;
+});
 
 function setEditorMode(mode) {
   const productActive = mode === 'product';
@@ -911,6 +950,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-game').value = item.game || item.gameGroup || '';
   byId('p-platform').value = item.platform || '';
   if (!byId('p-platform').value) syncPlatformFromProductGame();
+  syncClassificationPickers();
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
   byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
   byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
@@ -941,6 +981,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   setEditorMode('game');
   refreshClassificationOptions();
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
+  syncClassificationPickers();
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-img').value = item.img || item.image || item.video || '';
   const consultation = readConsultation(item);
