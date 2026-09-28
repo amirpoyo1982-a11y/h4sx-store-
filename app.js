@@ -284,7 +284,6 @@ function openAiHelper() {
   if (!modal) return;
   modal.classList.add('show');
   document.getElementById('ai-float-bubble')?.classList.add('is-hidden');
-  setTimeout(() => document.getElementById('ai-helper-input')?.focus(), 80);
 }
 function closeAiHelper() {
   const modal = document.getElementById('ai-helper-modal');
@@ -293,9 +292,7 @@ function closeAiHelper() {
   document.getElementById('ai-float-bubble')?.classList.remove('is-hidden');
 }
 function askAiPreset(text) {
-  const input = document.getElementById('ai-helper-input');
-  if (input) input.value = text;
-  askAiHelper();
+  askAiHelper(text);
 }
 const aiChatHistory = [];
 function appendAiMessage(type, text) {
@@ -348,32 +345,6 @@ function formatAiMessage(text) {
     })
     .join('')
     .replace(/\n/g, '<br>');
-}
-function aiCatalogSnapshot() {
-  const input = document.getElementById('ai-helper-input');
-  const query = String(input?.value || '').toLowerCase();
-  const words = query.split(/[^a-z0-9]+/i).filter(word => word.length > 2);
-  const scored = inventory.map((item, index) => {
-    const haystack = [item.name, item.game, item.platform, item.gameGroup, item.subcategory, item.desc]
-      .map(value => String(value || '').toLowerCase())
-      .join(' ');
-    const score = words.reduce((total, word) => total + (haystack.includes(word) ? 1 : 0), 0);
-    return { item, index, score };
-  });
-  return scored
-    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
-    .slice(0, 120)
-    .map(({ item }) => ({
-    id: item.id,
-    name: item.name,
-    game: item.game,
-    platform: item.platform || inferPlatform(item),
-    gameGroup: item.gameGroup,
-    subcategory: item.subcategory,
-    price: Number(item.price || 0),
-    stock: Number(item.stock || 0),
-    desc: String(item.desc || '').slice(0, 220)
-  }));
 }
 function helperIncludes(text, words) {
   const lower = String(text || '').toLowerCase();
@@ -454,38 +425,21 @@ function getLocalHelperAnswer(question) {
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
 }
-function askAiHelper() {
-  const input = document.getElementById('ai-helper-input');
-  const answer = document.getElementById('ai-helper-answer');
-  const btn = document.getElementById('ai-helper-send');
-  const question = (input?.value || '').trim();
-  if (!question) { toast('Tulis soalan dulu', true); return; }
+function askAiHelper(presetQuestion) {
+  const question = String(presetQuestion || '').trim();
+  if (!question) return;
   appendAiMessage('user', question);
   aiChatHistory.push({ role: 'customer', text: question });
   while (aiChatHistory.length > 8) aiChatHistory.shift();
-  input.value = '';
   const thinking = appendAiMessage('bot', 'Sekejap ya, saya semak info H4SX dulu...');
   setAiTypingBubble(thinking);
-  if (answer) answer.textContent = 'Helper sedang semak...';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
   window.setTimeout(() => {
     const finalAnswer = getLocalHelperAnswer(question);
     typeAiMessage(thinking, finalAnswer);
     aiChatHistory.push({ role: 'assistant', text: finalAnswer });
     while (aiChatHistory.length > 8) aiChatHistory.shift();
-    if (answer) answer.innerHTML = formatAiMessage(finalAnswer);
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>'; }
   }, 120);
 }
-document.addEventListener('DOMContentLoaded', () => {
-  const aiInput = document.getElementById('ai-helper-input');
-  aiInput?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      askAiHelper();
-    }
-  });
-});
 
 function getReceiptItemRows() {
   const rows = [];
