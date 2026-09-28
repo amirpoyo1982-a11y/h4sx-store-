@@ -6,11 +6,18 @@
   <meta name="h4sx-build" content="2026-07-13-update-dot-2"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
+  <meta name="theme-color" content="#0ea5e9">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="H4SX">
   <meta property="og:title" content="H4SX STORE | Malaysia Item Roblox">
   <meta property="og:description" content="Semak katalog produk digital, harga dan stok terkini di H4SX STORE Malaysia.">
   <link rel="canonical" href="https://www.h4sxmy.xyz/">
   <meta property="og:url" content="https://www.h4sxmy.xyz/">
   <link rel="icon" type="image/png" href="https://i.imgur.com/cLPulXQ.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/icons/h4sx-app-192.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -48,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=cleanup-20260929">
+  <link rel="stylesheet" href="styles.css?v=h4sx-review-toggle-20260926">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -101,7 +108,7 @@
       <div class="changelog-title" id="changelog-title">Apa Yang Baru - H4SX STORE</div>
       <div class="changelog-datetime" id="changelog-datetime">
         <i class="fa-regular fa-calendar"></i>
-        <span id="changelog-date-text">26 July 2026</span>
+        <span id="changelog-date-text">25 September 2026</span>
         <i class="fa-regular fa-clock"></i>
         <span id="changelog-time-text">Terkini</span>
       </div>
@@ -118,7 +125,7 @@
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=cleanup-20260929"></script>
+<script defer src="changelog-loader.js?v=v5.3-review-toggle"></script>
 <div class="site-header-nav-wrap">
 <!-- NAV -->
 <nav id="main-nav">
@@ -289,8 +296,8 @@
       </div>
     </section>
     <div class="div"></div>
-    <section id="reviews" class="section-panel reviews-list-hidden" style="margin-bottom:32px">
-      <div class="sh reveal"><div class="review-section-heading"><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button></div></div>
+    <section id="reviews" class="section-panel" style="margin-bottom:32px">
+      <div class="sh reveal"><div><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button><a href="https://review.h4sxmy.xyz/" target="_blank" class="review-all-btn"><i class="fa-solid fa-comments"></i><span><strong>Lihat Semua Review</strong><small>review.h4sxmy.xyz</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div>
       <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
         <div class="review-summary-card">
           <span class="review-summary-label">Purata Rating</span>
@@ -484,8 +491,8 @@
   <div class="bh-inner">
     <div class="bh-icon"><i class="fa-solid fa-store"></i></div>
     <div class="bh-text">
-      <div class="bh-kicker">STATUS KEDAI</div>
-      <div class="bh-title">Waktu Operasi H4SX</div>
+      <div class="bh-eyebrow">H4SX STORE <span>•</span> WAKTU MALAYSIA</div>
+      <div class="bh-title-row"><div class="bh-title">Status Kedai</div><span class="bh-live-time" id="bh-live-time">--:--</span></div>
       <div class="bh-desc" id="business-hours-text">Menyemak waktu operasi...</div>
     </div>
     <div class="bh-status" id="bh-status">
@@ -516,43 +523,39 @@
       </div>
       <button class="ai-helper-close" onclick="closeAiHelper()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="ai-chat-status"><span></span> FAQ pantas: pilih bantuan yang anda perlukan.</div>
+    <div class="ai-chat-status"><span></span> Helper pantas tanpa API: cara beli, stok, harga, resit & support.</div>
     <div class="ai-helper-suggestions">
-      <button onclick="askAiPreset('cheap')">Murah</button>
-      <button onclick="askAiPreset('buy')">Cara beli</button>
-      <button onclick="askAiPreset('process')">Proses</button>
-      <button onclick="askAiPreset('receipt')">Resit</button>
-      <button onclick="askAiPreset('safe')">Safe</button>
-      <button onclick="askAiPreset('review')">Review</button>
-      <button onclick="askAiPreset('channel')">Channel</button>
-      <button onclick="askAiPreset('admin')">Admin</button>
+      <button onclick="askAiPreset('Harga paling murah apa?')">Murah</button>
+      <button onclick="askAiPreset('Macam mana cara beli dekat H4SX?')">Cara beli</button>
+      <button onclick="askAiPreset('Berapa lama proses order?')">Proses</button>
+      <button onclick="askAiPreset('Lepas bayar saya kena buat apa?')">Resit</button>
+      <button onclick="askAiPreset('Beli dekat H4SX safe tak?')">Safe</button>
+      <button onclick="askAiPreset('Boleh bagi link review pelanggan?')">Review</button>
+      <button onclick="askAiPreset('Boleh bagi link channel WhatsApp H4SX?')">Channel</button>
+      <button onclick="askAiPreset('Saya nak tanya admin untuk maklumat lanjut.')">Admin</button>
     </div>
     <div class="ai-chat-messages" id="ai-chat-messages">
-      <div class="ai-msg ai-msg-bot">Pilih salah satu butang di atas untuk melihat maklumat H4SX.</div>
+      <div class="ai-msg ai-msg-bot">Hai, saya H4SX Helper. Tanya pasal cara beli, stok, harga, resit, checkout, review, channel WhatsApp atau link website H4SX.</div>
     </div>
+    <div class="ai-chat-compose">
+      <textarea id="ai-helper-input" maxlength="500" placeholder="Tanya H4SX... contoh: lepas bayar kena buat apa?"></textarea>
+      <button class="ai-helper-send" id="ai-helper-send" onclick="askAiHelper()" aria-label="Hantar soalan"><i class="fa-solid fa-paper-plane"></i></button>
+    </div>
+    <div class="ai-helper-answer" id="ai-helper-answer" hidden></div>
   </aside>
 </div>
 <!-- CART -->
 <div class="overlay" id="cart-overlay" onclick="ocClose(event)">
   <div class="cart-box">
     <div class="cart-head">
-      <div class="cart-head-left"><span class="cart-kicker">H4SX STORE</span><span class="cart-heading">Troli Belanja</span><span class="cart-count-pill" id="cart-pill">0</span></div>
+      <div class="cart-head-left"><span class="cart-heading">Troli Belanja</span><span class="cart-count-pill" id="cart-pill">0</span></div>
       <div class="cart-head-right"><button class="cart-clear" onclick="clearCart()"><i class="fa-solid fa-trash"></i> Kosongkan</button><button class="cart-x" onclick="toggleCart()" aria-label="Tutup troli"><i class="fa-solid fa-xmark"></i></button></div>
     </div>
-    <div class="cart-layout">
-      <section class="cart-list-panel">
-        <div class="cart-select-bar"><label><input id="cart-select-all" type="checkbox" onchange="toggleCartSelectAll(this.checked)"><span>Pilih semua item</span></label><strong id="cart-selected-count">0 dipilih</strong></div>
-        <div id="cart-body" class="cart-body"></div>
-      </section>
-      <aside class="cart-foot">
-        <div class="cart-summary-title">Ringkasan Pesanan</div>
-        <div class="cart-summary-line"><span>Item dipilih</span><strong id="cart-summary-count">0</strong></div>
-        <div class="cart-summary-line"><span>Yuran platform</span><strong>RM0.00</strong></div>
-        <div class="ct-row"><span class="ct-l">Jumlah</span><span class="ct-v" id="cart-total">RM0</span></div>
-        <div class="cart-safe-note"><i class="fa-solid fa-shield-halved"></i><span>Admin akan semak stok dan jumlah akhir sebelum pembayaran.</span></div>
-        <button type="button" class="btn-cart-share" id="cart-share-btn" onclick="shareCartItems()"><i class="fa-solid fa-share-nodes"></i> Kongsi item dipilih</button>
-        <button class="btn-proc whatsapp-buy" id="cart-checkout-btn" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Beli item dipilih</button>
-      </aside>
+    <div id="cart-body" class="cart-body"></div>
+    <div class="cart-foot">
+      <div class="ct-row"><span class="ct-l">Jumlah</span><span class="ct-v" id="cart-total">RM0</span></div>
+      <button type="button" class="btn-cart-share" id="cart-share-btn" onclick="shareCartItems()"><i class="fa-solid fa-share-nodes"></i> Kongsi Item Dalam Cart</button>
+      <button class="btn-proc whatsapp-buy" id="cart-checkout-btn" onclick="sendCartToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Troli ke WhatsApp</button>
     </div>
   </div>
 </div>
@@ -618,7 +621,7 @@
         </div>
       </div>
       <div class="product-modal-summary" id="product-modal-summary"></div>
-      <div class="product-modal-desc-label">Description</div>
+      <div class="product-modal-desc-head"><div class="product-modal-desc-label">Description</div><button type="button" onclick="copyModalProductDescription()"><i class="fa-regular fa-copy"></i> Copy Description</button></div>
       <div id="product-modal-desc" class="product-modal-desc"></div>
       <div class="product-modal-trust">
         <div class="pm-trust-item"><i class="fa-solid fa-bolt"></i>Proses Pantas</div>
@@ -715,8 +718,7 @@
           <button type="button" onclick="loadReviewShowcaseConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
         <form class="review-showcase-admin-form" onsubmit="saveReviewShowcaseSettings(event)">
-          <label class="vote-admin-toggle"><input id="review-section-admin-active" type="checkbox"><span></span><b>Paparkan senarai ulasan di halaman utama</b></label>
-          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan notis ulasan automatik</b></label>
+          <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan ulasan di website</b></label>
           <label>Ulasan bertukar setiap
             <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
           </label>
@@ -773,8 +775,9 @@
     <iframe id="catalog-control-frame" title="Firebase Catalog Control" loading="lazy"></iframe>
   </div>
 </div>
+<button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=cleanup-20260929"></script>
+<script defer src="app.js?v=h4sx-review-toggle-20260926"></script>
 
 </body>
 </html>
