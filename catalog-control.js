@@ -188,6 +188,7 @@ function startListeners() {
   database.ref(ROOT + '/games').on('value', snapshot => {
     games = asArray(snapshot.val());
     renderGames();
+    refreshProductClassificationOptions();
     byId('game-count').textContent = games.length;
     markSynced();
   }, realtimeError);
@@ -761,6 +762,48 @@ function collectEditorPayload() {
   return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
 }
 
+function uniqueTextOptions(values) {
+  const seen = new Set();
+  return values.map(value => String(value || '').trim()).filter(value => {
+    const key = value.toLocaleLowerCase();
+    if (!value || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function fillAutoSelect(select, values, currentValue, placeholder) {
+  const current = String(currentValue || '').trim();
+  const options = uniqueTextOptions(values);
+  if (current && !options.some(value => value.toLocaleLowerCase() === current.toLocaleLowerCase())) options.unshift(current);
+  select.innerHTML = '<option value="">' + escapeHtml(placeholder) + '</option>' + options.map(value => '<option value="' + escapeHtml(value) + '">' + escapeHtml(value) + '</option>').join('');
+  const exact = options.find(value => value.toLocaleLowerCase() === current.toLocaleLowerCase());
+  select.value = exact || '';
+}
+
+function selectedProductGame() {
+  const selected = byId('p-game').value.trim().toLocaleLowerCase();
+  return games.find(game => String(game.name || '').trim().toLocaleLowerCase() === selected) || null;
+}
+
+function refreshProductClassificationOptions(gameValue = byId('p-game').value, platformValue = byId('p-platform').value) {
+  const gameNames = games.map(game => game.name);
+  fillAutoSelect(byId('p-game'), gameNames, gameValue, games.length ? 'Pilih game / kategori' : 'Tambah game dahulu');
+  const selectedGame = selectedProductGame();
+  const platforms = uniqueTextOptions([selectedGame?.platform, ...games.map(game => game.platform)]);
+  const effectivePlatform = String(platformValue || selectedGame?.platform || '').trim();
+  fillAutoSelect(byId('p-platform'), platforms, effectivePlatform, platforms.length ? 'Pilih platform' : 'Tiada platform ditetapkan');
+}
+
+function syncPlatformFromProductGame() {
+  const selectedGame = selectedProductGame();
+  const detectedPlatform = String(selectedGame?.platform || '').trim();
+  const platforms = uniqueTextOptions([detectedPlatform, ...games.map(game => game.platform)]);
+  fillAutoSelect(byId('p-platform'), platforms, detectedPlatform, platforms.length ? 'Pilih platform' : 'Tiada platform ditetapkan');
+}
+
+byId('p-game').addEventListener('change', syncPlatformFromProductGame);
+
 function showItemPreview(mode, item) {
   const image = item.img || item.image || item.poster || '';
   const isVideo = /\.(mp4|webm|mov)(\?|#|$)/i.test(image);
@@ -822,7 +865,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('editor-title').textContent = item.name || 'Produk baru';
   byId('product-fields').hidden = false; byId('game-fields').hidden = true;
   byId('p-id').value = item.id ?? nextProductId(); byId('p-name').value = item.name || '';
-  byId('p-game').value = item.game || item.gameGroup || ''; byId('p-platform').value = item.platform || '';
+  refreshProductClassificationOptions(item.game || item.gameGroup || '', item.platform || '');
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
   byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
   byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
@@ -1055,13 +1098,19 @@ function renderHealthResults(issues) {
   }).join('') : '<div class="health-clean"><i class="fa-solid fa-circle-check"></i><strong>Semua nampak sihat</strong><span>Tiada masalah data utama dikesan.</span></div>';
 }
 
-byId('run-health-check').addEventListener('click', event => {
-  setBusy(event.currentTarget, true, 'Scan...');
-  window.setTimeout(() => {
+byId('run-health-check').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  setBusy(button, true, 'Scan...');
+  try {
+    await new Promise(resolve => window.setTimeout(resolve, 120));
     const issues = runHealthChecks();
-    setBusy(event.currentTarget, false);
     notify(issues.length ? 'Scan selesai. ' + issues.length + ' perkara dijumpai.' : 'Scan selesai. Semua sihat.');
-  }, 120);
+  } catch (error) {
+    console.error('Health scan failed:', error);
+    notify(error?.message || 'Scan gagal. Cuba semula.', true);
+  } finally {
+    setBusy(button, false);
+  }
 });
 
 document.addEventListener('click', event => {
