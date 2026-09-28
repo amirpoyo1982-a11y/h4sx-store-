@@ -378,7 +378,7 @@ const AI_HELPER_PRESETS = {
   },
   channel: {
     label: 'Channel H4SX',
-    answer: 'Channel WhatsApp rasmi H4SX: ' + H4SX_CHANNEL_URL
+    answer: () => 'Channel WhatsApp rasmi H4SX: ' + (H4SX_CHANNEL_URL || 'https://wa.me/H4SXMY')
   },
   admin: {
     label: 'Hubungi admin',
@@ -387,7 +387,7 @@ const AI_HELPER_PRESETS = {
 };
 function askAiPreset(key) {
   const preset = AI_HELPER_PRESETS[key];
-  let answer = preset?.answer || '';
+  let answer = typeof preset?.answer === 'function' ? preset.answer() : (preset?.answer || '');
   let label = preset?.label || '';
   if (key === 'cheap') {
     label = 'Item paling murah';
