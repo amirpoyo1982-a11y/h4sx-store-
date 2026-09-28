@@ -9,6 +9,9 @@ const firebaseConfig = {
 };
 const ROOT = 'store';
 const IMGBB_KEY_STORAGE = 'h4sx_imgbb_api_key';
+const DRAFT_STORAGE_KEY = 'h4sx_catalog_drafts_v1';
+const UNDO_STORAGE_KEY = 'h4sx_catalog_undo_v1';
+const UNDO_LIMIT = 8;
 const OPERATION_TIMEOUT_MS = 20000;
 const GIST = {
   inventory: 'https://gist.githubusercontent.com/amirpoyo1982-a11y/5ed3872290715d7833e788c7b0014f79/raw/inventory.json',
@@ -32,12 +35,15 @@ let toastTimer = null;
 let productImageFile = null;
 let gameImageFile = null;
 let editingPromoCode = '';
+let activeDraftId = '';
+let undoInProgress = false;
 
 const $ = selector => document.querySelector(selector);
 const byId = id => document.getElementById(id);
 const asArray = value => Array.isArray(value) ? value.filter(Boolean) : (value && typeof value === 'object' ? Object.values(value).filter(Boolean) : []);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
 const numberOrBlank = value => value === '' || value === null || value === undefined ? null : Number(value);
+const deepClone = value => value === undefined ? null : JSON.parse(JSON.stringify(value));
 
 function notify(message, bad = false) {
   const el = byId('toast');
@@ -91,10 +97,81 @@ function storeMetaUpdates() {
   };
 }
 
-async function saveStorePath(path, value, message) {
+function readStoredList(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(value) ? value : [];
+  } catch (error) { return []; }
+}
+
+function writeStoredList(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    if (key === UNDO_STORAGE_KEY && value.length > 2) localStorage.setItem(key, JSON.stringify(value.slice(-2)));
+    else throw error;
+  }
+}
+
+function updateUndoButton() {
+  const button = byId('undo-last');
+  if (!button) return;
+  const history = readStoredList(UNDO_STORAGE_KEY);
+  const latest = history.at(-1);
+  button.disabled = !latest || undoInProgress;
+  button.title = latest ? 'Batalkan: ' + latest.label : 'Tiada perubahan untuk dibatalkan';
+  const label = button.querySelector('span');
+  if (label) label.textContent = latest ? 'Undo: ' + latest.label : 'Undo';
+}
+
+function rememberUndo(path, before, label) {
+  const history = readStoredList(UNDO_STORAGE_KEY);
+  history.push({ id:Date.now() + '-' + Math.random().toString(36).slice(2, 7), path, before:deepClone(before), label, createdAt:new Date().toISOString() });
+  try { writeStoredList(UNDO_STORAGE_KEY, history.slice(-UNDO_LIMIT)); }
+  catch (error) { console.warn('Undo history tidak dapat disimpan pada browser.', error); }
+  updateUndoButton();
+}
+
+async function undoLastChange() {
+  const history = readStoredList(UNDO_STORAGE_KEY);
+  const entry = history.at(-1);
+  if (!entry || undoInProgress) return notify('Tiada perubahan untuk Undo.', true);
+  if (!confirm('Batalkan perubahan terakhir: "' + entry.label + '"?')) return;
+  const button = byId('undo-last');
+  undoInProgress = true;
+  setBusy(button, true, 'Undo...');
+  try {
+    if (entry.path === '') {
+      await withTimeout(database.ref(ROOT).set(entry.before || {}), 'Undo Firebase', 35000);
+    } else {
+      const updates = {...storeMetaUpdates(), [entry.path]:entry.before};
+      await withTimeout(database.ref(ROOT).update(updates), 'Undo Firebase');
+    }
+    history.pop();
+    writeStoredList(UNDO_STORAGE_KEY, history);
+    notify('Undo siap: ' + entry.label);
+  } catch (error) { notify(error.message, true); }
+  finally {
+    undoInProgress = false;
+    setBusy(button, false);
+    updateUndoButton();
+  }
+}
+
+async function saveStorePath(path, value, message, undoLabel = message || ('Ubah ' + path)) {
   if (!auth.currentUser) throw new Error('Sesi admin sudah tamat. Log masuk semula.');
+  const before = (await withTimeout(database.ref(ROOT + '/' + path).once('value'), 'Sediakan Undo')).val();
   const updates = {...storeMetaUpdates(), [path]:value};
   await withTimeout(database.ref(ROOT).update(updates), 'Simpan Firebase');
+  rememberUndo(path, before, undoLabel.replace(/[.!]+$/, ''));
+  if (message) notify(message);
+}
+
+async function replaceStoreRoot(value, label, message) {
+  if (!auth.currentUser) throw new Error('Sesi admin sudah tamat. Log masuk semula.');
+  const before = (await withTimeout(database.ref(ROOT).once('value'), 'Sediakan Undo')).val() || {};
+  await withTimeout(database.ref(ROOT).set(value), label, 35000);
+  rememberUndo('', before, label);
   if (message) notify(message);
 }
 
@@ -140,9 +217,11 @@ function markSynced() {
 auth.onAuthStateChanged(user => {
   byId('login-view').hidden = !!user;
   byId('control-view').hidden = !user;
-  if (user) startListeners();
+  if (user) { startListeners(); renderDrafts(); updateUndoButton(); }
   else stopListeners();
 });
+
+byId('undo-last').addEventListener('click', undoLastChange);
 
 byId('login-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -568,6 +647,23 @@ document.addEventListener('click', async event => {
   if (!actionButton) return;
   const index = Number(actionButton.dataset.index);
   const action = actionButton.dataset.action;
+  if (action.endsWith('-draft')) {
+    const draft = readDrafts().find(item => item.id === actionButton.dataset.draftId);
+    if (!draft) return notify('Draft tidak dijumpai.', true);
+    if (action === 'preview-draft') return showItemPreview(draft.mode, draft.item);
+    if (action === 'edit-draft') {
+      const targetIndex = draftTargetIndex(draft);
+      return draft.mode === 'game'
+        ? openGameEditor(draft.item, targetIndex >= 0 ? targetIndex : null, draft.id)
+        : openProductEditor(draft.item, targetIndex >= 0 ? targetIndex : null, draft.id);
+    }
+    if (action === 'publish-draft') return publishDraft(draft, actionButton);
+    if (action === 'delete-draft' && confirm('Buang draft "' + (draft.item?.name || '') + '"?')) {
+      writeDrafts(readDrafts().filter(item => item.id !== draft.id));
+      notify('Draft dibuang.');
+    }
+    return;
+  }
   if (action === 'edit-promo') return openPromoEditor(decodeURIComponent(actionButton.dataset.code || ''));
   if (action === 'delete-promo') {
     const code = decodeURIComponent(actionButton.dataset.code || '');
@@ -609,14 +705,119 @@ function nextProductId() {
   return id;
 }
 
+function readDrafts() { return readStoredList(DRAFT_STORAGE_KEY); }
+
+function writeDrafts(drafts) {
+  writeStoredList(DRAFT_STORAGE_KEY, drafts.slice(-30));
+  renderDrafts();
+}
+
+function draftTargetIndex(draft) {
+  if (draft.mode === 'product') {
+    return products.findIndex(item => String(item.id) === String(draft.targetKey));
+  }
+  return games.findIndex(item => String(item.name || '').toLowerCase() === String(draft.targetKey || '').toLowerCase());
+}
+
+function renderDrafts() {
+  const drafts = readDrafts().sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
+  const list = byId('draft-list');
+  if (byId('draft-count')) byId('draft-count').textContent = drafts.length;
+  if (!list) return;
+  list.innerHTML = drafts.length ? drafts.map(draft => {
+    const item = draft.item || {};
+    const image = item.img || item.image || item.poster || '';
+    const media = image && !/\.(mp4|webm|mov)(\?|#|$)/i.test(image)
+      ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
+      : '<span class="item-placeholder"><i class="fa-solid ' + (draft.mode === 'game' ? 'fa-gamepad' : 'fa-box') + '"></i></span>';
+    const date = new Date(draft.savedAt).toLocaleString('ms-MY', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return '<article class="item-row draft-row">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Draft tanpa nama') + '</strong><span>' + (draft.mode === 'game' ? 'Game' : 'Produk') + ' • Disimpan ' + escapeHtml(date) + '</span></div><div class="row-actions"><button data-action="preview-draft" data-draft-id="' + escapeHtml(draft.id) + '" title="Preview"><i class="fa-solid fa-eye"></i></button><button data-action="edit-draft" data-draft-id="' + escapeHtml(draft.id) + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button class="publish" data-action="publish-draft" data-draft-id="' + escapeHtml(draft.id) + '" title="Publish"><i class="fa-solid fa-cloud-arrow-up"></i></button><button class="danger" data-action="delete-draft" data-draft-id="' + escapeHtml(draft.id) + '" title="Buang"><i class="fa-solid fa-trash"></i></button></div></article>';
+  }).join('') : '<div class="empty">Belum ada draft. Buka editor produk atau game, kemudian tekan “Simpan Draft”.</div>';
+}
+
+function collectEditorPayload() {
+  let extra;
+  try { extra = JSON.parse(byId('extra-json').value || '{}'); }
+  catch (error) { throw new Error('Field tambahan bukan JSON yang sah.'); }
+  if (!extra || Array.isArray(extra) || typeof extra !== 'object') throw new Error('Field tambahan mesti object JSON.');
+  if (editorMode === 'product') {
+    const rawId = byId('p-id').value.trim();
+    const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+    if (id === '') throw new Error('ID produk diperlukan.');
+    const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
+    if (duplicate) throw new Error('ID produk sudah digunakan.');
+    const isConsultation = byId('p-consultation').checked;
+    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+    if (!item.name || !item.game) throw new Error('Nama produk dan game diperlukan.');
+    if (!isConsultation && (!Number.isFinite(item.price) || item.price < 0)) throw new Error('Harga produk tidak sah.');
+    return { mode:'product', item, index:editingKey, targetKey:editingKey === null ? '' : String(products[editingKey]?.id ?? '') };
+  }
+  const name = byId('g-name').value.trim();
+  if (!name) throw new Error('Nama game diperlukan.');
+  const duplicate = games.some((item, index) => index !== editingKey && String(item.name).toLowerCase() === name.toLowerCase());
+  if (duplicate) throw new Error('Nama game sudah digunakan.');
+  const isConsultation = byId('g-consultation').checked;
+  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+  return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
+}
+
+function showItemPreview(mode, item) {
+  const image = item.img || item.image || item.poster || '';
+  const isVideo = /\.(mp4|webm|mov)(\?|#|$)/i.test(image);
+  const media = image ? (isVideo ? '<video src="' + escapeHtml(image) + '" controls muted></video>' : '<img src="' + escapeHtml(image) + '" alt="">') : '<div class="preview-empty"><i class="fa-solid fa-image"></i><span>Tiada gambar</span></div>';
+  byId('preview-title').textContent = item.name || (mode === 'game' ? 'Preview game' : 'Preview produk');
+  byId('preview-content').innerHTML = '<article class="draft-preview">' + media + '<div><span class="preview-type">' + (mode === 'game' ? 'GAME' : 'PRODUK') + '</span><h3>' + escapeHtml(item.name || 'Tanpa nama') + '</h3>' + (mode === 'product' ? '<strong>RM' + Number(item.price || 0).toFixed(2) + '</strong><small>Stok: ' + escapeHtml(item.stock ?? '-') + ' • ' + escapeHtml(item.game || '-') + '</small>' : '<small>' + escapeHtml(item.platform || '-') + (item.oos ? ' • Soon' : '') + '</small>') + '<p>' + escapeHtml(item.desc || item.description || 'Tiada penerangan.') + '</p></div></article><details class="preview-json"><summary>Lihat data JSON</summary><pre>' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre></details>';
+  byId('preview-modal').hidden = false;
+}
+
+function saveCurrentDraft() {
+  try {
+    const payload = collectEditorPayload();
+    const drafts = readDrafts();
+    const existing = activeDraftId ? drafts.find(draft => draft.id === activeDraftId) : null;
+    const record = { id:existing?.id || (Date.now() + '-' + Math.random().toString(36).slice(2, 8)), mode:payload.mode, targetKey:existing?.targetKey || payload.targetKey, item:payload.item, savedAt:new Date().toISOString() };
+    const next = existing ? drafts.map(draft => draft.id === record.id ? record : draft) : [...drafts, record];
+    activeDraftId = record.id;
+    writeDrafts(next);
+    notify('Draft disimpan. Website belum berubah.');
+  } catch (error) { notify(error.message, true); }
+}
+
+async function publishPayload(payload, message) {
+  if (payload.mode === 'product') {
+    const next = [...products];
+    if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;
+    await saveArray('inventory', next, message || 'Produk dipublish ke website.');
+  } else {
+    const next = [...games];
+    if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;
+    await saveArray('games', next, message || 'Game dipublish ke website.');
+  }
+}
+
+async function publishDraft(draft, button) {
+  const index = draftTargetIndex(draft);
+  if (index < 0 && draft.targetKey) {
+    if (!confirm('Item asal draft ini tidak dijumpai. Publish sebagai item baru?')) return;
+  }
+  const payload = { mode:draft.mode, item:draft.item, index:index >= 0 ? index : null };
+  if (draft.mode === 'product' && payload.index === null && products.some(item => String(item.id) === String(draft.item.id))) return notify('ID produk draft sudah digunakan.', true);
+  if (draft.mode === 'game' && payload.index === null && games.some(item => String(item.name).toLowerCase() === String(draft.item.name).toLowerCase())) return notify('Nama game draft sudah digunakan.', true);
+  await runButtonOperation(button, 'Publish...', async () => {
+    await publishPayload(payload, (draft.mode === 'game' ? 'Game' : 'Produk') + ' draft dipublish ke website.');
+    writeDrafts(readDrafts().filter(item => item.id !== draft.id));
+  });
+}
+
 byId('p-next-id').addEventListener('click', () => {
   const id = nextProductId();
   byId('p-id').value = id;
   notify('ID kosong #' + id + ' sudah dipilih.');
 });
 
-function openProductEditor(item = {}, index = null) {
+function openProductEditor(item = {}, index = null, draftId = '') {
   editorMode = 'product'; editingKey = index;
+  activeDraftId = draftId;
   byId('editor-kicker').textContent = index === null ? 'PRODUK BARU' : 'EDIT PRODUK';
   byId('editor-title').textContent = item.name || 'Produk baru';
   byId('product-fields').hidden = false; byId('game-fields').hidden = true;
@@ -644,8 +845,9 @@ function openProductEditor(item = {}, index = null) {
   byId('editor-modal').hidden = false;
 }
 
-function openGameEditor(item = {}, index = null) {
+function openGameEditor(item = {}, index = null, draftId = '') {
   editorMode = 'game'; editingKey = index;
+  activeDraftId = draftId;
   byId('editor-kicker').textContent = index === null ? 'GAME BARU' : 'EDIT GAME';
   byId('editor-title').textContent = item.name || 'Game baru';
   byId('product-fields').hidden = true; byId('game-fields').hidden = false;
@@ -667,43 +869,40 @@ function openGameEditor(item = {}, index = null) {
   byId('editor-modal').hidden = false;
 }
 
-function closeEditor() { byId('editor-modal').hidden = true; editingKey = null; }
+function closeEditor() { byId('editor-modal').hidden = true; editingKey = null; activeDraftId = ''; }
 byId('editor-close').addEventListener('click', closeEditor);
 byId('editor-cancel').addEventListener('click', closeEditor);
 byId('editor-modal').addEventListener('click', event => { if (event.target === byId('editor-modal')) closeEditor(); });
 
 byId('editor-form').addEventListener('submit', async event => {
   event.preventDefault();
-  let extra;
-  try { extra = JSON.parse(byId('extra-json').value || '{}'); }
-  catch (error) { notify('Field tambahan bukan JSON yang sah.', true); return; }
-  if (!extra || Array.isArray(extra) || typeof extra !== 'object') { notify('Field tambahan mesti object JSON.', true); return; }
   const button = event.submitter;
-  setBusy(button, true, 'Menyimpan...');
+  setBusy(button, true, 'Publish...');
   try {
-    if (editorMode === 'product') {
-      const rawId = byId('p-id').value.trim();
-      const id = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-      const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
-      if (duplicate) throw new Error('ID produk sudah digunakan.');
-      const isConsultation = byId('p-consultation').checked;
-      const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
-      const next = [...products];
-      if (editingKey === null) next.push(item); else next[editingKey] = item;
-      await saveArray('inventory', next, 'Produk disimpan realtime.');
-    } else {
-      const name = byId('g-name').value.trim();
-      const duplicate = games.some((item, index) => index !== editingKey && String(item.name).toLowerCase() === name.toLowerCase());
-      if (duplicate) throw new Error('Nama game sudah digunakan.');
-      const isConsultation = byId('g-consultation').checked;
-      const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
-      const next = [...games];
-      if (editingKey === null) next.push(item); else next[editingKey] = item;
-      await saveArray('games', next, 'Game disimpan realtime.');
-    }
+    const payload = collectEditorPayload();
+    await publishPayload(payload);
+    if (activeDraftId) writeDrafts(readDrafts().filter(draft => draft.id !== activeDraftId));
     closeEditor();
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
+});
+
+byId('editor-save-draft').addEventListener('click', saveCurrentDraft);
+byId('editor-preview').addEventListener('click', () => {
+  try {
+    const payload = collectEditorPayload();
+    showItemPreview(payload.mode, payload.item);
+  } catch (error) { notify(error.message, true); }
+});
+byId('preview-close').addEventListener('click', () => { byId('preview-modal').hidden = true; });
+byId('preview-ok').addEventListener('click', () => { byId('preview-modal').hidden = true; });
+byId('preview-modal').addEventListener('click', event => { if (event.target === byId('preview-modal')) byId('preview-modal').hidden = true; });
+
+byId('clear-drafts').addEventListener('click', () => {
+  if (!readDrafts().length) return notify('Tiada draft untuk dibuang.', true);
+  if (!confirm('Buang semua draft pada browser ini?')) return;
+  writeDrafts([]);
+  notify('Semua draft dibuang.');
 });
 
 function compact(object) {
@@ -777,6 +976,104 @@ byId('save-config').addEventListener('click', async event => {
   finally { setBusy(button, false); }
 });
 
+function validMediaUrl(value) {
+  if (!value) return false;
+  try {
+    const url = new URL(String(value), location.href);
+    return ['http:', 'https:', 'data:'].includes(url.protocol);
+  } catch (error) { return false; }
+}
+
+function runHealthChecks() {
+  const issues = [];
+  const add = (severity, title, detail, action = '') => issues.push({severity, title, detail, action});
+  const productIds = new Map();
+  const gameNames = games.map(item => String(item.name || '').trim().toLowerCase()).filter(Boolean);
+
+  products.forEach((item, index) => {
+    const id = String(item.id ?? '').trim();
+    if (!id) add('error', 'Produk tiada ID', item.name || 'Produk pada kedudukan ' + (index + 1), 'health-edit-product:' + index);
+    else {
+      if (productIds.has(id)) add('error', 'ID produk berganda #' + id, (products[productIds.get(id)]?.name || 'Produk') + ' dan ' + (item.name || 'Produk'), 'health-edit-product:' + index);
+      else productIds.set(id, index);
+    }
+    if (!String(item.name || '').trim()) add('error', 'Nama produk kosong', 'Produk #' + (id || index + 1), 'health-edit-product:' + index);
+    const consultation = item.consultation === true || item.konsultasi === true || item.consult === true;
+    const price = Number(item.price);
+    if (!consultation && (!Number.isFinite(price) || price < 0)) add('error', 'Harga produk tidak sah', (item.name || '#' + id) + ' mempunyai harga ' + String(item.price ?? 'kosong'), 'health-edit-product:' + index);
+    if (item.stock !== undefined && (!Number.isFinite(Number(item.stock)) || Number(item.stock) < 0)) add('error', 'Stok produk tidak sah', item.name || '#' + id, 'health-edit-product:' + index);
+    const image = item.img || item.image || item.poster || item.video;
+    if (!image) add('warning', 'Produk tiada gambar', item.name || '#' + id, 'health-edit-product:' + index);
+    else if (!validMediaUrl(image)) add('error', 'Link gambar produk rosak', item.name || '#' + id, 'health-edit-product:' + index);
+    const group = String(item.game || item.gameGroup || '').trim().toLowerCase();
+    if (!group) add('warning', 'Produk tiada kategori game', item.name || '#' + id, 'health-edit-product:' + index);
+    else if (gameNames.length && !gameNames.some(name => name === group || name.includes(group) || group.includes(name))) add('warning', 'Kategori produk tidak sepadan', (item.name || '#' + id) + ' menggunakan "' + (item.game || item.gameGroup) + '"', 'health-edit-product:' + index);
+    promoSources(item).forEach(promo => {
+      const code = String(promo?.code || promo?.promoCode || '').trim();
+      const discount = Number(promo?.discount ?? promo?.promoDiscount);
+      const type = String(promo?.type ?? promo?.promoType ?? 'percent').toLowerCase();
+      if (!code) add('error', 'Promo tanpa kod', item.name || '#' + id, 'health-edit-product:' + index);
+      if (!Number.isFinite(discount) || discount <= 0 || (type === 'percent' && discount > 100)) add('error', 'Nilai promo tidak sah', (code || 'Promo') + ' pada ' + (item.name || '#' + id), 'health-edit-product:' + index);
+      const starts = Date.parse(String(promo?.promoStartsAt || promo?.promoStartAt || ''));
+      const expires = Date.parse(String(promo?.promoExpiresAt || ''));
+      if (Number.isFinite(starts) && Number.isFinite(expires) && expires <= starts) add('error', 'Masa promo terbalik', (code || 'Promo') + ' tamat sebelum waktu mula', 'health-edit-product:' + index);
+    });
+  });
+
+  const seenGames = new Map();
+  games.forEach((item, index) => {
+    const name = String(item.name || '').trim();
+    const key = name.toLowerCase();
+    if (!name) add('error', 'Nama game kosong', 'Game pada kedudukan ' + (index + 1), 'health-edit-game:' + index);
+    else if (seenGames.has(key)) add('error', 'Nama game berganda', name, 'health-edit-game:' + index);
+    else seenGames.set(key, index);
+    const image = item.img || item.image || item.poster || item.video;
+    if (!image) add('warning', 'Game tiada cover', name || 'Game ' + (index + 1), 'health-edit-game:' + index);
+    else if (!validMediaUrl(image)) add('error', 'Link cover game rosak', name || 'Game ' + (index + 1), 'health-edit-game:' + index);
+  });
+
+  const whatsapp = storeConfig.whatsapp_link || storeConfig.whatsappLink || storeConfig.whatsapp_number || storeConfig.whatsappNumber || storeConfig.contact?.whatsapp || storeConfig.support?.whatsapp;
+  if (!whatsapp) add('warning', 'WhatsApp utama belum ditetapkan', 'Pelanggan mungkin tidak dapat membuka support.', 'health-open-settings');
+  else if (!normalizeAdminWhatsAppLink(whatsapp)) add('error', 'WhatsApp utama tidak sah', String(whatsapp), 'health-open-settings');
+  if (!products.length) add('error', 'Inventory kosong', 'Tiada produk dijumpai dalam Firebase.');
+  if (!games.length) add('error', 'Senarai game kosong', 'Tiada game dijumpai dalam Firebase.');
+
+  renderHealthResults(issues);
+  return issues;
+}
+
+function renderHealthResults(issues) {
+  const errors = issues.filter(item => item.severity === 'error').length;
+  const warnings = issues.filter(item => item.severity === 'warning').length;
+  const summary = byId('health-summary');
+  summary.className = 'health-summary ' + (errors ? 'has-errors' : warnings ? 'has-warnings' : 'is-healthy');
+  summary.innerHTML = '<div><strong>' + errors + '</strong><span>Error</span></div><div><strong>' + warnings + '</strong><span>Amaran</span></div><div><strong>' + products.length + '</strong><span>Produk disemak</span></div><div><strong>' + games.length + '</strong><span>Game disemak</span></div>';
+  const list = byId('health-results');
+  list.innerHTML = issues.length ? issues.map(issue => {
+    const action = issue.action ? '<button class="ghost" data-health-action="' + escapeHtml(issue.action) + '"><i class="fa-solid fa-arrow-right"></i> Buka</button>' : '';
+    return '<article class="health-issue ' + issue.severity + '"><i class="fa-solid ' + (issue.severity === 'error' ? 'fa-circle-xmark' : 'fa-triangle-exclamation') + '"></i><div><strong>' + escapeHtml(issue.title) + '</strong><span>' + escapeHtml(issue.detail) + '</span></div>' + action + '</article>';
+  }).join('') : '<div class="health-clean"><i class="fa-solid fa-circle-check"></i><strong>Semua nampak sihat</strong><span>Tiada masalah data utama dikesan.</span></div>';
+}
+
+byId('run-health-check').addEventListener('click', event => {
+  setBusy(event.currentTarget, true, 'Scan...');
+  window.setTimeout(() => {
+    const issues = runHealthChecks();
+    setBusy(event.currentTarget, false);
+    notify(issues.length ? 'Scan selesai. ' + issues.length + ' perkara dijumpai.' : 'Scan selesai. Semua sihat.');
+  }, 120);
+});
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-health-action]');
+  if (!button) return;
+  const [action, rawIndex] = button.dataset.healthAction.split(':');
+  const index = Number(rawIndex);
+  if (action === 'health-edit-product' && products[index]) return openProductEditor(products[index], index);
+  if (action === 'health-edit-game' && games[index]) return openGameEditor(games[index], index);
+  if (action === 'health-open-settings') document.querySelector('[data-tab="settings"]')?.click();
+});
+
 async function fetchJson(url) {
   const response = await fetchWithTimeout(url + '?t=' + Date.now(), {cache:'no-store'}, 25000);
   if (!response.ok) throw new Error('Gagal baca ' + url + ' (' + response.status + ')');
@@ -826,8 +1123,7 @@ byId('import-gist').addEventListener('click', async event => {
       meta: {migratedAt:firebase.database.ServerValue.TIMESTAMP, updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:auth.currentUser?.email || 'admin', source:'GitHub Gist migration'}
     };
     if (!payload.inventory.length || !payload.games.length) throw new Error('Gist inventory/game kosong; import dibatalkan.');
-    await withTimeout(database.ref(ROOT).set(payload), 'Import Firebase', 35000);
-    notify('Import siap. Website sekarang baca Firebase realtime.');
+    await replaceStoreRoot(payload, 'Import semua Gist', 'Import siap. Website sekarang baca Firebase realtime.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
 });
@@ -854,8 +1150,7 @@ byId('restore-file').addEventListener('change', async event => {
   try {
     const data = JSON.parse(await file.text());
     if (!data || typeof data !== 'object' || !data.inventory || !data.games || !data.config) throw new Error('Format backup tidak lengkap.');
-    await withTimeout(database.ref(ROOT).set(data), 'Pulihkan backup Firebase', 35000);
-    notify('Backup berjaya dipulihkan.');
+    await replaceStoreRoot(data, 'Pulihkan backup Firebase', 'Backup berjaya dipulihkan.');
   } catch (error) { notify(error.message, true); }
   event.target.value = '';
 });

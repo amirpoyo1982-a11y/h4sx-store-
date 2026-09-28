@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=14">
+  <link rel="stylesheet" href="catalog-control.css?v=18">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=17"></script>
+  <script defer src="catalog-control.js?v=18"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -33,13 +33,14 @@
     <section id="control-view" hidden>
       <header class="topbar">
         <div><p class="eyebrow">FIREBASE REALTIME</p><h1>Catalog Control</h1><small id="sync-status">Menyambung...</small></div>
-        <div class="top-actions"><a href="index.htm?preview=1" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Preview</a><button id="logout-btn" class="ghost"><i class="fa-solid fa-right-from-bracket"></i> Log keluar</button></div>
+        <div class="top-actions"><button id="undo-last" class="ghost undo-button" disabled><i class="fa-solid fa-rotate-left"></i><span>Undo</span></button><a href="index.htm?preview=1" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Website</a><button id="logout-btn" class="ghost"><i class="fa-solid fa-right-from-bracket"></i> Log keluar</button></div>
       </header>
 
       <div class="stats">
         <article><i class="fa-solid fa-box"></i><div><strong id="product-count">0</strong><span>Produk</span></div></article>
         <article><i class="fa-solid fa-gamepad"></i><div><strong id="game-count">0</strong><span>Game</span></div></article>
         <article><i class="fa-solid fa-bolt"></i><div><strong>Live</strong><span>Auto update</span></div></article>
+        <article><i class="fa-solid fa-file-pen"></i><div><strong id="draft-count">0</strong><span>Draft</span></div></article>
       </div>
 
       <nav class="tabs" aria-label="Bahagian control">
@@ -47,6 +48,8 @@
         <button data-tab="games"><i class="fa-solid fa-gamepad"></i> Game</button>
         <button data-tab="promos"><i class="fa-solid fa-ticket"></i> Promo Code</button>
         <button data-tab="settings"><i class="fa-solid fa-sliders"></i> Tetapan Kedai</button>
+        <button data-tab="drafts"><i class="fa-solid fa-file-pen"></i> Draft</button>
+        <button data-tab="health"><i class="fa-solid fa-stethoscope"></i> Health Check</button>
         <button data-tab="migration"><i class="fa-solid fa-cloud-arrow-up"></i> Import & Backup</button>
       </nav>
 
@@ -54,6 +57,17 @@
         <div class="panel-head"><div><h2>Inventory</h2><p>Edit stok, harga dan produk; perubahan keluar terus di website.</p></div><button class="primary" id="new-product"><i class="fa-solid fa-plus"></i> Produk baru</button></div>
         <input id="product-search" class="search" placeholder="Cari nama, game atau ID...">
         <div id="product-list" class="item-list"></div>
+      </section>
+
+      <section class="panel" data-panel="drafts">
+        <div class="panel-head"><div><h2>Draft sebelum publish</h2><p>Simpan perubahan tanpa mengubah website. Preview dahulu, kemudian publish bila sudah yakin.</p></div><button class="ghost" id="clear-drafts"><i class="fa-solid fa-trash"></i> Buang semua</button></div>
+        <div id="draft-list" class="item-list"></div>
+      </section>
+
+      <section class="panel" data-panel="health">
+        <div class="panel-head"><div><h2>Pemeriksa kesihatan website</h2><p>Cari data rosak atau tidak lengkap sebelum pelanggan nampak masalah.</p></div><button class="primary" id="run-health-check"><i class="fa-solid fa-stethoscope"></i> Scan sekarang</button></div>
+        <div class="health-summary" id="health-summary"><span>Belum scan</span><p>Tekan “Scan sekarang” untuk memeriksa produk, game, promo dan tetapan kedai.</p></div>
+        <div id="health-results" class="health-results"></div>
       </section>
 
       <section class="panel" data-panel="games">
@@ -147,8 +161,17 @@
         <div class="wide image-upload-box" data-upload-for="game"><input id="g-image-file" type="file" accept="image/*"><button type="button" class="image-remove" id="g-remove-image" title="Buang gambar" aria-label="Buang gambar"><i class="fa-solid fa-xmark"></i></button><div class="image-upload-preview" id="g-image-preview"><i class="fa-solid fa-image"></i><span>Pilih cover game</span></div><div class="image-upload-copy"><strong>Upload cover baru</strong><span>Klik kotak, drag gambar ke sini, atau tekan <kbd>Ctrl</kbd> + <kbd>V</kbd></span></div><button type="button" class="primary" id="g-upload-imgbb"><i class="fa-solid fa-cloud-arrow-up"></i> Upload ImgBB &amp; jadikan link</button><small id="g-upload-status">PNG, JPG, WEBP atau GIF.</small></div>
       </div>
       <label class="editor-label">Field tambahan (JSON)<textarea id="extra-json" class="json-editor small" spellcheck="false">{}</textarea></label>
-      <div class="modal-actions"><button type="button" class="ghost" id="editor-cancel">Batal</button><button type="submit" class="primary"><i class="fa-solid fa-floppy-disk"></i> Simpan</button></div>
+      <div class="modal-actions editor-publish-actions"><button type="button" class="ghost" id="editor-cancel">Batal</button><button type="button" class="ghost" id="editor-save-draft"><i class="fa-solid fa-file-pen"></i> Simpan Draft</button><button type="button" class="ghost" id="editor-preview"><i class="fa-solid fa-eye"></i> Preview</button><button type="submit" class="primary"><i class="fa-solid fa-cloud-arrow-up"></i> Publish Live</button></div>
     </form>
+  </div>
+
+  <div id="preview-modal" class="modal" hidden>
+    <section class="modal-card preview-card" role="dialog" aria-modal="true" aria-labelledby="preview-title">
+      <button type="button" class="modal-close" id="preview-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">PREVIEW DRAFT</p><h2 id="preview-title">Preview</h2>
+      <div id="preview-content"></div>
+      <div class="modal-actions"><button type="button" class="primary" id="preview-ok"><i class="fa-solid fa-check"></i> Tutup preview</button></div>
+    </section>
   </div>
 </body>
 </html>
