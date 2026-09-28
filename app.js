@@ -45,101 +45,6 @@ function initReviewSystemPopup() {
   setTimeout(openReviewSystemPopup, 650);
 }
 
-// --- UI SOUND EFFECTS ---
-// Small synthesized tones keep the interface responsive without loading extra audio files.
-const H4SX_SOUND_FX_KEY = 'h4sx_sound_effects';
-let h4sxSoundContext = null;
-let h4sxSoundReady = false;
-
-function soundEffectsEnabled() {
-  return localStorage.getItem(H4SX_SOUND_FX_KEY) !== 'off';
-}
-
-function updateSoundEffectsButton() {
-  const button = document.getElementById('sound-fx-btn');
-  if (!button) return;
-  const enabled = soundEffectsEnabled();
-  button.classList.toggle('is-muted', !enabled);
-  button.setAttribute('aria-pressed', String(enabled));
-  button.setAttribute('aria-label', enabled ? 'Tutup sound effect' : 'Hidupkan sound effect');
-  button.title = enabled ? 'Sound effect: ON' : 'Sound effect: OFF';
-  button.innerHTML = '<i class="fa-solid ' + (enabled ? 'fa-volume-high' : 'fa-volume-xmark') + '"></i><span class="sound-fx-label">Sound</span>';
-}
-
-function toggleSoundEffects() {
-  const nextEnabled = !soundEffectsEnabled();
-  localStorage.setItem(H4SX_SOUND_FX_KEY, nextEnabled ? 'on' : 'off');
-  updateSoundEffectsButton();
-  if (nextEnabled) playH4sxSound('toggle');
-}
-
-function unlockH4sxSound() {
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContextClass) return null;
-  try {
-    h4sxSoundContext ||= new AudioContextClass();
-    if (h4sxSoundContext.state === 'suspended') h4sxSoundContext.resume().catch(() => {});
-    return h4sxSoundContext;
-  } catch (error) {
-    return null;
-  }
-}
-
-function playH4sxSound(kind = 'tap') {
-  if (!soundEffectsEnabled()) return;
-  const context = unlockH4sxSound();
-  if (!context) return;
-
-  const playPreset = () => {
-    if (context.state !== 'running') return;
-    const presets = {
-      tap: { notes: [520], duration: 0.065, type: 'sine', volume: 0.07 },
-      // Short three-note confirmation. More recognisable on desktop than the old two-tone beep.
-      cart: { notes: [392, 523.25, 659.25], duration: 0.13, type: 'triangle', volume: 0.075 },
-      open: { notes: [390, 540], duration: 0.08, type: 'sine', volume: 0.075 },
-      whatsapp: { notes: [620, 860], duration: 0.1, type: 'sine', volume: 0.1 },
-      toggle: { notes: [660], duration: 0.08, type: 'triangle', volume: 0.085 }
-    };
-    const preset = presets[kind] || presets.tap;
-    const startAt = context.currentTime + 0.005;
-
-    preset.notes.forEach((frequency, index) => {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const noteStart = startAt + index * 0.075;
-      oscillator.type = preset.type;
-      oscillator.frequency.setValueAtTime(frequency, noteStart);
-      gain.gain.setValueAtTime(0.0001, noteStart);
-      gain.gain.exponentialRampToValueAtTime(preset.volume, noteStart + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + preset.duration);
-      oscillator.connect(gain).connect(context.destination);
-      oscillator.start(noteStart);
-      oscillator.stop(noteStart + preset.duration + 0.02);
-    });
-    h4sxSoundReady = true;
-  };
-
-  try {
-    if (context.state === 'suspended') {
-      context.resume().then(playPreset).catch(() => {});
-    } else {
-      playPreset();
-    }
-  } catch (error) {
-    if (h4sxSoundReady) console.warn('Sound effect H4SX tidak dapat dimainkan', error);
-  }
-}
-
-function initSoundEffects() {
-  updateSoundEffectsButton();
-  document.addEventListener('pointerdown', unlockH4sxSound, { once: true, passive: true });
-  document.addEventListener('touchstart', unlockH4sxSound, { once: true, passive: true });
-  document.addEventListener('click', event => {
-    const waLink = event.target.closest('a[href*="wa.me/"]');
-    if (waLink) playH4sxSound('whatsapp');
-  }, { passive: true });
-}
-
 // --- DATE & TIME DISPLAY ---
 function updateDateTime() {
   const now = new Date();
@@ -3995,7 +3900,6 @@ function bootStoreApp() {
   cleanHardRefreshParam();
   applyPrimaryWhatsAppNumber(storeConfig);
   initPwaInstall();
-  initSoundEffects();
   restoreCart();
   updateBadge();
   initCartEventDelegation();
@@ -4871,14 +4775,12 @@ function showConsultationConfirm(config = {}) {
   modal.querySelector('.consult-confirm-close').addEventListener('click', close);
   modal.querySelector('.consult-confirm-cancel').addEventListener('click', close);
   modal.querySelector('.consult-confirm-payment')?.addEventListener('click', () => {
-    playH4sxSound('tap');
     window.open(paymentUrl, '_blank', 'noopener');
     close();
   });
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
     const goButton = modal.querySelector('.consult-confirm-go');
     if (redirectTimer || !goButton) return;
-    playH4sxSound(isReviewDestination ? 'tap' : 'whatsapp');
     dialog?.classList.add('is-loading');
     if (loading) loading.hidden = false;
     modal.querySelectorAll('.consult-confirm-actions button').forEach(button => {
@@ -4900,7 +4802,6 @@ function showConsultationConfirm(config = {}) {
     }, duration);
   });
   document.body.appendChild(modal);
-  playH4sxSound('open');
   requestAnimationFrame(() => modal.classList.add('show'));
 }
 
@@ -5600,7 +5501,6 @@ function addCart(input, originEl, options = {}) {
     cartItems.push({ id: targetId, qty: requestedQty, ...(variant ? { variantId: variant.id, variantName: variant.name } : {}), ...(requestedPromo.valid ? { promoCode: requestedPromo.promo.code } : {}) });
   }
   
-  playH4sxSound('cart');
   persistCart();
   updateBadge();
   updateAddButtons();
@@ -6432,42 +6332,6 @@ function toast(msg, err, name, count) {
       rafId = requestAnimationFrame(tick);
     }
   }
-})();
-// Music Player Control
-(() => {
-  const audio = document.getElementById('bgMusic');
-  const btn = document.getElementById('musicBtn');
-  let isPlaying = false;
-
-  function updateButton() {
-    if (isPlaying) {
-      btn.classList.remove('paused');
-      btn.classList.add('playing');
-      btn.innerHTML = '<i class="fas fa-pause"></i>';
-    } else {
-      btn.classList.remove('playing');
-      btn.classList.add('paused');
-      btn.innerHTML = '<i class="fas fa-music"></i>';
-    }
-  }
-
-  btn.addEventListener('click', async () => {
-    try {
-      if (isPlaying) {
-        audio.pause();
-        isPlaying = false;
-      } else {
-        await audio.play();
-        isPlaying = true;
-      }
-      updateButton();
-    } catch (e) {
-      console.log('Music play error:', e);
-    }
-  });
-
-  // Initialize button state
-  updateButton();
 })();
 initChangelog();
 initReviewSystemPopup();

@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=review-form-redesign-20260929">
+  <link rel="stylesheet" href="styles.css?v=clean-home-no-audio-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -146,7 +146,6 @@
     </div>
     <div class="nav-right">
       <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="H4SX Helper"><i class="fa-brands fa-whatsapp"></i><span>Helper</span></button>
-      <button class="search-btn sound-fx-btn" id="sound-fx-btn" onclick="toggleSoundEffects()" title="Sound effect" aria-label="Tutup sound effect" aria-pressed="true"><i class="fa-solid fa-volume-high"></i><span class="sound-fx-label">Sound</span></button>
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
       <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
       <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -254,12 +253,6 @@
           <div class="hero-float-2"><div class="float-ic">?</div>Respon admin 1-30 minit</div>
         </div>
       </div>
-    </section>
-    <section class="trust-grid reveal" aria-label="Kepercayaan kedai">
-      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-file-invoice"></i></div><div><div class="trust-title">Resit Boleh Disemak</div><div class="trust-sub">Hantar bukti bayaran terus ke admin.</div></div></div>
-      <div class="trust-item"><div class="trust-ic"><i class="fa-brands fa-whatsapp"></i></div><div><div class="trust-title">Support WhatsApp</div><div class="trust-sub">Respon pantas ikut giliran semasa.</div></div></div>
-      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-clock"></i></div><div><div class="trust-title">Proses 15-30 Minit</div><div class="trust-sub">Masa penghantaran ikut item dipilih.</div></div></div>
-      <div class="trust-item"><div class="trust-ic"><i class="fa-solid fa-shield-heart"></i></div><div><div class="trust-title">Pembayaran Jelas</div><div class="trust-sub">Nama penerima dipaparkan sebelum bayar.</div></div></div>
     </section>
     <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
       <div class="custom-vote-card">
@@ -510,13 +503,6 @@
     </div>
   </div>
 </div>
-<!-- BACKGROUND MUSIC -->
-<audio id="bgMusic" src="mp3" loop>
-  Your browser does not support the audio element.
-</audio>
-<button class="music-btn" id="musicBtn" title="Toggle Music">
-  <i class="fas fa-music"></i>
-</button>
 <!-- H4SX HELPER -->
 <div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
   <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX Helper">
@@ -781,7 +767,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=admin-choice-picker-fix-20260929"></script>
+<script defer src="app.js?v=clean-home-no-audio-20260929"></script>
 
 </body>
 </html>
