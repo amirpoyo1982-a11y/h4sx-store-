@@ -1,13 +1,25 @@
 const CHANGELOG_DATA = {
   title: 'Apa Yang Baru - H4SX STORE',
-  date: '26 September 2026',
-  time: '12:45 AM (MYT)',
-  version: 'v5.3',
+  date: '29 September 2026',
+  time: '3:42 PM (MYT)',
+  version: 'v5.4',
   sections: [
     {
       type: 'added',
       title: 'Ciri Baharu',
       items: [
+        {
+          icon: 'fa-bag-shopping',
+          text: '<strong>Pesanan dan bayaran sendiri</strong> kini membolehkan pelanggan menjana Order ID, melihat QR pembayaran dan mengikuti status pesanan.'
+        },
+        {
+          icon: 'fa-location-crosshairs',
+          text: '<strong>Track pesanan lebih mudah</strong> melalui butang Pesanan Terakhir atau dengan memasukkan Order ID daripada mana-mana peranti.'
+        },
+        {
+          icon: 'fa-brands fa-whatsapp',
+          text: '<strong>Peringatan WhatsApp baharu</strong> muncul selepas order dibuat dan selepas bayaran dihantar supaya maklumat pesanan tidak terlepas.'
+        },
         {
           icon: 'fa-receipt',
           text: '<strong>Salin nombor transaksi</strong> terus daripada rekod pembelian.'
