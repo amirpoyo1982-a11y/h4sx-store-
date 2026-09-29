@@ -25,6 +25,7 @@ firebase.initializeApp(firebaseConfig);
 if (new URLSearchParams(location.search).get('embedded') === '1') document.body.classList.add('embedded-control');
 const auth = firebase.auth();
 const database = firebase.database();
+const requestedCatalogTab = new URLSearchParams(location.search).get('tab') || 'products';
 let products = [];
 let games = [];
 let storeConfig = {};
@@ -239,7 +240,12 @@ function markSynced() {
 auth.onAuthStateChanged(user => {
   byId('login-view').hidden = !!user;
   byId('control-view').hidden = !user;
-  if (user) { startListeners(); renderDrafts(); updateUndoButton(); }
+  if (user) {
+    startListeners();
+    renderDrafts();
+    updateUndoButton();
+    requestAnimationFrame(() => activateCatalogTab(requestedCatalogTab));
+  }
   else stopListeners();
 });
 
@@ -417,6 +423,12 @@ document.querySelectorAll('.tabs button').forEach(button => button.addEventListe
   document.querySelectorAll('.tabs button').forEach(item => item.classList.toggle('active', item === button));
   document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.dataset.panel === button.dataset.tab));
 }));
+
+function activateCatalogTab(tabName) {
+  const allowed = new Set(['products','games','promos','orders','settings','drafts','health','migration']);
+  const name = allowed.has(tabName) ? tabName : 'products';
+  document.querySelector('.tabs button[data-tab="' + name + '"]')?.click();
+}
 
 function renderProducts() {
   const q = byId('product-search').value.trim().toLowerCase();

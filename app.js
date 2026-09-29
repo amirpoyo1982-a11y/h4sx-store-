@@ -3579,14 +3579,61 @@ function openOrderHistory() {
   setTimeout(() => document.getElementById('order-search-code')?.focus(), 80);
 }
 function closeOrderHistory() { document.getElementById('order-history-modal')?.classList.remove('show'); }
-function openOrderAdmin() {
+function openAdminProfile() {
   closeOrderHistory();
-  document.getElementById('order-admin-modal')?.classList.add('show');
+  document.getElementById('admin-profile-modal')?.classList.add('show');
+  syncAdminProfileUI();
+}
+function closeAdminProfile() { document.getElementById('admin-profile-modal')?.classList.remove('show'); }
+function syncAdminProfileUI() {
+  const user = orderAuth?.currentUser;
+  const login = document.getElementById('admin-profile-login');
+  const home = document.getElementById('admin-profile-home');
+  if (login) login.hidden = !!user;
+  if (home) home.hidden = !user;
+  const display = document.getElementById('admin-profile-email-display');
+  if (display) display.textContent = user?.email || 'Admin';
+}
+async function adminProfileLogin(event) {
+  event.preventDefault();
+  if (!orderAuth) return toast('Firebase belum dapat dihubungkan.', true);
+  const button = event.submitter;
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Log masuk...';
+  try {
+    await orderAuth.signInWithEmailAndPassword(document.getElementById('admin-profile-email').value.trim(), document.getElementById('admin-profile-password').value);
+    document.getElementById('admin-profile-password').value = '';
+    syncAdminProfileUI();
+    toast('Admin berjaya log masuk.');
+  } catch (error) { toast('Login gagal. Semak email atau password Firebase.', true); }
+  finally { button.disabled = false; button.innerHTML = original; }
+}
+function openAdminHistoryFromProfile() {
+  if (!orderAuth?.currentUser) return syncAdminProfileUI();
+  closeAdminProfile();
+  openOrderAdmin(true);
+}
+function openAdminReviewFromProfile() {
+  if (!orderAuth?.currentUser) return syncAdminProfileUI();
+  closeAdminProfile();
+  openCatalogControl('orders');
+}
+function openAdminCatalogFromProfile() {
+  if (!orderAuth?.currentUser) return syncAdminProfileUI();
+  closeAdminProfile();
+  openCatalogControl('settings');
+}
+function openOrderAdmin(historyOnly = false) {
+  closeOrderHistory();
+  const modal = document.getElementById('order-admin-modal');
+  modal?.classList.toggle('admin-history-mode', !!historyOnly);
+  modal?.classList.add('show');
   syncOrderAdminUI();
   setDefaultManualOrderDate();
 }
 
-function openCatalogControl() {
+function openCatalogControl(tab = 'products') {
   if (!orderAuth?.currentUser) {
     toast('Log masuk admin dahulu untuk urus katalog.', true);
     return;
@@ -3594,7 +3641,11 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=24';
+  const safeTab = ['products','games','promos','orders','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
+  if (frame.dataset.tab !== safeTab) {
+    frame.dataset.tab = safeTab;
+    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=25-admin-hub';
+  }
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -3607,7 +3658,11 @@ function closeCatalogControl() {
   setTimeout(() => { overlay.hidden = true; }, 180);
   if (!document.getElementById('order-admin-modal')?.classList.contains('show')) document.body.style.overflow = '';
 }
-function closeOrderAdmin() { document.getElementById('order-admin-modal')?.classList.remove('show'); }
+function closeOrderAdmin() {
+  const modal = document.getElementById('order-admin-modal');
+  modal?.classList.remove('show');
+  modal?.classList.remove('admin-history-mode');
+}
 function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
   const login = document.getElementById('order-admin-login');
@@ -3832,7 +3887,10 @@ async function copyInvoiceCode(code, button) {
     button.classList.remove('copied');
   }, 1600);
 }
-if (orderAuth) orderAuth.onAuthStateChanged(syncOrderAdminUI);
+if (orderAuth) orderAuth.onAuthStateChanged(() => {
+  syncOrderAdminUI();
+  syncAdminProfileUI();
+});
 
 function fixMojibakeText(value) {
   let text = String(value ?? '');

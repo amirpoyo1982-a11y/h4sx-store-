@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=customer-order-recovery-20260929">
+  <link rel="stylesheet" href="styles.css?v=admin-profile-hub-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -148,6 +148,7 @@
       <button class="search-btn ai-helper-btn" onclick="openAiHelper()" title="H4SX Helper"><i class="fa-brands fa-whatsapp"></i><span>Helper</span></button>
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
       <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
+      <button class="search-btn admin-profile-btn" onclick="openAdminProfile()" title="Admin Profile"><i class="fa-solid fa-user-shield"></i></button>
       <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
       <button class="cart-btn" onclick="toggleCart()">
         <i class="fa-solid fa-bag-shopping"></i>
@@ -179,6 +180,7 @@
   <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
   <a onclick="openAiHelper();toggleMenu()"><i class="fa-brands fa-whatsapp"></i> H4SX Helper</a>
   <a onclick="openChangelog(true);toggleMenu()"><i class="fa-solid fa-clock-rotate-left"></i> Changelog</a>
+  <a onclick="openAdminProfile();toggleMenu()"><i class="fa-solid fa-user-shield"></i> Admin Profile</a>
   <a class="hard-refresh-menu" onclick="hardRefreshSite()"><i class="fa-solid fa-rotate"></i> Hard Refresh Update</a>
   <a href="https://wa.me/6285178259060" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp Support</a>
 </div>
@@ -680,7 +682,6 @@
       <button type="submit">Cari</button>
     </form>
     <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
-    <button class="order-admin-link" onclick="openOrderAdmin()"><i class="fa-solid fa-lock"></i> Admin: masukkan transaksi</button>
   </div>
 </div>
 
@@ -742,6 +743,29 @@
         <div class="customer-order-wa-id"><span>ORDER ID</span><strong id="customer-order-wa-id"></strong></div>
         <button type="button" class="customer-order-wa-send" onclick="sendCustomerOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Sekarang</button>
         <button type="button" class="customer-order-wa-later" onclick="closeCustomerOrderWhatsAppPrompt()">Nanti, saya hantar kemudian</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PROFILE HUB -->
+<div id="admin-profile-modal" class="order-modal admin-profile-modal" onclick="if(event.target===this)closeAdminProfile()">
+  <div class="order-modal-card admin-profile-card">
+    <button class="order-modal-close" onclick="closeAdminProfile()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="admin-profile-hero">
+      <div class="admin-profile-avatar"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX Admin"><span><i class="fa-solid fa-shield-halved"></i></span></div>
+      <div><small>H4SX STORE</small><h2>Admin Profile</h2><p>Ruang pengurusan khas—asing daripada bahagian pelanggan.</p></div>
+    </div>
+    <div id="admin-profile-login" class="admin-profile-login">
+      <div class="admin-profile-lock"><i class="fa-solid fa-lock"></i><div><strong>Log masuk admin</strong><small>Gunakan akaun Firebase admin anda.</small></div></div>
+      <form onsubmit="adminProfileLogin(event)"><input id="admin-profile-email" type="email" autocomplete="username" placeholder="Email admin" required><input id="admin-profile-password" type="password" autocomplete="current-password" placeholder="Password" required><button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Log masuk</button></form>
+    </div>
+    <div id="admin-profile-home" hidden>
+      <div class="admin-profile-account"><span><i class="fa-solid fa-circle-check"></i><b id="admin-profile-email-display">Admin</b></span><button type="button" onclick="adminOrderLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log keluar</button></div>
+      <div class="admin-profile-menu">
+        <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
   </div>
@@ -837,7 +861,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=announcement-off-fix-20260929"></script>
+<script defer src="app.js?v=admin-profile-hub-20260929"></script>
 
 </body>
 </html>
