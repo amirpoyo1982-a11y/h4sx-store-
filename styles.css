@@ -62,6 +62,55 @@
   --nav-h: 76px;
 }
 
+/* Customer order recovery */
+.customer-order-recovery {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 15px;
+  padding: 13px;
+  border: 1px solid rgba(20, 184, 166, .28);
+  border-radius: 15px;
+  background: linear-gradient(135deg, rgba(20, 184, 166, .08), rgba(14, 165, 233, .06));
+}
+.customer-order-recovery[hidden] { display: none; }
+.customer-order-recovery-head { display: flex; align-items: center; gap: 10px; }
+.customer-order-recovery-head > span {
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #ddf9f4;
+  color: #0e9d8b;
+}
+.customer-order-recovery-head > div,
+.customer-order-last span { display: grid; gap: 1px; }
+.customer-order-recovery-head strong { color: #17324d; font-size: 12px; }
+.customer-order-recovery-head small { color: #718a9d; font-size: 9px; }
+.customer-order-last {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #bfe4ec;
+  border-radius: 12px;
+  background: #fff;
+  color: #177ea1;
+  text-align: left;
+  cursor: pointer;
+}
+.customer-order-last > i:first-child { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 10px; background: #e5f7ff; }
+.customer-order-last strong { color: #183950; font-size: 11px; }
+.customer-order-last small { overflow: hidden; color: #6e8999; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.customer-order-last:disabled { opacity: .55; cursor: not-allowed; }
+.customer-order-lookup { display: grid; grid-template-columns:minmax(0, 1fr) auto; gap: 8px; }
+.customer-order-lookup input { min-width: 0; border: 1px solid #c9dfeb; border-radius: 11px; padding: 11px; background: #fff; color: #17324d; font: 700 10px inherit; outline: none; text-transform: uppercase; }
+.customer-order-lookup input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.1); }
+.customer-order-lookup button { border: 0; border-radius: 11px; padding: 0 14px; background: linear-gradient(135deg,#0ea5e9,#14b8a6); color:#fff; font:800 10px inherit; cursor:pointer; }
+
 /* Customer order WhatsApp reminder */
 .customer-order-whatsapp {
   width: 100%;

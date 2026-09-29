@@ -656,9 +656,25 @@ function customerOrderConfig() {
 function syncCustomerOrderFeature() {
   const enabled = customerOrderConfig().enabled;
   const launch = document.getElementById('customer-order-launch');
+  const recovery = document.getElementById('customer-order-recovery');
   const productButton = document.getElementById('product-modal-order-btn');
   if (launch) launch.hidden = !enabled;
+  if (recovery) recovery.hidden = !enabled;
   if (productButton) productButton.hidden = !enabled;
+  updateLastCustomerOrderButton();
+}
+
+function storedCustomerOrderId() {
+  try { return String(localStorage.getItem(CUSTOMER_ORDER_STORAGE_KEY) || '').trim(); }
+  catch (error) { return ''; }
+}
+
+function updateLastCustomerOrderButton() {
+  const orderId = storedCustomerOrderId();
+  const button = document.getElementById('customer-order-last');
+  const label = document.getElementById('customer-order-last-id');
+  if (button) button.disabled = !orderId;
+  if (label) label.textContent = orderId || 'Belum ada pesanan tersimpan dalam telefon ini';
 }
 
 function formatCustomerOrderMoney(value) {
@@ -751,6 +767,46 @@ function openCustomerOrderFromProduct() {
   openCustomerOrder(modalItemId || '');
 }
 
+function openCustomerOrderById(orderId) {
+  const id = String(orderId || '').trim().toUpperCase();
+  if (!/^H4SX-[A-Z0-9-]{6,40}$/.test(id)) return toast('Order ID tidak sah. Semak dan cuba lagi.', true);
+  stopCustomerOrderListener();
+  activeCustomerOrderId = id;
+  activeCustomerOrder = null;
+  activeCustomerOrderClaim = null;
+  activeCustomerOrderPrivate = null;
+  try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, id); } catch (error) {}
+  updateLastCustomerOrderButton();
+  const modal = document.getElementById('customer-order-modal');
+  if (!modal) return;
+  closeOrderHistory();
+  modal.classList.add('show');
+  setCustomerOrderView('status');
+  const statusId = document.getElementById('customer-order-status-id');
+  const pill = document.getElementById('customer-order-status-pill');
+  if (statusId) statusId.textContent = id;
+  if (pill) {
+    pill.className = 'customer-order-status-pill';
+    pill.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i><span>Memuat status pesanan...</span>';
+  }
+  const orderUrl = new URL(location.href);
+  orderUrl.searchParams.set('order', id);
+  history.replaceState(null, '', orderUrl.pathname + orderUrl.search + orderUrl.hash);
+  startCustomerOrderListener(id);
+}
+
+function openLastCustomerOrder() {
+  const orderId = storedCustomerOrderId();
+  if (!orderId) return toast('Belum ada pesanan terakhir dalam telefon ini.', true);
+  openCustomerOrderById(orderId);
+}
+
+function lookupCustomerOrder(event) {
+  event.preventDefault();
+  const input = document.getElementById('customer-order-lookup-id');
+  openCustomerOrderById(input?.value || '');
+}
+
 function closeCustomerOrder() {
   closeCustomerOrderWhatsAppPrompt();
   document.getElementById('customer-order-modal')?.classList.remove('show');
@@ -822,6 +878,7 @@ async function submitCustomerOrder(event) {
     activeCustomerOrder = { ...publicOrder, createdAt:Date.now(), updatedAt:Date.now() };
     activeCustomerOrderPrivate = { customerName, phone, username, note };
     try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, orderId); } catch (error) {}
+    updateLastCustomerOrderButton();
     const orderUrl = new URL(location.href);
     orderUrl.searchParams.set('order', orderId);
     history.replaceState(null, '', orderUrl.pathname + orderUrl.search + orderUrl.hash);
@@ -1026,10 +1083,7 @@ function resumeCustomerOrderFromUrl() {
   const params = new URLSearchParams(location.search);
   const orderId = String(params.get('order') || '').trim();
   if (!orderId || !realtimeDb || !customerOrderConfig().enabled) return;
-  activeCustomerOrderId = orderId;
-  document.getElementById('customer-order-modal')?.classList.add('show');
-  setCustomerOrderView('status');
-  startCustomerOrderListener(orderId);
+  openCustomerOrderById(orderId);
 }
 async function fetchKedaiJson() {
   if (realtimeDb) {

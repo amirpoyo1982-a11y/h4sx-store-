@@ -1237,7 +1237,8 @@ function renderCustomerOrders() {
       '<div class="customer-order-row-info"><div><small>PELANGGAN</small><strong>' + escapeHtml(privateData.customerName || 'Data private belum dimuat') + '</strong><span>' + escapeHtml(privateData.phone || order.phoneMasked || '-') + '</span></div><div><small>ITEM</small><strong>' + escapeHtml(items.map(item => item.name + ' ×' + Number(item.qty || 1)).join(', ') || '-') + '</strong><span>' + escapeHtml(privateData.username ? 'Username: ' + privateData.username : '') + '</span></div></div>' +
       (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i>' + escapeHtml(privateData.note) + '</div>' : '') +
       '<div class="customer-order-row-actions"><select data-order-status="' + escapeHtml(order.id) + '">' + statusOptions + '</select><button class="primary" data-action="save-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-floppy-disk"></i> Simpan status</button>' +
-      (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') + '</div></article>';
+      (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') +
+      '<button class="delete-customer-order" data-action="delete-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-trash"></i> Delete</button></div></article>';
   }).join('') : '<div class="empty">Tiada pesanan sepadan.</div>';
 }
 
@@ -1259,6 +1260,22 @@ async function updateCustomerOrderStatus(orderId, status, button) {
   finally { setBusy(button, false); }
 }
 
+async function deleteCustomerOrder(orderId, button) {
+  const order = customerOrders.find(item => item.id === orderId);
+  if (!order) return notify('Order tidak dijumpai.', true);
+  if (!confirm('Delete pesanan ' + orderId + '?\n\nData order, maklumat pelanggan dan tuntutan bayaran akan dibuang. Tindakan ini tidak boleh dibuat asal.')) return;
+  setBusy(button, true, 'Deleting...');
+  try {
+    await withTimeout(database.ref().update({
+      [ROOT + '/customer_orders/' + orderId]: null,
+      [ROOT + '/customer_payment_claims/' + orderId]: null,
+      ['customer_order_private/' + orderId]: null
+    }), 'Delete pesanan');
+    notify('Pesanan ' + orderId + ' sudah dipadam.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
 byId('refresh-customer-orders').addEventListener('click', renderCustomerOrders);
 byId('customer-order-search').addEventListener('input', renderCustomerOrders);
 byId('customer-order-filter').addEventListener('change', renderCustomerOrders);
@@ -1266,6 +1283,7 @@ byId('customer-orders-list').addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const orderId = button.dataset.id;
+  if (button.dataset.action === 'delete-customer-order') return deleteCustomerOrder(orderId, button);
   if (button.dataset.action === 'confirm-customer-payment') return updateCustomerOrderStatus(orderId, 'Sudah Dibayar', button);
   if (button.dataset.action === 'save-customer-order') {
     const status = document.querySelector('[data-order-status="' + CSS.escape(orderId) + '"]')?.value;

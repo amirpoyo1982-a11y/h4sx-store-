@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=customer-order-whatsapp-popup-20260929">
+  <link rel="stylesheet" href="styles.css?v=customer-order-recovery-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -670,6 +670,11 @@
     <h2>Histori Transaksi</h2>
     <p>Masukkan nombor transaksi atau nombor WhatsApp semasa membuat order.</p>
     <button type="button" id="customer-order-launch" class="customer-order-launch" onclick="openCustomerOrder()" hidden><i class="fa-solid fa-bag-shopping"></i><span><strong>Buat Pesanan Sendiri</strong><small>Pilih item, dapatkan Order ID dan bayar melalui QR.</small></span><i class="fa-solid fa-arrow-right"></i></button>
+    <div id="customer-order-recovery" class="customer-order-recovery" hidden>
+      <div class="customer-order-recovery-head"><span><i class="fa-solid fa-location-crosshairs"></i></span><div><strong>Track pesanan baru</strong><small>Buka semula halaman bayaran dan status menggunakan Order ID.</small></div></div>
+      <button type="button" id="customer-order-last" class="customer-order-last" onclick="openLastCustomerOrder()"><i class="fa-solid fa-clock-rotate-left"></i><span><strong>Semak Pesanan Terakhir</strong><small id="customer-order-last-id">Order terakhir dalam telefon ini</small></span><i class="fa-solid fa-arrow-right"></i></button>
+      <form class="customer-order-lookup" onsubmit="lookupCustomerOrder(event)"><input id="customer-order-lookup-id" autocomplete="off" placeholder="Contoh: H4SX-20260929-ABCDE" aria-label="Order ID pesanan"><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Semak</button></form>
+    </div>
     <form class="order-search-form" onsubmit="findOrder(event)">
       <input id="order-search-code" autocomplete="off" placeholder="No. transaksi atau WhatsApp" aria-label="Nombor transaksi atau WhatsApp">
       <button type="submit">Cari</button>
@@ -832,7 +837,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=customer-order-whatsapp-popup-20260929"></script>
+<script defer src="app.js?v=customer-order-recovery-20260929"></script>
 
 </body>
 </html>
