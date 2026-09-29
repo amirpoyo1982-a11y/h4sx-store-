@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-09-30-order-whatsapp-last"/>
+  <meta name="h4sx-build" content="2026-09-30-review-popup-toggle"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=admin-profile-hub-20260929">
+  <link rel="stylesheet" href="styles.css?v=review-popup-toggle-20260930">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -765,6 +765,7 @@
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Popup Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan terapung sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
       </div>
     </div>
   </div>
@@ -860,7 +861,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=order-whatsapp-last-20260930"></script>
+<script defer src="app.js?v=review-popup-toggle-20260930"></script>
 
 </body>
 </html>

@@ -3476,6 +3476,42 @@ function syncReviewShowcaseAdmin() {
       : 'Paparan ulasan sedang dimatikan.',
     reviewShowcaseConfig.active ? 'success' : ''
   );
+  syncAdminReviewShowcaseToggle();
+}
+
+function syncAdminReviewShowcaseToggle() {
+  const button = document.getElementById('admin-review-popup-toggle');
+  const status = document.getElementById('admin-review-popup-status');
+  const icon = document.getElementById('admin-review-popup-icon');
+  const active = reviewShowcaseConfig.active === true;
+  button?.classList.toggle('is-active', active);
+  button?.setAttribute('aria-pressed', active ? 'true' : 'false');
+  if (status) status.textContent = active ? 'Paparan ulasan terapung sedang ON — tekan untuk tutup.' : 'Paparan ulasan terapung sedang OFF — tekan untuk hidupkan.';
+  if (icon) icon.className = 'fa-solid ' + (active ? 'fa-toggle-on' : 'fa-toggle-off');
+}
+
+async function toggleReviewShowcaseFromProfile(button) {
+  if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const active = !reviewShowcaseConfig.active;
+  if (button) button.disabled = true;
+  try {
+    await db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID).set({
+      active,
+      intervalSeconds:reviewShowcaseConfig.intervalSeconds,
+      position:reviewShowcaseConfig.position,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy:orderAuth.currentUser.email || 'admin'
+    }, { merge:true });
+    reviewShowcaseConfig.active = active;
+    syncReviewShowcaseAdmin();
+    renderReviews(latestReviewStatsData);
+    toast(active ? 'Popup ulasan dihidupkan.' : 'Popup ulasan dimatikan.');
+  } catch (error) {
+    console.error('Review popup toggle error:', error);
+    toast('Tak dapat ubah popup ulasan. Semak Firestore Rules.', true);
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 function loadReviewShowcaseConfig(force = false) {
@@ -3614,6 +3650,7 @@ function syncAdminProfileUI() {
   if (home) home.hidden = !user;
   const display = document.getElementById('admin-profile-email-display');
   if (display) display.textContent = user?.email || 'Admin';
+  syncAdminReviewShowcaseToggle();
 }
 async function adminProfileLogin(event) {
   event.preventDefault();

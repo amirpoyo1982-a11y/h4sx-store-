@@ -94,6 +94,11 @@
 .admin-profile-menu .history { background:linear-gradient(135deg,#0ea5e9,#06b6d4); }
 .admin-profile-menu .review { background:linear-gradient(135deg,#14b8a6,#22c55e); }
 .admin-profile-menu .catalog { background:linear-gradient(135deg,#7c3aed,#a855f7); }
+.admin-profile-menu .showcase { background:linear-gradient(135deg,#f59e0b,#f97316); }
+.admin-profile-menu #admin-review-popup-toggle > i:last-child { color:#94a3b8; font-size:25px; transition:color .18s ease, transform .18s ease; }
+.admin-profile-menu #admin-review-popup-toggle.is-active { border-color:#86efac; background:#f0fdf4; }
+.admin-profile-menu #admin-review-popup-toggle.is-active > i:last-child { color:#22c55e; transform:scale(1.06); }
+.admin-profile-menu #admin-review-popup-toggle:disabled { opacity:.65; cursor:wait; transform:none; }
 .admin-profile-menu > button div { display:grid; gap:2px; }
 .admin-profile-menu strong { color:#17334c; font-size:12px; }
 .admin-profile-menu small { color:#7a8f9f; font-size:9px; }
