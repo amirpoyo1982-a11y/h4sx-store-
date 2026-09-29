@@ -886,7 +886,6 @@ async function submitCustomerOrder(event) {
     startCustomerOrderListener(orderId);
     setCustomerOrderView('payment');
     toast('Order ID berjaya dijana!');
-    setTimeout(() => openCustomerOrderWhatsAppPrompt('order'), 260);
   } catch (error) {
     console.error('Customer order create failed:', error);
     toast(error.message || 'Order gagal dibuat. Cuba semula.', true);
@@ -1703,7 +1702,7 @@ async function downloadChangelogImage() {
   }
 }
 async function hardRefreshSite() {
-  const btns = document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh');
+  const btns = document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh, .hard-refresh-menu');
   btns.forEach(btn => {
     btn.classList.add('is-loading');
     btn.setAttribute('disabled', 'disabled');
@@ -1722,6 +1721,7 @@ async function hardRefreshSite() {
   try {
     if ('serviceWorker' in navigator) {
       const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.update().catch(() => null)));
       await Promise.all(regs.map(reg => reg.unregister()));
     }
   } catch (e) {}
@@ -1761,12 +1761,16 @@ function markSiteUpdateAvailable() {
     el.setAttribute('title', 'Update baru tersedia - tekan Hard Refresh');
   });
 }
+let siteUpdateCheckRunning = false;
 async function checkSiteUpdateAvailable() {
+  if (siteUpdateCheckRunning) return;
+  siteUpdateCheckRunning = true;
   try {
-    const url = new URL(window.location.origin + window.location.pathname);
+    const url = new URL('./index.htm', window.location.href);
     url.searchParams.set('_check_update', Date.now().toString());
     const res = await fetch(url.toString(), {
-      cache: 'reload',
+      cache: 'no-store',
+      credentials: 'same-origin',
       headers: {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
@@ -1777,7 +1781,24 @@ async function checkSiteUpdateAvailable() {
     const latest = getHtmlAssetSignature(html);
     const current = getLoadedAssetSignature();
     if (latest && current && latest !== current) markSiteUpdateAvailable();
-  } catch (e) {}
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration('./');
+      if (registration?.waiting) markSiteUpdateAvailable();
+      await registration?.update().catch(() => null);
+    }
+  } catch (e) {
+    console.warn('Semakan update H4SX gagal:', e);
+  } finally {
+    siteUpdateCheckRunning = false;
+  }
+}
+function watchSiteUpdates() {
+  runWhenIdle(checkSiteUpdateAvailable, 2600);
+  window.setInterval(checkSiteUpdateAvailable, 60000);
+  window.addEventListener('focus', checkSiteUpdateAvailable);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkSiteUpdateAvailable();
+  });
 }
 function changelogBackdrop(e) {
   if (e.target === document.getElementById('changelog-modal')) dismissChangelog();
@@ -4449,7 +4470,7 @@ function bootStoreApp() {
   runWhenIdle(loadReviews, 1200);
   runWhenIdle(animateCounters, 1600);
   runWhenIdle(initChangelog, 2200);
-  runWhenIdle(checkSiteUpdateAvailable, 2600);
+  watchSiteUpdates();
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
