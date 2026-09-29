@@ -631,8 +631,338 @@ let inventory = [], cartItems = [], currentGame = '', modalItemId = null;
 let cartSelectedKeys = new Set();
 let modalVariantId = '', modalQuantity = 1;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
+const CUSTOMER_ORDER_STORAGE_KEY = 'h4sx_customer_order_id';
+const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed'];
+let activeCustomerOrderId = '';
+let activeCustomerOrder = null;
+let activeCustomerOrderClaim = null;
+let customerOrderRef = null;
+let customerOrderClaimRef = null;
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
+
+function customerOrderConfig() {
+  const config = storeConfig?.order_flow || storeConfig?.orderFlow || {};
+  return {
+    enabled: config.enabled === true || String(config.enabled).toLowerCase() === 'true',
+    qrImage: cleanUrl(config.qrImage || config.qr_image || config.qrUrl || ''),
+    recipient: String(config.recipient || config.accountName || 'H4SX Store').trim(),
+    instructions: String(config.instructions || 'Scan QR dan buat pembayaran mengikut jumlah pesanan.').trim()
+  };
+}
+
+function syncCustomerOrderFeature() {
+  const enabled = customerOrderConfig().enabled;
+  const launch = document.getElementById('customer-order-launch');
+  const productButton = document.getElementById('product-modal-order-btn');
+  if (launch) launch.hidden = !enabled;
+  if (productButton) productButton.hidden = !enabled;
+}
+
+function formatCustomerOrderMoney(value) {
+  return 'RM' + Number(value || 0).toFixed(2);
+}
+
+function normalizeCustomerOrderPhone(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = '60' + digits.slice(1);
+  return /^\d{9,15}$/.test(digits) ? digits : '';
+}
+
+function maskCustomerOrderPhone(phone) {
+  const value = String(phone || '');
+  return value.length > 6 ? value.slice(0, 4) + '••••' + value.slice(-3) : '••••••';
+}
+
+function customerOrderProductOptions(selectedId = '') {
+  const select = document.getElementById('customer-order-product');
+  if (!select) return;
+  const available = inventory.filter(item => {
+    const consultationSource = item.consultation ?? item.konsultasi ?? item.consult;
+    const consultation = consultationSource === true || String(consultationSource).toLowerCase() === 'true' || (consultationSource && typeof consultationSource === 'object');
+    const variants = productVariants(item);
+    const inStock = variants.length ? variants.some(variant => variant.stock == null || Number(variant.stock) > 0) : (item.stock == null || Number(item.stock) > 0);
+    return !consultation && item.active !== false && inStock;
+  });
+  select.innerHTML = '<option value="">Pilih item...</option>' + available.map(item => '<option value="' + escapeHtml(String(item.id)) + '">' + escapeHtml(item.name || ('Produk #' + item.id)) + ' — ' + formatCustomerOrderMoney(item.price) + '</option>').join('');
+  if (selectedId && available.some(item => String(item.id) === String(selectedId))) select.value = String(selectedId);
+  syncCustomerOrderProduct();
+}
+
+function selectedCustomerOrderProduct() {
+  const id = document.getElementById('customer-order-product')?.value || '';
+  return inventory.find(item => String(item.id) === String(id)) || null;
+}
+
+function syncCustomerOrderProduct() {
+  const item = selectedCustomerOrderProduct();
+  const wrap = document.getElementById('customer-order-variant-wrap');
+  const select = document.getElementById('customer-order-variant');
+  const variants = productVariants(item || {});
+  if (wrap) wrap.hidden = !variants.length;
+  if (select) {
+    select.innerHTML = variants.map(variant => '<option value="' + escapeHtml(variant.id) + '"' + ((variant.stock != null && Number(variant.stock) <= 0) ? ' disabled' : '') + '>' + escapeHtml(variant.name) + ' — ' + formatCustomerOrderMoney(variant.price) + ((variant.stock != null) ? ' • stok ' + Number(variant.stock) : '') + '</option>').join('');
+  }
+  syncCustomerOrderTotal();
+}
+
+function selectedCustomerOrderItem() {
+  const product = selectedCustomerOrderProduct();
+  if (!product) return null;
+  const variants = productVariants(product);
+  const variantId = variants.length ? (document.getElementById('customer-order-variant')?.value || variants[0]?.id) : '';
+  return effectiveProductItem(product, variantId);
+}
+
+function syncCustomerOrderTotal() {
+  const item = selectedCustomerOrderItem();
+  const quantity = Math.max(1, Math.min(20, Number(document.getElementById('customer-order-qty')?.value || 1)));
+  const total = item ? Number(item.price || 0) * quantity : 0;
+  const target = document.getElementById('customer-order-total');
+  if (target) target.textContent = formatCustomerOrderMoney(total);
+  return total;
+}
+
+function setCustomerOrderView(view) {
+  ['form','payment','status'].forEach(name => {
+    const section = document.getElementById('customer-order-' + name + '-view');
+    if (section) section.hidden = name !== view;
+  });
+  document.querySelectorAll('[data-order-step]').forEach(step => {
+    const index = ['form','payment','status'].indexOf(step.dataset.orderStep);
+    const activeIndex = ['form','payment','status'].indexOf(view);
+    step.classList.toggle('active', index === activeIndex);
+    step.classList.toggle('done', index < activeIndex);
+  });
+}
+
+function openCustomerOrder(productId = '') {
+  if (!customerOrderConfig().enabled) return toast('Pesanan sendiri belum dibuka oleh admin.', true);
+  const modal = document.getElementById('customer-order-modal');
+  if (!modal) return;
+  customerOrderProductOptions(productId);
+  setCustomerOrderView('form');
+  modal.classList.add('show');
+}
+
+function openCustomerOrderFromProduct() {
+  openCustomerOrder(modalItemId || '');
+}
+
+function closeCustomerOrder() {
+  document.getElementById('customer-order-modal')?.classList.remove('show');
+}
+
+function startNewCustomerOrder() {
+  stopCustomerOrderListener();
+  activeCustomerOrderId = '';
+  activeCustomerOrder = null;
+  activeCustomerOrderClaim = null;
+  document.getElementById('customer-order-form')?.reset();
+  const qty = document.getElementById('customer-order-qty');
+  if (qty) qty.value = '1';
+  customerOrderProductOptions();
+  setCustomerOrderView('form');
+}
+
+async function generateCustomerOrderId() {
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const random = crypto.getRandomValues(new Uint32Array(1))[0].toString(36).toUpperCase().slice(0, 5).padStart(5, '0');
+    const id = 'H4SX-' + day + '-' + random;
+    const snapshot = await realtimeDb.ref(REALTIME_STORE_ROOT + '/customer_orders/' + id).once('value');
+    if (!snapshot.exists()) return id;
+  }
+  throw new Error('Gagal menjana Order ID unik. Cuba semula.');
+}
+
+async function submitCustomerOrder(event) {
+  event.preventDefault();
+  if (!realtimeDb) return toast('Firebase belum bersedia. Cuba semula sekejap lagi.', true);
+  if (!customerOrderConfig().enabled) return toast('Feature pesanan sedang ditutup.', true);
+  const button = document.getElementById('customer-order-submit');
+  const customerName = document.getElementById('customer-order-name').value.trim();
+  const phone = normalizeCustomerOrderPhone(document.getElementById('customer-order-phone').value);
+  const username = document.getElementById('customer-order-username').value.trim();
+  const note = document.getElementById('customer-order-note').value.trim();
+  const item = selectedCustomerOrderItem();
+  const quantity = Math.max(1, Math.min(20, Number(document.getElementById('customer-order-qty').value || 1)));
+  if (!phone) return toast('Nombor WhatsApp tidak sah.', true);
+  if (!item) return toast('Pilih produk dahulu.', true);
+  if (item.stock != null && quantity > Number(item.stock)) return toast('Kuantiti melebihi stok yang tersedia.', true);
+  const unitPrice = Number(item.price || 0);
+  const total = unitPrice * quantity;
+  if (!Number.isFinite(total) || total < 0) return toast('Harga produk tidak sah.', true);
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menjana Order ID...';
+  try {
+    const orderId = await generateCustomerOrderId();
+    const now = firebase.database.ServerValue.TIMESTAMP;
+    const publicOrder = {
+      id: orderId,
+      items: [{ productId:String(item.id), variantId:String(item.variantId || ''), name:String(item.variantName ? item.name + ' - ' + item.variantName : item.name), qty:quantity, unitPrice, lineTotal:total }],
+      total,
+      status: 'Menunggu Pembayaran',
+      phoneMasked: maskCustomerOrderPhone(phone),
+      createdAt: now,
+      updatedAt: now
+    };
+    const privateOrder = { customerName, phone, username, note, createdAt:now };
+    const updates = {};
+    updates[REALTIME_STORE_ROOT + '/customer_orders/' + orderId] = publicOrder;
+    updates['customer_order_private/' + orderId] = privateOrder;
+    await realtimeDb.ref().update(updates);
+    activeCustomerOrderId = orderId;
+    activeCustomerOrder = { ...publicOrder, createdAt:Date.now(), updatedAt:Date.now() };
+    try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, orderId); } catch (error) {}
+    const orderUrl = new URL(location.href);
+    orderUrl.searchParams.set('order', orderId);
+    history.replaceState(null, '', orderUrl.pathname + orderUrl.search + orderUrl.hash);
+    renderCustomerOrderPayment();
+    startCustomerOrderListener(orderId);
+    setCustomerOrderView('payment');
+    toast('Order ID berjaya dijana!');
+  } catch (error) {
+    console.error('Customer order create failed:', error);
+    toast(error.message || 'Order gagal dibuat. Cuba semula.', true);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = original;
+  }
+}
+
+function renderCustomerOrderPayment() {
+  const config = customerOrderConfig();
+  const order = activeCustomerOrder || {};
+  const qr = document.getElementById('customer-order-qr');
+  const empty = document.getElementById('customer-order-qr-empty');
+  document.getElementById('customer-order-id').textContent = activeCustomerOrderId;
+  document.getElementById('customer-order-recipient').textContent = config.recipient || 'H4SX Store';
+  document.getElementById('customer-order-instructions').textContent = config.instructions;
+  document.getElementById('customer-order-pay-total').textContent = formatCustomerOrderMoney(order.total);
+  if (qr) {
+    qr.hidden = !config.qrImage;
+    if (config.qrImage) qr.src = config.qrImage;
+  }
+  if (empty) empty.hidden = !!config.qrImage;
+}
+
+function copyCustomerOrderId() {
+  if (!activeCustomerOrderId) return;
+  copyTextWithFallback(activeCustomerOrderId).then(() => toast('Order ID disalin!')).catch(() => toast('Gagal menyalin Order ID.', true));
+}
+
+async function markCustomerOrderPaid() {
+  if (!realtimeDb || !activeCustomerOrderId || !activeCustomerOrder) return;
+  const currentStatus = activeCustomerOrder.status;
+  if (currentStatus !== 'Menunggu Pembayaran') {
+    setCustomerOrderView('status');
+    return renderCustomerOrderStatus();
+  }
+  const button = document.getElementById('customer-order-paid');
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghantar...';
+  try {
+    await realtimeDb.ref(REALTIME_STORE_ROOT + '/customer_payment_claims/' + activeCustomerOrderId).set({ orderId:activeCustomerOrderId, claimedAt:firebase.database.ServerValue.TIMESTAMP });
+    activeCustomerOrderClaim = { orderId:activeCustomerOrderId, claimedAt:Date.now() };
+    setCustomerOrderView('status');
+    renderCustomerOrderStatus();
+    toast('Bayaran dihantar untuk semakan admin.');
+  } catch (error) {
+    toast(error.message || 'Gagal menghantar pengesahan.', true);
+  } finally {
+    button.disabled = false;
+    button.innerHTML = original;
+  }
+}
+
+function customerOrderEffectiveStatus() {
+  if (activeCustomerOrder?.status === 'Menunggu Pembayaran' && activeCustomerOrderClaim) return 'Menunggu Pengesahan';
+  return activeCustomerOrder?.status || 'Menunggu Pembayaran';
+}
+
+function showCustomerOrderStatus() {
+  setCustomerOrderView('status');
+  renderCustomerOrderStatus();
+}
+
+function startCustomerOrderListener(orderId) {
+  stopCustomerOrderListener();
+  activeCustomerOrderId = String(orderId || '').trim();
+  if (!realtimeDb || !activeCustomerOrderId) return;
+  customerOrderRef = realtimeDb.ref(REALTIME_STORE_ROOT + '/customer_orders/' + activeCustomerOrderId);
+  customerOrderClaimRef = realtimeDb.ref(REALTIME_STORE_ROOT + '/customer_payment_claims/' + activeCustomerOrderId);
+  customerOrderRef.on('value', snapshot => {
+    activeCustomerOrder = snapshot.val();
+    if (!activeCustomerOrder) return renderMissingCustomerOrder();
+    renderCustomerOrderPayment();
+    renderCustomerOrderStatus();
+  });
+  customerOrderClaimRef.on('value', snapshot => {
+    activeCustomerOrderClaim = snapshot.val();
+    renderCustomerOrderStatus();
+  });
+}
+
+function stopCustomerOrderListener() {
+  customerOrderRef?.off();
+  customerOrderClaimRef?.off();
+  customerOrderRef = null;
+  customerOrderClaimRef = null;
+}
+
+function renderMissingCustomerOrder() {
+  const pill = document.getElementById('customer-order-status-pill');
+  if (pill) pill.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>Order ID tidak dijumpai.</span>';
+}
+
+function renderCustomerOrderStatus() {
+  if (!activeCustomerOrder) return;
+  const status = customerOrderEffectiveStatus();
+  const statusIndex = CUSTOMER_ORDER_STATUSES.indexOf(status);
+  const cancelled = status === 'Dibatalkan';
+  const pill = document.getElementById('customer-order-status-pill');
+  const icon = cancelled ? 'fa-circle-xmark' : (status === 'Completed' ? 'fa-circle-check' : 'fa-clock');
+  document.getElementById('customer-order-status-id').textContent = activeCustomerOrderId;
+  if (pill) {
+    pill.className = 'customer-order-status-pill status-' + status.toLowerCase().replace(/\s+/g, '-');
+    pill.innerHTML = '<i class="fa-solid ' + icon + '"></i><span>' + escapeHtml(status) + '</span>';
+  }
+  const labels = ['Order diterima','Menunggu semakan bayaran','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
+  const timeline = document.getElementById('customer-order-timeline');
+  if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Admin akan semak TNG / bank' : index === 2 ? 'Pembayaran sah' : index === 3 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
+  const summary = document.getElementById('customer-order-summary');
+  if (summary) summary.innerHTML = '<div><span>Item</span><strong>' + escapeHtml((activeCustomerOrder.items || []).map(item => item.name + ' ×' + item.qty).join(', ')) + '</strong></div><div><span>Jumlah</span><strong>' + formatCustomerOrderMoney(activeCustomerOrder.total) + '</strong></div><div><span>WhatsApp</span><strong>' + escapeHtml(activeCustomerOrder.phoneMasked || '-') + '</strong></div>';
+  const receipt = document.getElementById('customer-order-receipt');
+  if (receipt) receipt.hidden = status !== 'Completed';
+}
+
+function openCustomerOrderReceipt() {
+  if (!activeCustomerOrder || customerOrderEffectiveStatus() !== 'Completed') return;
+  const date = activeCustomerOrder.completedAt || activeCustomerOrder.updatedAt || activeCustomerOrder.createdAt || Date.now();
+  document.getElementById('receipt-code').textContent = activeCustomerOrderId;
+  document.getElementById('receipt-datetime').textContent = new Date(date).toLocaleString('ms-MY', {year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kuala_Lumpur'});
+  document.getElementById('receipt-username').textContent = '-';
+  const items = Array.isArray(activeCustomerOrder.items) ? activeCustomerOrder.items : Object.values(activeCustomerOrder.items || {});
+  document.getElementById('receipt-items').innerHTML = items.map(item => '<div class="receipt-item-line"><div><div class="receipt-item-name">' + escapeHtml(item.name) + '</div><div class="receipt-item-qty">x' + Number(item.qty || 1) + '</div></div><div class="receipt-item-price">' + formatCustomerOrderMoney(item.lineTotal) + '</div></div>').join('');
+  document.getElementById('receipt-total').textContent = formatCustomerOrderMoney(activeCustomerOrder.total);
+  currentReceiptText = 'H4SX STORE - RESIT PEMBELIAN\n============================\nNo. Resit: ' + activeCustomerOrderId + '\nStatus: Completed\n\nItem Dibeli:\n' + items.map(item => '- ' + item.name + ' x' + Number(item.qty || 1) + ' = ' + formatCustomerOrderMoney(item.lineTotal)).join('\n') + '\n\n============================\nJumlah: ' + formatCustomerOrderMoney(activeCustomerOrder.total) + '\n============================\nTerima kasih kerana membeli di H4SX STORE!';
+  document.getElementById('receipt-wa-link').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(currentReceiptText);
+  closeCustomerOrder();
+  document.getElementById('receipt-modal')?.classList.add('show');
+}
+
+function resumeCustomerOrderFromUrl() {
+  const params = new URLSearchParams(location.search);
+  const orderId = String(params.get('order') || '').trim();
+  if (!orderId || !realtimeDb || !customerOrderConfig().enabled) return;
+  activeCustomerOrderId = orderId;
+  document.getElementById('customer-order-modal')?.classList.add('show');
+  setCustomerOrderView('status');
+  startCustomerOrderListener(orderId);
+}
 async function fetchKedaiJson() {
   if (realtimeDb) {
     try {
@@ -1882,6 +2212,7 @@ async function checkStore() {
       updatePaymentUI();
       updateWarnBoxUI();
       applyPrimaryWhatsAppNumber(storeConfig);
+      syncCustomerOrderFeature();
     }
     renderPromoBanner(currentStoreConfig);
     updateProductSpotlight();
@@ -1890,6 +2221,8 @@ async function checkStore() {
   }
   kedaiConfigLoaded = true;
   renderPromoBanner(currentStoreConfig);
+  syncCustomerOrderFeature();
+  if (!activeCustomerOrderId) resumeCustomerOrderFromUrl();
 
   if (isPreviewBypass()) {
     if (overlay) overlay.style.display = 'none';
@@ -3116,7 +3449,7 @@ function openCatalogControl() {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=23';
+  if (!frame.src) frame.src = 'catalog-control.htm?embedded=1&v=24';
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
@@ -3917,6 +4250,8 @@ function bootStoreApp() {
   // Initialize payment UI with config
   setTimeout(updatePaymentUI, 500);
   setTimeout(updateWarnBoxUI, 500);
+  setTimeout(syncCustomerOrderFeature, 650);
+  setTimeout(resumeCustomerOrderFromUrl, 900);
 }
 
 function startRealtimeConfigSync() {

@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=clean-home-no-audio-20260929">
+  <link rel="stylesheet" href="styles.css?v=customer-order-flow-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -621,6 +621,7 @@
       <div class="product-modal-actions">
         <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
         <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Tambah ke Troli</button>
+        <button class="pm-btn order" id="product-modal-order-btn" onclick="openCustomerOrderFromProduct()" hidden><i class="fa-solid fa-file-invoice"></i> Order Sendiri</button>
         <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>
       </div>
     </div>
@@ -668,12 +669,61 @@
     <div class="order-modal-kicker"><i class="fa-solid fa-receipt"></i> H4SX STORE</div>
     <h2>Histori Transaksi</h2>
     <p>Masukkan nombor transaksi atau nombor WhatsApp semasa membuat order.</p>
+    <button type="button" id="customer-order-launch" class="customer-order-launch" onclick="openCustomerOrder()" hidden><i class="fa-solid fa-bag-shopping"></i><span><strong>Buat Pesanan Sendiri</strong><small>Pilih item, dapatkan Order ID dan bayar melalui QR.</small></span><i class="fa-solid fa-arrow-right"></i></button>
     <form class="order-search-form" onsubmit="findOrder(event)">
       <input id="order-search-code" autocomplete="off" placeholder="No. transaksi atau WhatsApp" aria-label="Nombor transaksi atau WhatsApp">
       <button type="submit">Cari</button>
     </form>
     <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
     <button class="order-admin-link" onclick="openOrderAdmin()"><i class="fa-solid fa-lock"></i> Admin: masukkan transaksi</button>
+  </div>
+</div>
+
+<!-- SELF-SERVICE CUSTOMER ORDER -->
+<div id="customer-order-modal" class="order-modal customer-order-modal" onclick="if(event.target===this)closeCustomerOrder()">
+  <div class="order-modal-card customer-order-card">
+    <button class="order-modal-close" onclick="closeCustomerOrder()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="customer-order-brand"><span><i class="fa-solid fa-bag-shopping"></i></span><div><small>H4SX STORE</small><strong>Pesanan & Pembayaran</strong></div></div>
+    <div class="customer-order-steps" aria-label="Proses pesanan">
+      <span data-order-step="form" class="active"><b>1</b> Maklumat</span>
+      <span data-order-step="payment"><b>2</b> Bayaran</span>
+      <span data-order-step="status"><b>3</b> Status</span>
+    </div>
+
+    <section id="customer-order-form-view" class="customer-order-view">
+      <h2>Buat pesanan baru</h2><p>Isi maklumat dengan betul. Order ID akan dijana secara automatik.</p>
+      <form id="customer-order-form" class="customer-order-form" onsubmit="submitCustomerOrder(event)">
+        <label>Nama pelanggan<input id="customer-order-name" maxlength="60" autocomplete="name" required placeholder="Nama anda"></label>
+        <label>Nombor WhatsApp<input id="customer-order-phone" maxlength="24" inputmode="tel" autocomplete="tel" required placeholder="Contoh: 0123456789"></label>
+        <label class="wide">Pilih produk<select id="customer-order-product" required onchange="syncCustomerOrderProduct()"><option value="">Pilih item...</option></select></label>
+        <label id="customer-order-variant-wrap" class="wide" hidden>Pilihan / variant<select id="customer-order-variant" onchange="syncCustomerOrderTotal()"></select></label>
+        <label>Kuantiti<input id="customer-order-qty" type="number" min="1" max="20" value="1" required oninput="syncCustomerOrderTotal()"></label>
+        <label>Username / ID game <small>(jika berkaitan)</small><input id="customer-order-username" maxlength="80" placeholder="Contoh: username Roblox"></label>
+        <label class="wide">Nota tambahan <small>(pilihan)</small><textarea id="customer-order-note" rows="2" maxlength="300" placeholder="Contoh: server, level atau maklumat penting"></textarea></label>
+        <div class="customer-order-total wide"><span>Jumlah pesanan</span><strong id="customer-order-total">RM0.00</strong></div>
+        <button type="submit" class="customer-order-primary wide" id="customer-order-submit"><i class="fa-solid fa-arrow-right"></i> Jana Order ID & Teruskan</button>
+      </form>
+    </section>
+
+    <section id="customer-order-payment-view" class="customer-order-view" hidden>
+      <div class="customer-order-success"><i class="fa-solid fa-circle-check"></i><div><small>ORDER BERJAYA DICIPTA</small><strong id="customer-order-id"></strong></div><button type="button" onclick="copyCustomerOrderId()" title="Salin Order ID"><i class="fa-regular fa-copy"></i></button></div>
+      <div class="customer-payment-grid">
+        <div class="customer-payment-qr"><img id="customer-order-qr" alt="QR pembayaran H4SX Store"><div id="customer-order-qr-empty"><i class="fa-solid fa-qrcode"></i><span>QR belum ditetapkan admin</span></div></div>
+        <div class="customer-payment-info"><small>BAYAR KEPADA</small><h3 id="customer-order-recipient">H4SX Store</h3><p id="customer-order-instructions">Scan QR dan buat pembayaran mengikut jumlah pesanan.</p><div><span>Jumlah tepat</span><strong id="customer-order-pay-total">RM0.00</strong></div></div>
+      </div>
+      <div class="customer-payment-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Pastikan jumlah betul. Tekan butang di bawah hanya selepas pembayaran berjaya.</span></div>
+      <button type="button" class="customer-order-primary" id="customer-order-paid" onclick="markCustomerOrderPaid()"><i class="fa-solid fa-check-double"></i> Saya Dah Bayar</button>
+      <button type="button" class="customer-order-secondary" onclick="showCustomerOrderStatus()">Semak status pesanan</button>
+    </section>
+
+    <section id="customer-order-status-view" class="customer-order-view" hidden>
+      <div class="customer-order-status-head"><div><small>ORDER ID</small><strong id="customer-order-status-id"></strong></div><button type="button" onclick="copyCustomerOrderId()"><i class="fa-regular fa-copy"></i> Salin</button></div>
+      <div id="customer-order-status-pill" class="customer-order-status-pill"><i class="fa-solid fa-clock"></i><span>Memuat status...</span></div>
+      <div class="customer-order-timeline" id="customer-order-timeline"></div>
+      <div class="customer-order-summary" id="customer-order-summary"></div>
+      <button type="button" id="customer-order-receipt" class="customer-order-primary" onclick="openCustomerOrderReceipt()" hidden><i class="fa-solid fa-receipt"></i> Buka Resit Digital</button>
+      <button type="button" class="customer-order-secondary" onclick="startNewCustomerOrder()"><i class="fa-solid fa-plus"></i> Buat pesanan lain</button>
+    </section>
   </div>
 </div>
 
@@ -767,7 +817,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=clean-home-no-audio-20260929"></script>
+<script defer src="app.js?v=customer-order-flow-20260929"></script>
 
 </body>
 </html>

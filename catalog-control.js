@@ -28,6 +28,10 @@ const database = firebase.database();
 let products = [];
 let games = [];
 let storeConfig = {};
+let customerOrders = [];
+let customerOrderClaims = {};
+let customerOrderPrivate = {};
+let orderQrFile = null;
 let editorMode = 'product';
 let editingKey = null;
 let listenersStarted = false;
@@ -197,12 +201,29 @@ function startListeners() {
     writeConfigEditor();
     markSynced();
   }, realtimeError);
+  database.ref(ROOT + '/customer_orders').on('value', snapshot => {
+    const value = snapshot.val() || {};
+    customerOrders = Object.entries(value).map(([key, order]) => ({...(order || {}), id:order?.id || key}));
+    renderCustomerOrders();
+    markSynced();
+  }, realtimeError);
+  database.ref(ROOT + '/customer_payment_claims').on('value', snapshot => {
+    customerOrderClaims = snapshot.val() || {};
+    renderCustomerOrders();
+  }, realtimeError);
+  database.ref('customer_order_private').on('value', snapshot => {
+    customerOrderPrivate = snapshot.val() || {};
+    renderCustomerOrders();
+  }, realtimeError);
 }
 
 function stopListeners() {
   database.ref(ROOT + '/inventory').off();
   database.ref(ROOT + '/games').off();
   database.ref(ROOT + '/config').off();
+  database.ref(ROOT + '/customer_orders').off();
+  database.ref(ROOT + '/customer_payment_claims').off();
+  database.ref('customer_order_private').off();
   listenersStarted = false;
 }
 
@@ -1063,6 +1084,12 @@ function writeConfigEditor() {
   byId('quick-reviews-area').checked = storeConfig.reviews_section_visible !== false && String(storeConfig.reviews_section_visible).toLowerCase() !== 'false';
   byId('quick-banner').checked = storeConfig.promo_banner_active === true || String(storeConfig.promo_banner_active).toLowerCase() === 'true';
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
+  const orderFlow = storeConfig.order_flow || storeConfig.orderFlow || {};
+  byId('order-flow-enabled').checked = orderFlow.enabled === true || String(orderFlow.enabled).toLowerCase() === 'true';
+  byId('order-flow-recipient').value = orderFlow.recipient || orderFlow.accountName || '';
+  byId('order-flow-instructions').value = orderFlow.instructions || '';
+  byId('order-flow-qr-url').value = orderFlow.qrImage || orderFlow.qr_image || orderFlow.qrUrl || '';
+  setOrderQrPreview(byId('order-flow-qr-url').value);
 }
 
 ['quick-open','quick-maintenance','quick-review-maintenance','quick-reviews-area','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
@@ -1104,6 +1131,146 @@ byId('save-config').addEventListener('click', async event => {
     await saveStorePath('config', value, 'Tetapan kedai disimpan realtime.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
+});
+
+function setOrderQrPreview(url = '', file = null) {
+  const preview = byId('order-flow-qr-preview');
+  if (!preview) return;
+  if (file) {
+    const objectUrl = URL.createObjectURL(file);
+    preview.innerHTML = '<img src="' + objectUrl + '" alt="Preview QR pembayaran">';
+    preview.querySelector('img').addEventListener('load', () => URL.revokeObjectURL(objectUrl), {once:true});
+  } else if (url) {
+    preview.innerHTML = '<img src="' + escapeHtml(url) + '" alt="QR pembayaran">';
+  } else {
+    preview.innerHTML = '<i class="fa-solid fa-qrcode"></i><span>Preview QR</span>';
+  }
+}
+
+byId('order-flow-pick-qr').addEventListener('click', () => byId('order-flow-qr-file').click());
+byId('order-flow-qr-file').addEventListener('change', event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return notify('Pilih fail gambar QR yang sah.', true);
+  if (file.size > 32 * 1024 * 1024) return notify('Gambar QR melebihi had 32MB.', true);
+  orderQrFile = file;
+  setOrderQrPreview('', file);
+});
+byId('order-flow-qr-url').addEventListener('change', event => setOrderQrPreview(event.target.value.trim()));
+
+byId('order-flow-upload-qr').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  let savedKey = '';
+  try { savedKey = localStorage.getItem(IMGBB_KEY_STORAGE) || ''; } catch (error) {}
+  const key = byId('imgbb-api-key').value.trim() || savedKey;
+  if (!key) return notify('Simpan API key ImgBB di bahagian Tetapan dahulu.', true);
+  if (!orderQrFile) return notify('Pilih gambar QR dahulu.', true);
+  setBusy(button, true, 'Uploading...');
+  try {
+    const form = new FormData();
+    form.append('image', orderQrFile, orderQrFile.name);
+    form.append('name', 'h4sx-payment-qr');
+    const response = await fetchWithTimeout('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), {method:'POST', body:form}, 45000);
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data?.url) throw new Error(result?.error?.message || 'Upload QR gagal.');
+    const imageUrl = result.data.display_url || result.data.url;
+    byId('order-flow-qr-url').value = imageUrl;
+    setOrderQrPreview(imageUrl);
+    notify('QR berjaya diupload. Tekan Simpan Tetapan Order.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
+
+byId('save-order-flow').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const value = {
+    enabled: byId('order-flow-enabled').checked,
+    recipient: byId('order-flow-recipient').value.trim(),
+    instructions: byId('order-flow-instructions').value.trim(),
+    qrImage: byId('order-flow-qr-url').value.trim()
+  };
+  if (value.enabled && !value.qrImage) return notify('Masukkan atau upload gambar QR sebelum aktifkan feature.', true);
+  if (value.qrImage && !validMediaUrl(value.qrImage)) return notify('URL gambar QR tidak sah.', true);
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await saveStorePath('config/order_flow', value, value.enabled ? 'Pesanan pelanggan sudah diaktifkan.' : 'Pesanan pelanggan sudah ditutup.');
+    const current = JSON.parse(byId('config-editor').value || '{}');
+    current.order_flow = value;
+    byId('config-editor').value = JSON.stringify(current, null, 2);
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
+
+const CUSTOMER_ORDER_STATUS_LIST = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed','Dibatalkan'];
+
+function effectiveAdminOrderStatus(order) {
+  return order.status === 'Menunggu Pembayaran' && customerOrderClaims[order.id] ? 'Menunggu Pengesahan' : order.status;
+}
+
+function formatAdminOrderDate(value) {
+  const date = new Date(Number(value || 0));
+  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('ms-MY', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function renderCustomerOrders() {
+  const list = byId('customer-orders-list');
+  if (!list) return;
+  const query = byId('customer-order-search')?.value.trim().toLowerCase() || '';
+  const filter = byId('customer-order-filter')?.value || '';
+  const sorted = [...customerOrders].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  const filtered = sorted.filter(order => {
+    const privateData = customerOrderPrivate[order.id] || {};
+    const status = effectiveAdminOrderStatus(order);
+    const haystack = [order.id, status, order.phoneMasked, privateData.phone, privateData.customerName, ...(Array.isArray(order.items) ? order.items.map(item => item.name) : Object.values(order.items || {}).map(item => item.name))].join(' ').toLowerCase();
+    return (!query || haystack.includes(query)) && (!filter || status === filter);
+  });
+  const pendingCount = customerOrders.filter(order => effectiveAdminOrderStatus(order) === 'Menunggu Pengesahan').length;
+  const badge = byId('pending-order-count');
+  if (badge) { badge.textContent = pendingCount; badge.hidden = !pendingCount; }
+  list.innerHTML = filtered.length ? filtered.map(order => {
+    const privateData = customerOrderPrivate[order.id] || {};
+    const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+    const status = effectiveAdminOrderStatus(order);
+    const statusOptions = CUSTOMER_ORDER_STATUS_LIST.map(value => '<option value="' + value + '"' + (value === status ? ' selected' : '') + '>' + value + '</option>').join('');
+    return '<article class="customer-order-row status-' + escapeHtml(status.toLowerCase().replace(/\s+/g, '-')) + '">' +
+      '<div class="customer-order-row-head"><div><span>' + escapeHtml(status) + '</span><strong>' + escapeHtml(order.id) + '</strong><small>' + formatAdminOrderDate(order.createdAt) + '</small></div><b>RM' + Number(order.total || 0).toFixed(2) + '</b></div>' +
+      '<div class="customer-order-row-info"><div><small>PELANGGAN</small><strong>' + escapeHtml(privateData.customerName || 'Data private belum dimuat') + '</strong><span>' + escapeHtml(privateData.phone || order.phoneMasked || '-') + '</span></div><div><small>ITEM</small><strong>' + escapeHtml(items.map(item => item.name + ' ×' + Number(item.qty || 1)).join(', ') || '-') + '</strong><span>' + escapeHtml(privateData.username ? 'Username: ' + privateData.username : '') + '</span></div></div>' +
+      (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i>' + escapeHtml(privateData.note) + '</div>' : '') +
+      '<div class="customer-order-row-actions"><select data-order-status="' + escapeHtml(order.id) + '">' + statusOptions + '</select><button class="primary" data-action="save-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-floppy-disk"></i> Simpan status</button>' +
+      (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') + '</div></article>';
+  }).join('') : '<div class="empty">Tiada pesanan sepadan.</div>';
+}
+
+async function updateCustomerOrderStatus(orderId, status, button) {
+  const order = customerOrders.find(item => item.id === orderId);
+  if (!order) return notify('Order tidak dijumpai.', true);
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    const updates = {
+      [ROOT + '/customer_orders/' + orderId + '/status']: status,
+      [ROOT + '/customer_orders/' + orderId + '/updatedAt']: firebase.database.ServerValue.TIMESTAMP
+    };
+    if (status === 'Sudah Dibayar') updates[ROOT + '/customer_orders/' + orderId + '/paidAt'] = firebase.database.ServerValue.TIMESTAMP;
+    if (status === 'Completed') updates[ROOT + '/customer_orders/' + orderId + '/completedAt'] = firebase.database.ServerValue.TIMESTAMP;
+    if (status !== 'Menunggu Pengesahan') updates[ROOT + '/customer_payment_claims/' + orderId] = null;
+    await withTimeout(database.ref().update(updates), 'Kemaskini status order');
+    notify('Status ' + orderId + ' ditukar kepada ' + status + '.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
+byId('refresh-customer-orders').addEventListener('click', renderCustomerOrders);
+byId('customer-order-search').addEventListener('input', renderCustomerOrders);
+byId('customer-order-filter').addEventListener('change', renderCustomerOrders);
+byId('customer-orders-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+  const orderId = button.dataset.id;
+  if (button.dataset.action === 'confirm-customer-payment') return updateCustomerOrderStatus(orderId, 'Sudah Dibayar', button);
+  if (button.dataset.action === 'save-customer-order') {
+    const status = document.querySelector('[data-order-status="' + CSS.escape(orderId) + '"]')?.value;
+    if (status) updateCustomerOrderStatus(orderId, status, button);
+  }
 });
 
 function validMediaUrl(value) {
