@@ -2222,7 +2222,11 @@ function showAnnouncementModal(config) {
 }
 function checkAndShowAnnouncement() {
   const config = getAnnouncementConfig();
-  if (!config.active || !config.id || isAnnouncementHidden(config) || dismissedAnnouncementIds.has(config.id)) return;
+  const existing = document.getElementById('h4sx-announcement-modal');
+  if (!config.active || !config.id || isAnnouncementHidden(config) || dismissedAnnouncementIds.has(config.id)) {
+    if (existing) closeAnnouncementModal(existing);
+    return;
+  }
   showAnnouncementModal(config);
 }
 function isTimeWithinRange(currentTime, startTime, endTime) {
@@ -2409,6 +2413,8 @@ async function checkStore() {
   
   if (shouldClose) {
     console.log(`Showing ${closureType} popup`);
+    const announcementModal = document.getElementById('h4sx-announcement-modal');
+    if (announcementModal) closeAnnouncementModal(announcementModal);
     showClosure(title, status, message, closureType);
     updateBusinessHoursDisplay(currentStoreConfig, false);
   } else {
