@@ -20,8 +20,8 @@
       }
     },
     "customer_order_private": {
+      ".read": "auth != null",
       "$orderId": {
-        ".read": "auth != null",
         ".write": "auth != null || (!data.exists() && newData.hasChildren(['customerName','phone','createdAt']))",
         ".validate": "newData.hasChildren(['customerName','phone','createdAt']) && newData.child('customerName').isString() && newData.child('customerName').val().length > 0 && newData.child('customerName').val().length <= 60 && newData.child('phone').isString() && newData.child('phone').val().length >= 9 && newData.child('phone').val().length <= 15 && newData.child('createdAt').isNumber()"
       }

@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=customer-order-flow-20260929">
+  <link rel="stylesheet" href="styles.css?v=customer-order-whatsapp-popup-20260929">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -713,6 +713,7 @@
       </div>
       <div class="customer-payment-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Pastikan jumlah betul. Tekan butang di bawah hanya selepas pembayaran berjaya.</span></div>
       <button type="button" class="customer-order-primary" id="customer-order-paid" onclick="markCustomerOrderPaid()"><i class="fa-solid fa-check-double"></i> Saya Dah Bayar</button>
+      <button type="button" class="customer-order-whatsapp" onclick="openCustomerOrderWhatsAppPrompt('order')"><i class="fa-brands fa-whatsapp"></i><span><strong>Hantar Order ke WhatsApp</strong><small>Maklumkan admin supaya pesanan anda cepat dilihat</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
       <button type="button" class="customer-order-secondary" onclick="showCustomerOrderStatus()">Semak status pesanan</button>
     </section>
 
@@ -722,8 +723,22 @@
       <div class="customer-order-timeline" id="customer-order-timeline"></div>
       <div class="customer-order-summary" id="customer-order-summary"></div>
       <button type="button" id="customer-order-receipt" class="customer-order-primary" onclick="openCustomerOrderReceipt()" hidden><i class="fa-solid fa-receipt"></i> Buka Resit Digital</button>
+      <button type="button" class="customer-order-whatsapp" onclick="openCustomerOrderWhatsAppPrompt('status')"><i class="fa-brands fa-whatsapp"></i><span><strong>Hantar Status ke WhatsApp</strong><small>Kongsi Order ID dan status terkini dengan admin</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
       <button type="button" class="customer-order-secondary" onclick="startNewCustomerOrder()"><i class="fa-solid fa-plus"></i> Buat pesanan lain</button>
     </section>
+
+    <div id="customer-order-wa-prompt" class="customer-order-wa-prompt" hidden role="dialog" aria-modal="true" aria-labelledby="customer-order-wa-title">
+      <div class="customer-order-wa-card">
+        <button type="button" class="customer-order-wa-close" onclick="closeCustomerOrderWhatsAppPrompt()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+        <div class="customer-order-wa-icon"><i class="fa-brands fa-whatsapp"></i><span><i class="fa-solid fa-bell"></i></span></div>
+        <small>LANGKAH PENTING</small>
+        <h3 id="customer-order-wa-title">Hantar order kepada admin</h3>
+        <p id="customer-order-wa-copy">Tekan butang hijau supaya admin nampak pesanan anda dan boleh mula membuat semakan.</p>
+        <div class="customer-order-wa-id"><span>ORDER ID</span><strong id="customer-order-wa-id"></strong></div>
+        <button type="button" class="customer-order-wa-send" onclick="sendCustomerOrderToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Hantar Sekarang</button>
+        <button type="button" class="customer-order-wa-later" onclick="closeCustomerOrderWhatsAppPrompt()">Nanti, saya hantar kemudian</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -817,7 +832,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=customer-order-flow-20260929"></script>
+<script defer src="app.js?v=customer-order-whatsapp-popup-20260929"></script>
 
 </body>
 </html>

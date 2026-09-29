@@ -636,6 +636,8 @@ const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Su
 let activeCustomerOrderId = '';
 let activeCustomerOrder = null;
 let activeCustomerOrderClaim = null;
+let activeCustomerOrderPrivate = null;
+let activeCustomerOrderWhatsAppMode = 'order';
 let customerOrderRef = null;
 let customerOrderClaimRef = null;
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
@@ -750,6 +752,7 @@ function openCustomerOrderFromProduct() {
 }
 
 function closeCustomerOrder() {
+  closeCustomerOrderWhatsAppPrompt();
   document.getElementById('customer-order-modal')?.classList.remove('show');
 }
 
@@ -758,6 +761,8 @@ function startNewCustomerOrder() {
   activeCustomerOrderId = '';
   activeCustomerOrder = null;
   activeCustomerOrderClaim = null;
+  activeCustomerOrderPrivate = null;
+  closeCustomerOrderWhatsAppPrompt();
   document.getElementById('customer-order-form')?.reset();
   const qty = document.getElementById('customer-order-qty');
   if (qty) qty.value = '1';
@@ -815,6 +820,7 @@ async function submitCustomerOrder(event) {
     await realtimeDb.ref().update(updates);
     activeCustomerOrderId = orderId;
     activeCustomerOrder = { ...publicOrder, createdAt:Date.now(), updatedAt:Date.now() };
+    activeCustomerOrderPrivate = { customerName, phone, username, note };
     try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, orderId); } catch (error) {}
     const orderUrl = new URL(location.href);
     orderUrl.searchParams.set('order', orderId);
@@ -823,6 +829,7 @@ async function submitCustomerOrder(event) {
     startCustomerOrderListener(orderId);
     setCustomerOrderView('payment');
     toast('Order ID berjaya dijana!');
+    setTimeout(() => openCustomerOrderWhatsAppPrompt('order'), 260);
   } catch (error) {
     console.error('Customer order create failed:', error);
     toast(error.message || 'Order gagal dibuat. Cuba semula.', true);
@@ -853,6 +860,66 @@ function copyCustomerOrderId() {
   copyTextWithFallback(activeCustomerOrderId).then(() => toast('Order ID disalin!')).catch(() => toast('Gagal menyalin Order ID.', true));
 }
 
+function customerOrderWhatsAppMessage(mode = 'order') {
+  const order = activeCustomerOrder || {};
+  const privateOrder = activeCustomerOrderPrivate || {};
+  const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
+  const itemLines = items.length
+    ? items.map(item => '- ' + String(item.name || 'Produk') + ' x' + Number(item.qty || 1)).join('\n')
+    : '- Maklumat item akan disemak melalui Order ID';
+  const status = customerOrderEffectiveStatus();
+  const heading = mode === 'paid'
+    ? 'Hai admin H4SX, saya sudah membuat pembayaran untuk order ini.'
+    : 'Hai admin H4SX, saya mahu menghantar maklumat order ini.';
+  const details = [
+    heading,
+    '',
+    'Order ID: ' + activeCustomerOrderId,
+    'Item:',
+    itemLines,
+    'Jumlah: ' + formatCustomerOrderMoney(order.total),
+    'Status: ' + status
+  ];
+  if (privateOrder.customerName) details.push('Nama: ' + privateOrder.customerName);
+  if (privateOrder.username) details.push('Username / ID game: ' + privateOrder.username);
+  if (privateOrder.note) details.push('Nota: ' + privateOrder.note);
+  details.push('', mode === 'paid' ? 'Mohon semak pembayaran saya. Terima kasih.' : 'Mohon semak pesanan saya. Terima kasih.');
+  return details.join('\n');
+}
+
+function openCustomerOrderWhatsAppPrompt(mode = 'order') {
+  if (!activeCustomerOrderId || !activeCustomerOrder) return toast('Buat pesanan dahulu sebelum menghantar ke WhatsApp.', true);
+  activeCustomerOrderWhatsAppMode = mode;
+  const prompt = document.getElementById('customer-order-wa-prompt');
+  const title = document.getElementById('customer-order-wa-title');
+  const copy = document.getElementById('customer-order-wa-copy');
+  const id = document.getElementById('customer-order-wa-id');
+  if (!prompt) return;
+  if (title) title.textContent = mode === 'paid' ? 'Maklumkan bayaran kepada admin' : 'Hantar order kepada admin';
+  if (copy) copy.textContent = mode === 'paid'
+    ? 'Bayaran sudah ditanda. Hantar mesej ini supaya admin cepat nampak dan boleh membuat pengesahan.'
+    : 'Tekan butang hijau supaya admin nampak pesanan anda dan boleh mula membuat semakan.';
+  if (id) id.textContent = activeCustomerOrderId;
+  prompt.hidden = false;
+  requestAnimationFrame(() => prompt.classList.add('show'));
+}
+
+function closeCustomerOrderWhatsAppPrompt() {
+  const prompt = document.getElementById('customer-order-wa-prompt');
+  if (!prompt) return;
+  prompt.classList.remove('show');
+  setTimeout(() => { if (!prompt.classList.contains('show')) prompt.hidden = true; }, 180);
+}
+
+function sendCustomerOrderToWhatsApp() {
+  if (!activeCustomerOrderId || !activeCustomerOrder) return;
+  const phone = normalizeWhatsAppTarget(WA_NUMBER, DEFAULT_WA_NUMBER);
+  const message = customerOrderWhatsAppMessage(activeCustomerOrderWhatsAppMode);
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  closeCustomerOrderWhatsAppPrompt();
+  toast('WhatsApp dibuka. Tekan Send untuk hantar order.');
+}
+
 async function markCustomerOrderPaid() {
   if (!realtimeDb || !activeCustomerOrderId || !activeCustomerOrder) return;
   const currentStatus = activeCustomerOrder.status;
@@ -870,6 +937,7 @@ async function markCustomerOrderPaid() {
     setCustomerOrderView('status');
     renderCustomerOrderStatus();
     toast('Bayaran dihantar untuk semakan admin.');
+    setTimeout(() => openCustomerOrderWhatsAppPrompt('paid'), 260);
   } catch (error) {
     toast(error.message || 'Gagal menghantar pengesahan.', true);
   } finally {

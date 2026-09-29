@@ -61,6 +61,142 @@
   --section-spacing: clamp(48px, 7vw, 96px);
   --nav-h: 76px;
 }
+
+/* Customer order WhatsApp reminder */
+.customer-order-whatsapp {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 11px;
+  margin-top: 9px;
+  padding: 11px 13px;
+  border: 1px solid #8de0be;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #e9fff5, #dcfce7);
+  color: #08784f;
+  text-align: left;
+  cursor: pointer;
+}
+.customer-order-whatsapp > i:first-child {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #20c66b;
+  color: #fff;
+  font-size: 20px;
+  box-shadow: 0 7px 16px rgba(32, 198, 107, .24);
+}
+.customer-order-whatsapp span { display: grid; gap: 2px; }
+.customer-order-whatsapp strong { font-size: 12px; }
+.customer-order-whatsapp small { color: #4b8e72; font-size: 9px; }
+.customer-order-whatsapp > i:last-child { font-size: 11px; }
+.customer-order-wa-prompt[hidden] { display: none; }
+.customer-order-wa-prompt {
+  position: absolute;
+  z-index: 15;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  border-radius: inherit;
+  background: rgba(7, 30, 42, .68);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.customer-order-wa-prompt.show { opacity: 1; }
+.customer-order-wa-card {
+  position: relative;
+  width: min(430px, 100%);
+  padding: 27px 23px 21px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 22px;
+  background: linear-gradient(155deg, #fff, #edfff5);
+  box-shadow: 0 24px 65px rgba(0, 0, 0, .3);
+  text-align: center;
+  transform: translateY(12px) scale(.97);
+  transition: transform .2s ease;
+}
+.customer-order-wa-prompt.show .customer-order-wa-card { transform: none; }
+.customer-order-wa-close {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #e6f3ed;
+  color: #587369;
+  cursor: pointer;
+}
+.customer-order-wa-icon {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #25d366, #0eab76);
+  color: #fff;
+  font-size: 37px;
+  box-shadow: 0 15px 30px rgba(24, 190, 103, .28);
+}
+.customer-order-wa-icon span {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #ffbf31;
+  color: #714b00;
+  font-size: 9px;
+}
+.customer-order-wa-card > small { color: #0bab6e; font-size: 9px; font-weight: 900; letter-spacing: 1.7px; }
+.customer-order-wa-card h3 { margin: 5px 0 7px; color: #102f27; font-size: 21px; }
+.customer-order-wa-card p { margin: 0 auto 15px; max-width: 345px; color: #5c766d; font-size: 12px; line-height: 1.55; }
+.customer-order-wa-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px dashed #8ed9ba;
+  border-radius: 11px;
+  background: #fff;
+  color: #56766a;
+}
+.customer-order-wa-id span { font-size: 9px; font-weight: 900; letter-spacing: 1px; }
+.customer-order-wa-id strong { color: #0a8057; font-size: 13px; }
+.customer-order-wa-send {
+  width: 100%;
+  border: 0;
+  border-radius: 13px;
+  padding: 14px;
+  background: linear-gradient(135deg, #25d366, #13b87a);
+  color: #fff;
+  font: 900 13px inherit;
+  box-shadow: 0 10px 23px rgba(24, 190, 103, .25);
+  cursor: pointer;
+}
+.customer-order-wa-send i { margin-right: 7px; font-size: 17px; }
+.customer-order-wa-later { margin-top: 8px; border: 0; background: transparent; color: #799087; font: 700 10px inherit; cursor: pointer; }
+
+@media (max-width: 620px) {
+  .customer-order-wa-prompt { position: fixed; border-radius: 0; padding: 15px; }
+  .customer-order-wa-card { padding: 25px 17px 18px; }
+  .customer-order-wa-icon { width: 64px; height: 64px; font-size: 32px; }
+  .customer-order-wa-card h3 { font-size: 19px; }
+}
 html { 
   scroll-behavior: smooth; 
   overflow-x: hidden;
