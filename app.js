@@ -1039,8 +1039,25 @@ function stopCustomerOrderListener() {
 }
 
 function renderMissingCustomerOrder() {
-  const pill = document.getElementById('customer-order-status-pill');
-  if (pill) pill.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i><span>Order ID tidak dijumpai.</span>';
+  const removedOrderId = activeCustomerOrderId;
+  stopCustomerOrderListener();
+  try {
+    if (storedCustomerOrderId() === removedOrderId) localStorage.removeItem(CUSTOMER_ORDER_STORAGE_KEY);
+  } catch (error) {}
+  activeCustomerOrderId = '';
+  activeCustomerOrder = null;
+  activeCustomerOrderClaim = null;
+  activeCustomerOrderPrivate = null;
+  updateLastCustomerOrderButton();
+  closeCustomerOrderWhatsAppPrompt();
+  document.getElementById('customer-order-modal')?.classList.remove('show');
+  try {
+    const url = new URL(location.href);
+    url.searchParams.delete('order');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (error) {}
+  showHome();
+  toast(removedOrderId ? 'Pesanan ' + removedOrderId + ' sudah tiada atau telah dipadam.' : 'Pesanan tidak dijumpai.', true);
 }
 
 function renderCustomerOrderStatus() {
