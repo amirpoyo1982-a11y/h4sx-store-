@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=26-admin-hub">
+  <link rel="stylesheet" href="catalog-control.css?v=27-order-voice">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=26-admin-hub"></script>
+  <script defer src="catalog-control.js?v=27-order-voice"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -83,7 +83,7 @@
       </section>
 
       <section class="panel" data-panel="orders">
-        <div class="panel-head"><div><h2>Pesanan pelanggan</h2><p>Sahkan bayaran secara manual, proses order dan lengkapkan resit digital.</p></div><button class="ghost" id="refresh-customer-orders"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <div class="panel-head"><div><h2>Pesanan pelanggan</h2><p>Sahkan bayaran secara manual, proses order dan lengkapkan resit digital.</p></div><div class="customer-order-head-actions"><button class="ghost order-sound-toggle" id="customer-order-sound-toggle"><i class="fa-solid fa-volume-high"></i> <span>Bunyi ON</span></button><button class="ghost" id="customer-order-sound-test"><i class="fa-solid fa-play"></i> Test Bunyi</button><button class="ghost" id="refresh-customer-orders"><i class="fa-solid fa-rotate"></i> Refresh</button></div></div>
         <div class="order-flow-settings">
           <div class="order-flow-heading"><div><span>SELF-SERVICE ORDER</span><h3>QR & arahan pembayaran</h3><p>Pelanggan isi order sendiri. Anda masih perlu semak TNG / bank sebelum menekan Confirm.</p></div><label class="switch"><input id="order-flow-enabled" type="checkbox"><span></span> Aktifkan</label></div>
           <div class="order-flow-config-grid">

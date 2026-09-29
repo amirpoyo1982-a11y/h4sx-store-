@@ -3644,7 +3644,7 @@ function openCatalogControl(tab = 'products') {
   const safeTab = ['products','games','promos','orders','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
   if (frame.dataset.tab !== safeTab) {
     frame.dataset.tab = safeTab;
-    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=25-admin-hub';
+    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=27-order-voice';
   }
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));

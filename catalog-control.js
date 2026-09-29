@@ -32,6 +32,8 @@ let storeConfig = {};
 let customerOrders = [];
 let customerOrderClaims = {};
 let customerOrderPrivate = {};
+let knownCustomerOrderIds = new Set();
+let customerOrdersReady = false;
 let orderQrFile = null;
 let editorMode = 'product';
 let editingKey = null;
@@ -204,9 +206,15 @@ function startListeners() {
   }, realtimeError);
   database.ref(ROOT + '/customer_orders').on('value', snapshot => {
     const value = snapshot.val() || {};
-    customerOrders = Object.entries(value).map(([key, order]) => ({...(order || {}), id:order?.id || key}));
+    const nextOrders = Object.entries(value).map(([key, order]) => ({...(order || {}), id:order?.id || key}));
+    const nextIds = new Set(nextOrders.map(order => String(order.id)));
+    const newOrders = customerOrdersReady ? nextOrders.filter(order => !knownCustomerOrderIds.has(String(order.id))) : [];
+    customerOrders = nextOrders;
+    knownCustomerOrderIds = nextIds;
+    if (!customerOrdersReady) customerOrdersReady = true;
     renderCustomerOrders();
     markSynced();
+    if (newOrders.length) announceNewCustomerOrders(newOrders);
   }, realtimeError);
   database.ref(ROOT + '/customer_payment_claims').on('value', snapshot => {
     customerOrderClaims = snapshot.val() || {};
@@ -226,6 +234,8 @@ function stopListeners() {
   database.ref(ROOT + '/customer_payment_claims').off();
   database.ref('customer_order_private').off();
   listenersStarted = false;
+  customerOrdersReady = false;
+  knownCustomerOrderIds = new Set();
 }
 
 function realtimeError(error) {
@@ -1214,6 +1224,48 @@ byId('save-order-flow').addEventListener('click', async event => {
 });
 
 const CUSTOMER_ORDER_STATUS_LIST = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed','Dibatalkan'];
+const CUSTOMER_ORDER_SOUND_KEY = 'h4sx_customer_order_sound_enabled';
+
+function customerOrderSoundEnabled() {
+  try { return localStorage.getItem(CUSTOMER_ORDER_SOUND_KEY) !== 'false'; }
+  catch (error) { return true; }
+}
+
+function syncCustomerOrderSoundButton() {
+  const button = byId('customer-order-sound-toggle');
+  if (!button) return;
+  const enabled = customerOrderSoundEnabled();
+  button.classList.toggle('is-off', !enabled);
+  button.querySelector('i').className = enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+  button.querySelector('span').textContent = enabled ? 'Bunyi ON' : 'Bunyi OFF';
+}
+
+function speakNewCustomerOrder(count = 1, force = false) {
+  if (!force && !customerOrderSoundEnabled()) return;
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    if (force) notify('Browser ini tidak menyokong suara notification.', true);
+    return;
+  }
+  const text = count > 1 ? count + ' order baru masuk' : 'Order baru masuk';
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'ms-MY';
+  utterance.rate = 0.92;
+  utterance.pitch = 1.05;
+  utterance.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const voice = voices.find(item => /^ms[-_]/i.test(item.lang))
+    || voices.find(item => /^id[-_]/i.test(item.lang))
+    || voices.find(item => /^en[-_]/i.test(item.lang));
+  if (voice) utterance.voice = voice;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
+function announceNewCustomerOrders(orders) {
+  const count = orders.length;
+  speakNewCustomerOrder(count);
+  notify(count > 1 ? count + ' order baru masuk!' : 'Order baru masuk: ' + orders[0].id);
+}
 
 function effectiveAdminOrderStatus(order) {
   return order.status === 'Menunggu Pembayaran' && customerOrderClaims[order.id] ? 'Menunggu Pengesahan' : order.status;
@@ -1289,6 +1341,17 @@ async function deleteCustomerOrder(orderId, button) {
 }
 
 byId('refresh-customer-orders').addEventListener('click', renderCustomerOrders);
+byId('customer-order-sound-toggle').addEventListener('click', () => {
+  const enabled = !customerOrderSoundEnabled();
+  try { localStorage.setItem(CUSTOMER_ORDER_SOUND_KEY, String(enabled)); } catch (error) {}
+  syncCustomerOrderSoundButton();
+  notify(enabled ? 'Bunyi order baru diaktifkan.' : 'Bunyi order baru dimatikan.');
+  if (enabled) speakNewCustomerOrder(1, true);
+});
+byId('customer-order-sound-test').addEventListener('click', () => {
+  speakNewCustomerOrder(1, true);
+  notify('Test suara: Order baru masuk.');
+});
 byId('customer-order-search').addEventListener('input', renderCustomerOrders);
 byId('customer-order-filter').addEventListener('change', renderCustomerOrders);
 byId('customer-orders-list').addEventListener('click', event => {
@@ -1302,6 +1365,8 @@ byId('customer-orders-list').addEventListener('click', event => {
     if (status) updateCustomerOrderStatus(orderId, status, button);
   }
 });
+
+syncCustomerOrderSoundButton();
 
 function validMediaUrl(value) {
   if (!value) return false;
