@@ -13,7 +13,9 @@
           ".write": "auth != null || (!data.exists() && newData.child('id').val() === $orderId && newData.child('status').val() === 'Menunggu Pembayaran')",
           ".validate": "newData.hasChildren(['id','items','total','status','createdAt','phoneMasked']) && newData.child('id').val() === $orderId && newData.child('items').hasChildren() && newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('createdAt').isNumber() && newData.child('phoneMasked').isString()",
           "adminNote": { ".validate": "auth != null && newData.isString() && newData.val().length <= 400" },
-          "adminNoteUpdatedAt": { ".validate": "auth != null && newData.isNumber()" }
+          "adminNoteUpdatedAt": { ".validate": "auth != null && newData.isNumber()" },
+          "deliveryCipher": { ".validate": "auth != null && newData.hasChildren(['v','iv','data']) && newData.child('v').val() === 1 && newData.child('iv').isString() && newData.child('data').isString() && newData.child('data').val().length <= 10000" },
+          "deliveryUpdatedAt": { ".validate": "auth != null && newData.isNumber()" }
         }
       },
       "customer_payment_claims": {
@@ -29,7 +31,8 @@
       ".read": "auth != null",
       "$orderId": {
         ".write": "auth != null || (!data.exists() && newData.hasChildren(['customerName','phone','createdAt']))",
-        ".validate": "newData.hasChildren(['customerName','phone','createdAt']) && newData.child('customerName').isString() && newData.child('customerName').val().length > 0 && newData.child('customerName').val().length <= 60 && newData.child('phone').isString() && newData.child('phone').val().length >= 9 && newData.child('phone').val().length <= 15 && newData.child('createdAt').isNumber()"
+        ".validate": "newData.hasChildren(['customerName','phone','createdAt']) && newData.child('customerName').isString() && newData.child('customerName').val().length > 0 && newData.child('customerName').val().length <= 60 && newData.child('phone').isString() && newData.child('phone').val().length >= 9 && newData.child('phone').val().length <= 15 && newData.child('createdAt').isNumber()",
+        "deliveryToken": { ".validate": "newData.isString() && newData.val().matches(/^[a-fA-F0-9]{64}$/)" }
       }
     }
   }

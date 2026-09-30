@@ -632,6 +632,7 @@ let cartSelectedKeys = new Set();
 let modalVariantId = '', modalQuantity = 1;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 const CUSTOMER_ORDER_STORAGE_KEY = 'h4sx_customer_order_id';
+const CUSTOMER_ORDER_ACCESS_PREFIX = 'h4sx_customer_order_access_';
 const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed'];
 let activeCustomerOrderId = '';
 let activeCustomerOrder = null;
@@ -640,6 +641,8 @@ let activeCustomerOrderPrivate = null;
 let activeCustomerOrderWhatsAppMode = 'order';
 let customerOrderRef = null;
 let customerOrderClaimRef = null;
+let activeCustomerOrderDelivery = null;
+let activeCustomerOrderAccessToken = '';
 let checkoutReq = { requireLogin:false, requirePassword:false, backupCodeCount:0 };
 let kedaiConfigLoaded = false;
 
@@ -667,6 +670,32 @@ function syncCustomerOrderFeature() {
 function storedCustomerOrderId() {
   try { return String(localStorage.getItem(CUSTOMER_ORDER_STORAGE_KEY) || '').trim(); }
   catch (error) { return ''; }
+}
+
+function generateCustomerOrderAccessToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function storedCustomerOrderAccess(orderId) {
+  try { return String(localStorage.getItem(CUSTOMER_ORDER_ACCESS_PREFIX + orderId) || '').trim(); }
+  catch (error) { return ''; }
+}
+
+function bytesFromHex(value) {
+  const hex = String(value || '').trim();
+  if (!/^[a-f0-9]{64}$/i.test(hex)) throw new Error('Kod akses serahan tidak sah.');
+  return new Uint8Array(hex.match(/.{2}/g).map(pair => parseInt(pair, 16)));
+}
+
+function bytesFromBase64(value) {
+  return Uint8Array.from(atob(String(value || '')), char => char.charCodeAt(0));
+}
+
+async function decryptCustomerDelivery(cipher, token) {
+  if (!cipher?.iv || !cipher?.data) return null;
+  const key = await crypto.subtle.importKey('raw', bytesFromHex(token), {name:'AES-GCM'}, false, ['decrypt']);
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:bytesFromBase64(cipher.iv)}, key, bytesFromBase64(cipher.data));
+  return JSON.parse(new TextDecoder().decode(plain));
 }
 
 function updateLastCustomerOrderButton() {
@@ -775,7 +804,9 @@ function openCustomerOrderById(orderId) {
   activeCustomerOrderId = id;
   activeCustomerOrder = null;
   activeCustomerOrderClaim = null;
+  activeCustomerOrderDelivery = null;
   activeCustomerOrderPrivate = null;
+  activeCustomerOrderAccessToken = storedCustomerOrderAccess(id);
   try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, id); } catch (error) {}
   updateLastCustomerOrderButton();
   const modal = document.getElementById('customer-order-modal');
@@ -818,7 +849,9 @@ function startNewCustomerOrder() {
   activeCustomerOrderId = '';
   activeCustomerOrder = null;
   activeCustomerOrderClaim = null;
+  activeCustomerOrderDelivery = null;
   activeCustomerOrderPrivate = null;
+  activeCustomerOrderAccessToken = '';
   closeCustomerOrderWhatsAppPrompt();
   document.getElementById('customer-order-form')?.reset();
   const qty = document.getElementById('customer-order-qty');
@@ -860,6 +893,7 @@ async function submitCustomerOrder(event) {
   button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menjana Order ID...';
   try {
     const orderId = await generateCustomerOrderId();
+    const deliveryToken = generateCustomerOrderAccessToken();
     const now = firebase.database.ServerValue.TIMESTAMP;
     const publicOrder = {
       id: orderId,
@@ -870,7 +904,7 @@ async function submitCustomerOrder(event) {
       createdAt: now,
       updatedAt: now
     };
-    const privateOrder = { customerName, phone, username, note, createdAt:now };
+    const privateOrder = { customerName, phone, username, note, deliveryToken, createdAt:now };
     const updates = {};
     updates[REALTIME_STORE_ROOT + '/customer_orders/' + orderId] = publicOrder;
     updates['customer_order_private/' + orderId] = privateOrder;
@@ -878,7 +912,11 @@ async function submitCustomerOrder(event) {
     activeCustomerOrderId = orderId;
     activeCustomerOrder = { ...publicOrder, createdAt:Date.now(), updatedAt:Date.now() };
     activeCustomerOrderPrivate = { customerName, phone, username, note };
-    try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, orderId); } catch (error) {}
+    activeCustomerOrderAccessToken = deliveryToken;
+    try {
+      localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, orderId);
+      localStorage.setItem(CUSTOMER_ORDER_ACCESS_PREFIX + orderId, deliveryToken);
+    } catch (error) {}
     updateLastCustomerOrderButton();
     const orderUrl = new URL(location.href);
     orderUrl.searchParams.set('order', orderId);
@@ -915,6 +953,19 @@ function renderCustomerOrderPayment() {
 function copyCustomerOrderId() {
   if (!activeCustomerOrderId) return;
   copyTextWithFallback(activeCustomerOrderId).then(() => toast('Order ID disalin!')).catch(() => toast('Gagal menyalin Order ID.', true));
+}
+
+async function copyCustomerOrderAdminNote() {
+  const noteElement = document.getElementById('customer-order-admin-note-text');
+  const fullNote = String(noteElement?.textContent || '').trim();
+  if (!noteElement || !fullNote) return toast('Nota admin masih kosong.', true);
+  const selection = window.getSelection?.();
+  const selectedText = selection && !selection.isCollapsed && noteElement.contains(selection.anchorNode) && noteElement.contains(selection.focusNode)
+    ? String(selection.toString() || '').trim()
+    : '';
+  const value = selectedText || fullNote;
+  const copied = await copyTextWithFallback(value);
+  toast(copied ? (selectedText ? 'Teks pilihan disalin!' : 'Nota admin disalin!') : 'Gagal menyalin nota admin.', !copied);
 }
 
 function customerOrderWhatsAppMessage(mode = 'order') {
@@ -1024,11 +1075,43 @@ function startCustomerOrderListener(orderId) {
     if (!activeCustomerOrder) return renderMissingCustomerOrder();
     renderCustomerOrderPayment();
     renderCustomerOrderStatus();
+    loadCustomerOrderDelivery();
   });
   customerOrderClaimRef.on('value', snapshot => {
     activeCustomerOrderClaim = snapshot.val();
     renderCustomerOrderStatus();
   });
+}
+
+async function loadCustomerOrderDelivery() {
+  activeCustomerOrderDelivery = null;
+  const cipher = activeCustomerOrder?.deliveryCipher;
+  if (!cipher || !activeCustomerOrderAccessToken) return renderCustomerOrderDelivery();
+  try {
+    activeCustomerOrderDelivery = await decryptCustomerDelivery(cipher, activeCustomerOrderAccessToken);
+  } catch (error) {
+    activeCustomerOrderDelivery = null;
+  }
+  renderCustomerOrderDelivery();
+}
+
+async function unlockCustomerOrderDelivery() {
+  const input = document.getElementById('customer-order-delivery-access');
+  const token = String(input?.value || '').replace(/\s+/g, '').trim();
+  if (!/^[a-f0-9]{64}$/i.test(token)) return toast('Kod Akses Serahan tidak sah.', true);
+  activeCustomerOrderAccessToken = token;
+  try {
+    const delivery = await decryptCustomerDelivery(activeCustomerOrder?.deliveryCipher, token);
+    if (!delivery) throw new Error('Maklumat serahan belum tersedia.');
+    activeCustomerOrderDelivery = delivery;
+    localStorage.setItem(CUSTOMER_ORDER_ACCESS_PREFIX + activeCustomerOrderId, token);
+    renderCustomerOrderDelivery();
+    toast('Maklumat serahan berjaya dibuka!');
+  } catch (error) {
+    activeCustomerOrderDelivery = null;
+    renderCustomerOrderDelivery();
+    toast('Kod akses salah atau maklumat belum tersedia.', true);
+  }
 }
 
 function stopCustomerOrderListener() {
@@ -1047,7 +1130,9 @@ function renderMissingCustomerOrder() {
   activeCustomerOrderId = '';
   activeCustomerOrder = null;
   activeCustomerOrderClaim = null;
+  activeCustomerOrderDelivery = null;
   activeCustomerOrderPrivate = null;
+  activeCustomerOrderAccessToken = '';
   updateLastCustomerOrderButton();
   closeCustomerOrderWhatsAppPrompt();
   document.getElementById('customer-order-modal')?.classList.remove('show');
@@ -1084,6 +1169,46 @@ function renderCustomerOrderStatus() {
   if (summary) summary.innerHTML = '<div><span>Item</span><strong>' + escapeHtml((activeCustomerOrder.items || []).map(item => item.name + ' ×' + item.qty).join(', ')) + '</strong></div><div><span>Jumlah</span><strong>' + formatCustomerOrderMoney(activeCustomerOrder.total) + '</strong></div><div><span>WhatsApp</span><strong>' + escapeHtml(activeCustomerOrder.phoneMasked || '-') + '</strong></div>';
   const receipt = document.getElementById('customer-order-receipt');
   if (receipt) receipt.hidden = status !== 'Completed';
+  renderCustomerOrderDelivery();
+}
+
+const CUSTOMER_DELIVERY_FIELDS = [
+  ['username', 'Nama / Username', 'fa-user'],
+  ['password', 'Password Akaun', 'fa-key'],
+  ['email', 'Email', 'fa-envelope'],
+  ['emailPassword', 'Password Email', 'fa-lock'],
+  ['licenseKey', 'License / Kod Pengaktifan', 'fa-certificate']
+];
+
+function renderCustomerOrderDelivery() {
+  const wrap = document.getElementById('customer-order-delivery');
+  const list = document.getElementById('customer-order-delivery-list');
+  const locked = document.getElementById('customer-order-delivery-locked');
+  if (!wrap || !list || !locked) return;
+  const cipherExists = !!activeCustomerOrder?.deliveryCipher;
+  const delivery = activeCustomerOrderDelivery || {};
+  const fields = CUSTOMER_DELIVERY_FIELDS.filter(([key]) => String(delivery[key] || '').trim());
+  wrap.hidden = !cipherExists;
+  locked.hidden = !cipherExists || !!fields.length;
+  list.hidden = !fields.length;
+  list.innerHTML = fields.map(([key, label, icon]) => '<div class="customer-delivery-field"><span><i class="fa-solid ' + icon + '"></i></span><div><small>' + label + '</small><code>' + escapeHtml(String(delivery[key])) + '</code></div><button type="button" onclick="copyCustomerOrderDeliveryField(\'' + key + '\')"><i class="fa-regular fa-copy"></i> Copy</button></div>').join('');
+  const allButton = document.getElementById('customer-order-delivery-copy-all');
+  if (allButton) allButton.hidden = !fields.length;
+}
+
+async function copyCustomerOrderDeliveryField(key) {
+  const value = String(activeCustomerOrderDelivery?.[key] || '').trim();
+  if (!value) return toast('Maklumat ini masih kosong.', true);
+  const copied = await copyTextWithFallback(value);
+  toast(copied ? 'Maklumat disalin!' : 'Gagal menyalin maklumat.', !copied);
+}
+
+async function copyAllCustomerOrderDelivery() {
+  const delivery = activeCustomerOrderDelivery || {};
+  const text = CUSTOMER_DELIVERY_FIELDS.filter(([key]) => String(delivery[key] || '').trim()).map(([key, label]) => label + ': ' + delivery[key]).join('\n');
+  if (!text) return toast('Maklumat serahan masih kosong.', true);
+  const copied = await copyTextWithFallback(text);
+  toast(copied ? 'Semua maklumat serahan disalin!' : 'Gagal menyalin maklumat.', !copied);
 }
 
 function openCustomerOrderReceipt() {

@@ -32,6 +32,7 @@ let storeConfig = {};
 let customerOrders = [];
 let customerOrderClaims = {};
 let customerOrderPrivate = {};
+let customerOrderDeliveryCache = {};
 let knownCustomerOrderIds = new Set();
 let customerOrdersReady = false;
 let orderQrFile = null;
@@ -1276,6 +1277,39 @@ function formatAdminOrderDate(value) {
   return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString('ms-MY', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
 
+function generateDeliveryAccessToken() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function deliveryBytesFromHex(value) {
+  const hex = String(value || '').trim();
+  if (!/^[a-f0-9]{64}$/i.test(hex)) throw new Error('Kod akses serahan tidak sah.');
+  return new Uint8Array(hex.match(/.{2}/g).map(pair => parseInt(pair, 16)));
+}
+
+function deliveryBytesToBase64(bytes) {
+  let binary = '';
+  bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function deliveryBytesFromBase64(value) {
+  return Uint8Array.from(atob(String(value || '')), char => char.charCodeAt(0));
+}
+
+async function encryptOrderDelivery(data, token) {
+  const key = await crypto.subtle.importKey('raw', deliveryBytesFromHex(token), {name:'AES-GCM'}, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(JSON.stringify(data)));
+  return {v:1, iv:deliveryBytesToBase64(iv), data:deliveryBytesToBase64(new Uint8Array(encrypted))};
+}
+
+async function decryptOrderDelivery(cipher, token) {
+  const key = await crypto.subtle.importKey('raw', deliveryBytesFromHex(token), {name:'AES-GCM'}, false, ['decrypt']);
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:deliveryBytesFromBase64(cipher.iv)}, key, deliveryBytesFromBase64(cipher.data));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
 function renderCustomerOrders() {
   const list = byId('customer-orders-list');
   if (!list) return;
@@ -1295,16 +1329,40 @@ function renderCustomerOrders() {
     const privateData = customerOrderPrivate[order.id] || {};
     const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
     const status = effectiveAdminOrderStatus(order);
+    const delivery = customerOrderDeliveryCache[order.id] || {};
     const statusOptions = CUSTOMER_ORDER_STATUS_LIST.map(value => '<option value="' + value + '"' + (value === status ? ' selected' : '') + '>' + value + '</option>').join('');
     return '<article class="customer-order-row status-' + escapeHtml(status.toLowerCase().replace(/\s+/g, '-')) + '">' +
       '<div class="customer-order-row-head"><div><span>' + escapeHtml(status) + '</span><strong>' + escapeHtml(order.id) + '</strong><small>' + formatAdminOrderDate(order.createdAt) + '</small></div><b>RM' + Number(order.total || 0).toFixed(2) + '</b></div>' +
       '<div class="customer-order-row-info"><div><small>PELANGGAN</small><strong>' + escapeHtml(privateData.customerName || 'Data private belum dimuat') + '</strong><span>' + escapeHtml(privateData.phone || order.phoneMasked || '-') + '</span></div><div><small>ITEM</small><strong>' + escapeHtml(items.map(item => item.name + ' ×' + Number(item.qty || 1)).join(', ') || '-') + '</strong><span>' + escapeHtml(privateData.username ? 'Username: ' + privateData.username : '') + '</span></div></div>' +
       (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i><span><b>Nota pelanggan</b>' + escapeHtml(privateData.note) + '</span></div>' : '') +
       '<div class="customer-order-admin-note"><label><span><i class="fa-solid fa-user-shield"></i> NOTA ADMIN UNTUK PELANGGAN</span><textarea data-order-admin-note="' + escapeHtml(order.id) + '" maxlength="400" rows="2" placeholder="Contoh: Bayaran dah disahkan. Sila chat admin untuk proses pesanan.">' + escapeHtml(order.adminNote || '') + '</textarea></label><button class="ghost" data-action="save-customer-order-note" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-note-sticky"></i> Simpan nota</button></div>' +
+      '<div class="customer-order-delivery-editor"><div class="customer-order-delivery-editor-head"><div><span>SERAHAN SELAMAT</span><strong>Akaun, email atau license</strong></div><button class="ghost" data-action="copy-delivery-access" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-key"></i> Copy Kod Akses</button></div><div class="customer-order-delivery-fields">' +
+      '<label>Nama / Username<input data-delivery-field="username" value="' + escapeHtml(delivery.username || '') + '" placeholder="Username akaun"></label>' +
+      '<label>Password Akaun<input data-delivery-field="password" value="' + escapeHtml(delivery.password || '') + '" placeholder="Password akaun"></label>' +
+      '<label>Email<input data-delivery-field="email" value="' + escapeHtml(delivery.email || '') + '" placeholder="Email jika perlu"></label>' +
+      '<label>Password Email<input data-delivery-field="emailPassword" value="' + escapeHtml(delivery.emailPassword || '') + '" placeholder="Password email jika perlu"></label>' +
+      '<label class="wide">License / Kod Pengaktifan<input data-delivery-field="licenseKey" value="' + escapeHtml(delivery.licenseKey || '') + '" placeholder="License key atau kod aktivasi aplikasi"></label></div><button class="primary" data-action="save-customer-delivery" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-shield-halved"></i> Simpan Maklumat Serahan</button></div>' +
       '<div class="customer-order-row-actions"><select data-order-status="' + escapeHtml(order.id) + '">' + statusOptions + '</select><button class="primary" data-action="save-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-floppy-disk"></i> Simpan status</button>' +
       (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') +
       '<button class="delete-customer-order" data-action="delete-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-trash"></i> Delete</button></div></article>';
   }).join('') : '<div class="empty">Tiada pesanan sepadan.</div>';
+  hydrateCustomerOrderDeliveries(filtered);
+}
+
+async function hydrateCustomerOrderDeliveries(orders) {
+  for (const order of orders) {
+    if (!order.deliveryCipher || customerOrderDeliveryCache[order.id]) continue;
+    const token = customerOrderPrivate[order.id]?.deliveryToken;
+    if (!token) continue;
+    try {
+      customerOrderDeliveryCache[order.id] = await decryptOrderDelivery(order.deliveryCipher, token);
+      const row = document.querySelector('[data-order-admin-note="' + CSS.escape(order.id) + '"]')?.closest('.customer-order-row');
+      Object.entries(customerOrderDeliveryCache[order.id]).forEach(([key, value]) => {
+        const input = row?.querySelector('[data-delivery-field="' + CSS.escape(key) + '"]');
+        if (input && !input.value) input.value = value;
+      });
+    } catch (error) {}
+  }
 }
 
 async function updateCustomerOrderStatus(orderId, status, button) {
@@ -1338,6 +1396,51 @@ async function updateCustomerOrderAdminNote(orderId, button) {
       [ROOT + '/customer_orders/' + orderId + '/updatedAt']: firebase.database.ServerValue.TIMESTAMP
     }), 'Simpan nota admin');
     notify(note ? 'Nota admin disimpan dan terus dipaparkan kepada pelanggan.' : 'Nota admin dibuang.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
+async function ensureCustomerDeliveryToken(orderId) {
+  let token = String(customerOrderPrivate[orderId]?.deliveryToken || '').trim();
+  if (/^[a-f0-9]{64}$/i.test(token)) return token;
+  token = generateDeliveryAccessToken();
+  await withTimeout(database.ref('customer_order_private/' + orderId + '/deliveryToken').set(token), 'Jana kod akses serahan');
+  customerOrderPrivate[orderId] = {...(customerOrderPrivate[orderId] || {}), deliveryToken:token};
+  return token;
+}
+
+async function saveCustomerOrderDelivery(orderId, button) {
+  const row = button.closest('.customer-order-row');
+  const delivery = {};
+  row?.querySelectorAll('[data-delivery-field]').forEach(input => {
+    const value = String(input.value || '').trim();
+    if (value) delivery[input.dataset.deliveryField] = value.slice(0, 500);
+  });
+  setBusy(button, true, 'Encrypt & simpan...');
+  try {
+    const updates = {[ROOT + '/customer_orders/' + orderId + '/updatedAt']:firebase.database.ServerValue.TIMESTAMP};
+    if (Object.keys(delivery).length) {
+      const token = await ensureCustomerDeliveryToken(orderId);
+      updates[ROOT + '/customer_orders/' + orderId + '/deliveryCipher'] = await encryptOrderDelivery(delivery, token);
+      updates[ROOT + '/customer_orders/' + orderId + '/deliveryUpdatedAt'] = firebase.database.ServerValue.TIMESTAMP;
+      customerOrderDeliveryCache[orderId] = delivery;
+    } else {
+      updates[ROOT + '/customer_orders/' + orderId + '/deliveryCipher'] = null;
+      updates[ROOT + '/customer_orders/' + orderId + '/deliveryUpdatedAt'] = null;
+      delete customerOrderDeliveryCache[orderId];
+    }
+    await withTimeout(database.ref().update(updates), 'Simpan maklumat serahan');
+    notify(Object.keys(delivery).length ? 'Maklumat serahan dienkripsi dan disimpan.' : 'Maklumat serahan dibuang.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
+async function copyCustomerDeliveryAccess(orderId, button) {
+  setBusy(button, true, 'Menjana...');
+  try {
+    const token = await ensureCustomerDeliveryToken(orderId);
+    await copyTextValue(token);
+    notify('Kod Akses Serahan disalin. Hantar hanya kepada pelanggan order ini.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
 }
@@ -1379,6 +1482,8 @@ byId('customer-orders-list').addEventListener('click', event => {
   if (button.dataset.action === 'delete-customer-order') return deleteCustomerOrder(orderId, button);
   if (button.dataset.action === 'confirm-customer-payment') return updateCustomerOrderStatus(orderId, 'Sudah Dibayar', button);
   if (button.dataset.action === 'save-customer-order-note') return updateCustomerOrderAdminNote(orderId, button);
+  if (button.dataset.action === 'save-customer-delivery') return saveCustomerOrderDelivery(orderId, button);
+  if (button.dataset.action === 'copy-delivery-access') return copyCustomerDeliveryAccess(orderId, button);
   if (button.dataset.action === 'save-customer-order') {
     const status = document.querySelector('[data-order-status="' + CSS.escape(orderId) + '"]')?.value;
     if (status) updateCustomerOrderStatus(orderId, status, button);
