@@ -9462,6 +9462,239 @@ html.review-submit-direct .wrap {
   }
 }
 
+/* Changelog v6: customer-facing release cards. */
+#changelog-modal {
+  padding: 18px 12px !important;
+  background: rgba(3, 16, 34, .72) !important;
+  backdrop-filter: blur(16px) saturate(1.15) !important;
+}
+#changelog-modal .changelog-box {
+  width: min(680px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  max-height: min(88dvh, 760px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(125, 211, 252, .32) !important;
+  border-radius: 24px !important;
+  background: #f4f9fc !important;
+  box-shadow: 0 34px 100px rgba(1, 12, 28, .42) !important;
+}
+#changelog-modal .changelog-box::before { display: none !important; }
+#changelog-modal .changelog-head {
+  min-height: 148px;
+  padding: 24px 26px 22px !important;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 86% 20%, rgba(34, 211, 238, .3), transparent 27%),
+    radial-gradient(circle at 8% 120%, rgba(14, 165, 233, .35), transparent 38%),
+    linear-gradient(135deg, #071a34 0%, #0b3153 58%, #075985 100%) !important;
+  border-bottom: 0 !important;
+}
+#changelog-modal .changelog-head::after {
+  display: block !important;
+  width: 150px;
+  height: 150px;
+  right: -30px;
+  top: -55px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 26px rgba(255,255,255,.035), 0 0 0 54px rgba(255,255,255,.025);
+}
+#changelog-modal .changelog-badge {
+  padding: 5px 7px 5px 10px !important;
+  margin-bottom: 13px !important;
+  border: 1px solid rgba(125, 211, 252, .24);
+  background: rgba(2, 132, 199, .18) !important;
+  box-shadow: none !important;
+  color: #bae6fd !important;
+  font-size: 8px !important;
+  letter-spacing: 1.15px !important;
+}
+#changelog-modal .changelog-badge span {
+  margin-left: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #22d3ee;
+  color: #06213b;
+  letter-spacing: .2px;
+}
+#changelog-modal .changelog-title {
+  max-width: calc(100% - 58px);
+  color: #fff !important;
+  font-size: clamp(24px, 5vw, 34px) !important;
+  letter-spacing: -.7px !important;
+}
+#changelog-modal .changelog-datetime {
+  margin-top: 11px !important;
+  color: #b9d9ea !important;
+  font-size: 10px !important;
+}
+#changelog-modal .cl-live-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 4px rgba(52,211,153,.13);
+}
+#changelog-modal .changelog-x {
+  top: 18px !important;
+  right: 18px !important;
+  border-color: rgba(255,255,255,.16) !important;
+  background: rgba(255,255,255,.08) !important;
+  color: #dff6ff !important;
+}
+#changelog-modal .changelog-x:hover { background: rgba(255,255,255,.18) !important; }
+#changelog-modal .changelog-body {
+  padding: 16px !important;
+  gap: 12px !important;
+  background: #f4f9fc;
+}
+#changelog-modal .cl-release-intro {
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px;
+  border: 1px solid #d6e8f2;
+  border-radius: 15px;
+  background: #fff;
+}
+#changelog-modal .cl-release-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+  color: #fff;
+  box-shadow: 0 9px 20px rgba(14,165,233,.2);
+}
+#changelog-modal .cl-release-intro > div:nth-child(2) > span {
+  display: block;
+  margin-bottom: 3px;
+  color: #0794c9;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 1.2px;
+}
+#changelog-modal .cl-release-intro p {
+  margin: 0;
+  color: #47657b;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+#changelog-modal .cl-release-intro > strong {
+  display: grid;
+  justify-items: center;
+  color: #082f49;
+  font-size: 22px;
+  line-height: 1;
+}
+#changelog-modal .cl-release-intro > strong small {
+  margin-top: 4px;
+  color: #7a93a6;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+#changelog-modal .cl-release-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+#changelog-modal .cl-release-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 36px minmax(0,1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #dceaf2;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(15, 57, 82, .045);
+}
+#changelog-modal .cl-release-card-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #e7f8ff;
+  color: #078bc5;
+  font-size: 13px;
+}
+#changelog-modal .cl-release-card.added .cl-release-card-icon { background: #e8fbf5; color: #07966d; }
+#changelog-modal .cl-release-card small {
+  display: block;
+  margin-bottom: 3px;
+  color: #8aa0af;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+#changelog-modal .cl-release-card p {
+  margin: 0;
+  color: #547083;
+  font-size: 9.5px;
+  line-height: 1.42;
+}
+#changelog-modal .cl-release-card p strong {
+  color: #102d45;
+  font-size: 11px;
+  line-height: 1.25;
+}
+#changelog-modal .changelog-foot {
+  padding: 11px 16px 15px !important;
+  gap: 8px !important;
+  border-top: 1px solid #deebf2 !important;
+  background: #fff !important;
+}
+#changelog-modal .changelog-action-row { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 8px !important; }
+#changelog-modal .changelog-image-btn,
+#changelog-modal .changelog-hard-refresh {
+  min-height: 43px !important;
+  padding: 7px 9px !important;
+  border-radius: 11px !important;
+  box-shadow: none !important;
+}
+#changelog-modal .changelog-image-btn > i,
+#changelog-modal .changelog-hard-refresh > i { width: 28px !important; height: 28px !important; border-radius: 8px !important; }
+#changelog-modal .changelog-image-btn strong,
+#changelog-modal .changelog-hard-refresh strong { font-size: 10px !important; }
+#changelog-modal .changelog-image-btn small,
+#changelog-modal .changelog-hard-refresh small { font-size: 8px !important; }
+#changelog-modal .changelog-ok {
+  min-height: 42px;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #082f49, #075985) !important;
+  box-shadow: 0 9px 20px rgba(7,89,133,.18) !important;
+  font-size: 11px !important;
+}
+
+@media (max-width: 560px) {
+  #changelog-modal .changelog-box { width: min(100%, 430px) !important; max-height: calc(100dvh - 18px) !important; border-radius: 20px !important; }
+  #changelog-modal .changelog-head { min-height: 128px; padding: 19px 18px 17px !important; }
+  #changelog-modal .changelog-title { font-size: 23px !important; }
+  #changelog-modal .changelog-body { padding: 11px !important; }
+  #changelog-modal .cl-release-intro { grid-template-columns: 38px minmax(0,1fr) auto; padding: 10px; }
+  #changelog-modal .cl-release-icon { width: 38px; height: 38px; border-radius: 11px; }
+  #changelog-modal .cl-release-intro p { font-size: 9px; }
+  #changelog-modal .cl-release-grid { grid-template-columns: 1fr; gap: 7px; }
+  #changelog-modal .cl-release-card { grid-template-columns: 32px minmax(0,1fr); padding: 9px; }
+  #changelog-modal .cl-release-card-icon { width: 32px; height: 32px; border-radius: 9px; font-size: 11px; }
+  #changelog-modal .cl-release-card p { font-size: 8.5px; }
+  #changelog-modal .cl-release-card p strong { font-size: 10px; }
+  #changelog-modal .changelog-foot { padding: 9px 11px 11px !important; }
+  #changelog-modal .changelog-image-btn small,
+  #changelog-modal .changelog-hard-refresh small { display: none !important; }
+}
+
 /* Compact buying guide: four clear steps without a long phone column. */
 .market-layout-v2 #guide .steps-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -9848,4 +10081,32 @@ html.review-submit-direct .h4rf-dialog { width:min(850px,100%); max-height:calc(
     border-radius: 10px;
     font-size: 10px;
   }
+}
+
+/* Keep v6 above every legacy changelog override in this stylesheet. */
+#changelog-modal .changelog-box {
+  width: min(680px, calc(100vw - 24px)) !important;
+  height: auto !important;
+  max-height: min(88dvh, 760px) !important;
+  border-radius: 24px !important;
+}
+#changelog-modal .changelog-head { min-height: 148px; padding: 24px 26px 22px !important; }
+#changelog-modal .changelog-title { font-size: clamp(24px, 5vw, 34px) !important; }
+#changelog-modal .changelog-body { padding: 16px !important; gap: 12px !important; }
+#changelog-modal .changelog-foot { padding: 11px 16px 15px !important; gap: 8px !important; }
+#changelog-modal .changelog-action-row { grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 8px !important; }
+#changelog-modal .changelog-image-btn,
+#changelog-modal .changelog-hard-refresh { min-height: 43px !important; border-radius: 11px !important; }
+
+@media (max-width: 560px) {
+  #changelog-modal .changelog-box {
+    width: min(100%, 430px) !important;
+    height: auto !important;
+    max-height: calc(100dvh - 18px) !important;
+    border-radius: 20px !important;
+  }
+  #changelog-modal .changelog-head { min-height: 128px; padding: 19px 18px 17px !important; }
+  #changelog-modal .changelog-title { font-size: 23px !important; }
+  #changelog-modal .changelog-body { padding: 11px !important; }
+  #changelog-modal .changelog-action-row { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
 }
