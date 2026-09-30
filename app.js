@@ -310,7 +310,7 @@ function getLocalHelperAnswer(question) {
     return cheap.length ? helperItemLines(cheap, 'Yang murah dalam katalog sekarang:') : 'Saya belum nampak data harga yang jelas. Boleh semak website utama: https://www.h4sxmy.xyz/';
   }
   const foundItems = helperFindItems(question);
-  if (foundItems.length && helperIncludes(q, ['ada', 'stok', 'harga', 'berapa', 'item', 'akun', 'account', 'gamepass', 'buah', 'fruit', 'ff', 'free fire', 'roblox', 'brookhaven'])) {
+  if (foundItems.length && helperIncludes(q, ['ada', 'stok', 'harga', 'berapa', 'item', 'akun', 'account', 'gamepass', 'buah', 'fruit', 'roblox', 'brookhaven'])) {
     return helperItemLines(foundItems);
   }
   if (asksBuy) {
@@ -328,7 +328,7 @@ function getLocalHelperAnswer(question) {
   if (asksWebsite || wantsAdmin) {
     return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
-  return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok Free Fire?"';
+  return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok untuk game ini?"';
 }
 function askAiHelper(presetQuestion) {
   const question = String(presetQuestion || '').trim();
@@ -1861,7 +1861,11 @@ function getGameFromUrl() {
   try {
     const url = new URL(window.location.href);
     const part = (url.searchParams.get('part') || '').trim();
-    if (part) activePlatform = /free-fire|ff/i.test(part) ? 'Free Fire' : 'Roblox';
+    if (part) {
+      const matchedPlatform = [...new Set(catalogGames(true).map(game => game.platform).filter(Boolean))]
+        .find(platform => normalizeKey(platform) === normalizeKey(part));
+      if (matchedPlatform) activePlatform = matchedPlatform;
+    }
     return (url.searchParams.get('game') || '').trim();
   } catch(e) {
     return '';
@@ -2554,16 +2558,16 @@ function normalizeKey(value) {
 }
 function inferPlatform(value = {}, fallbackName = '') {
   const raw = typeof value === 'object' ? (value.platform || value.part || value.jenis || value.categoryType || '') : '';
-  if (raw) return /free\s*fire|ff/i.test(raw) ? 'Free Fire' : 'Roblox';
-  const name = String((typeof value === 'object' ? (value.game || value.name) : value) || fallbackName || '');
-  return /free\s*fire|\bff\b/i.test(name) ? 'Free Fire' : 'Roblox';
+  if (String(raw).trim()) return String(raw).trim();
+  const name = String((typeof value === 'object' ? (value.game || value.name) : value) || fallbackName || '').trim();
+  const configuredGame = gamesList.find(game => normalizeKey(game.name) === normalizeKey(name) && String(game.platform || '').trim());
+  return String(configuredGame?.platform || 'Roblox').trim();
 }
 function gameGroupName(value = {}) {
   const custom = value.gameGroup || value.group || value.categoryGroup || value.parentGame;
   if (custom) return String(custom).trim();
   const name = String(value.game || value.name || value || '').trim();
   if (/blox\s*fruit/i.test(name)) return 'Blox Fruits';
-  if (/free\s*fire|\bff\b/i.test(name)) return 'Free Fire';
   return name;
 }
 function productSubcategory(item = {}) {
@@ -2572,7 +2576,6 @@ function productSubcategory(item = {}) {
   const name = String(item.game || item.name || '').toLowerCase();
   if (/blox\s*fruit/.test(name) && /(buah|fruit)/.test(name)) return 'Buah/Fruit';
   if (/blox\s*fruit/.test(name)) return 'Akun/Joki';
-  if (/free\s*fire|ff/.test(name)) return item.ffType || item.type || 'Akun/Item';
   return item.type || item.category || 'Lain-lain';
 }
 function isBloxFruitsGame(value = {}) {
@@ -2627,8 +2630,7 @@ function renderPlatformFilters() {
     if (!covers[g.platform]) covers[g.platform] = productPosterUrl(g) || g.img || g.image || '';
   });
   const labels = {
-    Roblox: { title: 'Roblox', sub: 'Game, item, akun', icon: 'fa-cube' },
-    'Free Fire': { title: 'Free Fire', sub: 'Item dan akun FF sahaja', icon: 'fa-crosshairs' }
+    Roblox: { title: 'Roblox', sub: 'Game, item, akun', icon: 'fa-cube' }
   };
   bar.innerHTML = platforms.map(p =>
     '<button type="button" aria-pressed="' + (activePlatform === p ? 'true' : 'false') + '" class="platform-chip platform-card' + (activePlatform === p ? ' active' : '') + '" onclick="setPlatform(\'' + p.replace(/'/g,"\\'") + '\')">' +
@@ -2769,17 +2771,14 @@ function productPosterUrl(item = {}) {
   }
   return normalizeImgurUrl(raw, false);
 }
-function isFreeFireItem(item = {}) {
-  return inferPlatform(item, gameGroupName(item)) === 'Free Fire' || /free\s*fire|\bff\b/i.test(gameGroupName(item));
-}
-function shouldSplitFreeFireMedia(item = {}, context = 'card') {
-  if (context !== 'modal' || !isFreeFireItem(item)) return false;
+function shouldSplitProductMedia(item = {}, context = 'card') {
+  if (context !== 'modal') return false;
   const still = productStillImageUrl(item);
   const videoRaw = item.video || item.videoUrl || item.mediaUrl || item.img || '';
   return !!(still && videoRaw && isVideoMediaUrl(videoRaw, item));
 }
 function renderMediaHTML(item = {}, context = 'card') {
-  if (shouldSplitFreeFireMedia(item, context)) {
+  if (shouldSplitProductMedia(item, context)) {
     const stillSrc = escapeForHtml(displayImageUrl(productStillImageUrl(item), context));
     const videoSrc = escapeForHtml(normalizeImgurUrl(item.video || item.videoUrl || item.mediaUrl || item.img, true));
     const posterSrc = escapeForHtml(displayImageUrl(productPosterUrl(item) || productStillImageUrl(item) || getProductScreenshotFallback(), context));
@@ -2835,6 +2834,7 @@ function syncInventoryGames() {
     seen.add(name.toLowerCase());
     gamesList.push({
       name,
+      platform:String(item.platform || item.part || item.jenis || '').trim() || 'Roblox',
       img: productPosterUrl(item),
       poster: productPosterUrl(item),
       video: isVideoMediaUrl(productMediaUrl(item), item) ? productMediaUrl(item) : '',

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-09-30-review-popup-toggle"/>
+  <meta name="h4sx-build" content="2026-09-30-custom-platforms"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -164,7 +164,6 @@
 <div class="storefront-tabs" aria-label="Akses pantas katalog">
   <button type="button" onclick="showHome()"><i class="fa-solid fa-house"></i><span>Utama</span></button>
   <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><i class="fa-solid fa-cube"></i><span>Roblox</span></button>
-  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Free Fire')"><i class="fa-solid fa-fire"></i><span>Free Fire</span></button>
   <button type="button" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i><span>Semak Pesanan</span></button>
   <button type="button" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span>Hantar Ulasan</span></button>
   <button type="button" onclick="goSection('reviews')"><i class="fa-solid fa-star"></i><span>Ulasan</span></button>
@@ -824,7 +823,7 @@
           <label class="vote-admin-toggle"><input id="vote-admin-active" type="checkbox"><span></span><b>Paparkan undian di website</b></label>
           <label>Tajuk undian<input id="vote-admin-title-input" maxlength="80" placeholder="Contoh: Game apa patut kami tambah?"></label>
           <label>Penerangan<textarea id="vote-admin-description" rows="2" maxlength="180" placeholder="Tulis arahan pendek untuk pelanggan."></textarea></label>
-          <label>Pilihan jawapan <small>Satu pilihan setiap baris, minimum 2 dan maksimum 6.</small><textarea id="vote-admin-options" rows="5" maxlength="420" placeholder="Blox Fruits\nFree Fire\nGame lain"></textarea></label>
+          <label>Pilihan jawapan <small>Satu pilihan setiap baris, minimum 2 dan maksimum 6.</small><textarea id="vote-admin-options" rows="5" maxlength="420" placeholder="Game A\nGame B\nGame lain"></textarea></label>
           <label>Vote tamat pada <small>Kosongkan jika tiada masa tamat. Selepas masa ini, pelanggan hanya boleh lihat keputusan.</small><input id="vote-admin-end-at" type="datetime-local"></label>
           <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Vote</button><button type="button" class="vote-reset-btn" onclick="startNewCustomVote()"><i class="fa-solid fa-rotate"></i> Vote Baru</button><button type="button" class="vote-copy-link-btn" onclick="copyCustomVoteLink()"><i class="fa-solid fa-link"></i> Copy Link Vote</button></div>
           <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
@@ -861,7 +860,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=review-popup-toggle-20260930"></script>
+<script defer src="app.js?v=custom-platforms-20260930"></script>
 
 </body>
 </html>
