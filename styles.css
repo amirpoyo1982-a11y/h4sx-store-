@@ -9468,7 +9468,7 @@ html.review-submit-direct .wrap {
   perspective: 1400px;
 }
 .promo-hero-shell {
-  height: clamp(205px, 23vw, 285px) !important;
+  height: clamp(270px, 32vw, 420px) !important;
   min-height: 0 !important;
   max-height: none !important;
   aspect-ratio: auto !important;
@@ -9589,7 +9589,7 @@ html.review-submit-direct .wrap {
   }
   .promo-hero-shell {
     width: 100% !important;
-    height: clamp(142px, 42vw, 190px) !important;
+    height: clamp(180px, 55vw, 245px) !important;
     margin-inline: 0 !important;
     border-radius: 16px !important;
     box-shadow: inset 0 0 0 1px rgba(11,113,159,.08), 0 11px 25px rgba(20,82,112,.11) !important;
