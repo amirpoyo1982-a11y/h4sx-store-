@@ -9454,6 +9454,79 @@ html.review-submit-direct .wrap {
   }
 }
 
+/* Compact buying guide: four clear steps without a long phone column. */
+.market-layout-v2 #guide .steps-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.market-layout-v2 #guide .step {
+  min-height: 170px;
+  padding: 18px;
+  border-radius: 14px;
+}
+.market-layout-v2 #guide .step-icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+.market-layout-v2 #guide .step-num-label {
+  margin-bottom: 5px;
+  font-size: 9px;
+}
+.market-layout-v2 #guide .step-title {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.market-layout-v2 #guide .step-desc {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.market-layout-v2 #guide .step-bg-num { font-size: 58px; }
+
+@media (max-width: 720px) {
+  .market-layout-v2 #guide {
+    padding: 14px !important;
+    margin-bottom: 20px !important;
+  }
+  .market-layout-v2 #guide .sh { margin-bottom: 10px; }
+  .market-layout-v2 #guide .steps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .market-layout-v2 #guide .step {
+    min-height: 132px;
+    padding: 11px !important;
+    border-radius: 11px;
+  }
+  .market-layout-v2 #guide .step-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+  .market-layout-v2 #guide .step-num-label {
+    margin-bottom: 4px;
+    font-size: 7px;
+    letter-spacing: .7px;
+  }
+  .market-layout-v2 #guide .step-title {
+    margin-bottom: 4px;
+    font-size: 11px;
+  }
+  .market-layout-v2 #guide .step-desc {
+    font-size: 8.5px;
+    line-height: 1.35;
+  }
+  .market-layout-v2 #guide .step-bg-num {
+    right: 5px;
+    bottom: -5px;
+    font-size: 40px;
+  }
+}
+
 /* v5.3: premium compact store-status bar. */
 body { padding-top: 74px !important; }
 .business-hours-bar {
