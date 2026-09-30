@@ -9543,10 +9543,18 @@ html.review-submit-direct .wrap {
 .promo-hero-slide.promo-contain::before {
   display: none !important;
 }
+.promo-hero-slide.promo-contain {
+  background: linear-gradient(135deg, #070b18, #11172a) !important;
+}
 .promo-hero-slide.promo-contain img {
   padding: 0 !important;
-  object-fit: cover !important;
+  object-fit: contain !important;
   object-position: center center !important;
+  transform: none !important;
+}
+.promo-hero-slide.promo-contain.active:hover img,
+.promo-hero-slide.promo-contain:not(.active) img {
+  transform: none !important;
 }
 .promo-hero-slide:not(.active) img {
   transform: scale(1.035);
