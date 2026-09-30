@@ -33,6 +33,9 @@ let customerOrders = [];
 let customerOrderClaims = {};
 let customerOrderPrivate = {};
 let customerOrderDeliveryCache = {};
+let leaderboardConfig = { active:false, title:'Top Pelanggan H4SX', subtitle:'Terima kasih kepada pelanggan yang terus menyokong H4SX STORE.', defaultPeriod:'daily' };
+let leaderboardEntries = [];
+let leaderboardAdminPeriod = 'daily';
 let knownCustomerOrderIds = new Set();
 let customerOrdersReady = false;
 let orderQrFile = null;
@@ -205,6 +208,13 @@ function startListeners() {
     writeConfigEditor();
     markSynced();
   }, realtimeError);
+  database.ref(ROOT + '/config/customerLeaderboard').on('value', snapshot => {
+    const value = snapshot.val() || {};
+    leaderboardConfig = { ...leaderboardConfig, ...(value.config || {}) };
+    leaderboardEntries = Object.entries(value.entries || {}).map(([id, entry]) => ({ id, ...(entry || {}) }));
+    renderLeaderboardAdmin();
+    markSynced();
+  }, realtimeError);
   database.ref(ROOT + '/customer_orders').on('value', snapshot => {
     const value = snapshot.val() || {};
     const nextOrders = Object.entries(value).map(([key, order]) => ({...(order || {}), id:order?.id || key}));
@@ -231,6 +241,7 @@ function stopListeners() {
   database.ref(ROOT + '/inventory').off();
   database.ref(ROOT + '/games').off();
   database.ref(ROOT + '/config').off();
+  database.ref(ROOT + '/config/customerLeaderboard').off();
   database.ref(ROOT + '/customer_orders').off();
   database.ref(ROOT + '/customer_payment_claims').off();
   database.ref('customer_order_private').off();
@@ -436,10 +447,112 @@ document.querySelectorAll('.tabs button').forEach(button => button.addEventListe
 }));
 
 function activateCatalogTab(tabName) {
-  const allowed = new Set(['products','games','promos','orders','settings','drafts','health','migration']);
+  const allowed = new Set(['products','games','promos','orders','leaderboard','settings','drafts','health','migration']);
   const name = allowed.has(tabName) ? tabName : 'products';
   document.querySelector('.tabs button[data-tab="' + name + '"]')?.click();
 }
+
+function leaderboardPeriodLabel(period) {
+  return ({ daily:'Harian', weekly:'Mingguan', monthly:'Bulanan' })[period] || period;
+}
+function leaderboardAdminMoney(value) {
+  return new Intl.NumberFormat('ms-MY', { style:'currency', currency:'MYR', minimumFractionDigits:2 }).format(Math.max(0, Number(value || 0)));
+}
+function syncLeaderboardAdminSettings() {
+  byId('leaderboard-enabled').checked = leaderboardConfig.active === true || String(leaderboardConfig.active).toLowerCase() === 'true';
+  byId('leaderboard-admin-title').value = leaderboardConfig.title || 'Top Pelanggan H4SX';
+  byId('leaderboard-admin-subtitle').value = leaderboardConfig.subtitle || 'Terima kasih kepada pelanggan yang terus menyokong H4SX STORE.';
+  byId('leaderboard-default-period').value = ['daily','weekly','monthly'].includes(leaderboardConfig.defaultPeriod) ? leaderboardConfig.defaultPeriod : 'daily';
+}
+function renderLeaderboardAdmin() {
+  syncLeaderboardAdminSettings();
+  document.querySelectorAll('[data-admin-leaderboard-period]').forEach(button => button.classList.toggle('active', button.dataset.adminLeaderboardPeriod === leaderboardAdminPeriod));
+  const rows = leaderboardEntries
+    .filter(entry => String(entry.period) === leaderboardAdminPeriod)
+    .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0) || String(a.name || '').localeCompare(String(b.name || '')));
+  byId('leaderboard-admin-list').innerHTML = rows.length ? rows.map((entry, index) =>
+    '<article class="leaderboard-admin-row"><div class="leaderboard-admin-rank">#' + (index + 1) + '</div><div class="leaderboard-admin-copy"><strong>' + escapeHtml(entry.name || 'Tanpa nama') + '</strong><span>' + leaderboardPeriodLabel(entry.period) + (entry.active === false ? ' • Disorok' : ' • Dipaparkan') + '</span></div><div class="leaderboard-admin-amount">' + leaderboardAdminMoney(entry.amount) + '</div><div class="leaderboard-admin-actions"><button type="button" data-leaderboard-action="edit" data-id="' + escapeHtml(entry.id) + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button type="button" class="danger" data-leaderboard-action="delete" data-id="' + escapeHtml(entry.id) + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>'
+  ).join('') : '<div class="empty">Belum ada ranking ' + leaderboardPeriodLabel(leaderboardAdminPeriod).toLowerCase() + '.</div>';
+}
+function resetLeaderboardEntryForm() {
+  byId('leaderboard-entry-form').reset();
+  byId('leaderboard-entry-id').value = '';
+  byId('leaderboard-entry-period').value = leaderboardAdminPeriod;
+  byId('cancel-leaderboard-edit').hidden = true;
+  byId('save-leaderboard-entry').innerHTML = '<i class="fa-solid fa-plus"></i> Tambah ranking';
+}
+function editLeaderboardEntry(id) {
+  const entry = leaderboardEntries.find(item => item.id === id);
+  if (!entry) return notify('Rekod leaderboard tidak dijumpai.', true);
+  byId('leaderboard-entry-id').value = entry.id;
+  byId('leaderboard-entry-name').value = entry.name || '';
+  byId('leaderboard-entry-amount').value = Number(entry.amount || 0);
+  byId('leaderboard-entry-period').value = entry.period || 'daily';
+  byId('cancel-leaderboard-edit').hidden = false;
+  byId('save-leaderboard-entry').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan perubahan';
+  byId('leaderboard-entry-name').focus();
+}
+
+byId('save-leaderboard-settings').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const value = {
+    active: byId('leaderboard-enabled').checked,
+    title: byId('leaderboard-admin-title').value.trim() || 'Top Pelanggan H4SX',
+    subtitle: byId('leaderboard-admin-subtitle').value.trim() || 'Terima kasih kepada pelanggan yang terus menyokong H4SX STORE.',
+    defaultPeriod: byId('leaderboard-default-period').value,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP
+  };
+  setBusy(button, true, 'Menyimpan...');
+  try { await saveStorePath('config/customerLeaderboard/config', value, 'Tetapan leaderboard disimpan.', 'Ubah tetapan leaderboard'); }
+  catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
+
+byId('leaderboard-entry-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = event.submitter;
+  const id = byId('leaderboard-entry-id').value.trim() || database.ref(ROOT + '/config/customerLeaderboard/entries').push().key;
+  const name = byId('leaderboard-entry-name').value.trim();
+  const amount = Number(byId('leaderboard-entry-amount').value);
+  const period = byId('leaderboard-entry-period').value;
+  if (!name) return notify('Masukkan nama pelanggan.', true);
+  if (!Number.isFinite(amount) || amount < 0) return notify('Jumlah spend tidak sah.', true);
+  if (!['daily','weekly','monthly'].includes(period)) return notify('Tempoh leaderboard tidak sah.', true);
+  const previous = leaderboardEntries.find(entry => entry.id === id);
+  const value = { name:name.slice(0,60), amount:Math.round(amount * 100) / 100, period, active:true, createdAt:previous?.createdAt || firebase.database.ServerValue.TIMESTAMP, updatedAt:firebase.database.ServerValue.TIMESTAMP };
+  let saved = false;
+  setBusy(button, true, previous ? 'Menyimpan...' : 'Menambah...');
+  try {
+    await saveStorePath('config/customerLeaderboard/entries/' + id, value, previous ? 'Ranking dikemas kini.' : 'Pelanggan ditambah ke leaderboard.', previous ? 'Edit ranking ' + name : 'Tambah ranking ' + name);
+    leaderboardAdminPeriod = period;
+    saved = true;
+  } catch (error) { notify(error.message, true); }
+  finally {
+    setBusy(button, false);
+    if (saved) resetLeaderboardEntryForm();
+  }
+});
+
+byId('cancel-leaderboard-edit').addEventListener('click', resetLeaderboardEntryForm);
+document.querySelectorAll('[data-admin-leaderboard-period]').forEach(button => button.addEventListener('click', () => {
+  leaderboardAdminPeriod = button.dataset.adminLeaderboardPeriod;
+  resetLeaderboardEntryForm();
+  renderLeaderboardAdmin();
+}));
+byId('leaderboard-admin-list').addEventListener('click', async event => {
+  const button = event.target.closest('[data-leaderboard-action]');
+  if (!button) return;
+  const id = button.dataset.id;
+  if (button.dataset.leaderboardAction === 'edit') return editLeaderboardEntry(id);
+  const entry = leaderboardEntries.find(item => item.id === id);
+  if (button.dataset.leaderboardAction !== 'delete' || !entry || !confirm('Padam ' + entry.name + ' daripada leaderboard?')) return;
+  setBusy(button, true, '');
+  try {
+    await saveStorePath('config/customerLeaderboard/entries/' + id, null, 'Rekod leaderboard dipadam.', 'Padam ranking ' + entry.name);
+    if (byId('leaderboard-entry-id').value === id) resetLeaderboardEntryForm();
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
 
 function renderProducts() {
   const q = byId('product-search').value.trim().toLowerCase();

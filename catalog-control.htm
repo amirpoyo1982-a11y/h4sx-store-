@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=29-secure-delivery">
+  <link rel="stylesheet" href="catalog-control.css?v=30-leaderboard">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=29-secure-delivery"></script>
+  <script defer src="catalog-control.js?v=30-leaderboard"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -48,6 +48,7 @@
         <button data-tab="games"><i class="fa-solid fa-gamepad"></i> Game</button>
         <button data-tab="promos"><i class="fa-solid fa-ticket"></i> Promo Code</button>
         <button data-tab="orders"><i class="fa-solid fa-file-invoice-dollar"></i> Pesanan <span id="pending-order-count" class="tab-count" hidden>0</span></button>
+        <button data-tab="leaderboard"><i class="fa-solid fa-ranking-star"></i> Leaderboard</button>
         <button data-tab="settings"><i class="fa-solid fa-sliders"></i> Tetapan Kedai</button>
         <button data-tab="drafts"><i class="fa-solid fa-file-pen"></i> Draft</button>
         <button data-tab="health"><i class="fa-solid fa-stethoscope"></i> Health Check</button>
@@ -96,6 +97,26 @@
         </div>
         <div class="customer-orders-tools"><input id="customer-order-search" class="search" placeholder="Cari Order ID, item atau nombor telefon..."><select id="customer-order-filter"><option value="">Semua status</option><option>Menunggu Pembayaran</option><option>Menunggu Pengesahan</option><option>Sudah Dibayar</option><option>Sedang Diproses</option><option>Completed</option><option>Dibatalkan</option></select></div>
         <div id="customer-orders-list" class="customer-orders-list"><div class="empty">Memuat pesanan...</div></div>
+      </section>
+
+      <section class="panel" data-panel="leaderboard">
+        <div class="panel-head"><div><h2>Leaderboard pelanggan</h2><p>Masukkan nama dan jumlah belanja untuk ranking harian, mingguan atau bulanan.</p></div><label class="switch"><input id="leaderboard-enabled" type="checkbox"><span></span> Paparkan</label></div>
+        <div class="leaderboard-admin-settings">
+          <label>Tajuk leaderboard<input id="leaderboard-admin-title" maxlength="80" placeholder="Top Pelanggan H4SX"></label>
+          <label class="wide">Ayat ringkas<input id="leaderboard-admin-subtitle" maxlength="180" placeholder="Terima kasih kepada pelanggan yang menyokong H4SX STORE."></label>
+          <label>Tab asal<select id="leaderboard-default-period"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option></select></label>
+          <button type="button" class="primary" id="save-leaderboard-settings"><i class="fa-solid fa-floppy-disk"></i> Simpan paparan</button>
+        </div>
+        <form id="leaderboard-entry-form" class="leaderboard-entry-form">
+          <input id="leaderboard-entry-id" type="hidden">
+          <label>Nama pelanggan<input id="leaderboard-entry-name" maxlength="60" autocomplete="off" placeholder="Contoh: Hakimi" required></label>
+          <label>Jumlah spend (RM)<input id="leaderboard-entry-amount" type="number" min="0" step="0.01" placeholder="150.00" required></label>
+          <label>Tempoh<select id="leaderboard-entry-period"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option></select></label>
+          <button type="submit" class="primary" id="save-leaderboard-entry"><i class="fa-solid fa-plus"></i> Tambah ranking</button>
+          <button type="button" class="ghost" id="cancel-leaderboard-edit" hidden>Batal edit</button>
+        </form>
+        <div class="leaderboard-admin-filter" role="tablist"><button type="button" class="active" data-admin-leaderboard-period="daily">Harian</button><button type="button" data-admin-leaderboard-period="weekly">Mingguan</button><button type="button" data-admin-leaderboard-period="monthly">Bulanan</button></div>
+        <div id="leaderboard-admin-list" class="leaderboard-admin-list"><div class="empty">Belum ada ranking.</div></div>
       </section>
 
       <section class="panel" data-panel="settings">

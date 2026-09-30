@@ -1303,6 +1303,7 @@ let promoBannerIndex = 0;
 let promoBannerSlides = [];
 let promoBannerTimer = null;
 let promoBannerIntervalDelay = 5500;
+let promoBannerSuppressClickUntil = 0;
 let productSpotlightTimer = null;
 let productSpotlightIndex = 0;
 let productSpotlightDismissed = false;
@@ -1436,14 +1437,49 @@ function startPromoBannerTimer(delay = promoBannerIntervalDelay) {
     promoBannerTimer = setInterval(() => showPromoBannerSlide(promoBannerIndex + 1), delay);
   }
 }
+function promoBannerSlideOffset(slideIndex, activeIndex = promoBannerIndex) {
+  const total = promoBannerSlides.length;
+  if (total <= 1) return 0;
+  let offset = slideIndex - activeIndex;
+  if (offset > total / 2) offset -= total;
+  if (offset < -total / 2) offset += total;
+  return offset;
+}
+function updatePromoBannerVisuals(dragProgress = 0) {
+  const track = document.getElementById('promo-hero-track');
+  if (!track) return;
+  track.style.transform = '';
+  track.querySelectorAll('.promo-hero-slide').forEach((slide, index) => {
+    const position = promoBannerSlideOffset(index) + dragProgress;
+    const distance = Math.abs(position);
+    const visibleDistance = Math.min(distance, 2.2);
+    const shift = position * 82;
+    const scale = Math.max(.68, 1 - visibleDistance * .13);
+    const tilt = Math.max(-22, Math.min(22, position * -13));
+    const opacity = distance > 1.65 ? 0 : Math.max(.18, 1 - distance * .28);
+    const active = distance < .5;
+    slide.style.setProperty('--promo-shift', shift.toFixed(3) + '%');
+    slide.style.setProperty('--promo-scale', scale.toFixed(3));
+    slide.style.setProperty('--promo-tilt', tilt.toFixed(2) + 'deg');
+    slide.style.setProperty('--promo-opacity', opacity.toFixed(3));
+    slide.style.zIndex = String(Math.max(1, 20 - Math.round(distance * 10)));
+    slide.classList.toggle('active', active);
+    slide.setAttribute('aria-hidden', String(!active));
+    if (slide.matches('a')) slide.tabIndex = active ? 0 : -1;
+  });
+}
 function showPromoBannerSlide(index) {
   const root = document.getElementById('promo-hero');
   const track = document.getElementById('promo-hero-track');
   const dots = document.getElementById('promo-hero-dots');
   if (!root || !track || !promoBannerSlides.length) return;
   promoBannerIndex = (index + promoBannerSlides.length) % promoBannerSlides.length;
-  track.style.transform = `translate3d(${-promoBannerIndex * 100}%,0,0)`;
-  dots?.querySelectorAll('button').forEach((dot, i) => dot.classList.toggle('active', i === promoBannerIndex));
+  updatePromoBannerVisuals();
+  dots?.querySelectorAll('button').forEach((dot, i) => {
+    const active = i === promoBannerIndex;
+    dot.classList.toggle('active', active);
+    dot.setAttribute('aria-current', active ? 'true' : 'false');
+  });
 }
 function initPromoBannerDrag() {
   const root = document.getElementById('promo-hero');
@@ -1451,36 +1487,46 @@ function initPromoBannerDrag() {
   if (!root || !track || root.dataset.dragReady === '1') return;
   root.dataset.dragReady = '1';
 
+  root.addEventListener('click', event => {
+    const control = event.target.closest('#promo-hero-prev, #promo-hero-next, [data-promo-dot]');
+    if (!control) return;
+    event.preventDefault();
+    if (control.id === 'promo-hero-prev') showPromoBannerSlide(promoBannerIndex - 1);
+    else if (control.id === 'promo-hero-next') showPromoBannerSlide(promoBannerIndex + 1);
+    else showPromoBannerSlide(Number(control.dataset.promoDot || 0));
+    startPromoBannerTimer();
+  });
+
   function pointX(event) {
     return event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX ?? event.clientX ?? 0;
   }
   function dragStart(event) {
+    if (event.target.closest('.promo-hero-nav, .promo-hero-dots')) return;
     if (promoBannerSlides.length <= 1) return;
     promoDragState = {
       startX: pointX(event),
       currentX: pointX(event),
-      width: root.getBoundingClientRect().width || 1,
+      width: root.querySelector('.promo-hero-shell')?.getBoundingClientRect().width || root.getBoundingClientRect().width || 1,
       moved: false
     };
     stopPromoBannerTimer();
     root.classList.add('is-dragging');
-    track.style.transition = 'none';
   }
   function dragMove(event) {
     if (!promoDragState) return;
     promoDragState.currentX = pointX(event);
     const delta = promoDragState.currentX - promoDragState.startX;
     if (Math.abs(delta) > 6) promoDragState.moved = true;
-    const percent = (-promoBannerIndex * 100) + ((delta / promoDragState.width) * 100);
-    track.style.transform = `translate3d(${percent}%,0,0)`;
+    const progress = Math.max(-1, Math.min(1, delta / promoDragState.width));
+    updatePromoBannerVisuals(progress);
     if (promoDragState.moved && event.cancelable) event.preventDefault();
   }
   function dragEnd() {
     if (!promoDragState) return;
     const delta = promoDragState.currentX - promoDragState.startX;
     const threshold = Math.max(45, promoDragState.width * 0.12);
-    track.style.transition = '';
     root.classList.remove('is-dragging');
+    if (promoDragState.moved) promoBannerSuppressClickUntil = Date.now() + 450;
     if (Math.abs(delta) > threshold) {
       showPromoBannerSlide(promoBannerIndex + (delta < 0 ? 1 : -1));
     } else {
@@ -1490,7 +1536,10 @@ function initPromoBannerDrag() {
     startPromoBannerTimer();
   }
   function blockClickAfterDrag(event) {
-    if (promoDragState?.moved) event.preventDefault();
+    if (event.target.closest('.promo-hero-slide') && (promoDragState?.moved || Date.now() < promoBannerSuppressClickUntil)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   root.addEventListener('mousedown', dragStart);
@@ -1555,23 +1604,18 @@ function renderPromoBanner(config = currentStoreConfig) {
       + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' onerror="this.closest(\'.promo-hero-slide\').classList.add(\'image-failed\')" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
-      ? '<a class="promo-hero-slide' + slideClass + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
-      : '<div class="promo-hero-slide' + slideClass + '"' + slideStyle + '>' + inner + '</div>';
+      ? '<a class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
+      : '<div class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '"' + slideStyle + '>' + inner + '</div>';
   }).join('');
   dots.innerHTML = promoBannerSlides.map((slide, i) =>
     '<button type="button" aria-label="Promosi ' + (i + 1) + '" data-promo-dot="' + i + '"></button>'
   ).join('');
 
   const multiple = promoBannerSlides.length > 1;
+  root.classList.toggle('has-multiple', multiple);
   prev.style.display = multiple ? '' : 'none';
   next.style.display = multiple ? '' : 'none';
   dots.style.display = multiple ? '' : 'none';
-  dots.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => showPromoBannerSlide(Number(btn.dataset.promoDot || 0)));
-  });
-  prev.onclick = () => showPromoBannerSlide(promoBannerIndex - 1);
-  next.onclick = () => showPromoBannerSlide(promoBannerIndex + 1);
-
   showPromoBannerSlide(0);
   if (multiple) {
     promoBannerIntervalDelay = Math.max(2500, Number(config.promo_banner_interval || config.promoBannerInterval || 5500));
@@ -3828,6 +3872,11 @@ function openAdminCatalogFromProfile() {
   closeAdminProfile();
   openCatalogControl('settings');
 }
+function openAdminLeaderboardFromProfile() {
+  if (!orderAuth?.currentUser) return syncAdminProfileUI();
+  closeAdminProfile();
+  openCatalogControl('leaderboard');
+}
 function openOrderAdmin(historyOnly = false) {
   closeOrderHistory();
   const modal = document.getElementById('order-admin-modal');
@@ -3845,10 +3894,10 @@ function openCatalogControl(tab = 'products') {
   const overlay = document.getElementById('catalog-control-overlay');
   const frame = document.getElementById('catalog-control-frame');
   if (!overlay || !frame) return;
-  const safeTab = ['products','games','promos','orders','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
+  const safeTab = ['products','games','promos','orders','leaderboard','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
   if (frame.dataset.tab !== safeTab) {
     frame.dataset.tab = safeTab;
-    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=27-order-voice';
+    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=30-leaderboard';
   }
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
@@ -4636,6 +4685,86 @@ function initPwaInstall() {
   }
 }
 
+let customerLeaderboardState = { config:{ active:false }, entries:[] };
+let customerLeaderboardPeriod = 'daily';
+let customerLeaderboardListening = false;
+const CUSTOMER_LEADERBOARD_PERIODS = new Set(['daily', 'weekly', 'monthly']);
+
+function leaderboardMoney(value) {
+  return new Intl.NumberFormat('ms-MY', { style:'currency', currency:'MYR', minimumFractionDigits:2 }).format(Math.max(0, Number(value || 0)));
+}
+function leaderboardInitials(name) {
+  return String(name || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '?';
+}
+function leaderboardColor(name) {
+  const colors = ['#0ea5e9','#7c3aed','#14b8a6','#f59e0b','#ec4899','#2563eb','#10b981'];
+  const score = Array.from(String(name || '')).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return colors[score % colors.length];
+}
+function normalizedLeaderboardEntries(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  return Object.entries(source).map(([id, entry]) => ({ id, ...(entry || {}) }))
+    .filter(entry => entry.active !== false && CUSTOMER_LEADERBOARD_PERIODS.has(String(entry.period || '')) && String(entry.name || '').trim() && Number.isFinite(Number(entry.amount)) && Number(entry.amount) >= 0);
+}
+function renderCustomerLeaderboard() {
+  const section = document.getElementById('customer-leaderboard');
+  const divider = document.getElementById('leaderboard-divider');
+  const content = document.getElementById('leaderboard-content');
+  if (!section || !content) return;
+  const config = customerLeaderboardState.config || {};
+  const active = config.active === true || String(config.active).toLowerCase() === 'true';
+  section.hidden = !active;
+  if (divider) divider.hidden = !active;
+  if (!active) return;
+  const title = document.getElementById('leaderboard-title');
+  const subtitle = document.getElementById('leaderboard-subtitle');
+  if (title) title.textContent = String(config.title || 'Top Pelanggan H4SX');
+  if (subtitle) subtitle.textContent = String(config.subtitle || 'Terima kasih kepada pelanggan yang terus menyokong H4SX STORE.');
+  document.querySelectorAll('[data-leaderboard-period]').forEach(button => {
+    const selected = button.dataset.leaderboardPeriod === customerLeaderboardPeriod;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-selected', String(selected));
+  });
+  const entries = customerLeaderboardState.entries
+    .filter(entry => entry.period === customerLeaderboardPeriod)
+    .sort((a, b) => Number(b.amount) - Number(a.amount) || String(a.name).localeCompare(String(b.name)));
+  if (!entries.length) {
+    content.innerHTML = '<div class="leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Ranking belum tersedia</strong><span>Senarai ' + ({daily:'harian',weekly:'mingguan',monthly:'bulanan'}[customerLeaderboardPeriod] || '') + ' akan dipaparkan di sini.</span></div>';
+    return;
+  }
+  const podium = entries.slice(0, 3).map((entry, index) => {
+    const rank = index + 1;
+    return '<article class="leaderboard-podium rank-' + rank + '">' +
+      '<span class="leaderboard-crown"><i class="fa-solid ' + (rank === 1 ? 'fa-crown' : 'fa-medal') + '"></i></span>' +
+      '<div class="leaderboard-avatar" style="--leader-color:' + leaderboardColor(entry.name) + '">' + escapeHtml(leaderboardInitials(entry.name)) + '</div>' +
+      '<div class="leaderboard-rank">#' + rank + '</div><strong>' + escapeHtml(entry.name) + '</strong><span>' + leaderboardMoney(entry.amount) + '</span>' +
+    '</article>';
+  }).join('');
+  const remaining = entries.slice(3).map((entry, index) => '<article class="leaderboard-row"><b>#' + (index + 4) + '</b><div class="leaderboard-mini-avatar" style="--leader-color:' + leaderboardColor(entry.name) + '">' + escapeHtml(leaderboardInitials(entry.name)) + '</div><strong>' + escapeHtml(entry.name) + '</strong><span>' + leaderboardMoney(entry.amount) + '</span></article>').join('');
+  content.innerHTML = '<div class="leaderboard-podium-grid">' + podium + '</div>' + (remaining ? '<div class="leaderboard-list">' + remaining + '</div>' : '');
+}
+function selectLeaderboardPeriod(period) {
+  if (!CUSTOMER_LEADERBOARD_PERIODS.has(period)) return;
+  customerLeaderboardPeriod = period;
+  renderCustomerLeaderboard();
+}
+function startCustomerLeaderboardSync() {
+  if (!realtimeDb || customerLeaderboardListening) return;
+  customerLeaderboardListening = true;
+  realtimeDb.ref(REALTIME_STORE_ROOT + '/config/customerLeaderboard').on('value', snapshot => {
+    const value = snapshot.val() || {};
+    const config = value.config && typeof value.config === 'object' ? value.config : {};
+    const defaultPeriod = String(config.defaultPeriod || 'daily');
+    if (CUSTOMER_LEADERBOARD_PERIODS.has(defaultPeriod) && !customerLeaderboardState.entries.length) customerLeaderboardPeriod = defaultPeriod;
+    customerLeaderboardState = { config, entries:normalizedLeaderboardEntries(value.entries) };
+    renderCustomerLeaderboard();
+  }, error => {
+    console.warn('Leaderboard realtime gagal:', error);
+    document.getElementById('customer-leaderboard')?.setAttribute('hidden', '');
+    document.getElementById('leaderboard-divider')?.setAttribute('hidden', '');
+  });
+}
+
 function bootStoreApp() {
   cleanHardRefreshParam();
   applyPrimaryWhatsAppNumber(storeConfig);
@@ -4646,6 +4775,7 @@ function bootStoreApp() {
   loadGames().then(renderGames);
   loadInv();
   startRealtimeConfigSync();
+  startCustomerLeaderboardSync();
   startCountdown();
   updateBusinessClock();
   window.setInterval(updateBusinessClock, 30000);
@@ -5808,6 +5938,7 @@ function renderProductGrid() {
   const filters = activeProductFilters();
   const active = filters.find(f => f.id === currentProductFilter) || filters[0];
   const items = currentProductItems.filter(active.test);
+  grid.classList.toggle('filtered-results', currentProductFilter !== 'all');
   activeGameConsultationConfig = null;
   const consultationSection = '';
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
