@@ -6602,6 +6602,21 @@ function changeProductModalQuantity(delta) {
   modalQuantity = Math.max(1, Math.min(max, modalQuantity + Number(delta || 0)));
   renderProductModalSelection(item, false);
 }
+function resetModalProductDescription() {
+  const card = document.querySelector('.product-modal-description-card');
+  const button = document.getElementById('product-modal-desc-toggle');
+  card?.classList.remove('expanded');
+  if (button) button.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Baca penuh';
+}
+function toggleModalProductDescription() {
+  const card = document.querySelector('.product-modal-description-card');
+  const button = document.getElementById('product-modal-desc-toggle');
+  if (!card || !button) return;
+  const expanded = card.classList.toggle('expanded');
+  button.innerHTML = expanded
+    ? '<i class="fa-solid fa-chevron-up"></i> Tutup'
+    : '<i class="fa-solid fa-chevron-down"></i> Baca penuh';
+}
 function openProductImage(id, options = {}) {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item || isPermanentFruitCatalogItem(item)) return;
@@ -6610,6 +6625,7 @@ function openProductImage(id, options = {}) {
   const requestedVariant = variants.find(variant => variant.id === String(options.variantId || ''));
   modalVariantId = requestedVariant?.id || variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
   modalQuantity = 1;
+  resetModalProductDescription();
   if (!options.fromUrl) updateProductUrl(item);
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
