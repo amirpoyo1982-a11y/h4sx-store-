@@ -4729,6 +4729,38 @@ function effectiveProductItem(item, variantId) {
   if (!variant) return item;
   return { ...item, ...variant, id: item.id, name: item.name, variantName: variant.name, variantId: variant.id };
 }
+function formatVariantPrice(value) {
+  return 'RM' + Math.max(0, Number(value || 0)).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+}
+function productVariantPriceState(item, variant) {
+  const variantItem = effectiveProductItem(item, variant?.id);
+  const storedCode = storedProductPromoCode(variantItem);
+  const result = productPromoResult(variantItem, storedCode);
+  const discounted = Boolean(
+    result.valid &&
+    promoRedeemedOnThisDevice(variantItem, result.promo) &&
+    promoPhoneReady(variantItem, result.promo)
+  );
+  return {
+    base: Math.max(0, Number(variantItem?.price || 0)),
+    final: discounted ? result.final : Math.max(0, Number(variantItem?.price || 0)),
+    discounted
+  };
+}
+function productVariantPriceHTML(item, variant) {
+  const price = productVariantPriceState(item, variant);
+  return price.discounted
+    ? '<span class="pm-variant-price has-promo"><s>' + formatVariantPrice(price.base) + '</s><strong>' + formatVariantPrice(price.final) + '</strong></span>'
+    : '<span class="pm-variant-price"><strong>' + formatVariantPrice(price.final) + '</strong></span>';
+}
+function syncProductModalVariantPrices(item) {
+  if (!item) return;
+  document.querySelectorAll('#product-modal-variants .pm-variant[data-variant-id]').forEach(button => {
+    const variant = getProductVariant(item, button.dataset.variantId);
+    const price = button.querySelector('.pm-variant-price');
+    if (variant && price) price.outerHTML = productVariantPriceHTML(item, variant);
+  });
+}
 function cartEntryKey(id, variantId = '') { return String(id) + '::' + String(variantId || ''); }
 function cartEntryName(item, cartItem) {
   const variant = getProductVariant(item, cartItem?.variantId);
@@ -5052,12 +5084,20 @@ function promoDraftStorageKey(item) {
 function savedProductPromoCode(item) {
   const saved = storedProductPromoCode(item);
   const result = productPromoResult(item, saved);
-  const redeemed = result.valid && promoRedeemedOnThisDevice(item, result.promo);
-  if (saved && (!result.valid || !redeemed)) {
-    localStorage.removeItem(promoDraftStorageKey(item));
-    return '';
+  const usableHere = result.valid && promoRedeemedOnThisDevice(item, result.promo) && promoPhoneReady(item, result.promo);
+  if (usableHere) return saved;
+  if (saved) {
+    // Variant-specific codes share one product storage key. Keep the redeemed code
+    // when it belongs to another variant instead of deleting it on every switch.
+    const baseItem = inventory.find(entry => String(entry.id) === String(item?.id)) || item;
+    const usableOnAnotherVariant = productVariants(baseItem).some(variant => {
+      const variantItem = effectiveProductItem(baseItem, variant.id);
+      const variantResult = productPromoResult(variantItem, saved);
+      return variantResult.valid && promoRedeemedOnThisDevice(variantItem, variantResult.promo) && promoPhoneReady(variantItem, variantResult.promo);
+    });
+    if (!usableOnAnotherVariant) localStorage.removeItem(promoDraftStorageKey(item));
   }
-  return redeemed && promoPhoneReady(item, result.promo) ? saved : '';
+  return '';
 }
 function storedProductPromoCode(item) {
   return String(localStorage.getItem(promoDraftStorageKey(item)) || '').trim().toUpperCase();
@@ -5138,7 +5178,10 @@ function syncProductModalPromo(item) {
   const result = productPromoResult(item, input.value);
   const promo = result.promo || productPromoConfig(item);
   wrap.hidden = !promo;
-  if (!promo) return;
+  if (!promo) {
+    syncProductModalVariantPrices(inventory.find(entry => String(entry.id) === String(modalItemId)) || item);
+    return;
+  }
   const redeemed = result.valid && promoRedeemedOnThisDevice(item, result.promo);
   if (title) title.textContent = redeemed ? 'Kod promo aktif' : 'Ada kod promo?';
   const needsPhone = result.valid && !redeemed && promoPhoneVerificationRequired(item, result.promo) && !promoPhoneVerificationReady(item, result.promo);
@@ -5169,6 +5212,7 @@ function syncProductModalPromo(item) {
   const expiresAt = effectivePromoExpiry(item, promo);
   const clock = document.getElementById('product-modal-promo-clock');
   if (clock && redeemed && expiresAt) clock.innerHTML = ' <strong class="promo-countdown"><i class="fa-solid fa-hourglass-half"></i> Tamat dalam ' + formatPromoCountdown(expiresAt - Date.now()) + '</strong>';
+  syncProductModalVariantPrices(inventory.find(entry => String(entry.id) === String(modalItemId)) || item);
 }
 function setupProductModalPromo(item) {
   const wrap = document.getElementById('product-modal-promo');
@@ -6676,7 +6720,7 @@ function renderProductModalSelection(item, refreshMedia = true) {
       const soldOut = Number.isFinite(Number(variant.stock)) && Number(variant.stock) <= 0;
       const active = variant.id === modalVariantId ? ' active' : '';
       const image = variant.img ? '<img src="' + escapeHtml(variant.img) + '" alt="" loading="lazy">' : '';
-      return '<button type="button" class="pm-variant' + active + '" data-variant-id="' + escapeHtml(variant.id) + '" onclick="selectProductVariant(this.dataset.variantId)"' + (soldOut ? ' disabled' : '') + '>' + image + '<span>' + escapeHtml(variant.name) + '</span></button>';
+      return '<button type="button" class="pm-variant' + active + '" data-variant-id="' + escapeHtml(variant.id) + '" onclick="selectProductVariant(this.dataset.variantId)"' + (soldOut ? ' disabled' : '') + '>' + image + '<span class="pm-variant-copy"><span class="pm-variant-name">' + escapeHtml(variant.name) + '</span>' + productVariantPriceHTML(item, variant) + '</span></button>';
     }).join('');
   }
   const max = getMaxPurchase(displayItem) || 20;
@@ -6693,7 +6737,7 @@ function renderProductModalSelection(item, refreshMedia = true) {
   }
   const priceEl = document.getElementById('product-modal-price');
   const oldPriceEl = document.getElementById('product-modal-price-old');
-  const promo = productPromoResult(displayItem, document.getElementById('product-modal-promo-input')?.value || savedProductPromoCode(item));
+  const promo = productPromoResult(displayItem, document.getElementById('product-modal-promo-input')?.value || savedProductPromoCode(displayItem));
   if (priceEl) priceEl.textContent = 'RM' + promo.final.toFixed(2);
   if (oldPriceEl) oldPriceEl.textContent = promo.valid ? 'RM' + promo.base.toFixed(2) : ((displayItem.originalPrice && displayItem.originalPrice > displayItem.price) ? 'RM' + Number(displayItem.originalPrice).toFixed(2) : '');
   const summaryEl = document.getElementById('product-modal-summary');
@@ -6722,7 +6766,7 @@ function selectProductVariant(variantId) {
   modalVariantId = String(variantId);
   modalQuantity = 1;
   const promoInput = document.getElementById('product-modal-promo-input');
-  if (promoInput) promoInput.value = '';
+  if (promoInput) promoInput.value = savedProductPromoCode(modalEffectiveItem(item));
   renderProductModalSelection(item);
 }
 function changeProductModalQuantity(delta) {
