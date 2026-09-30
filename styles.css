@@ -3738,6 +3738,23 @@ details.faq[open] .faq-ic {
 .order-copy-code:hover { transform:translateY(-1px); border-color:var(--primary); background:#e0f7ff; }
 .order-copy-code.copied { border-color:rgba(34,197,94,.35); background:var(--green-bg); color:var(--green); }
 .order-status { display:inline-flex; margin-top:6px; padding:3px 8px; border-radius:99px; background:var(--green-bg); color:var(--green); font-size:10px; font-weight:900; }
+.customer-order-admin-message {
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr);
+  align-items:start;
+  gap:11px;
+  margin:0 0 15px;
+  padding:13px;
+  border:1px solid #9cdbf1;
+  border-radius:14px;
+  background:linear-gradient(135deg,#eefaff,#edfff8);
+  box-shadow:0 8px 20px rgba(14,165,233,.08);
+}
+.customer-order-admin-message[hidden] { display:none; }
+.customer-order-admin-message>span { width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#0ea5e9,#14b8a6);color:#fff; }
+.customer-order-admin-message>div { min-width:0; }
+.customer-order-admin-message small { display:block;margin-bottom:3px;color:#0788b3;font-size:9px;font-weight:900;letter-spacing:1px; }
+.customer-order-admin-message p { margin:0;color:#173b51;font-size:12px;font-weight:700;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere; }
 .order-admin-link { display:block; width:100%; border:0; background:none; color:var(--muted); font-size:11px; font-weight:800; margin-top:18px; cursor:pointer; }
 .order-form { display:grid; gap:12px; }
 .order-form input,.order-form select { width:100%; border:1px solid var(--border2); border-radius:10px; padding:11px 12px; font:inherit; color:var(--ink); background:#fff; outline-color:var(--primary); }

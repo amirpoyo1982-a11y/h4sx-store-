@@ -1299,7 +1299,8 @@ function renderCustomerOrders() {
     return '<article class="customer-order-row status-' + escapeHtml(status.toLowerCase().replace(/\s+/g, '-')) + '">' +
       '<div class="customer-order-row-head"><div><span>' + escapeHtml(status) + '</span><strong>' + escapeHtml(order.id) + '</strong><small>' + formatAdminOrderDate(order.createdAt) + '</small></div><b>RM' + Number(order.total || 0).toFixed(2) + '</b></div>' +
       '<div class="customer-order-row-info"><div><small>PELANGGAN</small><strong>' + escapeHtml(privateData.customerName || 'Data private belum dimuat') + '</strong><span>' + escapeHtml(privateData.phone || order.phoneMasked || '-') + '</span></div><div><small>ITEM</small><strong>' + escapeHtml(items.map(item => item.name + ' ×' + Number(item.qty || 1)).join(', ') || '-') + '</strong><span>' + escapeHtml(privateData.username ? 'Username: ' + privateData.username : '') + '</span></div></div>' +
-      (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i>' + escapeHtml(privateData.note) + '</div>' : '') +
+      (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i><span><b>Nota pelanggan</b>' + escapeHtml(privateData.note) + '</span></div>' : '') +
+      '<div class="customer-order-admin-note"><label><span><i class="fa-solid fa-user-shield"></i> NOTA ADMIN UNTUK PELANGGAN</span><textarea data-order-admin-note="' + escapeHtml(order.id) + '" maxlength="400" rows="2" placeholder="Contoh: Bayaran dah disahkan. Sila chat admin untuk proses pesanan.">' + escapeHtml(order.adminNote || '') + '</textarea></label><button class="ghost" data-action="save-customer-order-note" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-note-sticky"></i> Simpan nota</button></div>' +
       '<div class="customer-order-row-actions"><select data-order-status="' + escapeHtml(order.id) + '">' + statusOptions + '</select><button class="primary" data-action="save-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-floppy-disk"></i> Simpan status</button>' +
       (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') +
       '<button class="delete-customer-order" data-action="delete-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-trash"></i> Delete</button></div></article>';
@@ -1320,6 +1321,23 @@ async function updateCustomerOrderStatus(orderId, status, button) {
     if (status !== 'Menunggu Pengesahan') updates[ROOT + '/customer_payment_claims/' + orderId] = null;
     await withTimeout(database.ref().update(updates), 'Kemaskini status order');
     notify('Status ' + orderId + ' ditukar kepada ' + status + '.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
+async function updateCustomerOrderAdminNote(orderId, button) {
+  const order = customerOrders.find(item => item.id === orderId);
+  if (!order) return notify('Order tidak dijumpai.', true);
+  const input = document.querySelector('[data-order-admin-note="' + CSS.escape(orderId) + '"]');
+  const note = String(input?.value || '').trim().slice(0, 400);
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await withTimeout(database.ref().update({
+      [ROOT + '/customer_orders/' + orderId + '/adminNote']: note || null,
+      [ROOT + '/customer_orders/' + orderId + '/adminNoteUpdatedAt']: note ? firebase.database.ServerValue.TIMESTAMP : null,
+      [ROOT + '/customer_orders/' + orderId + '/updatedAt']: firebase.database.ServerValue.TIMESTAMP
+    }), 'Simpan nota admin');
+    notify(note ? 'Nota admin disimpan dan terus dipaparkan kepada pelanggan.' : 'Nota admin dibuang.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
 }
@@ -1360,6 +1378,7 @@ byId('customer-orders-list').addEventListener('click', event => {
   const orderId = button.dataset.id;
   if (button.dataset.action === 'delete-customer-order') return deleteCustomerOrder(orderId, button);
   if (button.dataset.action === 'confirm-customer-payment') return updateCustomerOrderStatus(orderId, 'Sudah Dibayar', button);
+  if (button.dataset.action === 'save-customer-order-note') return updateCustomerOrderAdminNote(orderId, button);
   if (button.dataset.action === 'save-customer-order') {
     const status = document.querySelector('[data-order-status="' + CSS.escape(orderId) + '"]')?.value;
     if (status) updateCustomerOrderStatus(orderId, status, button);

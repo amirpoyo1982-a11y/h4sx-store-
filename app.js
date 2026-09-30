@@ -692,7 +692,7 @@ function maskCustomerOrderPhone(phone) {
   return value.length > 6 ? value.slice(0, 4) + '••••' + value.slice(-3) : '••••••';
 }
 
-function customerOrderProductOptions(selectedId = '') {
+function customerOrderProductOptions(selectedId = '', selectedVariantId = '') {
   const select = document.getElementById('customer-order-product');
   if (!select) return;
   const available = inventory.filter(item => {
@@ -704,7 +704,7 @@ function customerOrderProductOptions(selectedId = '') {
   });
   select.innerHTML = '<option value="">Pilih item...</option>' + available.map(item => '<option value="' + escapeHtml(String(item.id)) + '">' + escapeHtml(item.name || ('Produk #' + item.id)) + ' — ' + formatCustomerOrderMoney(item.price) + '</option>').join('');
   if (selectedId && available.some(item => String(item.id) === String(selectedId))) select.value = String(selectedId);
-  syncCustomerOrderProduct();
+  syncCustomerOrderProduct(selectedVariantId);
 }
 
 function selectedCustomerOrderProduct() {
@@ -712,7 +712,7 @@ function selectedCustomerOrderProduct() {
   return inventory.find(item => String(item.id) === String(id)) || null;
 }
 
-function syncCustomerOrderProduct() {
+function syncCustomerOrderProduct(selectedVariantId = '') {
   const item = selectedCustomerOrderProduct();
   const wrap = document.getElementById('customer-order-variant-wrap');
   const select = document.getElementById('customer-order-variant');
@@ -720,6 +720,7 @@ function syncCustomerOrderProduct() {
   if (wrap) wrap.hidden = !variants.length;
   if (select) {
     select.innerHTML = variants.map(variant => '<option value="' + escapeHtml(variant.id) + '"' + ((variant.stock != null && Number(variant.stock) <= 0) ? ' disabled' : '') + '>' + escapeHtml(variant.name) + ' — ' + formatCustomerOrderMoney(variant.price) + ((variant.stock != null) ? ' • stok ' + Number(variant.stock) : '') + '</option>').join('');
+    if (selectedVariantId && variants.some(variant => variant.id === String(selectedVariantId) && Number(variant.stock) !== 0)) select.value = String(selectedVariantId);
   }
   syncCustomerOrderTotal();
 }
@@ -754,17 +755,17 @@ function setCustomerOrderView(view) {
   });
 }
 
-function openCustomerOrder(productId = '') {
+function openCustomerOrder(productId = '', variantId = '') {
   if (!customerOrderConfig().enabled) return toast('Pesanan sendiri belum dibuka oleh admin.', true);
   const modal = document.getElementById('customer-order-modal');
   if (!modal) return;
-  customerOrderProductOptions(productId);
+  customerOrderProductOptions(productId, variantId);
   setCustomerOrderView('form');
   modal.classList.add('show');
 }
 
 function openCustomerOrderFromProduct() {
-  openCustomerOrder(modalItemId || '');
+  openCustomerOrder(modalItemId || '', modalVariantId || '');
 }
 
 function openCustomerOrderById(orderId) {
@@ -1071,6 +1072,11 @@ function renderCustomerOrderStatus() {
     pill.className = 'customer-order-status-pill status-' + status.toLowerCase().replace(/\s+/g, '-');
     pill.innerHTML = '<i class="fa-solid ' + icon + '"></i><span>' + escapeHtml(status) + '</span>';
   }
+  const adminNoteWrap = document.getElementById('customer-order-admin-note');
+  const adminNoteText = document.getElementById('customer-order-admin-note-text');
+  const adminNote = String(activeCustomerOrder.adminNote || '').trim();
+  if (adminNoteWrap) adminNoteWrap.hidden = !adminNote;
+  if (adminNoteText) adminNoteText.textContent = adminNote;
   const labels = ['Order diterima','Menunggu semakan bayaran','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
   const timeline = document.getElementById('customer-order-timeline');
   if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Admin akan semak TNG / bank' : index === 2 ? 'Pembayaran sah' : index === 3 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
