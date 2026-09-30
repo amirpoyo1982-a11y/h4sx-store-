@@ -10468,3 +10468,30 @@ html.review-submit-direct .h4rf-dialog { width:min(850px,100%); max-height:calc(
 @media (prefers-reduced-motion:reduce) {
   .site-update-notice { transition-duration:.01ms !important; }
 }
+
+/* Leaderboard owns the full marketplace row; use the right side for lower ranks. */
+.market-layout-v2 #home-view > #customer-leaderboard {
+  grid-column: 1 / -1;
+  order: 8;
+  width: 100%;
+}
+@media (min-width: 861px) {
+  .market-layout-v2 #customer-leaderboard .leaderboard-content.has-ranking-list {
+    grid-template-columns: minmax(0,1.65fr) minmax(280px,.72fr);
+    align-items: stretch;
+  }
+  .market-layout-v2 #customer-leaderboard .leaderboard-podium-grid {
+    align-items: stretch;
+  }
+  .market-layout-v2 #customer-leaderboard .leaderboard-podium {
+    min-height: 190px;
+    align-content: center;
+  }
+  .market-layout-v2 #customer-leaderboard .leaderboard-podium.rank-1 {
+    min-height: 215px;
+  }
+  .market-layout-v2 #customer-leaderboard .leaderboard-list {
+    grid-template-columns: 1fr;
+    align-content: start;
+  }
+}

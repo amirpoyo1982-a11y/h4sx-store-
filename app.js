@@ -4755,6 +4755,7 @@ function renderCustomerLeaderboard() {
     .filter(entry => entry.period === customerLeaderboardPeriod)
     .sort((a, b) => Number(b.amount) - Number(a.amount) || String(a.name).localeCompare(String(b.name)));
   if (!entries.length) {
+    content.classList.remove('has-ranking-list');
     content.innerHTML = '<div class="leaderboard-empty"><i class="fa-solid fa-ranking-star"></i><strong>Ranking belum tersedia</strong><span>Senarai ' + ({daily:'harian',weekly:'mingguan',monthly:'bulanan'}[customerLeaderboardPeriod] || '') + ' akan dipaparkan di sini.</span></div>';
     return;
   }
@@ -4767,6 +4768,7 @@ function renderCustomerLeaderboard() {
     '</article>';
   }).join('');
   const remaining = entries.slice(3).map((entry, index) => '<article class="leaderboard-row"><b>#' + (index + 4) + '</b><div class="leaderboard-mini-avatar" style="--leader-color:' + leaderboardColor(entry.name) + '">' + escapeHtml(leaderboardInitials(entry.name)) + '</div><strong>' + escapeHtml(entry.name) + '</strong><span>' + leaderboardMoney(entry.amount) + '</span></article>').join('');
+  content.classList.toggle('has-ranking-list', !!remaining);
   content.innerHTML = '<div class="leaderboard-podium-grid">' + podium + '</div>' + (remaining ? '<div class="leaderboard-list">' + remaining + '</div>' : '');
 }
 function selectLeaderboardPeriod(period) {
