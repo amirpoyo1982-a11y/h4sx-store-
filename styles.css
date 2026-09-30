@@ -9109,11 +9109,18 @@ html.review-submit-direct .wrap {
 }
 .market-layout-v2 #shop-section > .marketplace-command > button,
 .market-layout-v2 #shop-section > .catalog-marketplace-intro > button { width: 100%; justify-content: center; }
-.market-layout-v2 #shop-section > .platform-filter-bar { align-content: start; }
+.market-layout-v2 #shop-section > .platform-filter-bar {
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: start;
+}
+.market-layout-v2 #shop-section > .platform-filter-bar .platform-card { min-width: 0; }
 
 .market-layout-v2 #shop-section > #game-grid {
   grid-column: 2;
   grid-row: 1 / span 4;
+  min-width: 0;
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   align-content: start;
@@ -9127,6 +9134,7 @@ html.review-submit-direct .wrap {
   grid-template-columns: 112px minmax(0, 1fr);
   align-items: center !important;
   min-width: 0 !important;
+  overflow: hidden;
   padding: 10px !important;
   text-align: left;
 }
@@ -9210,6 +9218,7 @@ html.review-submit-direct .wrap {
   .market-layout-v2 .hero-vid video { min-height: 0; aspect-ratio: 16 / 10; }
   .market-layout-v2 #shop-section { display: block; padding: 18px !important; }
   .market-layout-v2 #shop-section > * { margin-bottom: 14px !important; }
+  .market-layout-v2 #shop-section > .platform-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .market-layout-v2 #shop-section > #game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .market-layout-v2 #shop-section #game-grid .gc { display: block !important; text-align: center; }
   .market-layout-v2 #shop-section #game-grid .gc-icon-wrap { width: 100%; }

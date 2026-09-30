@@ -1,9 +1,9 @@
-const CACHE_NAME = 'h4sx-pwa-20260930-v23';
+const CACHE_NAME = 'h4sx-pwa-20260930-v25';
 const APP_SHELL = [
   './',
   './index.htm',
-  './styles.css?v=review-popup-toggle-20260930',
-  './app.js?v=custom-platforms-20260930',
+  './styles.css?v=custom-platform-layout-v2-20260930',
+  './app.js?v=platform-dedupe-20260930',
   './manifest.webmanifest',
   './assets/h4sx-helper-logo.png',
   './assets/icons/h4sx-app-192.png',

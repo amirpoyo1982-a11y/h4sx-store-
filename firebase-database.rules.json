@@ -1,20 +1,24 @@
 {
   "rules": {
     "store": {
-      ".read": true,
+      ".read": "auth != null",
       ".write": "auth != null",
-      "inventory": { ".validate": "newData.hasChildren()" },
-      "games": { ".validate": "newData.hasChildren()" },
-      "config": { ".validate": "newData.hasChildren()" },
+      "inventory": { ".read": true, ".validate": "newData.hasChildren()" },
+      "games": { ".read": true, ".validate": "newData.hasChildren()" },
+      "config": { ".read": true, ".validate": "newData.hasChildren()" },
       "customer_orders": {
+        ".read": "auth != null",
         "$orderId": {
+          ".read": true,
           ".write": "auth != null || (!data.exists() && newData.child('id').val() === $orderId && newData.child('status').val() === 'Menunggu Pembayaran')",
           ".validate": "newData.hasChildren(['id','items','total','status','createdAt','phoneMasked']) && newData.child('id').val() === $orderId && newData.child('items').hasChildren() && newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('createdAt').isNumber() && newData.child('phoneMasked').isString()"
         }
       },
       "customer_payment_claims": {
+        ".read": "auth != null",
         "$orderId": {
-          ".write": "auth != null || (!data.exists() && newData.child('orderId').val() === $orderId)",
+          ".read": true,
+          ".write": "auth != null || (!data.exists() && root.child('store/customer_orders').child($orderId).exists() && newData.child('orderId').val() === $orderId)",
           ".validate": "newData.hasChildren(['orderId','claimedAt']) && newData.child('orderId').val() === $orderId && newData.child('claimedAt').isNumber()"
         }
       }

@@ -2554,14 +2554,21 @@ const DEFAULT_GAMES = [
 let gamesList = [...DEFAULT_GAMES];
 let activePlatform = 'Roblox';
 function normalizeKey(value) {
-  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+function platformDisplayName(value) {
+  const text = String(value || '').trim().replace(/\s+/g, ' ');
+  return normalizeKey(text) === 'roblox' ? 'Roblox' : text;
+}
+function samePlatform(left, right) {
+  return normalizeKey(left) === normalizeKey(right);
 }
 function inferPlatform(value = {}, fallbackName = '') {
   const raw = typeof value === 'object' ? (value.platform || value.part || value.jenis || value.categoryType || '') : '';
-  if (String(raw).trim()) return String(raw).trim();
+  if (String(raw).trim()) return platformDisplayName(raw);
   const name = String((typeof value === 'object' ? (value.game || value.name) : value) || fallbackName || '').trim();
   const configuredGame = gamesList.find(game => normalizeKey(game.name) === normalizeKey(name) && String(game.platform || '').trim());
-  return String(configuredGame?.platform || 'Roblox').trim();
+  return platformDisplayName(configuredGame?.platform || 'Roblox');
 }
 function gameGroupName(value = {}) {
   const custom = value.gameGroup || value.group || value.categoryGroup || value.parentGame;
@@ -2610,24 +2617,32 @@ function catalogGames(showAllPlatforms = false) {
   inventory
     .filter(item => !isPermanentFruitCatalogItem(item))
     .forEach(item => addGame({ name: gameGroupName(item), platform: inferPlatform(item), img: productPosterUrl(item), badge: item.gameBadge || item.badge }, item));
-  return [...map.values()].filter(g => showAllPlatforms || g.platform === activePlatform || (!activePlatform && g.platform));
+  return [...map.values()].filter(g => showAllPlatforms || samePlatform(g.platform, activePlatform) || (!activePlatform && g.platform));
 }
 function renderPlatformFilters() {
   const bar = document.getElementById('platform-filter-bar');
   if (!bar) return;
   const allGames = catalogGames(true);
-  const platforms = [...new Set(allGames.map(g => g.platform).filter(Boolean))];
+  const platformMap = new Map();
+  allGames.forEach(game => {
+    const display = platformDisplayName(game.platform);
+    const key = normalizeKey(display);
+    if (key && !platformMap.has(key)) platformMap.set(key, display);
+  });
+  const platforms = [...platformMap.values()];
   if (!platforms.length) {
     bar.innerHTML = '';
     return;
   }
-  if (!platforms.includes(activePlatform)) activePlatform = platforms[0];
+  const selectedPlatform = platforms.find(platform => samePlatform(platform, activePlatform));
+  activePlatform = selectedPlatform || platforms[0];
   const counts = {};
   const covers = {};
   allGames.forEach(g => {
-    if (!platforms.includes(g.platform)) return;
-    counts[g.platform] = (counts[g.platform] || 0) + (g.count || 0);
-    if (!covers[g.platform]) covers[g.platform] = productPosterUrl(g) || g.img || g.image || '';
+    const platform = platforms.find(candidate => samePlatform(candidate, g.platform));
+    if (!platform) return;
+    counts[platform] = (counts[platform] || 0) + (g.count || 0);
+    if (!covers[platform]) covers[platform] = productPosterUrl(g) || g.img || g.image || '';
   });
   const labels = {
     Roblox: { title: 'Roblox', sub: 'Game, item, akun', icon: 'fa-cube' }
@@ -2644,7 +2659,7 @@ function renderPlatformFilters() {
 }
 function setPlatform(platform) {
   const allowed = [...new Set(catalogGames(true).map(g => g.platform).filter(Boolean))];
-  activePlatform = allowed.includes(platform) ? platform : (allowed[0] || platform || 'Roblox');
+  activePlatform = allowed.find(item => samePlatform(item, platform)) || allowed[0] || platformDisplayName(platform) || 'Roblox';
   renderGames();
 }
 async function loadGames() {
