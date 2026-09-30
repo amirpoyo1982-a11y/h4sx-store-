@@ -1,9 +1,9 @@
-const CACHE_NAME = 'h4sx-pwa-20261001-v39';
+const CACHE_NAME = 'h4sx-pwa-20261001-v40';
 const APP_SHELL = [
   './',
   './index.htm',
-  './styles.css?v=banner-full-image-large-20261001',
-  './app.js?v=banner-full-image-large-20261001',
+  './styles.css?v=admin-update-notice-20261001',
+  './app.js?v=admin-update-notice-20261001',
   './changelog-loader.js?v=v6-store-upgrade-20261001',
   './manifest.webmanifest',
   './assets/h4sx-helper-logo.png',

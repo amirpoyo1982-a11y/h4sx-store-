@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-01-banner-full-image-large"/>
+  <meta name="h4sx-build" content="2026-10-01-admin-update-notice"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=banner-full-image-large-20261001">
+  <link rel="stylesheet" href="styles.css?v=admin-update-notice-20261001">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -126,6 +126,18 @@
 </div>
 
 <script defer src="changelog-loader.js?v=v6-store-upgrade-20261001"></script>
+<aside id="site-update-notice" class="site-update-notice" role="alertdialog" aria-live="assertive" aria-labelledby="site-update-notice-title" aria-hidden="true">
+  <div class="site-update-notice-icon"><i class="fa-solid fa-arrows-rotate"></i><span></span></div>
+  <div class="site-update-notice-copy">
+    <small><i class="fa-solid fa-shield-halved"></i> H4SX STORE ADMIN</small>
+    <strong id="site-update-notice-title">Update baharu dikesan</strong>
+    <p>Kami mengesan versi kedai yang lebih baru. Refresh untuk dapatkan paparan dan fungsi terkini.</p>
+  </div>
+  <div class="site-update-notice-actions">
+    <button type="button" class="site-update-refresh" onclick="refreshFromSiteUpdateNotice()"><i class="fa-solid fa-rotate"></i> Refresh Sekarang</button>
+    <button type="button" class="site-update-later" onclick="closeSiteUpdateNotice()">Lanjut Shopping</button>
+  </div>
+</aside>
 <div class="site-header-nav-wrap">
 <!-- NAV -->
 <nav id="main-nav">
@@ -888,7 +900,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=banner-full-image-large-20261001"></script>
+<script defer src="app.js?v=admin-update-notice-20261001"></script>
 
 </body>
 </html>

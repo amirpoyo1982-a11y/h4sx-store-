@@ -1930,11 +1930,37 @@ function getHtmlAssetSignature(html) {
   const changelog = doc.querySelector('script[src*="changelog-loader.js"]')?.getAttribute('src') || '';
   return [build, style, app, changelog].join('|');
 }
-function markSiteUpdateAvailable() {
+let siteUpdateNoticeSignature = '';
+function showSiteUpdateNotice(signature = 'website-update') {
+  const notice = document.getElementById('site-update-notice');
+  if (!notice) return;
+  const cleanSignature = String(signature || 'website-update');
+  try {
+    if (sessionStorage.getItem('h4sx_update_notice_dismissed') === cleanSignature) return;
+  } catch (e) {}
+  siteUpdateNoticeSignature = cleanSignature;
+  notice.classList.add('show');
+  notice.setAttribute('aria-hidden', 'false');
+}
+function closeSiteUpdateNotice() {
+  const notice = document.getElementById('site-update-notice');
+  if (!notice) return;
+  try { sessionStorage.setItem('h4sx_update_notice_dismissed', siteUpdateNoticeSignature || 'website-update'); } catch (e) {}
+  notice.classList.remove('show');
+  notice.setAttribute('aria-hidden', 'true');
+}
+function refreshFromSiteUpdateNotice() {
+  const button = document.querySelector('.site-update-refresh');
+  button?.classList.add('is-loading');
+  if (button) button.disabled = true;
+  hardRefreshSite();
+}
+function markSiteUpdateAvailable(signature = 'website-update') {
   document.querySelectorAll('.hard-refresh-btn, .changelog-hard-refresh, .hard-refresh-menu').forEach(el => {
     el.classList.add('has-update');
     el.setAttribute('title', 'Update baru tersedia - tekan Hard Refresh');
   });
+  showSiteUpdateNotice(signature);
 }
 let siteUpdateCheckRunning = false;
 async function checkSiteUpdateAvailable() {
@@ -1955,10 +1981,10 @@ async function checkSiteUpdateAvailable() {
     const html = await res.text();
     const latest = getHtmlAssetSignature(html);
     const current = getLoadedAssetSignature();
-    if (latest && current && latest !== current) markSiteUpdateAvailable();
+    if (latest && current && latest !== current) markSiteUpdateAvailable(latest);
     if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.getRegistration('./');
-      if (registration?.waiting) markSiteUpdateAvailable();
+      if (registration?.waiting) markSiteUpdateAvailable('service-worker:' + (latest || 'waiting'));
       await registration?.update().catch(() => null);
     }
   } catch (e) {
