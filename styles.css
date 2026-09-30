@@ -9468,7 +9468,7 @@ html.review-submit-direct .wrap {
   perspective: 1400px;
 }
 .promo-hero-shell {
-  height: clamp(230px, 27vw, 330px) !important;
+  height: clamp(205px, 23vw, 285px) !important;
   min-height: 0 !important;
   max-height: none !important;
   aspect-ratio: auto !important;
@@ -9501,8 +9501,8 @@ html.review-submit-direct .wrap {
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
-  width: 82% !important;
-  height: calc(100% - 28px) !important;
+  width: 90% !important;
+  height: calc(100% - 22px) !important;
   min-width: 0 !important;
   flex: none !important;
   overflow: hidden !important;
@@ -9540,6 +9540,14 @@ html.review-submit-direct .wrap {
   min-height: 0 !important;
   border-radius: inherit;
 }
+.promo-hero-slide.promo-contain::before {
+  display: none !important;
+}
+.promo-hero-slide.promo-contain img {
+  padding: 0 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+}
 .promo-hero-slide:not(.active) img {
   transform: scale(1.035);
 }
@@ -9573,14 +9581,14 @@ html.review-submit-direct .wrap {
   }
   .promo-hero-shell {
     width: 100% !important;
-    height: clamp(154px, 47vw, 210px) !important;
+    height: clamp(142px, 42vw, 190px) !important;
     margin-inline: 0 !important;
     border-radius: 16px !important;
     box-shadow: inset 0 0 0 1px rgba(11,113,159,.08), 0 11px 25px rgba(20,82,112,.11) !important;
   }
   .promo-hero-slide {
-    width: 86% !important;
-    height: calc(100% - 18px) !important;
+    width: 91% !important;
+    height: calc(100% - 14px) !important;
     border-radius: 13px !important;
     box-shadow: 0 8px 18px rgba(3,35,57,.17);
   }
