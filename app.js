@@ -1304,6 +1304,7 @@ let promoBannerSlides = [];
 let promoBannerTimer = null;
 let promoBannerIntervalDelay = 5500;
 let promoBannerSuppressClickUntil = 0;
+let promoBannerFrame = 0;
 let productSpotlightTimer = null;
 let productSpotlightIndex = 0;
 let productSpotlightDismissed = false;
@@ -1434,7 +1435,13 @@ function stopPromoBannerTimer() {
 function startPromoBannerTimer(delay = promoBannerIntervalDelay) {
   stopPromoBannerTimer();
   if (promoBannerSlides.length > 1) {
-    promoBannerTimer = setInterval(() => showPromoBannerSlide(promoBannerIndex + 1), delay);
+    promoBannerTimer = setInterval(() => {
+      const root = document.getElementById('promo-hero');
+      if (document.hidden || !root || root.classList.contains('is-dragging') || !root.getClientRects().length) return;
+      const bounds = root.getBoundingClientRect();
+      if (bounds.bottom < 0 || bounds.top > window.innerHeight) return;
+      showPromoBannerSlide(promoBannerIndex + 1);
+    }, delay);
   }
 }
 function promoBannerSlideOffset(slideIndex, activeIndex = promoBannerIndex) {
@@ -1448,24 +1455,25 @@ function promoBannerSlideOffset(slideIndex, activeIndex = promoBannerIndex) {
 function updatePromoBannerVisuals(dragProgress = 0) {
   const track = document.getElementById('promo-hero-track');
   if (!track) return;
-  track.style.transform = '';
   track.querySelectorAll('.promo-hero-slide').forEach((slide, index) => {
     const position = promoBannerSlideOffset(index) + dragProgress;
     const distance = Math.abs(position);
-    const visibleDistance = Math.min(distance, 2.2);
-    const shift = position * 82;
-    const scale = Math.max(.68, 1 - visibleDistance * .13);
-    const tilt = Math.max(-22, Math.min(22, position * -13));
-    const opacity = distance > 1.65 ? 0 : Math.max(.18, 1 - distance * .28);
+    const visible = distance < 1.65;
+    const scale = Math.max(.74, 1 - Math.min(distance, 2) * .13);
     const active = distance < .5;
-    slide.style.setProperty('--promo-shift', shift.toFixed(3) + '%');
-    slide.style.setProperty('--promo-scale', scale.toFixed(3));
-    slide.style.setProperty('--promo-tilt', tilt.toFixed(2) + 'deg');
-    slide.style.setProperty('--promo-opacity', opacity.toFixed(3));
-    slide.style.zIndex = String(Math.max(1, 20 - Math.round(distance * 10)));
-    slide.classList.toggle('active', active);
-    slide.setAttribute('aria-hidden', String(!active));
-    if (slide.matches('a')) slide.tabIndex = active ? 0 : -1;
+    if (!visible && !slide.classList.contains('is-visible')) return;
+    if (visible) {
+      slide.style.setProperty('--promo-shift', (position * 82).toFixed(2) + '%');
+      slide.style.setProperty('--promo-scale', scale.toFixed(3));
+      slide.style.setProperty('--promo-opacity', Math.max(.25, 1 - distance * .28).toFixed(3));
+      slide.style.zIndex = String(Math.max(1, 20 - Math.round(distance * 10)));
+    }
+    slide.classList.toggle('is-visible', visible);
+    if (slide.classList.contains('active') !== active) {
+      slide.classList.toggle('active', active);
+      slide.setAttribute('aria-hidden', String(!active));
+      if (slide.matches('a')) slide.tabIndex = active ? 0 : -1;
+    }
   });
 }
 function showPromoBannerSlide(index) {
@@ -1500,12 +1508,17 @@ function initPromoBannerDrag() {
   function pointX(event) {
     return event.touches?.[0]?.clientX ?? event.changedTouches?.[0]?.clientX ?? event.clientX ?? 0;
   }
+  function pointY(event) {
+    return event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY ?? event.clientY ?? 0;
+  }
   function dragStart(event) {
     if (event.target.closest('.promo-hero-nav, .promo-hero-dots')) return;
     if (promoBannerSlides.length <= 1) return;
     promoDragState = {
       startX: pointX(event),
       currentX: pointX(event),
+      startY: pointY(event),
+      axis: '',
       width: root.querySelector('.promo-hero-shell')?.getBoundingClientRect().width || root.getBoundingClientRect().width || 1,
       moved: false
     };
@@ -1516,13 +1529,30 @@ function initPromoBannerDrag() {
     if (!promoDragState) return;
     promoDragState.currentX = pointX(event);
     const delta = promoDragState.currentX - promoDragState.startX;
+    if (event.touches && !promoDragState.axis && Math.abs(delta) + Math.abs(pointY(event) - promoDragState.startY) > 8) {
+      promoDragState.axis = Math.abs(delta) > Math.abs(pointY(event) - promoDragState.startY) ? 'horizontal' : 'vertical';
+      if (promoDragState.axis === 'vertical') {
+        root.classList.remove('is-dragging');
+        promoDragState = null;
+        startPromoBannerTimer();
+        return;
+      }
+    }
+    if (event.touches && promoDragState.axis !== 'horizontal') return;
     if (Math.abs(delta) > 6) promoDragState.moved = true;
-    const progress = Math.max(-1, Math.min(1, delta / promoDragState.width));
-    updatePromoBannerVisuals(progress);
-    if (promoDragState.moved && event.cancelable) event.preventDefault();
+    if (!promoBannerFrame) {
+      promoBannerFrame = requestAnimationFrame(() => {
+        promoBannerFrame = 0;
+        if (!promoDragState) return;
+        const progress = Math.max(-1, Math.min(1, (promoDragState.currentX - promoDragState.startX) / promoDragState.width));
+        updatePromoBannerVisuals(progress);
+      });
+    }
   }
   function dragEnd() {
     if (!promoDragState) return;
+    if (promoBannerFrame) cancelAnimationFrame(promoBannerFrame);
+    promoBannerFrame = 0;
     const delta = promoDragState.currentX - promoDragState.startX;
     const threshold = Math.max(45, promoDragState.width * 0.12);
     root.classList.remove('is-dragging');
@@ -1547,7 +1577,7 @@ function initPromoBannerDrag() {
   window.addEventListener('mouseup', dragEnd);
   root.addEventListener('mouseleave', dragEnd);
   root.addEventListener('touchstart', dragStart, { passive: true });
-  root.addEventListener('touchmove', dragMove, { passive: false });
+  root.addEventListener('touchmove', dragMove, { passive: true });
   root.addEventListener('touchend', dragEnd);
   root.addEventListener('touchcancel', dragEnd);
   root.addEventListener('click', blockClickAfterDrag, true);
@@ -1604,8 +1634,8 @@ function renderPromoBanner(config = currentStoreConfig) {
       + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' onerror="this.closest(\'.promo-hero-slide\').classList.add(\'image-failed\')" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
-      ? '<a class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
-      : '<div class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '"' + slideStyle + '>' + inner + '</div>';
+      ? '<a class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '" aria-hidden="true" tabindex="-1"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'
+      : '<div class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '" aria-hidden="true"' + slideStyle + '>' + inner + '</div>';
   }).join('');
   dots.innerHTML = promoBannerSlides.map((slide, i) =>
     '<button type="button" aria-label="Promosi ' + (i + 1) + '" data-promo-dot="' + i + '"></button>'

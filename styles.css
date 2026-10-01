@@ -9489,14 +9489,11 @@ html.review-submit-direct .wrap {
   display: block !important;
   overflow: visible;
   transform: none !important;
-  perspective: 1200px;
-  transform-style: preserve-3d;
   transition: none !important;
 }
 .promo-hero-slide {
   --promo-shift: 0%;
   --promo-scale: 1;
-  --promo-tilt: 0deg;
   --promo-opacity: 1;
   position: absolute !important;
   top: 50% !important;
@@ -9509,22 +9506,20 @@ html.review-submit-direct .wrap {
   border: 1px solid rgba(255,255,255,.82);
   border-radius: 18px;
   opacity: var(--promo-opacity);
-  transform: translate(-50%,-50%) translateX(var(--promo-shift)) rotateY(var(--promo-tilt)) scale(var(--promo-scale)) !important;
+  visibility: hidden;
+  transform: translate3d(-50%,-50%,0) translateX(var(--promo-shift)) scale(var(--promo-scale)) !important;
   transform-origin: center center;
-  backface-visibility: hidden;
   pointer-events: none;
-  filter: saturate(.76) brightness(.82);
   box-shadow: 0 12px 27px rgba(3,35,57,.16);
   transition:
-    transform .72s cubic-bezier(.2,.82,.22,1),
-    opacity .52s ease,
-    filter .52s ease,
-    box-shadow .52s ease !important;
-  will-change: transform, opacity;
+    transform .46s cubic-bezier(.2,.82,.22,1),
+    opacity .38s ease !important;
+}
+.promo-hero-slide.is-visible {
+  visibility: visible;
 }
 .promo-hero-slide.active {
   pointer-events: auto;
-  filter: saturate(1) brightness(1);
   box-shadow: 0 22px 48px rgba(3,47,73,.25), 0 0 0 1px rgba(14,165,233,.13);
 }
 .promo-hero:not(.has-multiple) .promo-hero-slide {
@@ -9532,6 +9527,9 @@ html.review-submit-direct .wrap {
 }
 .promo-hero.is-dragging .promo-hero-slide {
   transition: none !important;
+}
+.promo-hero.is-dragging .promo-hero-slide.is-visible {
+  will-change: transform;
 }
 .promo-hero-slide picture,
 .promo-hero-slide img {
@@ -9583,6 +9581,7 @@ html.review-submit-direct .wrap {
 }
 
 @media (max-width: 640px) {
+  .promo-hero { perspective: none !important; }
   .promo-hero {
     width: calc(100% + 24px) !important;
     margin: 7px -12px 13px !important;
@@ -9603,6 +9602,8 @@ html.review-submit-direct .wrap {
   .promo-hero-slide.active {
     box-shadow: 0 13px 27px rgba(3,47,73,.23), 0 0 0 1px rgba(14,165,233,.11);
   }
+  .promo-hero-nav,
+  .promo-hero-dots { backdrop-filter: none !important; }
   .promo-hero:not(.has-multiple) .promo-hero-slide {
     width: calc(100% - 18px) !important;
   }
