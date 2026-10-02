@@ -10583,3 +10583,57 @@ html.review-submit-direct .h4rf-dialog { width:min(850px,100%); max-height:calc(
     align-content: start;
   }
 }
+
+/* Popup pembelian terkini — gaya kompak seperti popup ulasan */
+.recent-purchase-popup {
+  --recent-popup-duration:7s;
+  position:fixed;
+  z-index:1180;
+  width:min(330px,calc(100vw - 20px));
+  min-height:120px;
+  overflow:hidden;
+  border:1px solid #06b6d4;
+  border-radius:15px;
+  color:#eaf7ff;
+  background:linear-gradient(145deg,#09233b,#081a2d);
+  box-shadow:0 18px 42px rgba(2,18,35,.35);
+  animation:recentPurchasePopupIn .28s ease-out both;
+}
+.recent-purchase-popup.is-hidden { display:none !important; }
+.recent-purchase-popup.position-bottom-left { left:12px; bottom:14px; }
+.recent-purchase-popup.position-bottom-right { right:12px; bottom:14px; }
+.recent-purchase-popup.position-top-left { left:12px; top:112px; }
+.recent-purchase-popup.position-top-right { right:12px; top:112px; }
+.recent-purchase-popup .recent-purchases-list { display:block; }
+.recent-purchase-popup .recent-purchase-card {
+  display:grid; grid-template-columns:52px minmax(0,1fr); gap:11px; align-items:center;
+  min-height:118px; padding:13px 12px 39px; border:0; border-radius:0;
+  color:inherit; background:transparent; box-shadow:none;
+}
+.recent-purchase-popup .recent-purchase-card > img,
+.recent-purchase-popup .recent-purchase-fallback { width:52px; height:52px; border-radius:12px; background:#173e5d; color:#43d6ee; }
+.recent-purchase-popup .recent-purchase-status { color:#45e6b0; font-size:.51rem; letter-spacing:.1em; }
+.recent-purchase-popup .recent-purchase-status i { background:#2de39f; box-shadow:0 0 0 4px rgba(45,227,159,.1); }
+.recent-purchase-popup .recent-purchase-card strong { color:#fff; font-size:.76rem; }
+.recent-purchase-popup .recent-purchase-card strong > i { margin-left:3px; color:#29b6f6; font-size:.61rem; }
+.recent-purchase-popup .recent-purchase-card p { margin:4px 0; color:#d7e8f3; font-size:.62rem; }
+.recent-purchase-popup .recent-purchase-card p b { color:#fff; font-weight:850; }
+.recent-purchase-popup .recent-purchase-card small { color:#829caf; font-size:.53rem; }
+.recent-purchase-popup-controls { position:absolute; right:8px; bottom:8px; display:flex; align-items:center; gap:5px; }
+.recent-purchase-popup-controls > span { margin-right:2px; color:#76a9c4; font-size:.5rem; font-weight:800; }
+.recent-purchase-popup-controls button { width:25px; height:23px; display:grid; place-items:center; border:1px solid #185272; border-radius:7px; color:#66d7f3; background:#0d2b43; cursor:pointer; font-size:.55rem; }
+.recent-purchase-popup-controls button:hover { border-color:#1bbce4; color:#fff; }
+.recent-purchase-popup-progress { position:absolute; left:0; bottom:0; width:100%; height:3px; background:linear-gradient(90deg,#20dca0,#15bce5); transform-origin:left center; animation:recentPurchaseProgress var(--recent-popup-duration) linear both; }
+.recent-purchase-popup.is-paused .recent-purchase-popup-progress { animation-play-state:paused; }
+@keyframes recentPurchasePopupIn { from{opacity:0;transform:translateY(14px) scale(.97)} to{opacity:1;transform:none} }
+@keyframes recentPurchaseProgress { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+@media(max-width:560px) {
+  .recent-purchase-popup { width:min(310px,calc(100vw - 16px)); border-radius:14px; }
+  .recent-purchase-popup.position-bottom-left,.recent-purchase-popup.position-bottom-right { left:8px; right:auto; bottom:calc(72px + env(safe-area-inset-bottom)); }
+  .recent-purchase-popup.position-top-left,.recent-purchase-popup.position-top-right { left:8px; right:auto; top:92px; }
+  .recent-purchase-popup .recent-purchase-card { min-height:112px; padding:11px 10px 37px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .recent-purchase-popup { animation:none; }
+  .recent-purchase-popup-progress { animation:none; transform:scaleX(1); }
+}

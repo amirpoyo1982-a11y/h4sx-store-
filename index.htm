@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-02-recent-purchases"/>
+  <meta name="h4sx-build" content="2026-10-02-recent-purchase-popup"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=recent-purchases-20261002">
+  <link rel="stylesheet" href="styles.css?v=recent-purchase-popup-20261002">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -278,17 +278,16 @@
         <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span id="custom-vote-note-text">Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
       </div>
     </section>
-    <section class="recent-purchases reveal is-hidden" id="recent-purchases-section" aria-live="polite" aria-labelledby="recent-purchases-title">
-      <div class="recent-purchases-head">
-        <div class="recent-purchases-title-wrap">
-          <span class="recent-purchases-live"><i></i> AKTIVITI KEDAI</span>
-          <h2 id="recent-purchases-title">Pesanan Terkini</h2>
-          <p>Pembelian terbaru yang dikemas kini oleh admin H4SX.</p>
-        </div>
-        <div class="recent-purchases-badge"><i class="fa-solid fa-shield-check"></i><span>Disahkan<br><strong>Admin</strong></span></div>
-      </div>
+    <section class="recent-purchase-popup is-hidden position-bottom-left" id="recent-purchases-section" aria-live="polite" aria-label="Pembelian terkini">
       <div class="recent-purchases-list" id="recent-purchases-list"></div>
-      <div class="recent-purchases-note"><i class="fa-solid fa-lock"></i> Hanya nama paparan dan barang dipaparkan. Maklumat pesanan peribadi kekal tersembunyi.</div>
+      <div class="recent-purchase-popup-controls">
+        <span id="recent-purchase-counter">1/1</span>
+        <button type="button" onclick="toggleRecentPurchasePopupPause()" id="recent-purchase-pause" aria-label="Pause popup"><i class="fa-solid fa-pause"></i></button>
+        <button type="button" onclick="showNextRecentPurchase(-1)" aria-label="Pembelian sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
+        <button type="button" onclick="showNextRecentPurchase(1)" aria-label="Pembelian seterusnya"><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" onclick="dismissRecentPurchasePopup()" aria-label="Tutup popup"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="recent-purchase-popup-progress"></div>
     </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
@@ -892,6 +891,8 @@
           <label class="vote-admin-toggle"><input id="recent-purchases-show-name" type="checkbox" checked><span></span><b>Tunjuk nama pelanggan</b></label>
           <label class="vote-admin-toggle"><input id="recent-purchases-show-product" type="checkbox" checked><span></span><b>Tunjuk nama barang</b></label>
           <label>Jumlah dipaparkan<input id="recent-purchases-limit" type="number" min="3" max="12" step="1" value="6"></label>
+          <label>Tukar popup setiap<div class="review-showcase-interval"><input id="recent-purchases-interval" type="number" min="3" max="30" step="1" value="7"><span>saat</span></div></label>
+          <label>Posisi popup<select id="recent-purchases-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
           <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
         </form>
         <form class="recent-purchase-entry-form" onsubmit="saveRecentPurchase(event)">
@@ -935,7 +936,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=recent-purchases-20261002"></script>
+<script defer src="app.js?v=recent-purchase-popup-20261002"></script>
 
 </body>
 </html>
