@@ -10511,6 +10511,16 @@ html.review-submit-direct .h4rf-dialog { width:min(850px,100%); max-height:calc(
 .purchase-popup-admin-form input:focus,.purchase-popup-admin-form select:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.1); }
 .purchase-popup-admin-form > .btn-primary { min-height:43px; border:0; cursor:pointer; font-weight:850; }
 .purchase-popup-admin-form > .btn-primary:disabled { opacity:.6; cursor:wait; }
+.purchase-popup-settings-save { min-height:40px; border:1px solid #bcdceb; border-radius:11px; color:#146b8b; background:#eefaff; font:inherit; font-size:11px; font-weight:850; cursor:pointer; }
+.purchase-popup-admin-list { display:grid; gap:8px; max-height:260px; margin-top:14px; overflow:auto; overscroll-behavior:contain; }
+.purchase-popup-admin-empty { padding:16px; border:1px dashed #c9dfea; border-radius:12px; color:#7890a4; text-align:center; font-size:11px; }
+.purchase-popup-admin-item { display:grid; grid-template-columns:38px minmax(0,1fr) 34px; align-items:center; gap:9px; padding:8px; border:1px solid #d8e8f0; border-radius:12px; background:#fff; }
+.purchase-popup-admin-item img,.purchase-popup-admin-item > span:first-child { width:38px; height:38px; display:grid; place-items:center; object-fit:cover; border-radius:9px; color:#0891b2; background:#e8f8fc; }
+.purchase-popup-admin-item div { min-width:0; }
+.purchase-popup-admin-item strong,.purchase-popup-admin-item small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.purchase-popup-admin-item strong { color:#173b55; font-size:11px; }
+.purchase-popup-admin-item small { margin-top:3px; color:#7990a2; font-size:9px; }
+.purchase-popup-admin-item button { width:34px; height:34px; border:0; border-radius:9px; color:#e11d48; background:#fff1f2; cursor:pointer; }
 
 .purchase-popup { position:fixed; z-index:1180; width:min(310px,calc(100vw - 20px)); min-height:104px; display:grid; grid-template-columns:52px minmax(0,1fr); align-items:center; gap:11px; padding:13px 38px 13px 12px; overflow:hidden; border:1px solid #08b7d5; border-radius:15px; color:#eaf7ff; background:linear-gradient(145deg,#09233b,#081a2d); box-shadow:0 14px 34px rgba(2,18,35,.3); contain:layout paint style; }
 .purchase-popup.is-hidden { display:none !important; }

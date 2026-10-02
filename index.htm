@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-02-purchase-popup-lite"/>
+  <meta name="h4sx-build" content="2026-10-02-purchase-popup-multi-lite"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=purchase-popup-lite-20261002">
+  <link rel="stylesheet" href="styles.css?v=purchase-popup-multi-lite-20261002">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -801,7 +801,7 @@
       <div class="admin-profile-account"><span><i class="fa-solid fa-circle-check"></i><b id="admin-profile-email-display">Admin</b></span><button type="button" onclick="adminOrderLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log keluar</button></div>
       <div class="admin-profile-menu">
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()"><span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian terakhir sedang OFF.</small></div><i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i></button>
+        <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()"><span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian sedang OFF.</small></div><i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
@@ -817,15 +817,18 @@
     <button class="order-modal-close" onclick="closePurchasePopupAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-bag-shopping"></i> Paparan pelanggan</div>
     <h2>Popup Pembelian</h2>
-    <p>Custom pembelian terakhir yang pelanggan akan nampak. Versi ini hanya memaparkan satu rekod dan tidak menggunakan carousel.</p>
+    <p>Tambah beberapa pembelian untuk dipaparkan bergilir. Paparan awam kekal ringan dan hanya menunjukkan satu rekod pada satu masa.</p>
     <form class="purchase-popup-admin-form" onsubmit="savePurchasePopup(event)">
       <label class="vote-admin-toggle"><input id="purchase-popup-active" type="checkbox"><span></span><b>ON — Paparkan popup</b></label>
       <label>Nama pelanggan<input id="purchase-popup-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
       <label>Barang dibeli <small>Boleh pilih barang katalog atau tulis sendiri.</small><input id="purchase-popup-product" list="purchase-popup-products" maxlength="120" placeholder="Taip nama barang..." autocomplete="off" required><datalist id="purchase-popup-products"></datalist></label>
       <label>Posisi popup<select id="purchase-popup-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
-      <button type="submit" class="btn-primary" id="purchase-popup-save"><i class="fa-solid fa-floppy-disk"></i> Simpan Popup</button>
-      <div class="vote-admin-status" id="purchase-popup-admin-message">Tekan simpan selepas ubah tetapan.</div>
+      <label>Tukar pembelian setiap<select id="purchase-popup-interval"><option value="15">15 saat</option><option value="30">30 saat</option><option value="60">1 minit</option></select></label>
+      <button type="submit" class="btn-primary" id="purchase-popup-save"><i class="fa-solid fa-plus"></i> Tambah Pembelian</button>
+      <button type="button" class="purchase-popup-settings-save" onclick="savePurchasePopupSettings()"><i class="fa-solid fa-sliders"></i> Simpan ON/OFF & Paparan</button>
+      <div class="vote-admin-status" id="purchase-popup-admin-message">Tambah sehingga 20 rekod. Rekod akan dipaparkan bergilir.</div>
     </form>
+    <div id="purchase-popup-admin-list" class="purchase-popup-admin-list"></div>
   </div>
 </div>
 
@@ -924,7 +927,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small>Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=purchase-popup-lite-20261002"></script>
+<script defer src="app.js?v=purchase-popup-multi-lite-20261002"></script>
 
 </body>
 </html>
