@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-02-recent-popup-performance"/>
+  <meta name="h4sx-build" content="2026-10-02-purchase-popup-lite"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=recent-popup-performance-20261002">
+  <link rel="stylesheet" href="styles.css?v=purchase-popup-lite-20261002">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -277,17 +277,6 @@
         <div class="custom-vote-options" id="custom-vote-options"></div>
         <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span id="custom-vote-note-text">Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
       </div>
-    </section>
-    <section class="recent-purchase-popup is-hidden position-bottom-left" id="recent-purchases-section" aria-live="polite" aria-label="Pembelian terkini">
-      <div class="recent-purchases-list" id="recent-purchases-list"></div>
-      <div class="recent-purchase-popup-controls">
-        <span id="recent-purchase-counter">1/1</span>
-        <button type="button" onclick="toggleRecentPurchasePopupPause()" id="recent-purchase-pause" aria-label="Pause popup"><i class="fa-solid fa-pause"></i></button>
-        <button type="button" onclick="showNextRecentPurchase(-1)" aria-label="Pembelian sebelumnya"><i class="fa-solid fa-chevron-left"></i></button>
-        <button type="button" onclick="showNextRecentPurchase(1)" aria-label="Pembelian seterusnya"><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" onclick="dismissRecentPurchasePopup()" aria-label="Tutup popup"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="recent-purchase-popup-progress"></div>
     </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
@@ -812,7 +801,7 @@
       <div class="admin-profile-account"><span><i class="fa-solid fa-circle-check"></i><b id="admin-profile-email-display">Admin</b></span><button type="button" onclick="adminOrderLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log keluar</button></div>
       <div class="admin-profile-menu">
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" onclick="openAdminRecentPurchasesFromProfile()"><span class="recent"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Pesanan Terkini</strong><small>Urus pembelian yang pelanggan nampak di halaman utama.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()"><span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian terakhir sedang OFF.</small></div><i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
@@ -822,12 +811,30 @@
   </div>
 </div>
 
+<!-- LIGHTWEIGHT LAST PURCHASE POPUP ADMIN -->
+<div id="purchase-popup-admin-modal" class="order-modal purchase-popup-admin-modal" onclick="if(event.target===this)closePurchasePopupAdmin()">
+  <div class="order-modal-card purchase-popup-admin-card">
+    <button class="order-modal-close" onclick="closePurchasePopupAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-bag-shopping"></i> Paparan pelanggan</div>
+    <h2>Popup Pembelian</h2>
+    <p>Custom pembelian terakhir yang pelanggan akan nampak. Versi ini hanya memaparkan satu rekod dan tidak menggunakan carousel.</p>
+    <form class="purchase-popup-admin-form" onsubmit="savePurchasePopup(event)">
+      <label class="vote-admin-toggle"><input id="purchase-popup-active" type="checkbox"><span></span><b>ON — Paparkan popup</b></label>
+      <label>Nama pelanggan<input id="purchase-popup-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
+      <label>Barang dibeli <small>Boleh pilih barang katalog atau tulis sendiri.</small><input id="purchase-popup-product" list="purchase-popup-products" maxlength="120" placeholder="Taip nama barang..." autocomplete="off" required><datalist id="purchase-popup-products"></datalist></label>
+      <label>Posisi popup<select id="purchase-popup-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
+      <button type="submit" class="btn-primary" id="purchase-popup-save"><i class="fa-solid fa-floppy-disk"></i> Simpan Popup</button>
+      <div class="vote-admin-status" id="purchase-popup-admin-message">Tekan simpan selepas ubah tetapan.</div>
+    </form>
+  </div>
+</div>
+
 <!-- MANUAL ORDER ADMIN -->
 <div id="order-admin-modal" class="order-modal" onclick="if(event.target===this)closeOrderAdmin()">
   <div class="order-modal-card order-admin-card">
     <button class="order-modal-close" onclick="closeOrderAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-shield-halved"></i> Admin sahaja</div>
-    <h2 id="order-admin-title">Tambah Transaksi</h2>
+    <h2>Tambah Transaksi</h2>
     <div id="order-admin-login">
       <p>Log masuk akaun Firebase admin untuk simpan order.</p>
       <form class="order-form" onsubmit="adminOrderLogin(event)">
@@ -881,30 +888,6 @@
           <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
         </form>
       </section>
-      <section class="recent-purchases-admin" aria-labelledby="recent-purchases-admin-title">
-        <div class="vote-admin-head">
-          <div><span>AKTIVITI PEMBELIAN</span><h3 id="recent-purchases-admin-title">Sejarah Pesanan Awam</h3><p>Tambah sendiri pembelian yang mahu dipaparkan. Nombor telefon dan Order ID tidak ditunjukkan.</p></div>
-          <button type="button" onclick="loadRecentPurchases(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
-        </div>
-        <form class="recent-purchases-settings" onsubmit="saveRecentPurchaseSettings(event)">
-          <label class="vote-admin-toggle"><input id="recent-purchases-admin-active" type="checkbox"><span></span><b>Paparkan sejarah pesanan</b></label>
-          <label class="vote-admin-toggle"><input id="recent-purchases-show-name" type="checkbox" checked><span></span><b>Tunjuk nama pelanggan</b></label>
-          <label class="vote-admin-toggle"><input id="recent-purchases-show-product" type="checkbox" checked><span></span><b>Tunjuk nama barang</b></label>
-          <label>Jumlah dipaparkan<input id="recent-purchases-limit" type="number" min="3" max="12" step="1" value="6"></label>
-          <label>Tukar popup setiap<div class="review-showcase-interval"><input id="recent-purchases-interval" type="number" min="6" max="30" step="1" value="10"><span>saat</span></div></label>
-          <label>Posisi popup<select id="recent-purchases-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
-          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
-        </form>
-        <form class="recent-purchase-entry-form" onsubmit="saveRecentPurchase(event)">
-          <label>Nama pelanggan<input id="recent-purchase-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
-          <label>Nama barang <small>Pilih cadangan yang dikesan daripada katalog.</small><input id="recent-purchase-product" list="recent-purchase-product-options" maxlength="120" placeholder="Taip untuk cari barang..." autocomplete="off" required><datalist id="recent-purchase-product-options"></datalist></label>
-          <label>Tarikh &amp; masa<input id="recent-purchase-time" type="datetime-local" required></label>
-          <label class="recent-purchase-entry-visible"><input id="recent-purchase-visible" type="checkbox" checked> Terus paparkan rekod ini</label>
-          <div class="recent-purchase-entry-actions"><button type="submit" class="btn-primary" id="recent-purchase-save"><i class="fa-solid fa-plus"></i> Tambah Pesanan</button><button type="button" class="btn-ghost" id="recent-purchase-cancel" onclick="resetRecentPurchaseForm()" hidden>Batal edit</button></div>
-        </form>
-        <div class="vote-admin-status" id="recent-purchases-admin-status">Log masuk untuk urus sejarah pesanan.</div>
-        <div id="recent-purchases-admin-list" class="recent-purchases-admin-list">Belum ada rekod untuk dipaparkan.</div>
-      </section>
       <form class="order-form" onsubmit="saveManualOrder(event)">
         <div class="order-form-grid">
           <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
@@ -935,8 +918,13 @@
   </div>
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
+<aside id="purchase-popup" class="purchase-popup is-hidden position-bottom-left" aria-live="polite">
+  <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+  <div id="purchase-popup-media" class="purchase-popup-media"><i class="fa-solid fa-bag-shopping"></i></div>
+  <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small>Baru sahaja</small></div>
+</aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=recent-popup-performance-20261002"></script>
+<script defer src="app.js?v=purchase-popup-lite-20261002"></script>
 
 </body>
 </html>
