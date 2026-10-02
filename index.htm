@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-02-purchase-popup-multi-lite"/>
+  <meta name="h4sx-build" content="2026-10-02-variant-grid"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=purchase-popup-multi-lite-20261002">
+  <link rel="stylesheet" href="styles.css?v=variant-grid-20261002">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -822,6 +822,7 @@
       <label class="vote-admin-toggle"><input id="purchase-popup-active" type="checkbox"><span></span><b>ON — Paparkan popup</b></label>
       <label>Nama pelanggan<input id="purchase-popup-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
       <label>Barang dibeli <small>Boleh pilih barang katalog atau tulis sendiri.</small><input id="purchase-popup-product" list="purchase-popup-products" maxlength="120" placeholder="Taip nama barang..." autocomplete="off" required><datalist id="purchase-popup-products"></datalist></label>
+      <label>Tarikh & masa pembelian <small>Contoh: set 9:20, pada 9:25 popup tulis “5 minit yang lalu”.</small><input id="purchase-popup-bought-at" type="datetime-local" required></label>
       <label>Posisi popup<select id="purchase-popup-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
       <label>Tukar pembelian setiap<select id="purchase-popup-interval"><option value="15">15 saat</option><option value="30">30 saat</option><option value="60">1 minit</option></select></label>
       <button type="submit" class="btn-primary" id="purchase-popup-save"><i class="fa-solid fa-plus"></i> Tambah Pembelian</button>
@@ -924,10 +925,10 @@
 <aside id="purchase-popup" class="purchase-popup is-hidden position-bottom-left" aria-live="polite">
   <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
   <div id="purchase-popup-media" class="purchase-popup-media"><i class="fa-solid fa-bag-shopping"></i></div>
-  <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small>Baru sahaja</small></div>
+  <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=purchase-popup-multi-lite-20261002"></script>
+<script defer src="app.js?v=purchase-popup-time-mask-20261002"></script>
 
 </body>
 </html>

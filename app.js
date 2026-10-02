@@ -3853,8 +3853,41 @@ function normalisePurchasePopupEntry(data = {}, id = '') {
     productName:String(data.productName || '').trim().slice(0, 120),
     productId:String(data.productId || ''),
     productImage:cleanUrl(data.productImage || ''),
-    createdAt:Number(data.createdAt || data.updatedAt || 0)
+    createdAt:Number(data.createdAt || data.updatedAt || 0),
+    boughtAt:Number(data.boughtAt || data.createdAt || data.updatedAt || 0)
   };
+}
+
+function maskPurchaseCustomerName(value) {
+  return String(value || '').trim().split(/(\s+)/).map(part => {
+    if (/^\s+$/.test(part)) return part;
+    const chars = Array.from(part);
+    if (!chars.length) return '';
+    if (chars.length === 1) return '*';
+    if (chars.length === 2) return chars[0] + '*';
+    return chars[0] + '*'.repeat(Math.min(chars.length - 2, 8)) + chars[chars.length - 1];
+  }).join('');
+}
+
+function purchasePopupRelativeTime(timestamp) {
+  const time = Number(timestamp || 0);
+  if (!time) return 'Baru sahaja';
+  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (seconds < 60) return 'Baru sahaja';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + ' minit yang lalu';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + ' jam yang lalu';
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Semalam';
+  if (days < 7) return days + ' hari yang lalu';
+  return new Date(time).toLocaleDateString('ms-MY', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function purchasePopupDatetimeValue(timestamp = Date.now()) {
+  const date = new Date(timestamp);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
 }
 
 function normalisePurchasePopup(data = {}) {
@@ -3882,11 +3915,12 @@ function stopPurchasePopupTimer() {
 
 function schedulePurchasePopup() {
   stopPurchasePopupTimer();
-  if (!purchasePopupState.active || purchasePopupDismissed || purchasePopupState.entries.length < 2 || document.hidden) return;
+  if (!purchasePopupState.active || purchasePopupDismissed || !purchasePopupState.entries.length || document.hidden) return;
+  const delay = purchasePopupState.entries.length > 1 ? purchasePopupState.intervalSeconds * 1000 : 30000;
   purchasePopupTimer = window.setTimeout(() => {
-    purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
+    if (purchasePopupState.entries.length > 1) purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
     renderPurchasePopup();
-  }, purchasePopupState.intervalSeconds * 1000);
+  }, delay);
 }
 
 function renderPurchasePopup() {
@@ -3903,9 +3937,13 @@ function renderPurchasePopup() {
   popup.className = 'purchase-popup position-' + purchasePopupState.position;
   const name = document.getElementById('purchase-popup-name');
   const product = document.getElementById('purchase-popup-product-name');
+  const time = document.getElementById('purchase-popup-time');
   const media = document.getElementById('purchase-popup-media');
-  if (name && name.textContent !== entry.customerName) name.textContent = entry.customerName;
+  const maskedName = maskPurchaseCustomerName(entry.customerName);
+  const relativeTime = purchasePopupRelativeTime(entry.boughtAt);
+  if (name && name.textContent !== maskedName) name.textContent = maskedName;
   if (product && product.textContent !== entry.productName) product.textContent = entry.productName;
+  if (time && time.textContent !== relativeTime) time.textContent = relativeTime;
   if (media) {
     const liveProduct = inventory.find(item => String(item.id) === entry.productId);
     const image = cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
@@ -3928,7 +3966,7 @@ function renderPurchasePopupAdminList() {
     const media = item.productImage
       ? '<img src="' + escapeHtml(item.productImage) + '" alt="" loading="lazy" decoding="async">'
       : '<span><i class="fa-solid fa-bag-shopping"></i></span>';
-    return '<div class="purchase-popup-admin-item">' + media + '<div><strong>' + escapeHtml(item.customerName) + '</strong><small>' + escapeHtml(item.productName) + '</small></div><button type="button" onclick="deletePurchasePopupEntry(\'' + escapeHtml(item.id) + '\')" aria-label="Padam"><i class="fa-solid fa-trash"></i></button></div>';
+    return '<div class="purchase-popup-admin-item">' + media + '<div><strong>' + escapeHtml(item.customerName) + '</strong><small>' + escapeHtml(item.productName) + ' · ' + escapeHtml(purchasePopupRelativeTime(item.boughtAt)) + '</small></div><button type="button" onclick="deletePurchasePopupEntry(\'' + escapeHtml(item.id) + '\')" aria-label="Padam"><i class="fa-solid fa-trash"></i></button></div>';
   }).join('');
 }
 
@@ -3953,7 +3991,7 @@ function startPurchasePopupSync() {
   purchasePopupListening = true;
   realtimeDb.ref(PURCHASE_POPUP_PATH).on('value', snapshot => {
     const next = normalisePurchasePopup(snapshot.val() || {});
-    const signature = JSON.stringify([next.updatedAt,next.active,next.position,next.intervalSeconds,next.entries.map(item => [item.id,item.createdAt,item.customerName,item.productName])]);
+    const signature = JSON.stringify([next.updatedAt,next.active,next.position,next.intervalSeconds,next.entries.map(item => [item.id,item.createdAt,item.boughtAt,item.customerName,item.productName])]);
     if (purchasePopupSignature && signature !== purchasePopupSignature) purchasePopupDismissed = false;
     purchasePopupSignature = signature;
     purchasePopupState = next;
@@ -3968,6 +4006,8 @@ function openPurchasePopupAdmin() {
   closeAdminProfile();
   fillPurchasePopupProducts();
   syncPurchasePopupAdmin();
+  const boughtAt = document.getElementById('purchase-popup-bought-at');
+  if (boughtAt && !boughtAt.value) boughtAt.value = purchasePopupDatetimeValue();
   document.getElementById('purchase-popup-admin-modal')?.classList.add('show');
 }
 function closePurchasePopupAdmin() { document.getElementById('purchase-popup-admin-modal')?.classList.remove('show'); }
@@ -4005,7 +4045,11 @@ async function savePurchasePopup(event) {
   if (!realtimeDb || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
   const customerName = String(document.getElementById('purchase-popup-customer')?.value || '').trim();
   const productName = String(document.getElementById('purchase-popup-product')?.value || '').trim();
+  const boughtAtValue = String(document.getElementById('purchase-popup-bought-at')?.value || '').trim();
+  const boughtAt = new Date(boughtAtValue).getTime();
   if (!customerName || !productName) return toast('Isi nama pelanggan dan barang.', true);
+  if (!Number.isFinite(boughtAt)) return toast('Pilih tarikh dan masa pembelian.', true);
+  if (boughtAt > Date.now() + 300000) return toast('Masa pembelian tak boleh berada jauh pada masa depan.', true);
   if (purchasePopupState.entries.length >= PURCHASE_POPUP_LIMIT) return toast('Had 20 rekod. Padam rekod lama dahulu.', true);
   const match = purchasePopupCatalogOptions().find(item => item.name.toLowerCase() === productName.toLowerCase());
   const button = document.getElementById('purchase-popup-save');
@@ -4019,11 +4063,13 @@ async function savePurchasePopup(event) {
       productName:productName.slice(0,120),
       productId:match?.id || '',
       productImage:match?.image || '',
+      boughtAt,
       createdAt:firebase.database.ServerValue.TIMESTAMP
     };
     await realtimeDb.ref(PURCHASE_POPUP_PATH).update(updates);
     document.getElementById('purchase-popup-customer').value = '';
     document.getElementById('purchase-popup-product').value = '';
+    document.getElementById('purchase-popup-bought-at').value = purchasePopupDatetimeValue();
     const message = document.getElementById('purchase-popup-admin-message');
     if (message) { message.textContent = 'Pembelian berjaya ditambah.'; message.className = 'vote-admin-status success'; }
     toast('Pembelian berjaya ditambah.');
