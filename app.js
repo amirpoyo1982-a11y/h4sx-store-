@@ -3089,6 +3089,7 @@ function syncInventoryGames() {
       badge: 'new'
     });
   });
+  refreshRecentPurchaseProductOptions();
 }
 
 async function loadInv() {
@@ -3809,6 +3810,280 @@ window.saveReviewShowcaseSettings = saveReviewShowcaseSettings;
 
 if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 
+// --- PUBLIC RECENT PURCHASES (Firebase Realtime Database) ---
+// Stored under public-readable store/config, while writes still require admin auth.
+const RECENT_PURCHASES_PATH = REALTIME_STORE_ROOT + '/config/recentPurchases';
+let recentPurchasesConfig = { active:false, showCustomerName:true, showProductName:true, limit:6, items:[] };
+let recentPurchasesRef = null;
+let recentPurchasesListener = null;
+let editingRecentPurchaseId = null;
+
+function normaliseRecentPurchases(data = {}) {
+  const rawItems = Array.isArray(data.items)
+    ? data.items.filter(Boolean)
+    : Object.entries(data.items && typeof data.items === 'object' ? data.items : {}).map(([id, item]) => ({ ...item, id:item?.id || id }));
+  const items = rawItems.map((item, index) => ({
+    id: String(item?.id || ('purchase-' + index)).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80),
+    customerName: String(item?.customerName || '').trim().slice(0, 40),
+    productName: String(item?.productName || '').trim().slice(0, 120),
+    productId: String(item?.productId || '').trim().slice(0, 80),
+    productImage: cleanUrl(item?.productImage || ''),
+    purchasedAt: Number.isFinite(Date.parse(item?.purchasedAt || '')) ? new Date(item.purchasedAt).toISOString() : new Date().toISOString(),
+    active: item?.active !== false
+  })).filter(item => item.id && item.customerName && item.productName)
+    .sort((a, b) => Date.parse(b.purchasedAt) - Date.parse(a.purchasedAt));
+  const limit = Number.parseInt(data.limit, 10);
+  return {
+    active: data.active === true,
+    showCustomerName: data.showCustomerName !== false,
+    showProductName: data.showProductName !== false,
+    limit: Math.min(12, Math.max(3, Number.isFinite(limit) ? limit : 6)),
+    items
+  };
+}
+
+function recentPurchaseCatalogOptions() {
+  const options = [];
+  const seen = new Set();
+  const add = (name, item, variant = null) => {
+    const cleanName = String(name || '').trim();
+    const key = cleanName.toLocaleLowerCase('ms-MY');
+    if (!cleanName || seen.has(key)) return;
+    seen.add(key);
+    options.push({
+      name: cleanName,
+      productId: String(item?.id || ''),
+      image: cleanUrl(productPosterUrl(variant || item) || productPosterUrl(item) || ''),
+      game: String(item?.game || '').trim()
+    });
+  };
+  (Array.isArray(inventory) ? inventory : []).forEach(item => {
+    add(item?.name, item);
+    const variants = Array.isArray(item?.variants) ? item.variants : (Array.isArray(item?.types) ? item.types : []);
+    variants.forEach(variant => {
+      const variantName = String(variant?.name || variant?.label || variant?.title || '').trim();
+      if (variantName) add(String(item?.name || '').trim() + ' - ' + variantName, item, variant);
+    });
+  });
+  return options.sort((a, b) => a.name.localeCompare(b.name, 'ms'));
+}
+
+function refreshRecentPurchaseProductOptions() {
+  const list = document.getElementById('recent-purchase-product-options');
+  if (!list) return;
+  list.innerHTML = recentPurchaseCatalogOptions().map(item => '<option value="' + escapeHtml(item.name) + '" label="' + escapeHtml(item.game || 'Katalog H4SX') + '"></option>').join('');
+}
+
+function recentPurchaseTimeLabel(value) {
+  const time = Date.parse(value || '');
+  if (!Number.isFinite(time)) return 'Baru sahaja';
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - time) / 60000));
+  if (diffMinutes < 1) return 'Baru sahaja';
+  if (diffMinutes < 60) return diffMinutes + ' minit lalu';
+  if (diffMinutes < 1440) return Math.floor(diffMinutes / 60) + ' jam lalu';
+  if (diffMinutes < 10080) return Math.floor(diffMinutes / 1440) + ' hari lalu';
+  return new Date(time).toLocaleDateString('ms-MY', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function resolvedRecentPurchaseImage(item) {
+  const current = inventory.find(product => String(product.id) === String(item.productId));
+  return cleanUrl(productPosterUrl(current) || item.productImage || '');
+}
+
+function renderRecentPurchases() {
+  const section = document.getElementById('recent-purchases-section');
+  const list = document.getElementById('recent-purchases-list');
+  if (!section || !list) return;
+  const items = recentPurchasesConfig.items.filter(item => item.active).slice(0, recentPurchasesConfig.limit);
+  if (!recentPurchasesConfig.active || !items.length) {
+    section.classList.add('is-hidden');
+    list.innerHTML = '';
+    return;
+  }
+  section.classList.remove('is-hidden');
+  list.innerHTML = items.map(item => {
+    const image = resolvedRecentPurchaseImage(item);
+    const media = image
+      ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
+      : '<span class="recent-purchase-fallback"><i class="fa-solid fa-bag-shopping"></i></span>';
+    const customer = recentPurchasesConfig.showCustomerName ? escapeHtml(item.customerName) : 'Pelanggan H4SX';
+    const product = recentPurchasesConfig.showProductName ? escapeHtml(item.productName) : 'Pesanan telah disahkan';
+    return '<article class="recent-purchase-card">' + media + '<div><span class="recent-purchase-status"><i></i> Pembelian terbaru</span><strong>' + customer + '</strong><p>' + product + '</p><small><i class="fa-solid fa-clock"></i> ' + escapeHtml(recentPurchaseTimeLabel(item.purchasedAt)) + '</small></div><i class="fa-solid fa-circle-check recent-purchase-check" aria-hidden="true"></i></article>';
+  }).join('');
+}
+
+function setRecentPurchasesAdminStatus(text, type = '') {
+  const status = document.getElementById('recent-purchases-admin-status');
+  if (!status) return;
+  status.textContent = text;
+  status.className = 'vote-admin-status' + (type ? ' ' + type : '');
+}
+
+function syncRecentPurchasesAdmin() {
+  const active = document.getElementById('recent-purchases-admin-active');
+  const showName = document.getElementById('recent-purchases-show-name');
+  const showProduct = document.getElementById('recent-purchases-show-product');
+  const limit = document.getElementById('recent-purchases-limit');
+  if (active) active.checked = recentPurchasesConfig.active;
+  if (showName) showName.checked = recentPurchasesConfig.showCustomerName;
+  if (showProduct) showProduct.checked = recentPurchasesConfig.showProductName;
+  if (limit) limit.value = String(recentPurchasesConfig.limit);
+  refreshRecentPurchaseProductOptions();
+  renderRecentPurchasesAdminList();
+  if (!orderAuth?.currentUser) setRecentPurchasesAdminStatus('Log masuk sebagai admin untuk urus sejarah pesanan.');
+  else setRecentPurchasesAdminStatus(recentPurchasesConfig.active ? 'Sejarah pesanan sedang dipaparkan di website.' : 'Sejarah pesanan disimpan tetapi sedang dimatikan.', recentPurchasesConfig.active ? 'success' : '');
+}
+
+function renderRecentPurchasesAdminList() {
+  const box = document.getElementById('recent-purchases-admin-list');
+  if (!box) return;
+  if (!recentPurchasesConfig.items.length) {
+    box.textContent = 'Belum ada rekod untuk dipaparkan.';
+    return;
+  }
+  box.innerHTML = recentPurchasesConfig.items.map(item => {
+    const image = resolvedRecentPurchaseImage(item);
+    const picture = image ? '<img src="' + escapeHtml(image) + '" alt="">' : '<span class="recent-purchase-admin-fallback"><i class="fa-solid fa-bag-shopping"></i></span>';
+    return '<div class="recent-purchase-admin-row' + (item.active ? '' : ' is-disabled') + '">' + picture + '<div><strong>' + escapeHtml(item.customerName) + '</strong><small>' + escapeHtml(item.productName) + '</small><small>' + escapeHtml(recentPurchaseTimeLabel(item.purchasedAt)) + (item.active ? '' : ' · Disembunyikan') + '</small></div><div class="order-admin-row-actions"><button type="button" onclick="toggleRecentPurchaseItem(\'' + escapeHtml(item.id) + '\')" title="' + (item.active ? 'Sembunyikan' : 'Paparkan') + '"><i class="fa-solid ' + (item.active ? 'fa-eye' : 'fa-eye-slash') + '"></i></button><button type="button" onclick="editRecentPurchase(\'' + escapeHtml(item.id) + '\')" title="Edit"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteRecentPurchase(\'' + escapeHtml(item.id) + '\')" title="Padam"><i class="fa-solid fa-trash"></i></button></div></div>';
+  }).join('');
+}
+
+function setDefaultRecentPurchaseDate() {
+  const input = document.getElementById('recent-purchase-time');
+  if (input && !input.value) input.value = toDateTimeLocalValue();
+}
+
+function resetRecentPurchaseForm() {
+  editingRecentPurchaseId = null;
+  const form = document.querySelector('.recent-purchase-entry-form');
+  if (form) form.reset();
+  const visible = document.getElementById('recent-purchase-visible');
+  if (visible) visible.checked = true;
+  setDefaultRecentPurchaseDate();
+  const cancel = document.getElementById('recent-purchase-cancel');
+  if (cancel) cancel.hidden = true;
+  const save = document.getElementById('recent-purchase-save');
+  if (save) save.innerHTML = '<i class="fa-solid fa-plus"></i> Tambah Pesanan';
+}
+
+function loadRecentPurchases(force = false) {
+  if (!realtimeDb) return;
+  if (recentPurchasesListener && !force) {
+    syncRecentPurchasesAdmin();
+    return;
+  }
+  if (recentPurchasesRef && recentPurchasesListener) recentPurchasesRef.off('value', recentPurchasesListener);
+  recentPurchasesRef = realtimeDb.ref(RECENT_PURCHASES_PATH);
+  recentPurchasesListener = snapshot => {
+    recentPurchasesConfig = normaliseRecentPurchases(snapshot.exists() ? snapshot.val() : {});
+    renderRecentPurchases();
+    syncRecentPurchasesAdmin();
+  };
+  recentPurchasesRef.on('value', recentPurchasesListener, error => {
+    console.warn('Recent purchases listener failed:', error);
+    document.getElementById('recent-purchases-section')?.classList.add('is-hidden');
+    if (orderAuth?.currentUser) setRecentPurchasesAdminStatus('Tak dapat baca data. Semak Firebase Database Rules.', 'error');
+  });
+}
+
+async function saveRecentPurchaseSettings(event) {
+  event?.preventDefault();
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const limit = Math.min(12, Math.max(3, Number.parseInt(document.getElementById('recent-purchases-limit')?.value, 10) || 6));
+  const settings = {
+    active: document.getElementById('recent-purchases-admin-active')?.checked === true,
+    showCustomerName: document.getElementById('recent-purchases-show-name')?.checked !== false,
+    showProductName: document.getElementById('recent-purchases-show-product')?.checked !== false,
+    limit,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    updatedBy: orderAuth.currentUser.email || 'admin'
+  };
+  try {
+    setRecentPurchasesAdminStatus('Menyimpan tetapan...');
+    await realtimeDb.ref(RECENT_PURCHASES_PATH).update(settings);
+    setRecentPurchasesAdminStatus(settings.active ? 'Sejarah pesanan kini dipaparkan di website.' : 'Sejarah pesanan telah dimatikan.', settings.active ? 'success' : '');
+    toast('Tetapan sejarah pesanan berjaya disimpan.');
+  } catch (error) {
+    console.error('Recent purchases settings save error:', error);
+    setRecentPurchasesAdminStatus('Tak dapat simpan tetapan. Semak login atau Database Rules.', 'error');
+  }
+}
+
+async function saveRecentPurchase(event) {
+  event?.preventDefault();
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const customerName = String(document.getElementById('recent-purchase-customer')?.value || '').trim();
+  const typedProduct = String(document.getElementById('recent-purchase-product')?.value || '').trim();
+  const match = recentPurchaseCatalogOptions().find(item => item.name.toLocaleLowerCase('ms-MY') === typedProduct.toLocaleLowerCase('ms-MY'));
+  const timeValue = String(document.getElementById('recent-purchase-time')?.value || '').trim();
+  if (!customerName) return setRecentPurchasesAdminStatus('Masukkan nama pelanggan.', 'error');
+  if (!match) return setRecentPurchasesAdminStatus('Pilih nama barang yang dikesan daripada katalog.', 'error');
+  if (!Number.isFinite(Date.parse(timeValue))) return setRecentPurchasesAdminStatus('Tarikh dan masa tidak sah.', 'error');
+  const id = editingRecentPurchaseId || ('purchase_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7));
+  const entry = {
+    id,
+    customerName: customerName.slice(0, 40),
+    productName: match.name.slice(0, 120),
+    productId: match.productId,
+    productImage: match.image,
+    purchasedAt: new Date(timeValue).toISOString(),
+    active: document.getElementById('recent-purchase-visible')?.checked !== false,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    updatedBy: orderAuth.currentUser.email || 'admin'
+  };
+  try {
+    const wasEditing = !!editingRecentPurchaseId;
+    setRecentPurchasesAdminStatus(wasEditing ? 'Mengemas kini rekod...' : 'Menambah rekod...');
+    await realtimeDb.ref(RECENT_PURCHASES_PATH + '/items/' + id).set(entry);
+    resetRecentPurchaseForm();
+    setRecentPurchasesAdminStatus('Rekod pembelian berjaya disimpan.', 'success');
+    toast(wasEditing ? 'Sejarah pesanan dikemas kini.' : 'Sejarah pesanan ditambah.');
+  } catch (error) {
+    console.error('Recent purchase save error:', error);
+    setRecentPurchasesAdminStatus('Tak dapat simpan rekod. Semak login atau Database Rules.', 'error');
+  }
+}
+
+function editRecentPurchase(id) {
+  const item = recentPurchasesConfig.items.find(entry => entry.id === id);
+  if (!item) return toast('Rekod tidak dijumpai.', true);
+  editingRecentPurchaseId = id;
+  document.getElementById('recent-purchase-customer').value = item.customerName;
+  document.getElementById('recent-purchase-product').value = item.productName;
+  document.getElementById('recent-purchase-time').value = toDateTimeLocalValue(item.purchasedAt);
+  document.getElementById('recent-purchase-visible').checked = item.active;
+  document.getElementById('recent-purchase-cancel').hidden = false;
+  document.getElementById('recent-purchase-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
+  document.querySelector('.recent-purchase-entry-form')?.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+async function toggleRecentPurchaseItem(id) {
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  const item = recentPurchasesConfig.items.find(entry => entry.id === id);
+  if (!item) return;
+  try {
+    await realtimeDb.ref(RECENT_PURCHASES_PATH + '/items/' + id).update({ active:!item.active, updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:orderAuth.currentUser.email || 'admin' });
+  } catch (error) { toast('Tak dapat ubah paparan rekod.', true); }
+}
+
+async function deleteRecentPurchase(id) {
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  if (!confirm('Padam rekod ini daripada sejarah pesanan awam?')) return;
+  try {
+    await realtimeDb.ref(RECENT_PURCHASES_PATH + '/items/' + id).remove();
+    if (editingRecentPurchaseId === id) resetRecentPurchaseForm();
+    toast('Rekod sejarah pesanan dipadam.');
+  } catch (error) { toast('Tak dapat padam rekod.', true); }
+}
+
+window.loadRecentPurchases = loadRecentPurchases;
+window.saveRecentPurchaseSettings = saveRecentPurchaseSettings;
+window.saveRecentPurchase = saveRecentPurchase;
+window.resetRecentPurchaseForm = resetRecentPurchaseForm;
+window.editRecentPurchase = editRecentPurchase;
+window.toggleRecentPurchaseItem = toggleRecentPurchaseItem;
+window.deleteRecentPurchase = deleteRecentPurchase;
+
 // --- MANUAL TRANSACTION HISTORY (Firebase Firestore) ---
 function normaliseOrderCode(value) {
   return String(value || '').trim().toUpperCase().replace(/\s+/g, '');
@@ -3918,6 +4193,11 @@ function openAdminHistoryFromProfile() {
   closeAdminProfile();
   openOrderAdmin(true);
 }
+function openAdminRecentPurchasesFromProfile() {
+  if (!orderAuth?.currentUser) return syncAdminProfileUI();
+  closeAdminProfile();
+  openOrderAdmin(false, true);
+}
 function openAdminReviewFromProfile() {
   if (!orderAuth?.currentUser) return syncAdminProfileUI();
   closeAdminProfile();
@@ -3933,13 +4213,18 @@ function openAdminLeaderboardFromProfile() {
   closeAdminProfile();
   openCatalogControl('leaderboard');
 }
-function openOrderAdmin(historyOnly = false) {
+function openOrderAdmin(historyOnly = false, recentPurchasesOnly = false) {
   closeOrderHistory();
   const modal = document.getElementById('order-admin-modal');
   modal?.classList.toggle('admin-history-mode', !!historyOnly);
+  modal?.classList.toggle('admin-recent-purchases-mode', !!recentPurchasesOnly);
   modal?.classList.add('show');
+  const title = document.getElementById('order-admin-title');
+  if (title) title.textContent = recentPurchasesOnly ? 'Pesanan Terkini' : 'Tambah Transaksi';
   syncOrderAdminUI();
   setDefaultManualOrderDate();
+  setDefaultRecentPurchaseDate();
+  refreshRecentPurchaseProductOptions();
 }
 
 function openCatalogControl(tab = 'products') {
@@ -3971,6 +4256,7 @@ function closeOrderAdmin() {
   const modal = document.getElementById('order-admin-modal');
   modal?.classList.remove('show');
   modal?.classList.remove('admin-history-mode');
+  modal?.classList.remove('admin-recent-purchases-mode');
 }
 function syncOrderAdminUI() {
   const user = orderAuth?.currentUser;
@@ -3980,8 +4266,8 @@ function syncOrderAdminUI() {
   if (form) form.hidden = !user;
   const display = document.getElementById('order-admin-email-display');
   if (display) display.textContent = user?.email || '';
-  if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); loadReviewShowcaseConfig(); }
-  else { syncCustomVoteAdmin(customVoteConfig); syncReviewShowcaseAdmin(); }
+  if (user) { loadAdminOrders(); loadVisitorDashboard(); loadCustomVote(); loadReviewShowcaseConfig(); loadRecentPurchases(); }
+  else { syncCustomVoteAdmin(customVoteConfig); syncReviewShowcaseAdmin(); syncRecentPurchasesAdmin(); }
 }
 async function adminOrderLogin(event) {
   event.preventDefault();
@@ -4832,6 +5118,7 @@ function bootStoreApp() {
   initCartEventDelegation();
   loadGames().then(renderGames);
   loadInv();
+  loadRecentPurchases();
   startRealtimeConfigSync();
   startCustomerLeaderboardSync();
   startCountdown();

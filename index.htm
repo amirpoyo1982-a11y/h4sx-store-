@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-01-banner-performance"/>
+  <meta name="h4sx-build" content="2026-10-02-recent-purchases"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,7 +55,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <link rel="stylesheet" href="styles.css?v=banner-performance-20261001">
+  <link rel="stylesheet" href="styles.css?v=recent-purchases-20261002">
 </head>
 <body class="market-layout-v2">
 <div class="page-mesh" aria-hidden="true"></div>
@@ -277,6 +277,18 @@
         <div class="custom-vote-options" id="custom-vote-options"></div>
         <div class="custom-vote-note"><i class="fa-solid fa-shield-halved"></i><span id="custom-vote-note-text">Satu undi untuk satu perangkat. Keputusan dikemas kini secara langsung.</span></div>
       </div>
+    </section>
+    <section class="recent-purchases reveal is-hidden" id="recent-purchases-section" aria-live="polite" aria-labelledby="recent-purchases-title">
+      <div class="recent-purchases-head">
+        <div class="recent-purchases-title-wrap">
+          <span class="recent-purchases-live"><i></i> AKTIVITI KEDAI</span>
+          <h2 id="recent-purchases-title">Pesanan Terkini</h2>
+          <p>Pembelian terbaru yang dikemas kini oleh admin H4SX.</p>
+        </div>
+        <div class="recent-purchases-badge"><i class="fa-solid fa-shield-check"></i><span>Disahkan<br><strong>Admin</strong></span></div>
+      </div>
+      <div class="recent-purchases-list" id="recent-purchases-list"></div>
+      <div class="recent-purchases-note"><i class="fa-solid fa-lock"></i> Hanya nama paparan dan barang dipaparkan. Maklumat pesanan peribadi kekal tersembunyi.</div>
     </section>
     <div class="div"></div>
     <section class="section-panel reveal" id="shop-section">
@@ -801,6 +813,7 @@
       <div class="admin-profile-account"><span><i class="fa-solid fa-circle-check"></i><b id="admin-profile-email-display">Admin</b></span><button type="button" onclick="adminOrderLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log keluar</button></div>
       <div class="admin-profile-menu">
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" onclick="openAdminRecentPurchasesFromProfile()"><span class="recent"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Pesanan Terkini</strong><small>Urus pembelian yang pelanggan nampak di halaman utama.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
@@ -815,7 +828,7 @@
   <div class="order-modal-card order-admin-card">
     <button class="order-modal-close" onclick="closeOrderAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-shield-halved"></i> Admin sahaja</div>
-    <h2>Tambah Transaksi</h2>
+    <h2 id="order-admin-title">Tambah Transaksi</h2>
     <div id="order-admin-login">
       <p>Log masuk akaun Firebase admin untuk simpan order.</p>
       <form class="order-form" onsubmit="adminOrderLogin(event)">
@@ -869,6 +882,28 @@
           <div class="vote-admin-status" id="vote-admin-status">Log masuk untuk urus undian.</div>
         </form>
       </section>
+      <section class="recent-purchases-admin" aria-labelledby="recent-purchases-admin-title">
+        <div class="vote-admin-head">
+          <div><span>AKTIVITI PEMBELIAN</span><h3 id="recent-purchases-admin-title">Sejarah Pesanan Awam</h3><p>Tambah sendiri pembelian yang mahu dipaparkan. Nombor telefon dan Order ID tidak ditunjukkan.</p></div>
+          <button type="button" onclick="loadRecentPurchases(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <form class="recent-purchases-settings" onsubmit="saveRecentPurchaseSettings(event)">
+          <label class="vote-admin-toggle"><input id="recent-purchases-admin-active" type="checkbox"><span></span><b>Paparkan sejarah pesanan</b></label>
+          <label class="vote-admin-toggle"><input id="recent-purchases-show-name" type="checkbox" checked><span></span><b>Tunjuk nama pelanggan</b></label>
+          <label class="vote-admin-toggle"><input id="recent-purchases-show-product" type="checkbox" checked><span></span><b>Tunjuk nama barang</b></label>
+          <label>Jumlah dipaparkan<input id="recent-purchases-limit" type="number" min="3" max="12" step="1" value="6"></label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Paparan</button></div>
+        </form>
+        <form class="recent-purchase-entry-form" onsubmit="saveRecentPurchase(event)">
+          <label>Nama pelanggan<input id="recent-purchase-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
+          <label>Nama barang <small>Pilih cadangan yang dikesan daripada katalog.</small><input id="recent-purchase-product" list="recent-purchase-product-options" maxlength="120" placeholder="Taip untuk cari barang..." autocomplete="off" required><datalist id="recent-purchase-product-options"></datalist></label>
+          <label>Tarikh &amp; masa<input id="recent-purchase-time" type="datetime-local" required></label>
+          <label class="recent-purchase-entry-visible"><input id="recent-purchase-visible" type="checkbox" checked> Terus paparkan rekod ini</label>
+          <div class="recent-purchase-entry-actions"><button type="submit" class="btn-primary" id="recent-purchase-save"><i class="fa-solid fa-plus"></i> Tambah Pesanan</button><button type="button" class="btn-ghost" id="recent-purchase-cancel" onclick="resetRecentPurchaseForm()" hidden>Batal edit</button></div>
+        </form>
+        <div class="vote-admin-status" id="recent-purchases-admin-status">Log masuk untuk urus sejarah pesanan.</div>
+        <div id="recent-purchases-admin-list" class="recent-purchases-admin-list">Belum ada rekod untuk dipaparkan.</div>
+      </section>
       <form class="order-form" onsubmit="saveManualOrder(event)">
         <div class="order-form-grid">
           <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
@@ -900,7 +935,7 @@
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
 <div id="toasts"></div>
-<script defer src="app.js?v=banner-performance-20261001"></script>
+<script defer src="app.js?v=recent-purchases-20261002"></script>
 
 </body>
 </html>
