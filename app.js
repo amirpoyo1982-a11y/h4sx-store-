@@ -3073,6 +3073,7 @@ function scrollProductModalMedia(direction = 1) {
 
 function syncInventoryGames() {
   if (!Array.isArray(inventory) || !inventory.length) return;
+  if (typeof recentPurchaseImageCache !== 'undefined') recentPurchaseImageCache.clear();
   const seen = new Set(gamesList.map(g => String(g.name || '').toLowerCase()));
   inventory.forEach(item => {
     const name = String(item.game || '').trim();
@@ -3813,7 +3814,7 @@ if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 // --- PUBLIC RECENT PURCHASES (Firebase Realtime Database) ---
 // Stored under public-readable store/config, while writes still require admin auth.
 const RECENT_PURCHASES_PATH = REALTIME_STORE_ROOT + '/config/recentPurchases';
-let recentPurchasesConfig = { active:false, showCustomerName:true, showProductName:true, limit:6, intervalSeconds:7, position:'bottom-left', items:[] };
+let recentPurchasesConfig = { active:false, showCustomerName:true, showProductName:true, limit:6, intervalSeconds:10, position:'bottom-left', items:[] };
 let recentPurchasesRef = null;
 let recentPurchasesListener = null;
 let editingRecentPurchaseId = null;
@@ -3821,6 +3822,8 @@ let recentPurchasePopupIndex = 0;
 let recentPurchasePopupTimer = null;
 let recentPurchasePopupPaused = false;
 let recentPurchasePopupDismissed = false;
+let recentPurchaseRenderedKey = '';
+const recentPurchaseImageCache = new Map();
 
 function normaliseRecentPurchases(data = {}) {
   const rawItems = Array.isArray(data.items)
@@ -3844,7 +3847,7 @@ function normaliseRecentPurchases(data = {}) {
     showCustomerName: data.showCustomerName !== false,
     showProductName: data.showProductName !== false,
     limit: Math.min(12, Math.max(3, Number.isFinite(limit) ? limit : 6)),
-    intervalSeconds: Math.min(30, Math.max(3, Number.isFinite(interval) ? interval : 7)),
+    intervalSeconds: Math.min(30, Math.max(6, Number.isFinite(interval) ? interval : 10)),
     position: positions.includes(data.position) ? data.position : 'bottom-left',
     items
   };
@@ -3878,7 +3881,7 @@ function recentPurchaseCatalogOptions() {
 
 function refreshRecentPurchaseProductOptions() {
   const list = document.getElementById('recent-purchase-product-options');
-  if (!list) return;
+  if (!list || !orderAuth?.currentUser) return;
   list.innerHTML = recentPurchaseCatalogOptions().map(item => '<option value="' + escapeHtml(item.name) + '" label="' + escapeHtml(item.game || 'Katalog H4SX') + '"></option>').join('');
 }
 
@@ -3894,8 +3897,12 @@ function recentPurchaseTimeLabel(value) {
 }
 
 function resolvedRecentPurchaseImage(item) {
+  const cacheKey = String(item.productId || '') + '|' + String(item.productImage || '');
+  if (recentPurchaseImageCache.has(cacheKey)) return recentPurchaseImageCache.get(cacheKey);
   const current = inventory.find(product => String(product.id) === String(item.productId));
-  return cleanUrl(productPosterUrl(current) || item.productImage || '');
+  const image = cleanUrl(productPosterUrl(current) || item.productImage || '');
+  recentPurchaseImageCache.set(cacheKey, image);
+  return image;
 }
 
 function renderRecentPurchases() {
@@ -3908,6 +3915,7 @@ function renderRecentPurchases() {
   if (!recentPurchasesConfig.active || !items.length || recentPurchasePopupDismissed) {
     section.classList.add('is-hidden');
     list.innerHTML = '';
+    recentPurchaseRenderedKey = '';
     return;
   }
   recentPurchasePopupIndex = ((recentPurchasePopupIndex % items.length) + items.length) % items.length;
@@ -3917,11 +3925,15 @@ function renderRecentPurchases() {
   section.style.setProperty('--recent-popup-duration', recentPurchasesConfig.intervalSeconds + 's');
   const image = resolvedRecentPurchaseImage(item);
   const media = image
-    ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
+    ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy" decoding="async" fetchpriority="low">'
     : '<span class="recent-purchase-fallback"><i class="fa-solid fa-bag-shopping"></i></span>';
   const customer = recentPurchasesConfig.showCustomerName ? escapeHtml(item.customerName) : 'Pelanggan H4SX';
   const product = recentPurchasesConfig.showProductName ? escapeHtml(item.productName) : 'satu pesanan H4SX';
-  list.innerHTML = '<article class="recent-purchase-card">' + media + '<div><span class="recent-purchase-status"><i></i> BARU MEMBELI</span><strong>' + customer + ' <i class="fa-solid fa-circle-check"></i></strong><p>Membeli <b>' + product + '</b></p><small>' + escapeHtml(recentPurchaseTimeLabel(item.purchasedAt)) + '</small></div></article>';
+  const renderKey = [item.id, customer, product, item.purchasedAt, image].join('|');
+  if (renderKey !== recentPurchaseRenderedKey) {
+    recentPurchaseRenderedKey = renderKey;
+    list.innerHTML = '<article class="recent-purchase-card">' + media + '<div><span class="recent-purchase-status"><i></i> BARU MEMBELI</span><strong>' + customer + ' <i class="fa-solid fa-circle-check"></i></strong><p>Membeli <b>' + product + '</b></p><small>' + escapeHtml(recentPurchaseTimeLabel(item.purchasedAt)) + '</small></div></article>';
+  }
   const counter = document.getElementById('recent-purchase-counter');
   if (counter) counter.textContent = (recentPurchasePopupIndex + 1) + '/' + items.length;
   const pause = document.getElementById('recent-purchase-pause');
@@ -3974,10 +3986,13 @@ function syncRecentPurchasesAdmin() {
   if (limit) limit.value = String(recentPurchasesConfig.limit);
   if (interval) interval.value = String(recentPurchasesConfig.intervalSeconds);
   if (position) position.value = recentPurchasesConfig.position;
+  if (!orderAuth?.currentUser) {
+    setRecentPurchasesAdminStatus('Log masuk sebagai admin untuk urus sejarah pesanan.');
+    return;
+  }
   refreshRecentPurchaseProductOptions();
   renderRecentPurchasesAdminList();
-  if (!orderAuth?.currentUser) setRecentPurchasesAdminStatus('Log masuk sebagai admin untuk urus sejarah pesanan.');
-  else setRecentPurchasesAdminStatus(recentPurchasesConfig.active ? 'Sejarah pesanan sedang dipaparkan di website.' : 'Sejarah pesanan disimpan tetapi sedang dimatikan.', recentPurchasesConfig.active ? 'success' : '');
+  setRecentPurchasesAdminStatus(recentPurchasesConfig.active ? 'Sejarah pesanan sedang dipaparkan di website.' : 'Sejarah pesanan disimpan tetapi sedang dimatikan.', recentPurchasesConfig.active ? 'success' : '');
 }
 
 function renderRecentPurchasesAdminList() {
@@ -4037,7 +4052,7 @@ async function saveRecentPurchaseSettings(event) {
   event?.preventDefault();
   if (!realtimeDb || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
   const limit = Math.min(12, Math.max(3, Number.parseInt(document.getElementById('recent-purchases-limit')?.value, 10) || 6));
-  const intervalSeconds = Math.min(30, Math.max(3, Number.parseInt(document.getElementById('recent-purchases-interval')?.value, 10) || 7));
+  const intervalSeconds = Math.min(30, Math.max(6, Number.parseInt(document.getElementById('recent-purchases-interval')?.value, 10) || 10));
   const positionInput = String(document.getElementById('recent-purchases-position')?.value || 'bottom-left');
   const position = ['bottom-left','bottom-right','top-left','top-right'].includes(positionInput) ? positionInput : 'bottom-left';
   const settings = {
