@@ -3923,7 +3923,12 @@ function renderPurchaseHistoryShowcase() {
   const total = document.getElementById('purchase-history-total');
   const button = document.getElementById('purchase-history-show-all');
   if (!grid) return;
-  const entries = purchasePopupState.entries || [];
+  const entries = [...(purchasePopupState.entries || [])].sort((a, b) => {
+    const latestA = Number(a.createdAt || a.boughtAt || 0);
+    const latestB = Number(b.createdAt || b.boughtAt || 0);
+    if (latestB !== latestA) return latestB - latestA;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  });
   if (total) total.textContent = String(entries.length);
   if (button) {
     button.hidden = entries.length <= 8;
@@ -4053,11 +4058,13 @@ function startPurchasePopupSync() {
   purchasePopupListening = true;
   realtimeDb.ref(PURCHASE_POPUP_PATH).on('value', snapshot => {
     const next = normalisePurchasePopup(snapshot.val() || {});
+    const previousLatestId = purchasePopupState.entries[0]?.id || '';
+    const nextLatestId = next.entries[0]?.id || '';
     const signature = JSON.stringify([next.updatedAt,next.active,next.position,next.intervalSeconds,next.entries.map(item => [item.id,item.createdAt,item.boughtAt,item.customerName,item.productName])]);
     if (purchasePopupSignature && signature !== purchasePopupSignature) purchasePopupDismissed = false;
     purchasePopupSignature = signature;
     purchasePopupState = next;
-    if (purchasePopupIndex >= next.entries.length) purchasePopupIndex = 0;
+    if (nextLatestId !== previousLatestId || purchasePopupIndex >= next.entries.length) purchasePopupIndex = 0;
     renderPurchasePopup();
     syncPurchasePopupAdmin();
     renderPurchaseHistoryShowcase();
