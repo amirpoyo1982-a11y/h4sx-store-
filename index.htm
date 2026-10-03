@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-03-opening-transition-v2"/>
+  <meta name="h4sx-build" content="2026-10-03-custom-intro-auto-v4"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -56,39 +56,33 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=opening-transition-v2-20261003">
+  <link rel="stylesheet" href="styles.css?v=custom-intro-v3-20261003">
 </head>
 <body class="market-layout-v2">
-<div id="h4sx-opening" class="h4sx-opening" role="status" aria-label="Membuka H4SX Store">
-  <div class="h4sx-opening-lightning" aria-hidden="true"><i></i><i></i></div>
-  <div class="h4sx-opening-brand">
-    <div class="h4sx-opening-logo"><span></span><img src="assets/icons/h4sx-app-192.png" alt="H4SX STORE"></div>
-    <div class="h4sx-opening-copy"><strong>H4SX STORE</strong><small>YOUR TRUSTED GAMING STORE</small></div>
-    <div class="h4sx-opening-progress" aria-hidden="true"><i></i></div>
-  </div>
+<div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
+  <iframe id="h4sx-intro-frame" src="h4sx-intro.html?v=custom-intro-v3-20261003" title="Intro H4SX Store"></iframe>
 </div>
 <script>
   (() => {
-    const opening = document.getElementById('h4sx-opening');
-    const startedAt = performance.now();
-    let finished = false;
-    requestAnimationFrame(() => opening?.classList.add('is-ready'));
-    const finishOpening = () => {
-      if (finished || !opening) return;
-      finished = true;
-      const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const remaining = reducedMotion ? 0 : Math.max(0, 1450 - (performance.now() - startedAt));
-      setTimeout(() => {
-        opening.classList.add('is-transitioning');
-        setTimeout(() => {
-          opening.classList.add('is-leaving');
-          document.documentElement.classList.remove('h4sx-opening-active');
-          setTimeout(() => opening.remove(), reducedMotion ? 30 : 260);
-        }, reducedMotion ? 20 : 820);
-      }, remaining);
+    const host = document.getElementById('h4sx-intro-host');
+    const frame = document.getElementById('h4sx-intro-frame');
+    let closed = false;
+    let autoEnterTimer = 0;
+    const closeIntro = () => {
+      if (closed || !host) return;
+      closed = true;
+      clearTimeout(autoEnterTimer);
+      host.classList.add('is-leaving');
+      document.documentElement.classList.remove('h4sx-opening-active');
+      setTimeout(() => host.remove(), matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 650);
     };
-    window.addEventListener('load', finishOpening, { once:true });
-    setTimeout(finishOpening, 3200);
+    autoEnterTimer = window.setTimeout(closeIntro, 3600);
+    frame?.addEventListener('load', () => {
+      host?.classList.add('is-ready');
+    }, { once:true });
+    window.addEventListener('message', event => {
+      if (event.source === frame?.contentWindow && event.data?.type === 'h4sx-intro-enter') closeIntro();
+    });
   })();
 </script>
 <div class="page-mesh" aria-hidden="true"></div>
