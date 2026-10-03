@@ -10582,3 +10582,78 @@ html.review-submit-direct .h4rf-dialog { width:min(850px,100%); max-height:calc(
   .purchase-popup { left:8px !important; right:auto !important; bottom:calc(72px + env(safe-area-inset-bottom)) !important; width:min(300px,calc(100vw - 16px)); box-shadow:0 9px 22px rgba(2,18,35,.24); }
   .purchase-popup.position-top-left,.purchase-popup.position-top-right { top:92px !important; bottom:auto !important; }
 }
+/* Lightweight opening animation inspired by a native mobile app splash. */
+html.h4sx-opening-active,
+html.h4sx-opening-active body { overflow:hidden !important; }
+.h4sx-opening {
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 42%,rgba(14,165,233,.16),transparent 30%),
+    linear-gradient(155deg,#02070d 0%,#061321 52%,#02070d 100%);
+  opacity:1;
+  visibility:visible;
+  transform:translateZ(0);
+  transition:opacity .46s ease,visibility .46s ease;
+  contain:strict;
+}
+.h4sx-opening::before {
+  content:"";
+  position:absolute;
+  inset:-20%;
+  background:linear-gradient(115deg,transparent 38%,rgba(76,201,240,.07) 49%,transparent 60%);
+  transform:translate3d(-34%,0,0);
+  transition:transform 1.25s cubic-bezier(.2,.8,.2,1);
+}
+.h4sx-opening.is-ready::before { transform:translate3d(34%,0,0); }
+.h4sx-opening.is-leaving { opacity:0; visibility:hidden; pointer-events:none; }
+.h4sx-opening-brand { position:relative; z-index:2; display:grid; justify-items:center; width:min(310px,76vw); text-align:center; }
+.h4sx-opening-logo {
+  position:relative;
+  width:108px;
+  height:108px;
+  display:grid;
+  place-items:center;
+  opacity:0;
+  transform:translate3d(0,16px,0) scale(.72);
+  transition:opacity .5s ease,transform .78s cubic-bezier(.18,.9,.25,1.2);
+}
+.h4sx-opening.is-ready .h4sx-opening-logo { opacity:1; transform:translate3d(0,0,0) scale(1); }
+.h4sx-opening-logo::before {
+  content:"";
+  position:absolute;
+  inset:-17px;
+  border:1px solid rgba(56,189,248,.25);
+  border-radius:34px;
+  transform:rotate(45deg) scale(.72);
+  opacity:0;
+  transition:opacity .6s .18s ease,transform .75s .18s cubic-bezier(.2,.8,.2,1);
+}
+.h4sx-opening.is-ready .h4sx-opening-logo::before { opacity:1; transform:rotate(45deg) scale(1); }
+.h4sx-opening-logo span { position:absolute; inset:5px; border-radius:29px; background:#08a8df; filter:blur(28px); opacity:.28; }
+.h4sx-opening-logo img { position:relative; width:92px; height:92px; border-radius:50%; object-fit:contain; filter:drop-shadow(0 14px 25px rgba(0,170,225,.25)); }
+.h4sx-opening-copy { margin-top:28px; opacity:0; transform:translate3d(0,13px,0); transition:opacity .45s .3s ease,transform .58s .3s ease; }
+.h4sx-opening.is-ready .h4sx-opening-copy { opacity:1; transform:translate3d(0,0,0); }
+.h4sx-opening-copy strong { display:block; color:#fff; font:800 23px/1.1 'Plus Jakarta Sans',sans-serif; letter-spacing:4px; }
+.h4sx-opening-copy small { display:block; margin-top:9px; color:rgba(205,233,246,.58); font:700 8px/1.2 'Plus Jakarta Sans',sans-serif; letter-spacing:2.1px; }
+.h4sx-opening-progress { width:124px; height:3px; margin-top:30px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.1); opacity:0; transition:opacity .3s .48s ease; }
+.h4sx-opening.is-ready .h4sx-opening-progress { opacity:1; }
+.h4sx-opening-progress i { display:block; width:42%; height:100%; border-radius:inherit; background:linear-gradient(90deg,#0ea5e9,#22d3a6); box-shadow:0 0 14px rgba(34,211,166,.55); animation:h4sxOpeningProgress 1.05s .42s cubic-bezier(.4,0,.2,1) both; }
+.h4sx-opening-lightning { position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .18s .16s ease; }
+.h4sx-opening.is-ready .h4sx-opening-lightning { opacity:1; }
+.h4sx-opening-lightning i { position:absolute; top:-8%; left:22%; width:2px; height:58%; background:linear-gradient(transparent,#7dd3fc 42%,rgba(255,255,255,.9) 48%,transparent 72%); transform:rotate(19deg); filter:drop-shadow(0 0 6px #0ea5e9); opacity:.52; }
+.h4sx-opening-lightning i+ i { top:48%; right:18%; left:auto; height:45%; transform:rotate(32deg); opacity:.24; }
+@keyframes h4sxOpeningProgress { from{transform:translateX(-115%)} to{transform:translateX(240%)} }
+@media (max-width:480px) {
+  .h4sx-opening-logo { width:94px; height:94px; }
+  .h4sx-opening-logo img { width:80px; height:80px; }
+  .h4sx-opening-copy { margin-top:24px; }
+  .h4sx-opening-copy strong { font-size:19px; letter-spacing:3px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .h4sx-opening *, .h4sx-opening::before { animation:none !important; transition-duration:.01ms !important; transition-delay:0ms !important; }
+}
