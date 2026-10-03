@@ -3840,6 +3840,7 @@ let purchasePopupSignature = '';
 let purchasePopupIndex = 0;
 let purchasePopupTimer = 0;
 let purchaseHistoryShowAll = false;
+let purchasePopupActiveSaving = false;
 
 function purchasePopupCatalogOptions() {
   const result = [];
@@ -4039,9 +4040,11 @@ function renderPurchasePopupAdminList() {
 
 function syncPurchasePopupAdmin() {
   const active = document.getElementById('purchase-popup-active');
+  const activeLabel = document.getElementById('purchase-popup-active-label');
   const position = document.getElementById('purchase-popup-position');
   const interval = document.getElementById('purchase-popup-interval');
-  if (active) active.checked = purchasePopupState.active;
+  if (active && !purchasePopupActiveSaving) active.checked = purchasePopupState.active;
+  if (activeLabel) activeLabel.textContent = purchasePopupState.active ? 'ON — Popup sedang dipaparkan' : 'OFF — Popup disembunyikan';
   if (position) position.value = purchasePopupState.position;
   if (interval) interval.value = String(purchasePopupState.intervalSeconds);
   const menu = document.getElementById('admin-purchase-popup-menu');
@@ -4097,6 +4100,48 @@ function purchasePopupSettingsPayload() {
     updatedAt:firebase.database.ServerValue.TIMESTAMP,
     updatedBy:orderAuth.currentUser.email || 'admin'
   };
+}
+
+async function setPurchasePopupActive(nextActive, input) {
+  if (!realtimeDb || !orderAuth?.currentUser) {
+    if (input) input.checked = purchasePopupState.active;
+    return toast('Log masuk sebagai admin dahulu.', true);
+  }
+  if (purchasePopupActiveSaving) return;
+  const previousActive = purchasePopupState.active;
+  purchasePopupActiveSaving = true;
+  if (input) input.disabled = true;
+  try {
+    await realtimeDb.ref(PURCHASE_POPUP_PATH).update({
+      active:nextActive === true,
+      updatedAt:firebase.database.ServerValue.TIMESTAMP,
+      updatedBy:orderAuth.currentUser.email || 'admin'
+    });
+    purchasePopupState.active = nextActive === true;
+    purchasePopupDismissed = false;
+    renderPurchasePopup();
+    syncPurchasePopupAdmin();
+    const message = document.getElementById('purchase-popup-admin-message');
+    if (message) {
+      message.textContent = nextActive ? 'Popup pembelian sudah dihidupkan.' : 'Popup pembelian sudah dimatikan.';
+      message.className = 'vote-admin-status success';
+    }
+    toast(nextActive ? 'Popup pembelian sudah ON.' : 'Popup pembelian sudah OFF.');
+  } catch (error) {
+    console.error('Tukar status popup pembelian gagal:', error);
+    purchasePopupState.active = previousActive;
+    if (input) input.checked = previousActive;
+    const message = document.getElementById('purchase-popup-admin-message');
+    if (message) {
+      message.textContent = 'Tak dapat menukar status popup. Cuba semula.';
+      message.className = 'vote-admin-status error';
+    }
+    toast('Tak dapat menukar status popup.', true);
+  } finally {
+    purchasePopupActiveSaving = false;
+    if (input) input.disabled = false;
+    syncPurchasePopupAdmin();
+  }
 }
 
 async function savePurchasePopupSettings() {
@@ -4174,6 +4219,7 @@ window.openPurchasePopupAdmin = openPurchasePopupAdmin;
 window.closePurchasePopupAdmin = closePurchasePopupAdmin;
 window.closePurchasePopup = closePurchasePopup;
 window.savePurchasePopup = savePurchasePopup;
+window.setPurchasePopupActive = setPurchasePopupActive;
 window.savePurchasePopupSettings = savePurchasePopupSettings;
 window.deletePurchasePopupEntry = deletePurchasePopupEntry;
 window.showCustomerHub = showCustomerHub;

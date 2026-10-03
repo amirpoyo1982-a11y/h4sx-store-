@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-04-hs-draw-intro-v6"/>
+  <meta name="h4sx-build" content="2026-10-04-purchase-popup-toggle-v7"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -871,16 +871,16 @@
     <button class="order-modal-close" onclick="closePurchasePopupAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-bag-shopping"></i> Paparan pelanggan</div>
     <h2>Popup Pembelian</h2>
-    <p>Tambah beberapa pembelian untuk dipaparkan bergilir. Paparan awam kekal ringan dan hanya menunjukkan satu rekod pada satu masa.</p>
+    <p>Tambah beberapa pembelian untuk dipaparkan bergilir. Tekan suis ON/OFF sekali sahaja—status terus disimpan secara automatik.</p>
     <form class="purchase-popup-admin-form" onsubmit="savePurchasePopup(event)">
-      <label class="vote-admin-toggle"><input id="purchase-popup-active" type="checkbox"><span></span><b>ON — Paparkan popup</b></label>
+      <label class="vote-admin-toggle"><input id="purchase-popup-active" type="checkbox" onchange="setPurchasePopupActive(this.checked,this)"><span></span><b id="purchase-popup-active-label">OFF — Popup disembunyikan</b></label>
       <label>Nama pelanggan<input id="purchase-popup-customer" maxlength="40" placeholder="Contoh: Amir" required></label>
       <label>Barang dibeli <small>Boleh pilih barang katalog atau tulis sendiri.</small><input id="purchase-popup-product" list="purchase-popup-products" maxlength="120" placeholder="Taip nama barang..." autocomplete="off" required><datalist id="purchase-popup-products"></datalist></label>
       <label>Tarikh & masa pembelian <small>Contoh: set 9:20, pada 9:25 popup tulis “5 minit yang lalu”.</small><input id="purchase-popup-bought-at" type="datetime-local" required></label>
       <label>Posisi popup<select id="purchase-popup-position"><option value="bottom-left">Kiri bawah</option><option value="bottom-right">Kanan bawah</option><option value="top-left">Kiri atas</option><option value="top-right">Kanan atas</option></select></label>
       <label>Tukar pembelian setiap<select id="purchase-popup-interval"><option value="15">15 saat</option><option value="30">30 saat</option><option value="60">1 minit</option></select></label>
       <button type="submit" class="btn-primary" id="purchase-popup-save"><i class="fa-solid fa-plus"></i> Tambah Pembelian</button>
-      <button type="button" class="purchase-popup-settings-save" onclick="savePurchasePopupSettings()"><i class="fa-solid fa-sliders"></i> Simpan ON/OFF & Paparan</button>
+      <button type="button" class="purchase-popup-settings-save" onclick="savePurchasePopupSettings()"><i class="fa-solid fa-sliders"></i> Simpan Posisi & Interval</button>
       <div class="vote-admin-status" id="purchase-popup-admin-message">Tambah sehingga 100 rekod. Rekod akan dipaparkan bergilir.</div>
     </form>
     <div id="purchase-popup-admin-list" class="purchase-popup-admin-list"></div>
@@ -982,7 +982,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=intro-toggle-v5-20261003"></script>
+<script defer src="app.js?v=purchase-popup-toggle-v7-20261004"></script>
 
 </body>
 </html>
