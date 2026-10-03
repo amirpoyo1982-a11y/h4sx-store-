@@ -554,6 +554,10 @@ byId('leaderboard-admin-list').addEventListener('click', async event => {
   finally { setBusy(button, false); }
 });
 
+function isAdminCatalogItemVisible(item = {}) {
+  return item.active !== false && String(item.active).toLowerCase() !== 'false' && item.hidden !== true && String(item.hidden).toLowerCase() !== 'true';
+}
+
 function renderProducts() {
   const q = byId('product-search').value.trim().toLowerCase();
   const filtered = products.filter(item => [item.id,item.name,item.game,item.gameGroup,item.platform,item.subcategory].join(' ').toLowerCase().includes(q));
@@ -565,7 +569,8 @@ function renderProducts() {
       : '<span class="item-placeholder"><i class="fa-solid fa-box"></i></span>';
     const position = {top:'Atas', middle:'Tengah', bottom:'Bawah'}[item.displayPosition] || 'Tengah';
     const pin = item.pinned === true || String(item.pinned).toLowerCase() === 'true' ? ' • <b><i class="fa-solid fa-thumbtack"></i> Pin</b>' : '';
-    return '<article class="item-row">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>#' + escapeHtml(item.id) + ' • ' + escapeHtml(item.game || item.gameGroup || '-') + ' • <b>RM' + Number(item.price || 0).toFixed(2) + '</b> • Stok ' + escapeHtml(item.stock ?? '-') + ' • Posisi ' + position + pin + '</span></div><div class="row-actions"><button data-action="edit-product" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-product" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-product" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+    const visible = isAdminCatalogItemVisible(item);
+    return '<article class="item-row' + (visible ? '' : ' is-hidden-item') + '">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>#' + escapeHtml(item.id) + ' • ' + escapeHtml(item.game || item.gameGroup || '-') + ' • <b>RM' + Number(item.price || 0).toFixed(2) + '</b> • Stok ' + escapeHtml(item.stock ?? '-') + ' • Posisi ' + position + pin + '</span><span class="visibility-state' + (visible ? '' : ' off') + '">' + (visible ? 'DIPAPARKAN' : 'DISEMBUNYIKAN') + '</span></div><div class="row-actions"><button class="visibility-action" data-action="toggle-product-visibility" data-index="' + index + '" title="' + (visible ? 'Sembunyikan produk' : 'Paparkan produk') + '"><i class="fa-solid ' + (visible ? 'fa-eye-slash' : 'fa-eye') + '"></i></button><button data-action="edit-product" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-product" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-product" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
   }).join('') : '<div class="empty">Belum ada produk.</div>';
 }
 
@@ -578,7 +583,8 @@ function renderGames() {
     const media = image && !/\.(mp4|webm|mov)(\?|#|$)/i.test(image)
       ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
       : '<span class="item-placeholder"><i class="fa-solid fa-gamepad"></i></span>';
-    return '<article class="item-row">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>' + escapeHtml(item.platform || '-') + (item.badge ? ' • ' + escapeHtml(item.badge) : '') + (item.oos ? ' • <b>Soon</b>' : '') + '</span></div><div class="row-actions"><button data-action="edit-game" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-game" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-game" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
+    const visible = isAdminCatalogItemVisible(item);
+    return '<article class="item-row' + (visible ? '' : ' is-hidden-item') + '">' + media + '<div class="item-copy"><strong>' + escapeHtml(item.name || 'Tanpa nama') + '</strong><span>' + escapeHtml(item.platform || '-') + (item.badge ? ' • ' + escapeHtml(item.badge) : '') + (item.oos ? ' • <b>Soon</b>' : '') + '</span><span class="visibility-state' + (visible ? '' : ' off') + '">' + (visible ? 'DIPAPARKAN' : 'DISEMBUNYIKAN') + '</span></div><div class="row-actions"><button class="visibility-action" data-action="toggle-game-visibility" data-index="' + index + '" title="' + (visible ? 'Sembunyikan game' : 'Paparkan game') + '"><i class="fa-solid ' + (visible ? 'fa-eye-slash' : 'fa-eye') + '"></i></button><button data-action="edit-game" data-index="' + index + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button data-action="duplicate-game" data-index="' + index + '" title="Duplicate"><i class="fa-solid fa-copy"></i></button><button class="danger" data-action="delete-game" data-index="' + index + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>';
   }).join('') : '<div class="empty">Belum ada game.</div>';
 }
 
@@ -867,6 +873,14 @@ document.addEventListener('click', async event => {
     return;
   }
   if (action === 'edit-product') return openProductEditor(products[index], index);
+  if (action === 'toggle-product-visibility') {
+    if (!products[index]) return notify('Produk tidak dijumpai.', true);
+    const next = JSON.parse(JSON.stringify(products));
+    next[index].active = !isAdminCatalogItemVisible(products[index]);
+    if (next[index].active) delete next[index].hidden;
+    await runButtonOperation(actionButton, '...', () => saveArray('inventory', next, next[index].active ? 'Produk dipaparkan semula.' : 'Produk disembunyikan daripada pelanggan.'));
+    return;
+  }
   if (action === 'duplicate-product') {
     if (!products[index]) return notify('Produk tidak dijumpai. Tunggu sync selesai dan cuba semula.', true);
     const copy = JSON.parse(JSON.stringify(products[index]));
@@ -880,6 +894,14 @@ document.addEventListener('click', async event => {
     return;
   }
   if (action === 'edit-game') return openGameEditor(games[index], index);
+  if (action === 'toggle-game-visibility') {
+    if (!games[index]) return notify('Game tidak dijumpai.', true);
+    const next = JSON.parse(JSON.stringify(games));
+    next[index].active = !isAdminCatalogItemVisible(games[index]);
+    if (next[index].active) delete next[index].hidden;
+    await runButtonOperation(actionButton, '...', () => saveArray('games', next, next[index].active ? 'Game dipaparkan semula.' : 'Game dan produknya disembunyikan daripada pelanggan.'));
+    return;
+  }
   if (action === 'duplicate-game') {
     if (!games[index]) return notify('Game tidak dijumpai. Tunggu sync selesai dan cuba semula.', true);
     const copy = JSON.parse(JSON.stringify(games[index]));
@@ -941,7 +963,7 @@ function collectEditorPayload() {
     const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
     if (duplicate) throw new Error('ID produk sudah digunakan.');
     const isConsultation = byId('p-consultation').checked;
-    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), active:byId('p-active').checked, pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
     if (!item.name || !item.game) throw new Error('Nama produk dan game diperlukan.');
     if (!isConsultation && (!Number.isFinite(item.price) || item.price < 0)) throw new Error('Harga produk tidak sah.');
     return { mode:'product', item, index:editingKey, targetKey:editingKey === null ? '' : String(products[editingKey]?.id ?? '') };
@@ -951,7 +973,7 @@ function collectEditorPayload() {
   const duplicate = games.some((item, index) => index !== editingKey && String(item.name).toLowerCase() === name.toLowerCase());
   if (duplicate) throw new Error('Nama game sudah digunakan.');
   const isConsultation = byId('g-consultation').checked;
-  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
   return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
 }
 
@@ -1111,6 +1133,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
   byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
   byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
+  byId('p-active').checked = isAdminCatalogItemVisible(item);
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
   byId('p-roblox-lookup').checked = item.robloxUsernameLookup === true || String(item.robloxUsernameLookup).toLowerCase() === 'true';
@@ -1125,7 +1148,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
+  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','active','hidden','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -1140,6 +1163,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
   syncClassificationPickers();
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
+  byId('g-active').checked = isAdminCatalogItemVisible(item);
   byId('g-img').value = item.img || item.image || item.video || '';
   const consultation = readConsultation(item);
   byId('g-consultation').checked = consultation.enabled;
@@ -1151,7 +1175,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-image-file').value = '';
   setImagePreview('game', null, byId('g-img').value);
   byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['name','platform','badge','badgeTitle','oos','img','image','video','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
+  const known = ['name','platform','badge','badgeTitle','oos','active','hidden','img','image','video','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }

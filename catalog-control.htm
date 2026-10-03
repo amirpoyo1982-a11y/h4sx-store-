@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=30-leaderboard">
+  <link rel="stylesheet" href="catalog-control.css?v=31-visibility">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=30-leaderboard"></script>
+  <script defer src="catalog-control.js?v=31-visibility"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -181,6 +181,7 @@
         <label>Game / kategori<div class="smart-choice-row"><input id="p-game" placeholder="Taip kategori baru" required><select id="p-game-picker" aria-label="Pilih game sedia ada"><option value="">Pilih game...</option></select></div><small>Taip sendiri atau buka “Pilih game” untuk lihat semua kategori.</small></label><label>Platform<div class="smart-choice-row"><input id="p-platform" placeholder="Taip platform baru"><select id="p-platform-picker" aria-label="Pilih platform sedia ada"><option value="">Pilih platform...</option></select></div><small>Auto ikut game, tetapi masih boleh ditaip atau dipilih.</small></label>
         <label>Subcategory<input id="p-subcategory"></label><label>Badge / promo<input id="p-badge"></label>
         <label>Posisi produk<select id="p-display-position"><option value="top">Atas</option><option value="middle" selected>Tengah (default)</option><option value="bottom">Bawah</option></select><small>Menentukan seksyen produk di website.</small></label><label class="switch inline"><input id="p-pinned" type="checkbox"><span></span> Pin paling depan</label>
+        <label class="switch inline wide visibility-toggle"><input id="p-active" type="checkbox" checked><span></span> Paparkan produk kepada pelanggan</label>
         <label id="p-price-field">Harga RM<input id="p-price" type="number" min="0" step="0.01" required></label><label id="p-original-price-field">Harga asal RM<input id="p-original-price" type="number" min="0" step="0.01"></label>
         <label>Stok<input id="p-stock" type="number" min="0" step="1"></label><label>Terjual<input id="p-sold" type="number" min="0" step="1"></label>
         <label class="switch inline wide roblox-lookup-toggle"><input id="p-roblox-lookup" type="checkbox"><span></span> Semak dan paparkan profil username Roblox semasa checkout</label>
@@ -193,6 +194,7 @@
       <div id="game-fields" class="form-grid" hidden>
         <label>Nama game<div class="smart-choice-row"><input id="g-name" placeholder="Taip nama game baru" required><select id="g-name-picker" aria-label="Pilih game sedia ada"><option value="">Pilih game...</option></select></div><small>Taip nama baru atau pilih semua game sedia ada.</small></label><label>Platform<div class="smart-choice-row"><input id="g-platform" placeholder="Contoh: Roblox"><select id="g-platform-picker" aria-label="Pilih platform sedia ada"><option value="">Pilih platform...</option></select></div><small>Taip platform baru atau pilih daripada senarai penuh.</small></label>
         <label>Badge<input id="g-badge"></label><label class="switch inline"><input id="g-oos" type="checkbox"><span></span> Soon / OOS</label>
+        <label class="switch inline wide visibility-toggle"><input id="g-active" type="checkbox" checked><span></span> Paparkan game kepada pelanggan</label>
         <label class="switch inline wide consultation-toggle"><input id="g-consultation" type="checkbox"><span></span> Jadikan konsultasi WhatsApp</label>
         <div id="g-consultation-fields" class="consultation-fields wide" hidden><label>Nombor WhatsApp<input id="g-whatsapp" inputmode="tel" placeholder="Kosong = nombor utama"></label><label>Teks butang<input id="g-consultation-button" placeholder="Chat WhatsApp"></label><label class="wide">Mesej WhatsApp<textarea id="g-consultation-message" rows="2" placeholder="Hi H4SX, saya nak tanya game ini."></textarea></label></div>
         <label class="wide">URL cover / video<input id="g-img" type="url"></label>

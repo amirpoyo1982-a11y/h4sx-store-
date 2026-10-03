@@ -729,7 +729,7 @@ function customerOrderProductOptions(selectedId = '', selectedVariantId = '') {
     const consultation = consultationSource === true || String(consultationSource).toLowerCase() === 'true' || (consultationSource && typeof consultationSource === 'object');
     const variants = productVariants(item);
     const inStock = variants.length ? variants.some(variant => variant.stock == null || Number(variant.stock) > 0) : (item.stock == null || Number(item.stock) > 0);
-    return !consultation && item.active !== false && inStock;
+    return !consultation && isCustomerProductVisible(item) && inStock;
   });
   select.innerHTML = '<option value="">Pilih item...</option>' + available.map(item => '<option value="' + escapeHtml(String(item.id)) + '">' + escapeHtml(item.name || ('Produk #' + item.id)) + ' — ' + formatCustomerOrderMoney(item.price) + '</option>').join('');
   if (selectedId && available.some(item => String(item.id) === String(selectedId))) select.value = String(selectedId);
@@ -1315,7 +1315,7 @@ function productSpotlightIsEnabled(config = currentStoreConfig) {
 }
 
 function productSpotlightItems() {
-  return inventory.filter(item => item && item.id !== undefined && item.name && productPosterUrl(item)
+  return inventory.filter(item => isCustomerProductVisible(item) && item && item.id !== undefined && item.name && productPosterUrl(item)
     && !item.consultation && !isOutOfStock(item) && !isPermanentFruitCatalogItem(item));
 }
 
@@ -2051,7 +2051,7 @@ function toggleMenu() {
   m.classList.toggle('show', open);
   h?.classList.toggle('is-open', open);
 }
-const VIEWS = ['home-view','product-view','checkout-view'];
+const VIEWS = ['home-view','customer-hub-view','product-view','checkout-view'];
 function showView(id) {
   VIEWS.forEach(v => {
     const el = document.getElementById(v);
@@ -2787,6 +2787,27 @@ let activePlatform = 'Roblox';
 function normalizeKey(value) {
   return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
+function showCustomerHub() {
+  currentGame = '';
+  updateGameUrl('');
+  showView('customer-hub-view');
+  renderCustomerLeaderboard();
+  renderPurchaseHistoryShowcase();
+}
+function isCatalogEntityVisible(item = {}) {
+  return item.active !== false && String(item.active).toLowerCase() !== 'false' && item.hidden !== true && String(item.hidden).toLowerCase() !== 'true';
+}
+function configuredGameByName(name) {
+  const key = normalizeKey(name);
+  return gamesList.find(game => normalizeKey(gameGroupName(game)) === key || normalizeKey(game.name) === key) || null;
+}
+function isCatalogGameVisible(name) {
+  const configured = configuredGameByName(name);
+  return !configured || isCatalogEntityVisible(configured);
+}
+function isCustomerProductVisible(item = {}) {
+  return isCatalogEntityVisible(item) && isCatalogGameVisible(gameGroupName(item));
+}
 function platformDisplayName(value) {
   const text = String(value || '').trim().replace(/\s+/g, ' ');
   return normalizeKey(text) === 'roblox' ? 'Roblox' : text;
@@ -2844,9 +2865,9 @@ function catalogGames(showAllPlatforms = false) {
     existing.platform = existing.platform || platform;
     map.set(key, existing);
   };
-  gamesList.forEach(g => addGame(g));
+  gamesList.filter(isCatalogEntityVisible).forEach(g => addGame(g));
   inventory
-    .filter(item => !isPermanentFruitCatalogItem(item))
+    .filter(item => isCustomerProductVisible(item) && !isPermanentFruitCatalogItem(item))
     .forEach(item => addGame({ name: gameGroupName(item), platform: inferPlatform(item), img: productPosterUrl(item), badge: item.gameBadge || item.badge }, item));
   return [...map.values()].filter(g => showAllPlatforms || samePlatform(g.platform, activePlatform) || (!activePlatform && g.platform));
 }
@@ -3074,7 +3095,7 @@ function scrollProductModalMedia(direction = 1) {
 function syncInventoryGames() {
   if (!Array.isArray(inventory) || !inventory.length) return;
   const seen = new Set(gamesList.map(g => String(g.name || '').toLowerCase()));
-  inventory.forEach(item => {
+  inventory.filter(isCustomerProductVisible).forEach(item => {
     const name = String(item.game || '').trim();
     if (!name || seen.has(name.toLowerCase())) return;
     seen.add(name.toLowerCase());
@@ -3811,13 +3832,14 @@ if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 
 // --- LIGHTWEIGHT PURCHASE POPUP ---
 const PURCHASE_POPUP_PATH = REALTIME_STORE_ROOT + '/config/purchasePopup';
-const PURCHASE_POPUP_LIMIT = 20;
+const PURCHASE_POPUP_LIMIT = 100;
 let purchasePopupState = { active:false, position:'bottom-left', intervalSeconds:15, entries:[], updatedAt:0 };
 let purchasePopupListening = false;
 let purchasePopupDismissed = false;
 let purchasePopupSignature = '';
 let purchasePopupIndex = 0;
 let purchasePopupTimer = 0;
+let purchaseHistoryShowAll = false;
 
 function purchasePopupCatalogOptions() {
   const result = [];
@@ -3888,6 +3910,46 @@ function purchasePopupDatetimeValue(timestamp = Date.now()) {
   const date = new Date(timestamp);
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 16);
+}
+
+function purchaseHistoryDate(timestamp) {
+  const time = Number(timestamp || 0);
+  if (!time) return 'Masa tidak direkodkan';
+  return new Date(time).toLocaleString('ms-MY', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function renderPurchaseHistoryShowcase() {
+  const grid = document.getElementById('purchase-history-grid');
+  const total = document.getElementById('purchase-history-total');
+  const button = document.getElementById('purchase-history-show-all');
+  if (!grid) return;
+  const entries = purchasePopupState.entries || [];
+  if (total) total.textContent = String(entries.length);
+  if (button) {
+    button.hidden = entries.length <= 8;
+    button.innerHTML = purchaseHistoryShowAll
+      ? '<i class="fa-solid fa-compress"></i> Ringkaskan Paparan'
+      : '<i class="fa-solid fa-table-cells"></i> Tunjuk Semua Pembelian (' + entries.length + ')';
+  }
+  if (!entries.length) {
+    grid.innerHTML = '<div class="purchase-history-empty"><i class="fa-solid fa-bag-shopping"></i><strong>Belum ada pembelian dipaparkan</strong><span>Rekod yang admin tambah akan muncul di sini.</span></div>';
+    return;
+  }
+  const shown = purchaseHistoryShowAll ? entries : entries.slice(0, 8);
+  grid.classList.toggle('show-all', purchaseHistoryShowAll);
+  grid.innerHTML = shown.map((entry, index) => {
+    const image = cleanUrl(entry.productImage || '');
+    const media = image
+      ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy" decoding="async">'
+      : '<span><i class="fa-solid fa-bag-shopping"></i></span>';
+    return '<article class="purchase-history-card">' + media + '<div><small><i class="fa-solid fa-circle-check"></i> PEMBELIAN #' + (entries.length - index) + '</small><strong>' + escapeHtml(maskPurchaseCustomerName(entry.customerName)) + '</strong><p>' + escapeHtml(entry.productName) + '</p><time title="' + escapeHtml(purchaseHistoryDate(entry.boughtAt)) + '">' + escapeHtml(purchasePopupRelativeTime(entry.boughtAt)) + '</time></div></article>';
+  }).join('');
+}
+
+function toggleAllPurchaseHistory() {
+  purchaseHistoryShowAll = !purchaseHistoryShowAll;
+  renderPurchaseHistoryShowcase();
+  if (!purchaseHistoryShowAll) document.getElementById('purchase-history-showcase')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function normalisePurchasePopup(data = {}) {
@@ -3998,6 +4060,7 @@ function startPurchasePopupSync() {
     if (purchasePopupIndex >= next.entries.length) purchasePopupIndex = 0;
     renderPurchasePopup();
     syncPurchasePopupAdmin();
+    renderPurchaseHistoryShowcase();
   }, error => console.warn('Purchase popup sync gagal:', error));
 }
 
@@ -4050,7 +4113,7 @@ async function savePurchasePopup(event) {
   if (!customerName || !productName) return toast('Isi nama pelanggan dan barang.', true);
   if (!Number.isFinite(boughtAt)) return toast('Pilih tarikh dan masa pembelian.', true);
   if (boughtAt > Date.now() + 300000) return toast('Masa pembelian tak boleh berada jauh pada masa depan.', true);
-  if (purchasePopupState.entries.length >= PURCHASE_POPUP_LIMIT) return toast('Had 20 rekod. Padam rekod lama dahulu.', true);
+  if (purchasePopupState.entries.length >= PURCHASE_POPUP_LIMIT) return toast('Had 100 rekod. Padam rekod lama dahulu.', true);
   const match = purchasePopupCatalogOptions().find(item => item.name.toLowerCase() === productName.toLowerCase());
   const button = document.getElementById('purchase-popup-save');
   if (button) button.disabled = true;
@@ -4106,6 +4169,8 @@ window.closePurchasePopup = closePurchasePopup;
 window.savePurchasePopup = savePurchasePopup;
 window.savePurchasePopupSettings = savePurchasePopupSettings;
 window.deletePurchasePopupEntry = deletePurchasePopupEntry;
+window.showCustomerHub = showCustomerHub;
+window.toggleAllPurchaseHistory = toggleAllPurchaseHistory;
 
 // --- MANUAL TRANSACTION HISTORY (Firebase Firestore) ---
 function normaliseOrderCode(value) {
@@ -4251,7 +4316,7 @@ function openCatalogControl(tab = 'products') {
   const safeTab = ['products','games','promos','orders','leaderboard','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
   if (frame.dataset.tab !== safeTab) {
     frame.dataset.tab = safeTab;
-    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=30-leaderboard';
+    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=31-visibility';
   }
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));
@@ -6377,11 +6442,12 @@ function renderGames() {
   initScrollReveal();
 }
 function openGame(name, options = {}) {
+  if (!isCatalogGameVisible(name)) { showHome(); toast('Game ini sedang disembunyikan.', true); return; }
   currentGame = name;
   if (!options.fromUrl) updateGameUrl(name);
   // Highlight active game
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
-  let items = inventory.filter(i => gameGroupName(i) === name && !isPermanentFruitCatalogItem(i));
+  let items = inventory.filter(i => isCustomerProductVisible(i) && gameGroupName(i) === name && !isPermanentFruitCatalogItem(i));
   items = sortProductsForDisplay(items);
   document.getElementById('pv-title').textContent = name;
   document.getElementById('pv-count').textContent = items.length + ' item tersedia';
@@ -6448,6 +6514,7 @@ function doSearch(q) {
     .split(/\s+/)
     .filter(t => t && !/^\d+(\.\d+)?$/.test(t));
   let hits = inventory.filter(item => {
+    if (!isCustomerProductVisible(item)) return false;
     if (isPermanentFruitCatalogItem(item)) return false;
     const hay = searchTextForItem(item);
     const textMatch = !plainTerms.length || plainTerms.every(t => hay.includes(t));
@@ -6744,7 +6811,7 @@ function addCart(input, originEl, options = {}) {
   let item, name;
   if (typeof input === 'number') {
     item = inventory.find(i=>i.id===input);
-    if (!item) return;
+    if (!item || !isCustomerProductVisible(item)) return toast('Produk ini sedang disembunyikan.', true);
     name = item.name;
   } else {
     // For PS servers
@@ -7282,7 +7349,7 @@ function toggleModalProductDescription() {
 }
 function openProductImage(id, options = {}) {
   const item = inventory.find(i => String(i.id) === String(id));
-  if (!item || isPermanentFruitCatalogItem(item)) return;
+  if (!item || !isCustomerProductVisible(item) || isPermanentFruitCatalogItem(item)) return;
   modalItemId = item.id;
   const variants = productVariants(item);
   const requestedVariant = variants.find(variant => variant.id === String(options.variantId || ''));
@@ -7458,7 +7525,7 @@ function showRobloxUsernamePrompt(item, onConfirmed) {
 }
 function buyNowItem(id, promoCode = '', options = {}) {
   const baseItem = inventory.find(i => i.id === id);
-  if (!baseItem) return;
+  if (!baseItem || !isCustomerProductVisible(baseItem)) return toast('Produk ini sedang disembunyikan.', true);
   if (productRequiresRobloxLookup(baseItem) && !options.robloxProfile) {
     showRobloxUsernamePrompt(baseItem, robloxProfile => buyNowItem(id, promoCode, { ...options, robloxProfile }));
     return;

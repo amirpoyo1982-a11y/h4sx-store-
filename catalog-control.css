@@ -13,6 +13,7 @@ select{width:100%;border:1px solid var(--line);border-radius:11px;background:#07
 .stats{grid-template-columns:repeat(4,1fr)}
 .undo-button{max-width:230px}.undo-button span{max-width:165px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.undo-button:not(:disabled){border-color:rgba(55,230,223,.5);color:var(--cyan)}
 .row-actions .publish{color:var(--green);border-color:rgba(53,212,134,.38);background:rgba(53,212,134,.08)}
+.item-row.is-hidden-item{opacity:.68;border-style:dashed;background:#071322}.item-row.is-hidden-item .item-copy strong{text-decoration:line-through;text-decoration-color:rgba(255,85,114,.55)}.visibility-state{display:inline-flex!important;width:max-content;margin-top:4px;padding:2px 7px;border-radius:99px;background:rgba(53,212,134,.11);color:var(--green)!important;font-size:9px!important;font-weight:900}.visibility-state.off{background:rgba(255,85,114,.12);color:#ff7892!important}.row-actions .visibility-action{color:var(--cyan);border-color:rgba(55,230,223,.35);background:rgba(55,230,223,.07)}.item-row.is-hidden-item .row-actions .visibility-action{color:var(--green);border-color:rgba(53,212,134,.38);background:rgba(53,212,134,.08)}.visibility-toggle{border-color:rgba(55,230,223,.38);background:rgba(55,230,223,.07);color:#d9fbff}
 .draft-row{border-color:rgba(55,230,223,.22);background:linear-gradient(135deg,#09182a,#0c2034)}
 .editor-publish-actions{flex-wrap:wrap}.editor-publish-actions .primary{min-width:145px}
 .preview-card{width:min(680px,100%)}
