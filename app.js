@@ -4267,7 +4267,55 @@ function syncAdminProfileUI() {
   const display = document.getElementById('admin-profile-email-display');
   if (display) display.textContent = user?.email || 'Admin';
   syncAdminReviewShowcaseToggle();
+  syncWebsiteIntroAdminToggle();
 }
+
+const WEBSITE_INTRO_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/websiteIntro';
+let websiteIntroEnabled = true;
+let websiteIntroConfigListening = false;
+
+function syncWebsiteIntroAdminToggle() {
+  const button = document.getElementById('admin-website-intro-toggle');
+  const status = document.getElementById('admin-website-intro-status');
+  const icon = document.getElementById('admin-website-intro-icon');
+  if (!button) return;
+  button.classList.toggle('is-active', websiteIntroEnabled);
+  button.setAttribute('aria-pressed', String(websiteIntroEnabled));
+  if (status) status.textContent = websiteIntroEnabled ? 'Animasi pembukaan sedang ON.' : 'Animasi pembukaan sedang OFF.';
+  if (icon) icon.className = 'fa-solid ' + (websiteIntroEnabled ? 'fa-toggle-on' : 'fa-toggle-off');
+}
+
+function startWebsiteIntroConfigSync() {
+  if (!realtimeDb || websiteIntroConfigListening) return;
+  websiteIntroConfigListening = true;
+  realtimeDb.ref(WEBSITE_INTRO_CONFIG_PATH).on('value', snapshot => {
+    const value = snapshot.val();
+    websiteIntroEnabled = value === null ? true : value === false ? false : value === true ? true : value?.enabled !== false;
+    syncWebsiteIntroAdminToggle();
+  }, error => console.warn('Sync intro website gagal:', error));
+}
+
+async function toggleWebsiteIntroFromProfile(button) {
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  const nextEnabled = !websiteIntroEnabled;
+  if (button) button.disabled = true;
+  try {
+    await realtimeDb.ref(WEBSITE_INTRO_CONFIG_PATH).set({
+      enabled:nextEnabled,
+      updatedAt:firebase.database.ServerValue.TIMESTAMP,
+      updatedBy:orderAuth.currentUser.email || 'admin'
+    });
+    websiteIntroEnabled = nextEnabled;
+    syncWebsiteIntroAdminToggle();
+    toast(nextEnabled ? 'Intro website sudah dihidupkan.' : 'Intro website sudah dimatikan.');
+  } catch (error) {
+    console.error('Simpan intro website gagal:', error);
+    toast('Tak dapat simpan tetapan intro.', true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+window.toggleWebsiteIntroFromProfile = toggleWebsiteIntroFromProfile;
 async function adminProfileLogin(event) {
   event.preventDefault();
   if (!orderAuth) return toast('Firebase belum dapat dihubungkan.', true);
@@ -5204,6 +5252,7 @@ function bootStoreApp() {
   loadInv().then(renderPurchasePopup);
   startRealtimeConfigSync();
   startPurchasePopupSync();
+  startWebsiteIntroConfigSync();
   startCustomerLeaderboardSync();
   startCountdown();
   updateBusinessClock();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-03-custom-intro-auto-v4"/>
+  <meta name="h4sx-build" content="2026-10-03-intro-toggle-v5"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -56,33 +56,45 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=custom-intro-v3-20261003">
+  <link rel="stylesheet" href="styles.css?v=intro-toggle-v5-20261003">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
-  <iframe id="h4sx-intro-frame" src="h4sx-intro.html?v=custom-intro-v3-20261003" title="Intro H4SX Store"></iframe>
+  <iframe id="h4sx-intro-frame" data-src="h4sx-intro.html?v=custom-intro-v3-20261003" title="Intro H4SX Store"></iframe>
 </div>
 <script>
   (() => {
     const host = document.getElementById('h4sx-intro-host');
     const frame = document.getElementById('h4sx-intro-frame');
     let closed = false;
+    let started = false;
     let autoEnterTimer = 0;
-    const closeIntro = () => {
+    const closeIntro = (immediate = false) => {
       if (closed || !host) return;
       closed = true;
       clearTimeout(autoEnterTimer);
-      host.classList.add('is-leaving');
       document.documentElement.classList.remove('h4sx-opening-active');
+      if (immediate) return host.remove();
+      host.classList.add('is-leaving');
       setTimeout(() => host.remove(), matchMedia('(prefers-reduced-motion: reduce)').matches ? 30 : 650);
     };
-    autoEnterTimer = window.setTimeout(closeIntro, 3600);
+    const startIntro = () => {
+      if (started || closed || !frame) return;
+      started = true;
+      autoEnterTimer = window.setTimeout(closeIntro, 3600);
+      frame.src = frame.dataset.src;
+    };
     frame?.addEventListener('load', () => {
-      host?.classList.add('is-ready');
-    }, { once:true });
+      if (frame.hasAttribute('src')) host?.classList.add('is-ready');
+    });
     window.addEventListener('message', event => {
       if (event.source === frame?.contentWindow && event.data?.type === 'h4sx-intro-enter') closeIntro();
     });
+    const configUrl = 'https://h4sx-6712c-default-rtdb.asia-southeast1.firebasedatabase.app/store/config/websiteIntro.json?cb=' + Date.now();
+    Promise.race([
+      fetch(configUrl, { cache:'no-store' }).then(response => response.ok ? response.json() : null).catch(() => null),
+      new Promise(resolve => setTimeout(() => resolve(null), 1200))
+    ]).then(config => (config === false || config?.enabled === false) ? closeIntro(true) : startIntro());
   })();
 </script>
 <div class="page-mesh" aria-hidden="true"></div>
@@ -847,6 +859,7 @@
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Popup Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan terapung sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
+        <button type="button" id="admin-website-intro-toggle" onclick="toggleWebsiteIntroFromProfile(this)" aria-pressed="true"><span class="intro"><i class="fa-solid fa-wand-magic-sparkles"></i></span><div><strong>Intro Website</strong><small id="admin-website-intro-status">Animasi pembukaan sedang ON.</small></div><i id="admin-website-intro-icon" class="fa-solid fa-toggle-on"></i></button>
       </div>
     </div>
   </div>
@@ -969,7 +982,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=latest-purchase-first-20261003"></script>
+<script defer src="app.js?v=intro-toggle-v5-20261003"></script>
 
 </body>
 </html>
