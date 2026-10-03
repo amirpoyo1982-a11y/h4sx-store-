@@ -10598,8 +10598,10 @@ html.h4sx-opening-active body { overflow:hidden !important; }
   opacity:1;
   visibility:visible;
   transform:translateZ(0);
-  transition:opacity .46s ease,visibility .46s ease;
+  clip-path:inset(0 0 0 0 round 0);
+  transition:clip-path .82s cubic-bezier(.2,.88,.24,1),opacity .18s ease,visibility .18s ease;
   contain:strict;
+  will-change:clip-path;
 }
 .h4sx-opening::before {
   content:"";
@@ -10610,8 +10612,10 @@ html.h4sx-opening-active body { overflow:hidden !important; }
   transition:transform 1.25s cubic-bezier(.2,.8,.2,1);
 }
 .h4sx-opening.is-ready::before { transform:translate3d(34%,0,0); }
+.h4sx-opening.is-transitioning { clip-path:inset(0 0 100% 0 round 0 0 32px 32px); }
 .h4sx-opening.is-leaving { opacity:0; visibility:hidden; pointer-events:none; }
-.h4sx-opening-brand { position:relative; z-index:2; display:grid; justify-items:center; width:min(310px,76vw); text-align:center; }
+.h4sx-opening-brand { position:relative; z-index:2; display:grid; justify-items:center; width:min(310px,76vw); text-align:center; transition:transform .78s cubic-bezier(.2,.88,.24,1),opacity .2s .64s ease; }
+.h4sx-opening.is-transitioning .h4sx-opening-brand { transform:translate3d(0,-38vh,0) scale(.64); opacity:0; }
 .h4sx-opening-logo {
   position:relative;
   width:108px;
@@ -10638,6 +10642,8 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .h4sx-opening-logo img { position:relative; width:92px; height:92px; border-radius:50%; object-fit:contain; filter:drop-shadow(0 14px 25px rgba(0,170,225,.25)); }
 .h4sx-opening-copy { margin-top:28px; opacity:0; transform:translate3d(0,13px,0); transition:opacity .45s .3s ease,transform .58s .3s ease; }
 .h4sx-opening.is-ready .h4sx-opening-copy { opacity:1; transform:translate3d(0,0,0); }
+.h4sx-opening.is-transitioning .h4sx-opening-copy,
+.h4sx-opening.is-transitioning .h4sx-opening-progress { opacity:0; transition-delay:0s; transition-duration:.2s; }
 .h4sx-opening-copy strong { display:block; color:#fff; font:800 23px/1.1 'Plus Jakarta Sans',sans-serif; letter-spacing:4px; }
 .h4sx-opening-copy small { display:block; margin-top:9px; color:rgba(205,233,246,.58); font:700 8px/1.2 'Plus Jakarta Sans',sans-serif; letter-spacing:2.1px; }
 .h4sx-opening-progress { width:124px; height:3px; margin-top:30px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.1); opacity:0; transition:opacity .3s .48s ease; }
@@ -10653,6 +10659,7 @@ html.h4sx-opening-active body { overflow:hidden !important; }
   .h4sx-opening-logo img { width:80px; height:80px; }
   .h4sx-opening-copy { margin-top:24px; }
   .h4sx-opening-copy strong { font-size:19px; letter-spacing:3px; }
+  .h4sx-opening.is-transitioning .h4sx-opening-brand { transform:translate3d(0,-36vh,0) scale(.58); }
 }
 @media (prefers-reduced-motion:reduce) {
   .h4sx-opening *, .h4sx-opening::before { animation:none !important; transition-duration:.01ms !important; transition-delay:0ms !important; }
