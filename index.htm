@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-03-intro-toggle-v5"/>
+  <meta name="h4sx-build" content="2026-10-04-hs-draw-intro-v6"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -60,7 +60,7 @@
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
-  <iframe id="h4sx-intro-frame" data-src="h4sx-intro.html?v=custom-intro-v3-20261003" title="Intro H4SX Store"></iframe>
+  <iframe id="h4sx-intro-frame" data-src="h4sx-intro.html?v=hs-draw-v6-20261004" title="Intro H4SX Store"></iframe>
 </div>
 <script>
   (() => {
@@ -81,7 +81,7 @@
     const startIntro = () => {
       if (started || closed || !frame) return;
       started = true;
-      autoEnterTimer = window.setTimeout(closeIntro, 3600);
+      autoEnterTimer = window.setTimeout(closeIntro, 6800);
       frame.src = frame.dataset.src;
     };
     frame?.addEventListener('load', () => {
