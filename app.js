@@ -4314,7 +4314,175 @@ function syncAdminProfileUI() {
   if (display) display.textContent = user?.email || 'Admin';
   syncAdminReviewShowcaseToggle();
   syncWebsiteIntroAdminToggle();
+  syncFlashDropAdminMenu();
 }
+
+const FLASH_DROP_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/flashDrop';
+let flashDropConfig = { active:false };
+let flashDropConfigListening = false;
+let flashDropTimer = null;
+
+function normaliseFlashDrop(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    active: source.active === true || String(source.active).toLowerCase() === 'true',
+    productId: String(source.productId ?? '').trim(),
+    productName: String(source.productName || '').trim(),
+    title: String(source.title || 'Tawaran masa terhad').trim(),
+    message: String(source.message || 'Tekan untuk lihat produk.').trim(),
+    endsAt: Number(source.endsAt || 0)
+  };
+}
+
+function flashDropIsLive(config = flashDropConfig) {
+  return config.active && config.endsAt > Date.now() && Boolean(config.productId || config.productName);
+}
+
+function syncFlashDropAdminMenu() {
+  const button = document.getElementById('admin-flash-drop-menu');
+  const status = document.getElementById('admin-flash-drop-status');
+  const icon = document.getElementById('admin-flash-drop-icon');
+  if (!button) return;
+  const live = flashDropIsLive();
+  button.classList.toggle('is-active', live);
+  if (status) status.textContent = live ? (flashDropConfig.productName + ' sedang LIVE.') : (flashDropConfig.active && flashDropConfig.endsAt ? 'Flash Drop sudah tamat.' : 'Tawaran sedang OFF.');
+  if (icon) icon.className = 'fa-solid ' + (live ? 'fa-toggle-on' : 'fa-toggle-off');
+}
+
+function updateFlashDropCountdown() {
+  const root = document.getElementById('flash-drop');
+  if (!root) return;
+  const remaining = Math.max(0, flashDropConfig.endsAt - Date.now());
+  if (!flashDropIsLive() || remaining <= 0) {
+    root.classList.add('is-hidden');
+    if (flashDropTimer) { clearInterval(flashDropTimer); flashDropTimer = null; }
+    syncFlashDropAdminMenu();
+    return;
+  }
+  const totalSeconds = Math.floor(remaining / 1000);
+  const values = {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60
+  };
+  Object.entries(values).forEach(([key, value]) => {
+    const node = document.getElementById('flash-drop-' + key);
+    if (node) node.textContent = String(value).padStart(2, '0');
+  });
+}
+
+function renderFlashDrop() {
+  const root = document.getElementById('flash-drop');
+  if (!root) return;
+  const live = flashDropIsLive();
+  root.classList.toggle('is-hidden', !live);
+  if (!live) {
+    if (flashDropTimer) { clearInterval(flashDropTimer); flashDropTimer = null; }
+    syncFlashDropAdminMenu();
+    return;
+  }
+  const title = document.getElementById('flash-drop-title');
+  const message = document.getElementById('flash-drop-message');
+  if (title) title.textContent = flashDropConfig.title || flashDropConfig.productName;
+  if (message) message.textContent = flashDropConfig.message || flashDropConfig.productName;
+  updateFlashDropCountdown();
+  if (!flashDropTimer) flashDropTimer = setInterval(updateFlashDropCountdown, 1000);
+  syncFlashDropAdminMenu();
+}
+
+function startFlashDropSync() {
+  if (!realtimeDb || flashDropConfigListening) return;
+  flashDropConfigListening = true;
+  realtimeDb.ref(FLASH_DROP_CONFIG_PATH).on('value', snapshot => {
+    flashDropConfig = normaliseFlashDrop(snapshot.val());
+    renderFlashDrop();
+  }, error => console.warn('Sync Flash Drop gagal:', error));
+}
+
+function flashDropProduct() {
+  return inventory.find(item => String(item.id) === flashDropConfig.productId)
+    || inventory.find(item => String(item.name || '').trim().toLowerCase() === flashDropConfig.productName.toLowerCase());
+}
+
+function openFlashDropProduct() {
+  const item = flashDropProduct();
+  if (!item || !isCustomerProductVisible(item)) return toast('Produk Flash Drop belum tersedia.', true);
+  openGame(gameGroupName(item), { itemId:item.id });
+}
+
+function populateFlashDropProducts() {
+  const list = document.getElementById('flash-drop-products');
+  if (!list) return;
+  list.innerHTML = inventory.filter(isCustomerProductVisible).map(item => '<option value="' + escapeHtml(item.name) + '">' + escapeHtml(gameGroupName(item)) + '</option>').join('');
+}
+
+function openFlashDropAdmin() {
+  if (!orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  populateFlashDropProducts();
+  const active = document.getElementById('flash-drop-active');
+  const product = document.getElementById('flash-drop-product');
+  const title = document.getElementById('flash-drop-admin-title');
+  const message = document.getElementById('flash-drop-admin-message');
+  const end = document.getElementById('flash-drop-end-at');
+  if (active) active.checked = flashDropConfig.active;
+  if (product) product.value = flashDropConfig.productName || '';
+  if (title) title.value = flashDropConfig.title || 'Flash Drop H4SX';
+  if (message) message.value = flashDropConfig.message || '';
+  if (end) end.value = flashDropConfig.endsAt ? toDateTimeLocalValue(flashDropConfig.endsAt) : toDateTimeLocalValue(Date.now() + 3600000);
+  closeAdminProfile();
+  document.getElementById('flash-drop-admin-modal')?.classList.add('show');
+}
+
+function closeFlashDropAdmin() { document.getElementById('flash-drop-admin-modal')?.classList.remove('show'); }
+
+async function saveFlashDrop(event) {
+  event.preventDefault();
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  const productValue = document.getElementById('flash-drop-product')?.value.trim() || '';
+  const item = inventory.find(entry => String(entry.id) === productValue) || inventory.find(entry => String(entry.name || '').trim().toLowerCase() === productValue.toLowerCase());
+  if (!item) return toast('Pilih produk yang wujud dalam katalog.', true);
+  const endsAt = new Date(document.getElementById('flash-drop-end-at')?.value || '').getTime();
+  const active = Boolean(document.getElementById('flash-drop-active')?.checked);
+  if (!Number.isFinite(endsAt)) return toast('Pilih masa tamat yang sah.', true);
+  if (active && endsAt <= Date.now()) return toast('Masa tamat mesti selepas waktu sekarang.', true);
+  const button = event.submitter;
+  if (button) button.disabled = true;
+  try {
+    await realtimeDb.ref(FLASH_DROP_CONFIG_PATH).set({
+      active,
+      productId:String(item.id),
+      productName:String(item.name || ''),
+      title:document.getElementById('flash-drop-admin-title')?.value.trim() || 'Flash Drop H4SX',
+      message:document.getElementById('flash-drop-admin-message')?.value.trim() || ('Tawaran khas untuk ' + item.name),
+      endsAt,
+      updatedAt:firebase.database.ServerValue.TIMESTAMP,
+      updatedBy:orderAuth.currentUser.email || 'admin'
+    });
+    const status = document.getElementById('flash-drop-admin-status');
+    if (status) status.textContent = active ? 'Flash Drop sudah LIVE.' : 'Tetapan disimpan dalam keadaan OFF.';
+    toast(active ? 'Flash Drop sudah dihidupkan.' : 'Flash Drop disimpan sebagai OFF.');
+  } catch (error) {
+    console.error('Simpan Flash Drop gagal:', error);
+    toast('Tak dapat simpan Flash Drop. Semak Firebase Rules.', true);
+  } finally { if (button) button.disabled = false; }
+}
+
+async function disableFlashDrop() {
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  try {
+    await realtimeDb.ref(FLASH_DROP_CONFIG_PATH).update({ active:false, updatedAt:firebase.database.ServerValue.TIMESTAMP, updatedBy:orderAuth.currentUser.email || 'admin' });
+    const active = document.getElementById('flash-drop-active');
+    if (active) active.checked = false;
+    toast('Flash Drop sudah ditutup.');
+  } catch (error) { toast('Tak dapat tutup Flash Drop.', true); }
+}
+
+window.openFlashDropProduct = openFlashDropProduct;
+window.openFlashDropAdmin = openFlashDropAdmin;
+window.closeFlashDropAdmin = closeFlashDropAdmin;
+window.saveFlashDrop = saveFlashDrop;
+window.disableFlashDrop = disableFlashDrop;
 
 const WEBSITE_INTRO_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/websiteIntro';
 let websiteIntroEnabled = true;
@@ -5299,6 +5467,7 @@ function bootStoreApp() {
   startRealtimeConfigSync();
   startPurchasePopupSync();
   startWebsiteIntroConfigSync();
+  startFlashDropSync();
   startCustomerLeaderboardSync();
   startCountdown();
   updateBusinessClock();
@@ -6125,6 +6294,63 @@ function buildQuickBarHTML(item, oos) {
   const buyAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
   return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();' + cartAction + '"><i class="fa-solid fa-cart-plus"></i> ' + (hasVariants ? 'Pilih Type' : 'Add Cart') + '</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
 }
+let quickPreviewItemId = null;
+function quickPreviewButtonHTML(item) {
+  return '<button type="button" class="product-quick-preview-trigger" data-product-id="' + escapeHtml(String(item.id)) + '" onclick="event.stopPropagation();event.preventDefault();openProductQuickPreview(this.dataset.productId)" aria-label="Quick preview ' + escapeHtml(item.name || 'produk') + '" title="Quick Preview"><i class="fa-regular fa-eye"></i><span>Quick View</span></button>';
+}
+function openProductQuickPreview(id) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  if (!item || !isCustomerProductVisible(item) || isPermanentFruitCatalogItem(item)) return;
+  quickPreviewItemId = item.id;
+  const variants = productVariants(item);
+  const prices = variants.length ? variants.map(variant => Number(variant.price || 0)).filter(Number.isFinite) : [Number(item.price || 0)];
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const priceItem = variants.length ? { ...item, price:minPrice, originalPrice:0 } : item;
+  const promo = productPromoResult(priceItem, savedProductPromoCode(item));
+  const media = document.getElementById('quick-preview-media');
+  const game = document.getElementById('quick-preview-game');
+  const name = document.getElementById('quick-preview-name');
+  const price = document.getElementById('quick-preview-price');
+  const stock = document.getElementById('quick-preview-stock');
+  const variantsWrap = document.getElementById('quick-preview-variants');
+  if (media) media.innerHTML = renderMediaHTML(item, 'quick-preview');
+  if (game) game.textContent = gameGroupName(item) || item.platform || 'PRODUK H4SX';
+  if (name) name.textContent = item.name || 'Produk';
+  if (price) price.innerHTML = (variants.length ? '<small>Dari</small>' : '') + '<strong>RM' + promo.final.toFixed(2) + '</strong>' + (promo.valid ? '<del>RM' + promo.base.toFixed(2) + '</del>' : ((item.originalPrice && Number(item.originalPrice) > Number(item.price)) ? '<del>RM' + Number(item.originalPrice).toFixed(2) + '</del>' : ''));
+  const out = isOutOfStock(item);
+  const stockLabel = out ? 'Habis stok' : (item.stock != null ? Math.max(0, Number(item.stock)) + ' stok tersedia' : 'Tersedia');
+  if (stock) { stock.className = 'quick-preview-stock ' + (out ? 'out' : 'ready'); stock.innerHTML = '<i class="fa-solid ' + (out ? 'fa-box-open' : 'fa-circle-check') + '"></i> ' + escapeHtml(stockLabel); }
+  if (variantsWrap) {
+    variantsWrap.innerHTML = variants.length
+      ? '<small>PILIHAN TYPE</small><div>' + variants.slice(0, 8).map(variant => '<span class="' + (Number(variant.stock) === 0 ? 'sold-out' : '') + '"><b>' + escapeHtml(variant.name) + '</b><em>RM' + Number(variant.price || 0).toFixed(2) + '</em></span>').join('') + '</div>'
+      : '<small>Produk ini tiada pilihan tambahan.</small>';
+  }
+  const modal = document.getElementById('quick-preview-modal');
+  if (modal) { modal.classList.add('show'); modal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; }
+}
+function closeProductQuickPreview() {
+  const modal = document.getElementById('quick-preview-modal');
+  if (modal) { modal.classList.remove('show'); modal.setAttribute('aria-hidden', 'true'); }
+  const media = document.getElementById('quick-preview-media');
+  if (media) media.innerHTML = '';
+  if (!document.getElementById('product-modal')?.classList.contains('show')) document.body.style.overflow = '';
+}
+function openQuickPreviewFullDetail() {
+  const id = quickPreviewItemId;
+  closeProductQuickPreview();
+  if (id != null) openProductImage(id);
+}
+function buyQuickPreviewProduct() {
+  const item = inventory.find(entry => String(entry.id) === String(quickPreviewItemId));
+  if (!item) return;
+  if (productVariants(item).length) return openQuickPreviewFullDetail();
+  closeProductQuickPreview();
+  buyNowItem(item.id);
+}
+window.openProductQuickPreview = openProductQuickPreview;
+window.closeProductQuickPreview = closeProductQuickPreview;
+window.openQuickPreviewFullDetail = openQuickPreviewFullDetail;
+window.buyQuickPreviewProduct = buyQuickPreviewProduct;
 let currentProductItems = [];
 let currentProductBanner = '';
 let currentProductFilter = 'all';
@@ -6334,7 +6560,7 @@ function productCardHTML(item) {
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
   const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;

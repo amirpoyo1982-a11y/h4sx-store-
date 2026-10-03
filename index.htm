@@ -56,7 +56,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=intro-toggle-v5-20261003">
+  <link rel="stylesheet" href="styles.css?v=flash-drop-quick-preview-v8-20261004">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -343,6 +343,19 @@
         <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-solid fa-receipt"></i></div><div class="step-num-label">Langkah 03</div><div class="step-title">Sahkan Pesanan</div><p class="step-desc">Ikut arahan bayaran rasmi daripada admin dan hantar resit.</p><div class="step-bg-num">3</div></div>
         <div class="step reveal reveal-delay-3"><div class="step-icon"><i class="fa-solid fa-circle-check"></i></div><div class="step-num-label">Langkah 04</div><div class="step-title">Terima Pesanan</div><p class="step-desc">Admin proses item dan maklumkan apabila pesanan telah siap.</p><div class="step-bg-num">4</div></div>
       </div>
+    </section>
+    <section id="flash-drop" class="flash-drop is-hidden" aria-live="polite" aria-label="Flash Drop H4SX">
+      <button type="button" class="flash-drop-card" onclick="openFlashDropProduct()">
+        <span class="flash-drop-icon"><i class="fa-solid fa-bolt"></i></span>
+        <span class="flash-drop-copy"><small>FLASH DROP</small><strong id="flash-drop-title">Tawaran masa terhad</strong><span id="flash-drop-message">Tekan untuk lihat produk.</span></span>
+        <span class="flash-drop-countdown" aria-label="Masa berbaki">
+          <b><strong id="flash-drop-days">00</strong><small>Hari</small></b><i>:</i>
+          <b><strong id="flash-drop-hours">00</strong><small>Jam</small></b><i>:</i>
+          <b><strong id="flash-drop-minutes">00</strong><small>Min</small></b><i>:</i>
+          <b><strong id="flash-drop-seconds">00</strong><small>Saat</small></b>
+        </span>
+        <span class="flash-drop-action">Lihat Drop <i class="fa-solid fa-arrow-right"></i></span>
+      </button>
     </section>
     <div class="div"></div>
     <section id="reviews" class="section-panel" style="margin-bottom:32px">
@@ -769,6 +782,21 @@
     <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
   </div>
 </div>
+<!-- QUICK PRODUCT PREVIEW -->
+<div class="quick-preview-modal" id="quick-preview-modal" aria-hidden="true" onclick="if(event.target===this)closeProductQuickPreview()">
+  <section class="quick-preview-card" role="dialog" aria-modal="true" aria-labelledby="quick-preview-name">
+    <button type="button" class="quick-preview-close" onclick="closeProductQuickPreview()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="quick-preview-media" id="quick-preview-media"></div>
+    <div class="quick-preview-info">
+      <small id="quick-preview-game">PRODUK H4SX</small>
+      <h2 id="quick-preview-name">Produk</h2>
+      <div class="quick-preview-price" id="quick-preview-price"></div>
+      <div class="quick-preview-stock" id="quick-preview-stock"></div>
+      <div class="quick-preview-variants" id="quick-preview-variants"></div>
+      <div class="quick-preview-actions"><button type="button" onclick="openQuickPreviewFullDetail()"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Detail Penuh</button><button type="button" class="primary" onclick="buyQuickPreviewProduct()"><i class="fa-brands fa-whatsapp"></i> Beli</button></div>
+    </div>
+  </section>
+</div>
 
 <!-- SELF-SERVICE CUSTOMER ORDER -->
 <div id="customer-order-modal" class="order-modal customer-order-modal" onclick="if(event.target===this)closeCustomerOrder()">
@@ -860,8 +888,28 @@
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Popup Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan terapung sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" id="admin-website-intro-toggle" onclick="toggleWebsiteIntroFromProfile(this)" aria-pressed="true"><span class="intro"><i class="fa-solid fa-wand-magic-sparkles"></i></span><div><strong>Intro Website</strong><small id="admin-website-intro-status">Animasi pembukaan sedang ON.</small></div><i id="admin-website-intro-icon" class="fa-solid fa-toggle-on"></i></button>
+        <button type="button" id="admin-flash-drop-menu" onclick="openFlashDropAdmin()"><span class="flash"><i class="fa-solid fa-bolt"></i></span><div><strong>Flash Drop</strong><small id="admin-flash-drop-status">Tawaran sedang OFF.</small></div><i id="admin-flash-drop-icon" class="fa-solid fa-toggle-off"></i></button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- FLASH DROP ADMIN -->
+<div id="flash-drop-admin-modal" class="order-modal flash-drop-admin-modal" onclick="if(event.target===this)closeFlashDropAdmin()">
+  <div class="order-modal-card flash-drop-admin-card">
+    <button class="order-modal-close" onclick="closeFlashDropAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="order-modal-kicker"><i class="fa-solid fa-bolt"></i> Promosi masa terhad</div>
+    <h2>Flash Drop</h2>
+    <p>Pilih produk dan masa tamat. Countdown pelanggan menggunakan masa sebenar dan hilang sendiri apabila tamat.</p>
+    <form class="flash-drop-admin-form" onsubmit="saveFlashDrop(event)">
+      <label class="vote-admin-toggle"><input id="flash-drop-active" type="checkbox"><span></span><b>Aktifkan Flash Drop</b></label>
+      <label>Produk<input id="flash-drop-product" list="flash-drop-products" autocomplete="off" placeholder="Pilih atau taip nama produk" required><datalist id="flash-drop-products"></datalist></label>
+      <label>Tajuk<input id="flash-drop-admin-title" maxlength="60" placeholder="Contoh: RedFinger Flash Drop" required></label>
+      <label>Ayat ringkas<input id="flash-drop-admin-message" maxlength="120" placeholder="Contoh: Harga khas sehingga malam ini"></label>
+      <label>Tamat pada<input id="flash-drop-end-at" type="datetime-local" required></label>
+      <div class="flash-drop-admin-actions"><button type="submit" class="btn-primary" id="flash-drop-save"><i class="fa-solid fa-floppy-disk"></i> Simpan Flash Drop</button><button type="button" class="btn-ghost" onclick="disableFlashDrop()"><i class="fa-solid fa-power-off"></i> Tutup Sekarang</button></div>
+      <div class="vote-admin-status" id="flash-drop-admin-status">Pilih produk dan masa tamat.</div>
+    </form>
   </div>
 </div>
 
@@ -982,7 +1030,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=purchase-popup-toggle-v7-20261004"></script>
+<script defer src="app.js?v=flash-drop-quick-preview-v8-20261004"></script>
 
 </body>
 </html>
