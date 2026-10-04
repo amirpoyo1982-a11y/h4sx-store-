@@ -4484,6 +4484,71 @@ window.closeFlashDropAdmin = closeFlashDropAdmin;
 window.saveFlashDrop = saveFlashDrop;
 window.disableFlashDrop = disableFlashDrop;
 
+const PRICE_DROP_ALERT_PATH = REALTIME_STORE_ROOT + '/config/priceDropAlert';
+const PRICE_DROP_DISMISSED_KEY = 'h4sx_price_drop_dismissed';
+let priceDropAlert = { active:false };
+let priceDropAlertListening = false;
+
+function normalisePriceDropAlert(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    active: source.active === true || String(source.active).toLowerCase() === 'true',
+    productId:String(source.productId ?? '').trim(),
+    productName:String(source.productName || '').trim(),
+    variantName:String(source.variantName || '').trim(),
+    oldPrice:Number(source.oldPrice || 0),
+    newPrice:Number(source.newPrice || 0),
+    updatedAt:Number(source.updatedAt || 0),
+    expiresAt:Number(source.expiresAt || 0)
+  };
+}
+
+function priceDropAlertIsLive() {
+  if (!priceDropAlert.active || !priceDropAlert.productName || !(priceDropAlert.oldPrice > priceDropAlert.newPrice)) return false;
+  if (priceDropAlert.expiresAt && Date.now() >= priceDropAlert.expiresAt) return false;
+  try { return localStorage.getItem(PRICE_DROP_DISMISSED_KEY) !== String(priceDropAlert.updatedAt || ''); }
+  catch (error) { return true; }
+}
+
+function renderPriceDropAlert() {
+  const root = document.getElementById('price-drop-alert');
+  if (!root) return;
+  const live = priceDropAlertIsLive();
+  root.classList.toggle('is-hidden', !live);
+  if (!live) return;
+  const product = document.getElementById('price-drop-product');
+  const oldPrice = document.getElementById('price-drop-old');
+  const newPrice = document.getElementById('price-drop-new');
+  const saving = document.getElementById('price-drop-saving');
+  if (product) product.textContent = priceDropAlert.productName + (priceDropAlert.variantName ? ' — ' + priceDropAlert.variantName : '');
+  if (oldPrice) oldPrice.textContent = 'RM' + priceDropAlert.oldPrice.toFixed(2);
+  if (newPrice) newPrice.textContent = 'RM' + priceDropAlert.newPrice.toFixed(2);
+  if (saving) saving.textContent = 'Jimat RM' + (priceDropAlert.oldPrice - priceDropAlert.newPrice).toFixed(2);
+}
+
+function startPriceDropAlertSync() {
+  if (!realtimeDb || priceDropAlertListening) return;
+  priceDropAlertListening = true;
+  realtimeDb.ref(PRICE_DROP_ALERT_PATH).on('value', snapshot => {
+    priceDropAlert = normalisePriceDropAlert(snapshot.val());
+    renderPriceDropAlert();
+  }, error => console.warn('Sync Price Drop Alert gagal:', error));
+}
+
+function dismissPriceDropAlert() {
+  try { localStorage.setItem(PRICE_DROP_DISMISSED_KEY, String(priceDropAlert.updatedAt || '')); } catch (error) {}
+  renderPriceDropAlert();
+}
+
+function openPriceDropProduct() {
+  const item = inventory.find(entry => String(entry.id) === priceDropAlert.productId)
+    || inventory.find(entry => String(entry.name || '').trim().toLowerCase() === priceDropAlert.productName.toLowerCase());
+  if (!item || !isCustomerProductVisible(item)) return toast('Produk ini belum tersedia.', true);
+  openGame(gameGroupName(item), { itemId:item.id });
+}
+window.dismissPriceDropAlert = dismissPriceDropAlert;
+window.openPriceDropProduct = openPriceDropProduct;
+
 const WEBSITE_INTRO_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/websiteIntro';
 let websiteIntroEnabled = true;
 let websiteIntroConfigListening = false;
@@ -5468,6 +5533,7 @@ function bootStoreApp() {
   startPurchasePopupSync();
   startWebsiteIntroConfigSync();
   startFlashDropSync();
+  startPriceDropAlertSync();
   startCustomerLeaderboardSync();
   startCountdown();
   updateBusinessClock();
@@ -6948,6 +7014,105 @@ function updateCredentialFields() {
   back1.classList.toggle('hidden', checkoutReq.backupCodeCount < 1);
   back2.classList.toggle('hidden', checkoutReq.backupCodeCount < 2);
 }
+function posterRoundRect(ctx, x, y, width, height, radius, fill, stroke = '') {
+  ctx.beginPath(); ctx.roundRect(x, y, width, height, radius);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+}
+function posterWrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+  const words = String(text || '').split(/\s+/); let line = ''; let used = 0;
+  for (let index = 0; index < words.length && used < maxLines; index++) {
+    const test = line ? line + ' ' + words[index] : words[index];
+    if (ctx.measureText(test).width > maxWidth && line) { ctx.fillText(line, x, y + used * lineHeight); line = words[index]; used++; }
+    else line = test;
+  }
+  if (used < maxLines && line) { if (words.length && ctx.measureText(line).width > maxWidth) line = line.slice(0, Math.max(1, line.length - 3)) + '...'; ctx.fillText(line, x, y + used * lineHeight); used++; }
+  return y + used * lineHeight;
+}
+function loadPosterCanvasImage(url) {
+  return new Promise(resolve => {
+    if (!url) return resolve(null);
+    const image = new Image(); const timer = setTimeout(() => resolve(null), 6000);
+    image.crossOrigin = 'anonymous';
+    image.onload = () => { clearTimeout(timer); resolve(image); };
+    image.onerror = () => { clearTimeout(timer); resolve(null); };
+    image.src = url;
+  });
+}
+async function generateProductPromoPoster(item) {
+  if (!item) return;
+  const button = document.getElementById('product-modal-poster-btn');
+  const original = button?.innerHTML || '';
+  if (button) { button.disabled = true; button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Membuat...'; }
+  try {
+    toast('Poster promo sedang dibuat...');
+    const variants = productVariants(item).filter(variant => Number(variant.stock) !== 0).slice(0, 12);
+    const variantPrices = variants.map(variant => Number(variant.price || 0)).filter(Number.isFinite);
+    const basePrice = variantPrices.length ? Math.min(...variantPrices) : Number(item.price || 0);
+    const priceItem = variants.length ? { ...item, price:basePrice, originalPrice:0 } : item;
+    const promo = productPromoResult(priceItem, savedProductPromoCode(item));
+    const desc = String(item.desc || item.description || 'Produk digital H4SX STORE.').replace(/\s+/g, ' ').trim().slice(0, 260);
+    const stock = isOutOfStock(item) ? 'HABIS STOK' : (item.stock != null ? Number(item.stock) + ' STOK TERSEDIA' : 'TERSEDIA');
+    const image = productPosterUrl(item) || getProductScreenshotFallback();
+    const oldPrice = promo.valid ? promo.base : ((item.originalPrice && Number(item.originalPrice) > Number(item.price)) ? Number(item.originalPrice) : 0);
+    const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    const background = ctx.createLinearGradient(0, 0, 1080, 1080); background.addColorStop(0, '#eaf8ff'); background.addColorStop(.55, '#ffffff'); background.addColorStop(1, '#e8f5ff'); ctx.fillStyle = background; ctx.fillRect(0, 0, 1080, 1080);
+    ctx.strokeStyle = '#cce9f6'; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(24, 24, 1032, 1032, 38); ctx.stroke();
+    ctx.fillStyle = '#078bc1'; ctx.font = '900 34px Arial'; ctx.fillText('H4SX STORE', 58, 83);
+    ctx.fillStyle = '#68859a'; ctx.font = '700 14px Arial'; ctx.fillText('PRODUK DIGITAL MALAYSIA', 59, 111);
+    const category = String(gameGroupName(item) || item.platform || 'H4SX').toUpperCase().slice(0, 28); ctx.font = '800 16px Arial'; const categoryWidth = Math.min(320, ctx.measureText(category).width + 44); posterRoundRect(ctx, 1022 - categoryWidth, 61, categoryWidth, 48, 24, '#102c47'); ctx.fillStyle = '#ffffff'; ctx.fillText(category, 1044 - categoryWidth, 92);
+    posterRoundRect(ctx, 54, 145, 972, 808, 34, 'rgba(255,255,255,.94)', '#d3ebf5');
+    posterRoundRect(ctx, 78, 170, 430, 758, 26, '#eaf8ff');
+    const posterImage = await loadPosterCanvasImage(image);
+    if (posterImage) {
+      const maxW = 382, maxH = 650, ratio = Math.min(maxW / posterImage.naturalWidth, maxH / posterImage.naturalHeight); const drawW = posterImage.naturalWidth * ratio, drawH = posterImage.naturalHeight * ratio;
+      ctx.drawImage(posterImage, 293 - drawW / 2, 200 + (650 - drawH) / 2, drawW, drawH);
+    } else {
+      ctx.fillStyle = '#0ea5e9'; ctx.font = '1000 86px Arial'; ctx.textAlign = 'center'; ctx.fillText('H4SX', 293, 525); ctx.textAlign = 'left';
+    }
+    posterRoundRect(ctx, 110, 850, Math.min(330, ctx.measureText(stock).width + 50), 48, 24, isOutOfStock(item) ? '#ef4444' : '#10b981'); ctx.fillStyle = '#fff'; ctx.font = '900 14px Arial'; ctx.fillText(stock, 134, 880);
+    const copyX = 548; ctx.fillStyle = '#0ea5e9'; ctx.font = '900 14px Arial'; ctx.fillText('READY TO ORDER', copyX, 214);
+    ctx.fillStyle = '#102c47'; ctx.font = '900 42px Arial'; let cursorY = posterWrapText(ctx, item.name || 'Produk H4SX', copyX, 266, 425, 48, 3) + 10;
+    ctx.fillStyle = '#627d91'; ctx.font = '500 18px Arial'; cursorY = posterWrapText(ctx, desc, copyX, cursorY, 425, 28, 4) + 17;
+    ctx.fillStyle = '#7891a4'; ctx.font = '800 13px Arial'; ctx.fillText(variants.length ? 'HARGA DARI' : 'HARGA', copyX, cursorY); cursorY += 48;
+    ctx.fillStyle = '#069bd5'; ctx.font = '1000 52px Arial'; ctx.fillText('RM' + promo.final.toFixed(2), copyX, cursorY);
+    if (oldPrice > promo.final) { ctx.fillStyle = '#9cafbb'; ctx.font = '700 18px Arial'; ctx.fillText('dulu RM' + oldPrice.toFixed(2), copyX + 245, cursorY - 3); }
+    cursorY += 44;
+    if (variants.length) {
+      ctx.fillStyle = '#7891a4'; ctx.font = '900 12px Arial'; ctx.fillText('PILIHAN TYPE', copyX, cursorY); cursorY += 17;
+      variants.forEach((variant, index) => { const col = index % 2, row = Math.floor(index / 2), x = copyX + col * 218, y = cursorY + row * 54; posterRoundRect(ctx, x, y, 205, 44, 11, '#f7fcff', '#d8ebf4'); ctx.fillStyle = '#294a62'; ctx.font = '800 12px Arial'; ctx.fillText(String(variant.name || 'Type').slice(0, 17), x + 11, y + 18); ctx.fillStyle = '#079bd1'; ctx.font = '900 12px Arial'; ctx.fillText('RM' + Number(variant.price || 0).toFixed(2), x + 11, y + 35); });
+    }
+    ctx.fillStyle = '#4f7188'; ctx.font = '800 16px Arial'; ctx.fillText('✓ Transaksi Telus', 60, 1012); ctx.fillText('⚡ Proses Pantas', 260, 1012); ctx.fillStyle = '#0a8fc5'; ctx.font = '900 24px Arial'; ctx.fillText('www.h4sxmy.xyz', 814, 1013);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('Poster tidak dapat dijana');
+    try {
+      if (!navigator.clipboard || !window.ClipboardItem) throw new Error('Clipboard gambar tidak disokong');
+      await Promise.race([
+        navigator.clipboard.write([new ClipboardItem({ 'image/png':blob })]),
+        new Promise((resolve, reject) => setTimeout(() => reject(new Error('Clipboard tidak memberi respons')), 4500))
+      ]);
+      toast('Poster promo sudah disalin ke clipboard!');
+    } catch (clipboardError) {
+      const link = document.createElement('a');
+      link.download = 'h4sx-poster-' + String(item.name || 'produk').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast('Poster promo dimuat turun.');
+    }
+  } catch (error) {
+    console.error('Poster promo gagal:', error);
+    toast('Tak dapat buat poster. Cuba semula selepas gambar siap dimuatkan.', true);
+  } finally {
+    if (button) { button.disabled = false; button.innerHTML = original; }
+  }
+}
+function generateModalProductPoster() {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  if (item) generateProductPromoPoster(item);
+}
+window.generateModalProductPoster = generateModalProductPoster;
+
 async function takeScreenshot() {
   try {
     const ssBtn = document.getElementById('pv-ss-btn');

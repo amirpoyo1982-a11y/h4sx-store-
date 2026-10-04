@@ -56,7 +56,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=flash-drop-quick-preview-v8-20261004">
+  <link rel="stylesheet" href="styles.css?v=price-drop-poster-v9-20261005">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -356,6 +356,14 @@
         </span>
         <span class="flash-drop-action">Lihat Drop <i class="fa-solid fa-arrow-right"></i></span>
       </button>
+    </section>
+    <section id="price-drop-alert" class="price-drop-alert is-hidden" aria-live="polite" aria-label="Harga baru turun">
+      <button type="button" class="price-drop-main" onclick="openPriceDropProduct()">
+        <span class="price-drop-icon"><i class="fa-solid fa-arrow-trend-down"></i></span>
+        <span class="price-drop-copy"><small>HARGA BARU TURUN</small><strong id="price-drop-product">Produk H4SX</strong><span><del id="price-drop-old">RM0.00</del><b id="price-drop-new">RM0.00</b><em id="price-drop-saving">Jimat RM0.00</em></span></span>
+        <span class="price-drop-action">Lihat Produk <i class="fa-solid fa-arrow-right"></i></span>
+      </button>
+      <button type="button" class="price-drop-close" onclick="dismissPriceDropAlert()" aria-label="Tutup notis harga turun"><i class="fa-solid fa-xmark"></i></button>
     </section>
     <div class="div"></div>
     <section id="reviews" class="section-panel" style="margin-bottom:32px">
@@ -720,6 +728,7 @@
       </div>
       <div class="product-modal-actions">
         <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
+        <button class="pm-btn poster" id="product-modal-poster-btn" onclick="generateModalProductPoster()"><i class="fa-solid fa-wand-magic-sparkles"></i> Poster Promo</button>
         <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Tambah ke Troli</button>
         <button class="pm-btn order" id="product-modal-order-btn" onclick="openCustomerOrderFromProduct()" hidden><i class="fa-solid fa-file-invoice"></i> Order Sendiri</button>
         <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>
@@ -1030,7 +1039,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=flash-drop-quick-preview-v8-20261004"></script>
+<script defer src="app.js?v=price-drop-poster-v9-20261005"></script>
 
 </body>
 </html>

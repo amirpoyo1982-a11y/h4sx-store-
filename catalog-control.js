@@ -471,7 +471,7 @@ function renderLeaderboardAdmin() {
     .filter(entry => String(entry.period) === leaderboardAdminPeriod)
     .sort((a, b) => Number(b.amount || 0) - Number(a.amount || 0) || String(a.name || '').localeCompare(String(b.name || '')));
   byId('leaderboard-admin-list').innerHTML = rows.length ? rows.map((entry, index) =>
-    '<article class="leaderboard-admin-row"><div class="leaderboard-admin-rank">#' + (index + 1) + '</div><div class="leaderboard-admin-copy"><strong>' + escapeHtml(entry.name || 'Tanpa nama') + '</strong><span>' + leaderboardPeriodLabel(entry.period) + (entry.active === false ? ' • Disorok' : ' • Dipaparkan') + '</span></div><div class="leaderboard-admin-amount">' + leaderboardAdminMoney(entry.amount) + '</div><div class="leaderboard-admin-actions"><button type="button" data-leaderboard-action="edit" data-id="' + escapeHtml(entry.id) + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button type="button" class="danger" data-leaderboard-action="delete" data-id="' + escapeHtml(entry.id) + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>'
+    '<article class="leaderboard-admin-row' + (entry.active === false ? ' is-hidden' : '') + '"><div class="leaderboard-admin-rank">#' + (index + 1) + '</div><div class="leaderboard-admin-copy"><strong>' + escapeHtml(entry.name || 'Tanpa nama') + '</strong><span>' + leaderboardPeriodLabel(entry.period) + (entry.active === false ? ' • Disorok daripada pelanggan' : ' • Dipaparkan') + '</span></div><div class="leaderboard-admin-amount">' + leaderboardAdminMoney(entry.amount) + '</div><div class="leaderboard-admin-actions"><button type="button" class="visibility' + (entry.active === false ? ' is-hidden' : '') + '" data-leaderboard-action="visibility" data-id="' + escapeHtml(entry.id) + '" title="' + (entry.active === false ? 'Unhide pelanggan' : 'Hide pelanggan') + '" aria-label="' + (entry.active === false ? 'Unhide ' : 'Hide ') + escapeHtml(entry.name || 'pelanggan') + '"><i class="fa-solid ' + (entry.active === false ? 'fa-eye' : 'fa-eye-slash') + '"></i></button><button type="button" data-leaderboard-action="edit" data-id="' + escapeHtml(entry.id) + '" title="Edit"><i class="fa-solid fa-pen"></i></button><button type="button" class="danger" data-leaderboard-action="delete" data-id="' + escapeHtml(entry.id) + '" title="Padam"><i class="fa-solid fa-trash"></i></button></div></article>'
   ).join('') : '<div class="empty">Belum ada ranking ' + leaderboardPeriodLabel(leaderboardAdminPeriod).toLowerCase() + '.</div>';
 }
 function resetLeaderboardEntryForm() {
@@ -519,7 +519,7 @@ byId('leaderboard-entry-form').addEventListener('submit', async event => {
   if (!Number.isFinite(amount) || amount < 0) return notify('Jumlah spend tidak sah.', true);
   if (!['daily','weekly','monthly'].includes(period)) return notify('Tempoh leaderboard tidak sah.', true);
   const previous = leaderboardEntries.find(entry => entry.id === id);
-  const value = { name:name.slice(0,60), amount:Math.round(amount * 100) / 100, period, active:true, createdAt:previous?.createdAt || firebase.database.ServerValue.TIMESTAMP, updatedAt:firebase.database.ServerValue.TIMESTAMP };
+  const value = { name:name.slice(0,60), amount:Math.round(amount * 100) / 100, period, active:previous ? previous.active !== false : true, createdAt:previous?.createdAt || firebase.database.ServerValue.TIMESTAMP, updatedAt:firebase.database.ServerValue.TIMESTAMP };
   let saved = false;
   setBusy(button, true, previous ? 'Menyimpan...' : 'Menambah...');
   try {
@@ -545,6 +545,15 @@ byId('leaderboard-admin-list').addEventListener('click', async event => {
   const id = button.dataset.id;
   if (button.dataset.leaderboardAction === 'edit') return editLeaderboardEntry(id);
   const entry = leaderboardEntries.find(item => item.id === id);
+  if (button.dataset.leaderboardAction === 'visibility' && entry) {
+    const nextActive = entry.active === false;
+    setBusy(button, true, '');
+    try {
+      await saveStorePath('config/customerLeaderboard/entries/' + id + '/active', nextActive, nextActive ? 'Pelanggan dipaparkan semula.' : 'Pelanggan disorok daripada leaderboard.', (nextActive ? 'Unhide ' : 'Hide ') + entry.name);
+    } catch (error) { notify(error.message, true); }
+    finally { setBusy(button, false); }
+    return;
+  }
   if (button.dataset.leaderboardAction !== 'delete' || !entry || !confirm('Padam ' + entry.name + ' daripada leaderboard?')) return;
   setBusy(button, true, '');
   try {
@@ -1086,11 +1095,58 @@ function saveCurrentDraft() {
   } catch (error) { notify(error.message, true); }
 }
 
+function productPricePoints(item = {}) {
+  const points = [];
+  const base = Number(item.price);
+  if (Number.isFinite(base) && base >= 0) points.push({ key:'base', name:'', price:base });
+  const source = Array.isArray(item.variants) ? item.variants : (Array.isArray(item.types) ? item.types : []);
+  source.forEach((variant, index) => {
+    const price = Number(variant?.price);
+    if (!Number.isFinite(price) || price < 0) return;
+    const id = String(variant?.id ?? variant?.name ?? index).trim().toLowerCase();
+    points.push({ key:'variant:' + id, name:String(variant?.name || variant?.label || ('Variant ' + (index + 1))), price });
+  });
+  return points;
+}
+
+function detectProductPriceDrop(previous, next) {
+  if (!previous || !next) return null;
+  const before = new Map(productPricePoints(previous).map(point => [point.key, point]));
+  return productPricePoints(next).map(point => {
+    const old = before.get(point.key);
+    return old && old.price - point.price >= 0.01 ? { oldPrice:old.price, newPrice:point.price, variantName:point.name, saving:old.price - point.price } : null;
+  }).filter(Boolean).sort((a, b) => b.saving - a.saving)[0] || null;
+}
+
+async function publishPriceDropAlert(item, drop) {
+  if (!drop || !auth.currentUser) return;
+  await withTimeout(database.ref(ROOT + '/config/priceDropAlert').set({
+    active:true,
+    productId:String(item.id),
+    productName:String(item.name || 'Produk H4SX'),
+    variantName:String(drop.variantName || ''),
+    oldPrice:Math.round(drop.oldPrice * 100) / 100,
+    newPrice:Math.round(drop.newPrice * 100) / 100,
+    updatedAt:firebase.database.ServerValue.TIMESTAMP,
+    expiresAt:Date.now() + (3 * 24 * 60 * 60 * 1000),
+    updatedBy:auth.currentUser.email || 'admin'
+  }), 'Simpan Price Drop Alert');
+}
+
 async function publishPayload(payload, message) {
   if (payload.mode === 'product') {
     const next = [...products];
+    const previous = payload.index === null || payload.index < 0 ? null : products[payload.index];
+    const drop = detectProductPriceDrop(previous, payload.item);
+    if (drop && !productPricePoints(payload.item).some(point => point.key !== 'base') && !(Number(payload.item.originalPrice) > drop.newPrice)) payload.item.originalPrice = drop.oldPrice;
     if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;
     await saveArray('inventory', next, message || 'Produk dipublish ke website.');
+    if (drop) {
+      try {
+        await publishPriceDropAlert(payload.item, drop);
+        notify('Harga turun dikesan — Price Drop Alert dipaparkan selama 3 hari.');
+      } catch (error) { notify('Produk disimpan, tetapi Price Drop Alert gagal: ' + error.message, true); }
+    }
   } else {
     const next = [...games];
     if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;
