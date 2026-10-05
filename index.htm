@@ -56,7 +56,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=price-drop-poster-v9-20261005">
+  <link rel="stylesheet" href="styles.css?v=customer-hub-toggle-v11-20261005">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -189,7 +189,7 @@
       <i class="fa-solid fa-magnifying-glass"></i><span>Cari game, item atau akaun</span><kbd>/</kbd>
     </button>
     <div class="nav-links">
-      <a onclick="showCustomerHub()">Pelanggan</a>
+      <a data-customer-hub-link onclick="showCustomerHub()">Pelanggan</a>
       <a onclick="goSection('guide')">Guide</a>
       <a onclick="goSection('faq')">FAQ</a>
       <a onclick="goSection('reviews')">Reviews</a>
@@ -216,7 +216,7 @@
 <div class="storefront-tabs" aria-label="Akses pantas katalog">
   <button type="button" onclick="showHome()"><i class="fa-solid fa-house"></i><span>Utama</span></button>
   <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><i class="fa-solid fa-cube"></i><span>Roblox</span></button>
-  <button type="button" onclick="showCustomerHub()"><i class="fa-solid fa-trophy"></i><span>Pelanggan</span></button>
+  <button type="button" data-customer-hub-link onclick="showCustomerHub()"><i class="fa-solid fa-trophy"></i><span>Pelanggan</span></button>
   <button type="button" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i><span>Semak Pesanan</span></button>
   <button type="button" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span>Hantar Ulasan</span></button>
   <button type="button" onclick="goSection('reviews')"><i class="fa-solid fa-star"></i><span>Ulasan</span></button>
@@ -225,7 +225,7 @@
 </div>
 <!-- MOBILE MENU -->
 <div id="mob-menu">
-  <a onclick="showCustomerHub();toggleMenu()"><i class="fa-solid fa-trophy"></i> Leaderboard & Pembelian</a>
+  <a data-customer-hub-link onclick="showCustomerHub();toggleMenu()"><i class="fa-solid fa-trophy"></i> Leaderboard & Pembelian</a>
   <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
@@ -727,11 +727,11 @@
         <div class="pm-trust-item"><i class="fa-brands fa-whatsapp"></i>Bantuan Admin</div>
       </div>
       <div class="product-modal-actions">
-        <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
-        <button class="pm-btn poster" id="product-modal-poster-btn" onclick="generateModalProductPoster()"><i class="fa-solid fa-wand-magic-sparkles"></i> Poster Promo</button>
-        <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i> Tambah ke Troli</button>
-        <button class="pm-btn order" id="product-modal-order-btn" onclick="openCustomerOrderFromProduct()" hidden><i class="fa-solid fa-file-invoice"></i> Order Sendiri</button>
-        <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>
+        <button class="pm-btn link" id="product-modal-link-btn" onclick="copyModalProductLink()"><i class="fa-solid fa-link"></i><span>Copy Link</span></button>
+        <button class="pm-btn poster" id="product-modal-poster-btn" onclick="generateModalProductPoster()"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Poster</span></button>
+        <button class="pm-btn cart" id="product-modal-cart-btn" onclick="modalAddToCart()"><i class="fa-solid fa-cart-plus"></i><span>Troli</span></button>
+        <button class="pm-btn order" id="product-modal-order-btn" onclick="openCustomerOrderFromProduct()" hidden><i class="fa-solid fa-file-invoice"></i><span>Order Sendiri</span></button>
+        <button class="pm-btn buy whatsapp-buy" onclick="modalBuyNow()"><i class="fa-brands fa-whatsapp"></i><span>WhatsApp</span></button>
       </div>
     </div>
   </div>
@@ -895,6 +895,7 @@
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" id="admin-customer-hub-toggle" onclick="toggleCustomerHubFromProfile(this)" aria-pressed="true"><span class="customers"><i class="fa-solid fa-users"></i></span><div><strong>Halaman Pelanggan</strong><small id="admin-customer-hub-status">Menu pelanggan sedang dipaparkan.</small></div><i id="admin-customer-hub-icon" class="fa-solid fa-toggle-on"></i></button>
         <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Popup Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan terapung sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" id="admin-website-intro-toggle" onclick="toggleWebsiteIntroFromProfile(this)" aria-pressed="true"><span class="intro"><i class="fa-solid fa-wand-magic-sparkles"></i></span><div><strong>Intro Website</strong><small id="admin-website-intro-status">Animasi pembukaan sedang ON.</small></div><i id="admin-website-intro-icon" class="fa-solid fa-toggle-on"></i></button>
         <button type="button" id="admin-flash-drop-menu" onclick="openFlashDropAdmin()"><span class="flash"><i class="fa-solid fa-bolt"></i></span><div><strong>Flash Drop</strong><small id="admin-flash-drop-status">Tawaran sedang OFF.</small></div><i id="admin-flash-drop-icon" class="fa-solid fa-toggle-off"></i></button>
@@ -1039,7 +1040,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=price-drop-poster-v9-20261005"></script>
+<script defer src="app.js?v=customer-hub-toggle-v11-20261005"></script>
 
 </body>
 </html>

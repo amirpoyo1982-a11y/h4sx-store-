@@ -2788,6 +2788,11 @@ function normalizeKey(value) {
   return String(value || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 function showCustomerHub() {
+  if (!customerHubEnabled) {
+    showHome();
+    toast('Halaman pelanggan sedang disembunyikan oleh admin.', true);
+    return;
+  }
   currentGame = '';
   updateGameUrl('');
   showView('customer-hub-view');
@@ -4314,6 +4319,7 @@ function syncAdminProfileUI() {
   if (display) display.textContent = user?.email || 'Admin';
   syncAdminReviewShowcaseToggle();
   syncWebsiteIntroAdminToggle();
+  syncCustomerHubAdminToggle();
   syncFlashDropAdminMenu();
 }
 
@@ -4595,6 +4601,62 @@ async function toggleWebsiteIntroFromProfile(button) {
   }
 }
 window.toggleWebsiteIntroFromProfile = toggleWebsiteIntroFromProfile;
+
+const CUSTOMER_HUB_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/customerHub';
+let customerHubEnabled = true;
+let customerHubConfigListening = false;
+
+function syncCustomerHubAdminToggle() {
+  const button = document.getElementById('admin-customer-hub-toggle');
+  const status = document.getElementById('admin-customer-hub-status');
+  const icon = document.getElementById('admin-customer-hub-icon');
+  if (!button) return;
+  button.classList.toggle('is-active', customerHubEnabled);
+  button.setAttribute('aria-pressed', String(customerHubEnabled));
+  if (status) status.textContent = customerHubEnabled ? 'Menu pelanggan sedang dipaparkan.' : 'Menu dan halaman pelanggan disembunyikan.';
+  if (icon) icon.className = 'fa-solid ' + (customerHubEnabled ? 'fa-toggle-on' : 'fa-toggle-off');
+}
+
+function applyCustomerHubVisibility() {
+  document.querySelectorAll('[data-customer-hub-link]').forEach(link => {
+    link.hidden = !customerHubEnabled;
+  });
+  const view = document.getElementById('customer-hub-view');
+  if (!customerHubEnabled && view && !view.classList.contains('hidden')) showHome();
+  syncCustomerHubAdminToggle();
+}
+
+function startCustomerHubConfigSync() {
+  if (!realtimeDb || customerHubConfigListening) return;
+  customerHubConfigListening = true;
+  realtimeDb.ref(CUSTOMER_HUB_CONFIG_PATH).on('value', snapshot => {
+    const value = snapshot.val();
+    customerHubEnabled = value === null ? true : value === false ? false : value === true ? true : value?.enabled !== false;
+    applyCustomerHubVisibility();
+  }, error => console.warn('Sync halaman pelanggan gagal:', error));
+}
+
+async function toggleCustomerHubFromProfile(button) {
+  if (!realtimeDb || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  const nextEnabled = !customerHubEnabled;
+  if (button) button.disabled = true;
+  try {
+    await realtimeDb.ref(CUSTOMER_HUB_CONFIG_PATH).set({
+      enabled:nextEnabled,
+      updatedAt:firebase.database.ServerValue.TIMESTAMP,
+      updatedBy:orderAuth.currentUser.email || 'admin'
+    });
+    customerHubEnabled = nextEnabled;
+    applyCustomerHubVisibility();
+    toast(nextEnabled ? 'Halaman pelanggan sudah dipaparkan.' : 'Halaman pelanggan sudah disembunyikan.');
+  } catch (error) {
+    console.error('Simpan tetapan halaman pelanggan gagal:', error);
+    toast('Tak dapat simpan tetapan halaman pelanggan.', true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+window.toggleCustomerHubFromProfile = toggleCustomerHubFromProfile;
 async function adminProfileLogin(event) {
   event.preventDefault();
   if (!orderAuth) return toast('Firebase belum dapat dihubungkan.', true);
@@ -5532,6 +5594,7 @@ function bootStoreApp() {
   startRealtimeConfigSync();
   startPurchasePopupSync();
   startWebsiteIntroConfigSync();
+  startCustomerHubConfigSync();
   startFlashDropSync();
   startPriceDropAlertSync();
   startCustomerLeaderboardSync();
@@ -6810,8 +6873,8 @@ function updateModalCartBtn(item) {
   btn.disabled = oos;
   btn.classList.toggle('in-cart', qty > 0);
   btn.innerHTML = oos
-    ? '<i class="fa-solid fa-ban"></i> Habis Stok'
-    : '<i class="fa-solid fa-cart-plus"></i> Tambah ke Troli' + (qty > 0 ? '<span class="pm-qty">' + qty + '</span>' : '');
+    ? '<i class="fa-solid fa-ban"></i><span>Habis Stok</span>'
+    : '<i class="fa-solid fa-cart-plus"></i><span>Troli</span>' + (qty > 0 ? '<b class="pm-qty">' + qty + '</b>' : '');
 }
 function getGameBadgeMeta(value) {
   const text = String(value || '').trim();
