@@ -2488,7 +2488,7 @@ function showAnnouncementModal(config) {
   const media = '<div class="h4sx-announcement-media">' +
     (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="">' : '') +
     '<div class="h4sx-announcement-icon"' + (safeImage ? ' hidden' : '') + '><i class="fa-solid ' + icon + '"></i></div></div>';
-  modal.innerHTML = '<section class="h4sx-announcement-card" role="region" aria-live="polite" aria-labelledby="h4sx-announcement-title">' +
+  modal.innerHTML = '<section class="h4sx-announcement-card" role="dialog" aria-modal="true" aria-labelledby="h4sx-announcement-title">' +
     '<button class="h4sx-announcement-close" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
     media + '<div class="h4sx-announcement-content"><span class="h4sx-announcement-kicker">' + escapeHtml(config.kicker) + '</span>' +
     '<h2 id="h4sx-announcement-title">' + escapeHtml(config.title) + '</h2>' +
@@ -2507,6 +2507,7 @@ function showAnnouncementModal(config) {
     if (modal.querySelector('#h4sx-announcement-hide')?.checked) rememberAnnouncement(config);
     closeAnnouncementModal(modal);
   };
+  modal.addEventListener('click', event => { if (event.target === modal) dismiss(); });
   modal.querySelector('.h4sx-announcement-close').addEventListener('click', dismiss);
   modal.querySelector('.h4sx-announcement-confirm').addEventListener('click', () => {
     dismiss();

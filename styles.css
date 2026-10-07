@@ -2097,27 +2097,26 @@ nav {
   .consult-confirm-dialog h3 { font-size: 19px; }
 }
 
-/* Compact announcement banner: visible without blocking the storefront. */
+/* Compact announcement banner, centered in the viewport. */
 .h4sx-announcement-modal {
   position: fixed;
-  inset: 16px 16px auto auto;
+  inset: 0;
   z-index: 100002;
-  width: min(720px, calc(100% - 32px));
-  display: block;
-  padding: 0;
-  background: transparent;
-  backdrop-filter: none;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(6,26,43,.42);
+  backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-18px);
-  transition: opacity .24s ease, transform .24s ease;
+  transition: opacity .24s ease;
 }
-.h4sx-announcement-modal.show { opacity: 1; pointer-events: none; transform: translateY(0); }
+.h4sx-announcement-modal.show { opacity: 1; pointer-events: auto; }
 .h4sx-announcement-card {
   position: relative;
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
-  width: 100%;
+  width: min(720px, 100%);
   max-height: min(430px, calc(100dvh - 32px));
   padding: 12px;
   border: 1px solid rgba(125,211,252,.78);
@@ -2148,8 +2147,8 @@ nav {
 .h4sx-announcement-confirm { display:inline-flex; align-items:center; justify-content:center; gap:9px; width:auto; min-height:42px; padding:0 17px; border:0; border-radius:12px; background:linear-gradient(135deg,#0ea5e9,#14b8a6); color:#fff; font-weight:900; white-space:nowrap; cursor:pointer; box-shadow:0 10px 22px rgba(14,165,233,.22); }
 .h4sx-announcement-close { position:absolute; z-index:2; top:12px; right:12px; display:grid; place-items:center; width:34px; height:34px; padding:0; border:1px solid #d6edf9; border-radius:11px; background:rgba(255,255,255,.92); color:#53657b; cursor:pointer; }
 @media (max-width: 640px) {
-  .h4sx-announcement-modal { inset: auto 10px 78px; width: auto; padding: 0; }
-  .h4sx-announcement-card { grid-template-columns: 92px minmax(0,1fr); max-height: min(420px,calc(100dvh - 110px)); padding: 10px; border-radius: 18px; }
+  .h4sx-announcement-modal { padding: 12px; }
+  .h4sx-announcement-card { grid-template-columns: 92px minmax(0,1fr); max-height: calc(100dvh - 24px); padding: 10px; border-radius: 18px; }
   .h4sx-announcement-media { min-height: 92px; align-self: start; }
   .h4sx-announcement-image { min-height: 92px; max-height: 135px; }
   .h4sx-announcement-icon { width: 54px; height: 54px; border-radius: 17px; font-size: 23px; }
