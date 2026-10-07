@@ -1,9 +1,9 @@
-const CACHE_NAME = 'h4sx-pwa-20261008-v67';
+const CACHE_NAME = 'h4sx-pwa-20261008-v68';
 const APP_SHELL = [
   './',
   './index.htm',
-  './styles.css?v=popup-intro-hours-v3-20261008',
-  './h4sx-intro.html?v=hs-intro-v7-20261008',
+  './styles.css?v=light-popup-intro-v4-20261008',
+  './h4sx-intro.html?v=hs-intro-v8-20261008',
   './app.js?v=popup-intro-hours-v3-20261008',
   './changelog-loader.js?v=v6-store-upgrade-20261001',
   './manifest.webmanifest',
@@ -32,7 +32,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin || url.pathname.includes('/api/')) return;
 
   if (request.mode === 'navigate') {
-    const navigationCacheKey = url.pathname.endsWith('/h4sx-intro.html') ? './h4sx-intro.html?v=hs-intro-v7-20261008' : './index.htm';
+    const navigationCacheKey = url.pathname.endsWith('/h4sx-intro.html') ? './h4sx-intro.html?v=hs-intro-v8-20261008' : './index.htm';
     event.respondWith(
       fetch(request)
         .then(response => {
