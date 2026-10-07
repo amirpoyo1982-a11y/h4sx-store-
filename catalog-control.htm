@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=34-purchase-notice">
+  <link rel="stylesheet" href="catalog-control.css?v=35-announcement-banner">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=34-purchase-notice"></script>
+  <script defer src="catalog-control.js?v=35-announcement-banner"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -129,6 +129,25 @@
           <div><span>IMAGE HOSTING</span><h3>ImgBB API</h3><p>Key disimpan dalam browser admin ini sahaja dan tidak dihantar ke Firebase atau GitHub.</p></div>
           <label>API key ImgBB<div class="key-input"><input id="imgbb-api-key" type="password" autocomplete="off" placeholder="Paste API key ImgBB"><button type="button" class="ghost" id="toggle-imgbb-key" title="Tunjuk atau sembunyikan key"><i class="fa-solid fa-eye"></i></button><button type="button" class="primary" id="save-imgbb-key"><i class="fa-solid fa-key"></i> Simpan key</button></div></label>
         </div>
+        <div class="announcement-settings">
+          <div class="announcement-settings-head">
+            <div><span>ANNOUNCEMENT BANNER</span><h3>Makluman pelanggan</h3><p>Banner terapung yang pelanggan boleh tutup tanpa mengganggu mereka melayari kedai.</p></div>
+            <label class="switch"><input id="announcement-active" type="checkbox"><span></span> Aktifkan</label>
+          </div>
+          <div class="announcement-settings-grid">
+            <label>ID / versi banner<div class="input-action-row"><input id="announcement-id" maxlength="80" placeholder="contoh: promo-oktober"><button type="button" class="ghost" id="announcement-new-id"><i class="fa-solid fa-rotate"></i> ID baru</button></div><small>Tukar ID apabila mahu banner lama dipaparkan semula kepada semua pelanggan.</small></label>
+            <label>Label kecil<input id="announcement-kicker" maxlength="30" placeholder="BARU / PENTING / PROMO"></label>
+            <label class="wide">Tajuk<input id="announcement-title" maxlength="100" placeholder="Makluman H4SX Store"></label>
+            <label class="wide">Mesej<textarea id="announcement-message" rows="4" maxlength="1200" placeholder="Tulis mesej. HTML ringkas seperti &lt;strong&gt;, &lt;p&gt; dan &lt;br&gt; dibenarkan."></textarea></label>
+            <label>URL gambar<input id="announcement-image" type="url" placeholder="https://..."><small>Kosongkan untuk menggunakan ikon.</small></label>
+            <label>Ikon Font Awesome<input id="announcement-icon" maxlength="60" placeholder="fa-bullhorn"></label>
+            <label>Teks butang<input id="announcement-button-text" maxlength="50" placeholder="Lihat sekarang"></label>
+            <label>Link butang<input id="announcement-button-link" type="url" placeholder="https://..."><small>Kosongkan jika butang hanya menutup banner.</small></label>
+            <label>Tempoh sembunyi<select id="announcement-cooldown"><option value="1">1 hari</option><option value="3">3 hari</option><option value="7">7 hari</option><option value="14">14 hari</option><option value="30">30 hari</option></select></label>
+            <div class="announcement-switches"><label class="switch"><input id="announcement-show-dont-show" type="checkbox"><span></span> Pilihan jangan tunjuk lagi</label><label class="switch"><input id="announcement-new-tab" type="checkbox"><span></span> Buka link di tab baru</label></div>
+          </div>
+          <button type="button" class="primary" id="save-announcement"><i class="fa-solid fa-floppy-disk"></i> Simpan Announcement</button>
+        </div>
         <div class="quick-settings">
           <label class="switch"><input id="quick-open" type="checkbox"><span></span> Kedai buka</label>
           <label class="switch"><input id="quick-maintenance" type="checkbox"><span></span> Maintenance</label>
@@ -138,7 +157,7 @@
           <label class="switch"><input id="quick-spotlight" type="checkbox"><span></span> Pilihan H4SX</label>
         </div>
         <label class="editor-label">JSON tetapan penuh<textarea id="config-editor" class="json-editor" spellcheck="false"></textarea></label>
-        <p class="hint">Boleh edit flash sale, announcement, payment QR, waktu operasi, banner dan semua field Gist lama.</p>
+        <p class="hint">Boleh edit flash sale, payment QR, waktu operasi, banner dan semua field Gist lama.</p>
       </section>
 
       <section class="panel" data-panel="migration">

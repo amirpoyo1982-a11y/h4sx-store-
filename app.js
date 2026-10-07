@@ -2383,7 +2383,7 @@ let currentStoreConfig = {
   business_hours_text: "Isnin - Ahad: 9AM - 12AM",
   // Announcement settings
   announcement_active: false,
-  announcement_id: "v1", // Change this ID every time you want a new popup
+  announcement_id: "v1", // Change this ID every time you want a new banner
   announcement_title: "KEMASKINI BARU!",
   announcement_subtitle: "Barang baru ditambah!",
   announcement_message: "Kami telah menambah item-item baru! Sila semak katalog kami.",
@@ -2399,9 +2399,34 @@ function announcementTextValue(config, nested, key, fallback = '') {
   return nestedValue !== undefined ? nestedValue : (legacyValue !== undefined ? legacyValue : fallback);
 }
 function safeAnnouncementHtml(value) {
-  return String(value || '')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/\son\w+\s*=\s*(["']).*?\1/gi, '');
+  const template = document.createElement('template');
+  template.innerHTML = String(value || '');
+  const allowed = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'UL', 'OL', 'LI', 'A']);
+  const removeWithContent = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'SVG', 'MATH', 'FORM']);
+  const clean = parent => {
+    Array.from(parent.children).forEach(element => {
+      const tag = element.tagName;
+      if (removeWithContent.has(tag)) {
+        element.remove();
+        return;
+      }
+      if (!allowed.has(tag)) {
+        clean(element);
+        element.replaceWith(...Array.from(element.childNodes));
+        return;
+      }
+      const href = tag === 'A' ? String(element.getAttribute('href') || '').trim() : '';
+      Array.from(element.attributes).forEach(attribute => element.removeAttribute(attribute.name));
+      if (tag === 'A' && /^https?:\/\//i.test(href)) {
+        element.setAttribute('href', href);
+        element.setAttribute('target', '_blank');
+        element.setAttribute('rel', 'noopener noreferrer');
+      }
+      clean(element);
+    });
+  };
+  clean(template.content);
+  return template.innerHTML;
 }
 function getAnnouncementConfig(config = currentStoreConfig) {
   const nested = config && config.announcement && typeof config.announcement === 'object' && !Array.isArray(config.announcement)
@@ -2440,8 +2465,9 @@ function rememberAnnouncement(config) {
 }
 function closeAnnouncementModal(modal) {
   if (!modal) return;
+  if (typeof modal._announcementCleanup === 'function') modal._announcementCleanup();
   modal.classList.remove('show');
-  setTimeout(() => modal.remove(), 190);
+  setTimeout(() => modal.remove(), 240);
 }
 function showAnnouncementModal(config) {
   const existing = document.getElementById('h4sx-announcement-modal');
@@ -2454,33 +2480,44 @@ function showAnnouncementModal(config) {
   const icon = String(config.icon || 'fa-bullhorn').replace(/[^a-z0-9\s-]/gi, '') || 'fa-bullhorn';
   const image = String(config.image || '').trim();
   const safeImage = /^https:\/\//i.test(image) ? image : '';
+  const link = String(config.buttonLink || '').trim();
+  const safeLink = /^https?:\/\//i.test(link) ? link : '';
   const dontShow = config.showDontShow
     ? '<label class="h4sx-announcement-hide"><input type="checkbox" id="h4sx-announcement-hide"><span>Jangan tunjuk lagi selama ' + config.cooldownDays + ' hari</span></label>'
     : '';
-  modal.innerHTML = '<section class="h4sx-announcement-card" role="dialog" aria-modal="true" aria-labelledby="h4sx-announcement-title">' +
+  const media = '<div class="h4sx-announcement-media">' +
+    (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="">' : '') +
+    '<div class="h4sx-announcement-icon"' + (safeImage ? ' hidden' : '') + '><i class="fa-solid ' + icon + '"></i></div></div>';
+  modal.innerHTML = '<section class="h4sx-announcement-card" role="region" aria-live="polite" aria-labelledby="h4sx-announcement-title">' +
     '<button class="h4sx-announcement-close" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
-    (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="Makluman H4SX">' : '<div class="h4sx-announcement-icon"><i class="fa-solid ' + icon + '"></i></div>') +
-    '<span class="h4sx-announcement-kicker">' + escapeHtml(config.kicker) + '</span>' +
+    media + '<div class="h4sx-announcement-content"><span class="h4sx-announcement-kicker">' + escapeHtml(config.kicker) + '</span>' +
     '<h2 id="h4sx-announcement-title">' + escapeHtml(config.title) + '</h2>' +
     '<div class="h4sx-announcement-message">' + safeAnnouncementHtml(config.message) + '</div>' +
-    '<div class="h4sx-announcement-bottom">' + dontShow + '<button class="h4sx-announcement-confirm" type="button">' + escapeHtml(config.buttonText) + '<i class="fa-solid fa-arrow-right"></i></button></div>' +
+    '<div class="h4sx-announcement-bottom">' + dontShow + '<button class="h4sx-announcement-confirm" type="button">' + escapeHtml(config.buttonText) + '<i class="fa-solid ' + (safeLink ? 'fa-arrow-up-right-from-square' : 'fa-check') + '"></i></button></div></div>' +
   '</section>';
+  const imageElement = modal.querySelector('.h4sx-announcement-image');
+  if (imageElement) imageElement.addEventListener('error', () => {
+    imageElement.remove();
+    const fallbackIcon = modal.querySelector('.h4sx-announcement-icon');
+    if (fallbackIcon) fallbackIcon.hidden = false;
+  }, { once: true });
   const dismiss = () => {
     // Do not interrupt browsing again until this page is refreshed.
     dismissedAnnouncementIds.add(config.id);
     if (modal.querySelector('#h4sx-announcement-hide')?.checked) rememberAnnouncement(config);
     closeAnnouncementModal(modal);
   };
-  modal.addEventListener('click', event => { if (event.target === modal) dismiss(); });
   modal.querySelector('.h4sx-announcement-close').addEventListener('click', dismiss);
   modal.querySelector('.h4sx-announcement-confirm').addEventListener('click', () => {
-    const link = String(config.buttonLink || '').trim();
     dismiss();
-    if (/^https:\/\//i.test(link)) {
-      if (config.openNewTab) window.open(link, '_blank', 'noopener');
-      else window.location.assign(link);
+    if (safeLink) {
+      if (config.openNewTab) window.open(safeLink, '_blank', 'noopener');
+      else window.location.assign(safeLink);
     }
   });
+  const onKeydown = event => { if (event.key === 'Escape') dismiss(); };
+  document.addEventListener('keydown', onKeydown);
+  modal._announcementCleanup = () => document.removeEventListener('keydown', onKeydown);
   document.body.appendChild(modal);
   requestAnimationFrame(() => modal.classList.add('show'));
 }

@@ -1315,6 +1315,21 @@ function writeConfigEditor() {
   byId('quick-reviews-area').checked = storeConfig.reviews_section_visible !== false && String(storeConfig.reviews_section_visible).toLowerCase() !== 'false';
   byId('quick-banner').checked = storeConfig.promo_banner_active === true || String(storeConfig.promo_banner_active).toLowerCase() === 'true';
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
+  const announcement = storeConfig.announcement && typeof storeConfig.announcement === 'object' && !Array.isArray(storeConfig.announcement) ? storeConfig.announcement : {};
+  byId('announcement-active').checked = announcement.active === true || String(announcement.active ?? storeConfig.announcement_active).toLowerCase() === 'true';
+  byId('announcement-id').value = announcement.id ?? storeConfig.announcement_id ?? '';
+  byId('announcement-kicker').value = announcement.kicker ?? announcement.subtitle ?? storeConfig.announcement_subtitle ?? 'MAKLUMAN H4SX';
+  byId('announcement-title').value = announcement.title ?? storeConfig.announcement_title ?? '';
+  byId('announcement-message').value = announcement.message ?? storeConfig.announcement_message ?? '';
+  byId('announcement-image').value = announcement.image ?? storeConfig.announcement_image ?? '';
+  byId('announcement-icon').value = announcement.icon ?? storeConfig.announcement_icon ?? 'fa-bullhorn';
+  byId('announcement-button-text').value = announcement.buttonText ?? storeConfig.announcement_button_text ?? 'Saya faham';
+  byId('announcement-button-link').value = announcement.buttonLink ?? storeConfig.announcement_button_link ?? '';
+  byId('announcement-cooldown').value = String(announcement.cooldownDays ?? announcement.cooldown_days ?? storeConfig.announcement_cooldown_days ?? 3);
+  if (!byId('announcement-cooldown').value) byId('announcement-cooldown').value = '3';
+  const showDontShow = announcement.showDontShow ?? storeConfig.announcement_show_dont_show;
+  byId('announcement-show-dont-show').checked = showDontShow === undefined || (showDontShow !== false && String(showDontShow).toLowerCase() !== 'false');
+  byId('announcement-new-tab').checked = announcement.openNewTab === true || String(announcement.openNewTab ?? storeConfig.announcement_open_new_tab).toLowerCase() === 'true';
   const orderFlow = storeConfig.order_flow || storeConfig.orderFlow || {};
   byId('order-flow-enabled').checked = orderFlow.enabled === true || String(orderFlow.enabled).toLowerCase() === 'true';
   byId('order-flow-recipient').value = orderFlow.recipient || orderFlow.accountName || '';
@@ -1322,6 +1337,43 @@ function writeConfigEditor() {
   byId('order-flow-qr-url').value = orderFlow.qrImage || orderFlow.qr_image || orderFlow.qrUrl || '';
   setOrderQrPreview(byId('order-flow-qr-url').value);
 }
+
+byId('announcement-new-id').addEventListener('click', () => {
+  const now = new Date();
+  const stamp = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('')
+    + '-' + [String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0')].join('');
+  byId('announcement-id').value = 'announcement-' + stamp;
+});
+
+byId('save-announcement').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const value = {
+    active: byId('announcement-active').checked,
+    id: byId('announcement-id').value.trim(),
+    kicker: byId('announcement-kicker').value.trim(),
+    title: byId('announcement-title').value.trim(),
+    message: byId('announcement-message').value.trim(),
+    image: byId('announcement-image').value.trim(),
+    icon: byId('announcement-icon').value.trim() || 'fa-bullhorn',
+    buttonText: byId('announcement-button-text').value.trim() || 'Saya faham',
+    buttonLink: byId('announcement-button-link').value.trim(),
+    cooldownDays: Number(byId('announcement-cooldown').value) || 3,
+    showDontShow: byId('announcement-show-dont-show').checked,
+    openNewTab: byId('announcement-new-tab').checked
+  };
+  if (value.active && !value.id) return notify('Masukkan ID banner atau tekan “ID baru”.', true);
+  if (value.active && !value.title) return notify('Masukkan tajuk announcement.', true);
+  if (value.image && !/^https:\/\//i.test(value.image)) return notify('URL gambar mesti bermula dengan https://', true);
+  if (value.buttonLink && !/^https?:\/\//i.test(value.buttonLink)) return notify('Link butang mesti bermula dengan http:// atau https://', true);
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await saveStorePath('config/announcement', value, value.active ? 'Announcement banner sudah aktif.' : 'Announcement banner sudah disimpan sebagai tidak aktif.');
+    const current = JSON.parse(byId('config-editor').value || '{}');
+    current.announcement = value;
+    byId('config-editor').value = JSON.stringify(current, null, 2);
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
 
 ['quick-open','quick-maintenance','quick-review-maintenance','quick-reviews-area','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
   try {
