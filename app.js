@@ -1514,13 +1514,16 @@ function initPromoBannerDrag() {
   function dragStart(event) {
     if (event.target.closest('.promo-hero-nav, .promo-hero-dots')) return;
     if (promoBannerSlides.length <= 1) return;
+    if (!event.touches && event.button !== 0) return;
+    if (!event.touches) event.preventDefault();
     promoDragState = {
       startX: pointX(event),
       currentX: pointX(event),
       startY: pointY(event),
       axis: '',
       width: root.querySelector('.promo-hero-shell')?.getBoundingClientRect().width || root.getBoundingClientRect().width || 1,
-      moved: false
+      moved: false,
+      maxDistance: 0
     };
     stopPromoBannerTimer();
     root.classList.add('is-dragging');
@@ -1529,6 +1532,8 @@ function initPromoBannerDrag() {
     if (!promoDragState) return;
     promoDragState.currentX = pointX(event);
     const delta = promoDragState.currentX - promoDragState.startX;
+    const verticalDelta = pointY(event) - promoDragState.startY;
+    promoDragState.maxDistance = Math.max(promoDragState.maxDistance, Math.hypot(delta, verticalDelta));
     if (event.touches && !promoDragState.axis && Math.abs(delta) + Math.abs(pointY(event) - promoDragState.startY) > 8) {
       promoDragState.axis = Math.abs(delta) > Math.abs(pointY(event) - promoDragState.startY) ? 'horizontal' : 'vertical';
       if (promoDragState.axis === 'vertical') {
@@ -1539,7 +1544,7 @@ function initPromoBannerDrag() {
       }
     }
     if (event.touches && promoDragState.axis !== 'horizontal') return;
-    if (Math.abs(delta) > 6) promoDragState.moved = true;
+    if (promoDragState.maxDistance > 4) promoDragState.moved = true;
     if (!promoBannerFrame) {
       promoBannerFrame = requestAnimationFrame(() => {
         promoBannerFrame = 0;
@@ -1556,7 +1561,7 @@ function initPromoBannerDrag() {
     const delta = promoDragState.currentX - promoDragState.startX;
     const threshold = Math.max(45, promoDragState.width * 0.12);
     root.classList.remove('is-dragging');
-    if (promoDragState.moved) promoBannerSuppressClickUntil = Date.now() + 450;
+    if (promoDragState.moved) promoBannerSuppressClickUntil = Date.now() + 650;
     if (Math.abs(delta) > threshold) {
       showPromoBannerSlide(promoBannerIndex + (delta < 0 ? 1 : -1));
     } else {
@@ -1569,6 +1574,7 @@ function initPromoBannerDrag() {
     if (event.target.closest('.promo-hero-slide') && (promoDragState?.moved || Date.now() < promoBannerSuppressClickUntil)) {
       event.preventDefault();
       event.stopPropagation();
+      event.stopImmediatePropagation();
     }
   }
 
@@ -1581,6 +1587,8 @@ function initPromoBannerDrag() {
   root.addEventListener('touchend', dragEnd);
   root.addEventListener('touchcancel', dragEnd);
   root.addEventListener('click', blockClickAfterDrag, true);
+  root.addEventListener('auxclick', blockClickAfterDrag, true);
+  root.addEventListener('dragstart', event => event.preventDefault());
   root.addEventListener('mouseenter', stopPromoBannerTimer);
   root.addEventListener('mouseleave', () => {
     if (!promoDragState) startPromoBannerTimer();
@@ -1631,7 +1639,7 @@ function renderPromoBanner(config = currentStoreConfig) {
     const slideClass = cleanFit === 'contain' ? ' promo-contain' : '';
     const slideStyle = cleanFit === 'contain' ? ' style="--promo-img:url(\'' + escapeHtml(slide.img) + '\')"' : '';
     const inner = '<picture>' + mobileSource
-      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '"' + imgLoadAttrs + ' onerror="this.closest(\'.promo-hero-slide\').classList.add(\'image-failed\')" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
+      + '<img src="' + escapeHtml(slide.img) + '" alt="' + escapeHtml(slide.alt) + '" draggable="false"' + imgLoadAttrs + ' onerror="this.closest(\'.promo-hero-slide\').classList.add(\'image-failed\')" style="object-position:' + escapeHtml(slide.position) + ';object-fit:' + escapeHtml(cleanFit) + '">'
       + '</picture>' + copy;
     return slide.link
       ? '<a class="promo-hero-slide' + slideClass + '" data-promo-index="' + i + '" aria-hidden="true" tabindex="-1"' + slideStyle + ' href="' + escapeHtml(slide.link) + '">' + inner + '</a>'

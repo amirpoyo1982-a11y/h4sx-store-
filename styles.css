@@ -9486,7 +9486,12 @@ html.review-submit-direct .wrap {
 /* 3D cover-flow promo banner: active card stays large while its neighbours peek behind it. */
 .promo-hero {
   perspective: 1400px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
+.promo-hero.is-dragging { cursor: grabbing; }
 .promo-hero-shell {
   height: clamp(270px, 32vw, 420px) !important;
   min-height: 0 !important;
@@ -9557,6 +9562,9 @@ html.review-submit-direct .wrap {
   height: 100% !important;
   min-height: 0 !important;
   border-radius: inherit;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .promo-hero-slide.promo-contain::before {
   display: none !important;
