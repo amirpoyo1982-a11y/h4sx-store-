@@ -12,8 +12,7 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=34-product-sheets"></script>
-  <script defer src="product-sheet-sync.js?v=2-vercel"></script>
+  <script defer src="catalog-control.js?v=33-price-drop"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -145,7 +144,6 @@
       <section class="panel" data-panel="migration">
         <div class="panel-head"><div><h2>Import Gist & backup</h2><p>Import sekali untuk pindahkan data sedia ada ke Firebase. Selepas itu edit dari halaman ini.</p></div></div>
         <div class="migration-grid">
-          <article><i class="fa-solid fa-table"></i><h3>Google Sheets produk</h3><p>Selepas backend diaktifkan, produk diselaraskan secara automatik. Full Sync juga memasukkan semua produk sedia ada.</p><button type="button" class="primary" id="product-sheet-full-sync">Full Sync</button> <button type="button" class="ghost" id="product-sheet-status">Semak Status</button><p id="product-sheet-result" role="status" aria-live="polite">Perlu setup backend sekali. Lihat panduan PRODUCT-SHEETS-SYNC.md.</p></article>
           <article><i class="fa-brands fa-github"></i><h3>Import semua Gist</h3><p>Ambil inventory, games dan kedai semasa lalu simpan ke Realtime Database.</p><button class="primary" id="import-gist"><i class="fa-solid fa-cloud-arrow-up"></i> Import ke Firebase</button></article>
           <article><i class="fa-solid fa-download"></i><h3>Backup Firebase</h3><p>Muat turun satu fail JSON lengkap sebelum buat perubahan besar.</p><button class="ghost" id="download-backup"><i class="fa-solid fa-download"></i> Download backup</button></article>
           <article><i class="fa-solid fa-upload"></i><h3>Restore backup</h3><p>Pilih backup JSON yang pernah dimuat turun daripada control ini.</p><label class="file-button"><i class="fa-solid fa-upload"></i> Pilih backup<input id="restore-file" type="file" accept="application/json"></label></article>
