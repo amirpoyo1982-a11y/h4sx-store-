@@ -128,10 +128,12 @@ npm test
 npm run build
 ```
 
-Node.js 22.x ditetapkan dalam package.json. Commit/push/deploy ikut aliran Vercel projek anda.
+Node.js 24.x ditetapkan dalam package.json. Commit/push/deploy ikut aliran Vercel projek anda.
 Di Vercel, **Framework Preset: Other**, build `npm run build`, output directory `public`;
 pastikan tiada dashboard override yang menukar tetapan `vercel.json`. Root directory kekal repo.
-`api/product-sheet-sync.js` ialah Node serverless function; dua API asal kekal.
+`api/product-sheet-sync.js` ialah Node 24 serverless function; dua API asal kekal. Runtime Node 24
+diperlukan oleh dependency authentication semasa dan ditetapkan melalui `engines.node` dalam
+`package.json` supaya deployment Vercel tidak mengalami ralat `ERR_REQUIRE_ESM` pada Node 22.
 
 Build menyalin **allowlist** aset website sahaja ke `public/`. Folder `server/`, tests, README,
 `.env*` dan key tidak disajikan sebagai static files. API membundle modul `server/product-sheets`.
