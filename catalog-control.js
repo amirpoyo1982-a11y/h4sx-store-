@@ -410,8 +410,13 @@ function syncGameConsultation() {
   }
 }
 
+function syncGamePurchaseNotice() {
+  byId('g-purchase-notice-fields').hidden = !byId('g-purchase-notice').checked;
+}
+
 byId('p-consultation').addEventListener('change', syncProductConsultation);
 byId('g-consultation').addEventListener('change', syncGameConsultation);
+byId('g-purchase-notice').addEventListener('change', syncGamePurchaseNotice);
 
 async function uploadImgBB(kind, button) {
   const file = kind === 'product' ? productImageFile : gameImageFile;
@@ -982,7 +987,11 @@ function collectEditorPayload() {
   const duplicate = games.some((item, index) => index !== editingKey && String(item.name).toLowerCase() === name.toLowerCase());
   if (duplicate) throw new Error('Nama game sudah digunakan.');
   const isConsultation = byId('g-consultation').checked;
-  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+  const purchaseNoticeEnabled = byId('g-purchase-notice').checked;
+  const purchaseNoticeTitle = byId('g-purchase-notice-title').value.trim();
+  const purchaseNoticeBody = byId('g-purchase-notice-body').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).join('\n');
+  if (purchaseNoticeEnabled && !purchaseNoticeBody) throw new Error('Isi sekurang-kurangnya satu baris untuk notis pembelian.');
+  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), purchaseNoticeEnabled, purchaseNoticeTitle:purchaseNoticeEnabled ? (purchaseNoticeTitle || 'Semak sebelum membuat pesanan') : null, purchaseNoticeBody:purchaseNoticeEnabled ? purchaseNoticeBody : null, consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
   return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
 }
 
@@ -1221,6 +1230,12 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-active').checked = isAdminCatalogItemVisible(item);
   byId('g-img').value = item.img || item.image || item.video || '';
+  const hasPurchaseNoticeSetting = Object.prototype.hasOwnProperty.call(item, 'purchaseNoticeEnabled');
+  const useBrookhavenDefault = !hasPurchaseNoticeSetting && String(item.name || '').trim().toLowerCase() === 'brookhaven';
+  byId('g-purchase-notice').checked = useBrookhavenDefault || item.purchaseNoticeEnabled === true || String(item.purchaseNoticeEnabled).toLowerCase() === 'true';
+  byId('g-purchase-notice-title').value = item.purchaseNoticeTitle || (useBrookhavenDefault ? 'Semak sebelum membuat pesanan' : '');
+  byId('g-purchase-notice-body').value = item.purchaseNoticeBody || (useBrookhavenDefault ? 'Setiap gamepass hanya boleh dimiliki sekali bagi satu akaun Roblox.\nSemak username dan profil penerima sebelum meneruskan pesanan.\nGamepass yang telah dihantar ke akaun pilihan tidak boleh dipindahkan atau dibayar balik.' : '');
+  syncGamePurchaseNotice();
   const consultation = readConsultation(item);
   byId('g-consultation').checked = consultation.enabled;
   byId('g-whatsapp').value = consultation.whatsapp;
@@ -1231,7 +1246,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-image-file').value = '';
   setImagePreview('game', null, byId('g-img').value);
   byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['name','platform','badge','badgeTitle','oos','active','hidden','img','image','video','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
+  const known = ['name','platform','badge','badgeTitle','oos','active','hidden','img','image','video','purchaseNoticeEnabled','purchaseNoticeTitle','purchaseNoticeBody','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }

@@ -6882,6 +6882,29 @@ function getGameBadgeMeta(value) {
   const key = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'custom';
   return { text, key };
 }
+const BROOKHAVEN_PURCHASE_NOTICE = {
+  title: 'Semak sebelum membuat pesanan',
+  lines: [
+    'Setiap gamepass hanya boleh dimiliki sekali bagi satu akaun Roblox.',
+    'Semak username dan profil penerima sebelum meneruskan pesanan.',
+    'Gamepass yang telah dihantar ke akaun pilihan tidak boleh dipindahkan atau dibayar balik.'
+  ]
+};
+function gamePurchaseNotice(name) {
+  const game = configuredGameByName(name) || {};
+  const hasSetting = Object.prototype.hasOwnProperty.call(game, 'purchaseNoticeEnabled');
+  if (!hasSetting && normalizeKey(name) === 'brookhaven') return BROOKHAVEN_PURCHASE_NOTICE;
+  const enabled = game.purchaseNoticeEnabled === true || String(game.purchaseNoticeEnabled).toLowerCase() === 'true';
+  if (!enabled) return null;
+  const lines = String(game.purchaseNoticeBody || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean).slice(0, 8);
+  if (!lines.length) return null;
+  return { title: String(game.purchaseNoticeTitle || 'Semak sebelum membuat pesanan').trim(), lines };
+}
+function renderGamePurchaseNotice(name) {
+  const notice = gamePurchaseNotice(name);
+  if (!notice) return '';
+  return '<aside class="game-purchase-notice"><div class="game-purchase-notice-icon"><i class="fa-solid fa-shield-halved"></i></div><div><p>MAKLUMAT PESANAN</p><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><i class="fa-solid fa-check"></i><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div></aside>';
+}
 function renderGames() {
   renderPlatformFilters();
   const visibleGames = catalogGames().sort((a, b) => Number(Boolean(a.oos)) - Number(Boolean(b.oos)));
@@ -6913,9 +6936,8 @@ function openGame(name, options = {}) {
   let banner = '';
   if (name === 'Robux Via Log in') {
     banner = '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-circle-info" style="color:var(--sky);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);margin-bottom:6px"><i class="fa-solid fa-circle-info"></i> Cara Top Up Via Log In</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300"><i class="fa-brands fa-whatsapp"></i> <strong>Hubungi Admin</strong> via WhatsApp dan hantar username & password Roblox.<br><i class="fa-solid fa-clock"></i> Proses antara <strong>1-25 minit</strong>.<br><i class="fa-solid fa-shield-halved"></i> Akaun dipulangkan segera selepas top up selesai.<br><i class="fa-solid fa-lock"></i> Pastikan tiada <strong>2FA</strong> aktif.</div><a href="https://wa.me/' + WA_NUMBER + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> DM Admin</a></div></div>';
-  } else if (name === 'Brookhaven') {
-    banner = '<div style="grid-column:1/-1;background:var(--red-bg);border:1px solid var(--red-bdr);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:6px"><i class="fa-solid fa-triangle-exclamation"></i> Penting Sebelum Beli!</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300"><i class="fa-solid fa-ticket"></i> Gamepass hanya boleh dibeli <strong>1x sahaja</strong>.<br><i class="fa-solid fa-user-check"></i> Semak username Roblox dengan teliti.<br><i class="fa-solid fa-circle-exclamation"></i> H4SX tidak bertanggungjawab atas kesilapan username.</div></div></div>';
   }
+  banner += renderGamePurchaseNotice(name);
   currentProductItems = items;
   currentProductBanner = banner;
   currentProductFilter = 'all';

@@ -1,10 +1,10 @@
-const CACHE_NAME = 'h4sx-pwa-20261005-v59';
+const CACHE_NAME = 'h4sx-pwa-20261007-v60';
 const APP_SHELL = [
   './',
   './index.htm',
-  './styles.css?v=customer-hub-toggle-v11-20261005',
+  './styles.css?v=purchase-notice-v1-20261007',
   './h4sx-intro.html?v=hs-draw-v6-20261004',
-  './app.js?v=customer-hub-toggle-v11-20261005',
+  './app.js?v=purchase-notice-v1-20261007',
   './changelog-loader.js?v=v6-store-upgrade-20261001',
   './manifest.webmanifest',
   './assets/h4sx-helper-logo.png',

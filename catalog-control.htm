@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=33-price-drop">
+  <link rel="stylesheet" href="catalog-control.css?v=34-purchase-notice">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=33-price-drop"></script>
+  <script defer src="catalog-control.js?v=34-purchase-notice"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -195,6 +195,8 @@
         <label>Nama game<div class="smart-choice-row"><input id="g-name" placeholder="Taip nama game baru" required><select id="g-name-picker" aria-label="Pilih game sedia ada"><option value="">Pilih game...</option></select></div><small>Taip nama baru atau pilih semua game sedia ada.</small></label><label>Platform<div class="smart-choice-row"><input id="g-platform" placeholder="Contoh: Roblox"><select id="g-platform-picker" aria-label="Pilih platform sedia ada"><option value="">Pilih platform...</option></select></div><small>Taip platform baru atau pilih daripada senarai penuh.</small></label>
         <label>Badge<input id="g-badge"></label><label class="switch inline"><input id="g-oos" type="checkbox"><span></span> Soon / OOS</label>
         <label class="switch inline wide visibility-toggle"><input id="g-active" type="checkbox" checked><span></span> Paparkan game kepada pelanggan</label>
+        <label class="switch inline wide purchase-notice-toggle"><input id="g-purchase-notice" type="checkbox"><span></span> Paparkan notis sebelum pelanggan memilih gamepass</label>
+        <div id="g-purchase-notice-fields" class="purchase-notice-fields wide" hidden><label class="wide">Tajuk notis<input id="g-purchase-notice-title" maxlength="90" placeholder="Semak sebelum membuat pesanan"></label><label class="wide">Maklumat penting<textarea id="g-purchase-notice-body" rows="4" maxlength="700" placeholder="Masukkan satu perkara pada setiap baris."></textarea><small>Satu baris akan dipaparkan sebagai satu perkara. Notis ini hanya muncul pada bahagian game ini.</small></label></div>
         <label class="switch inline wide consultation-toggle"><input id="g-consultation" type="checkbox"><span></span> Jadikan konsultasi WhatsApp</label>
         <div id="g-consultation-fields" class="consultation-fields wide" hidden><label>Nombor WhatsApp<input id="g-whatsapp" inputmode="tel" placeholder="Kosong = nombor utama"></label><label>Teks butang<input id="g-consultation-button" placeholder="Chat WhatsApp"></label><label class="wide">Mesej WhatsApp<textarea id="g-consultation-message" rows="2" placeholder="Hi H4SX, saya nak tanya game ini."></textarea></label></div>
         <label class="wide">URL cover / video<input id="g-img" type="url"></label>
