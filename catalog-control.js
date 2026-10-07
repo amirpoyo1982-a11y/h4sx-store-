@@ -1317,6 +1317,8 @@ function writeConfigEditor() {
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
   const websiteTheme = storeConfig.websiteTheme && typeof storeConfig.websiteTheme === 'object' ? storeConfig.websiteTheme : {};
   byId('market-logo-image').value = websiteTheme.logoImage || '';
+  byId('market-logo-scale').value = Math.min(300, Math.max(100, Number(websiteTheme.logoScale) || 100));
+  syncMarketLogoScale();
   showMarketLogoPreview();
   byId('market-primary-color').value = /^#[0-9a-f]{6}$/i.test(websiteTheme.primaryColor || '') ? websiteTheme.primaryColor : '#0ea5e9';
   byId('market-secondary-color').value = /^#[0-9a-f]{6}$/i.test(websiteTheme.secondaryColor || '') ? websiteTheme.secondaryColor : '#7c3aed';
@@ -1357,7 +1359,13 @@ function showMarketLogoPreview() {
   preview.onerror = () => { preview.onerror = null; preview.src = 'https://i.imgur.com/cLPulXQ.png'; };
   preview.src = /^https:\/\//i.test(logoUrl) ? logoUrl : 'https://i.imgur.com/cLPulXQ.png';
 }
+function syncMarketLogoScale() {
+  const scale = Math.min(300, Math.max(100, Number(byId('market-logo-scale').value) || 100));
+  byId('market-logo-scale-value').textContent = scale + '%';
+  byId('market-logo-preview').style.setProperty('--market-logo-preview-scale', String(scale / 100));
+}
 byId('market-logo-image').addEventListener('change', showMarketLogoPreview);
+byId('market-logo-scale').addEventListener('input', syncMarketLogoScale);
 byId('market-logo-upload').addEventListener('click', async event => {
   const button = event.currentTarget;
   const file = byId('market-logo-file').files?.[0];
@@ -1389,6 +1397,7 @@ byId('save-market-theme').addEventListener('click', async event => {
   const value = {
     ...(storeConfig.websiteTheme && typeof storeConfig.websiteTheme === 'object' ? storeConfig.websiteTheme : {}),
     logoImage,
+    logoScale: Number(byId('market-logo-scale').value) || 100,
     primaryColor: byId('market-primary-color').value,
     secondaryColor: byId('market-secondary-color').value,
     accentColor: byId('market-accent-color').value

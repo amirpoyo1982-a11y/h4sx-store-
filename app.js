@@ -620,6 +620,9 @@ function applyWebsiteTheme(config = storeConfig) {
   if (logo) {
     const logoUrl = String(theme.logoImage || '').trim();
     const nextUrl = /^https:\/\//i.test(logoUrl) ? logoUrl : DEFAULT_MARKET_LOGO;
+    const requestedScale = Number(theme.logoScale);
+    const logoScale = Number.isFinite(requestedScale) ? Math.min(3, Math.max(1, requestedScale / 100)) : 1;
+    logo.style.setProperty('--market-logo-scale', String(logoScale));
     logo.onerror = () => {
       logo.onerror = null;
       logo.src = DEFAULT_MARKET_LOGO;
