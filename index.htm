@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-04-purchase-popup-toggle-v7"/>
+  <meta name="h4sx-build" content="2026-10-08-popup-intro-hours-v3"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -55,12 +55,21 @@
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
-  <script>document.documentElement.classList.add('h4sx-opening-active');</script>
-  <link rel="stylesheet" href="styles.css?v=announcement-banner-v2-20261008">
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      let seen = false;
+      try { seen = sessionStorage.getItem('h4sx-intro-seen') === '1'; } catch (error) {}
+      if (!seen && !['preview', 'game', 'part', 'item'].some(key => params.has(key))) {
+        document.documentElement.classList.add('h4sx-opening-active');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css?v=popup-intro-hours-v3-20261008">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
-  <iframe id="h4sx-intro-frame" data-src="h4sx-intro.html?v=hs-draw-v6-20261004" title="Intro H4SX Store"></iframe>
+  <iframe id="h4sx-intro-frame" data-src="h4sx-intro.html?v=hs-intro-v7-20261008" title="Intro H4SX Store"></iframe>
 </div>
 <script>
   (() => {
@@ -73,6 +82,7 @@
       if (closed || !host) return;
       closed = true;
       clearTimeout(autoEnterTimer);
+      try { sessionStorage.setItem('h4sx-intro-seen', '1'); } catch (error) {}
       document.documentElement.classList.remove('h4sx-opening-active');
       if (immediate) return host.remove();
       host.classList.add('is-leaving');
@@ -81,7 +91,7 @@
     const startIntro = () => {
       if (started || closed || !frame) return;
       started = true;
-      autoEnterTimer = window.setTimeout(closeIntro, 6800);
+      autoEnterTimer = window.setTimeout(closeIntro, 3500);
       frame.src = frame.dataset.src;
     };
     frame?.addEventListener('load', () => {
@@ -90,6 +100,10 @@
     window.addEventListener('message', event => {
       if (event.source === frame?.contentWindow && event.data?.type === 'h4sx-intro-enter') closeIntro();
     });
+    if (!document.documentElement.classList.contains('h4sx-opening-active')) {
+      closeIntro(true);
+      return;
+    }
     const configUrl = 'https://h4sx-6712c-default-rtdb.asia-southeast1.firebasedatabase.app/store/config/websiteIntro.json?cb=' + Date.now();
     Promise.race([
       fetch(configUrl, { cache:'no-store' }).then(response => response.ok ? response.json() : null).catch(() => null),
@@ -1040,7 +1054,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=announcement-banner-v2-20261008"></script>
+<script defer src="app.js?v=popup-intro-hours-v3-20261008"></script>
 
 </body>
 </html>

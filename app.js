@@ -42,7 +42,13 @@ function closeReviewSystemPopup(fromButton) {
 }
 
 function initReviewSystemPopup() {
+  if (isDirectCatalogVisit()) return;
   setTimeout(openReviewSystemPopup, 650);
+}
+
+function isDirectCatalogVisit() {
+  const params = new URLSearchParams(window.location.search);
+  return ['preview', 'game', 'part', 'item'].some(key => params.has(key));
 }
 
 // --- DATE & TIME DISPLAY ---
@@ -1238,20 +1244,15 @@ async function fetchKedaiJson() {
       const snapshot = await realtimeDb.ref(REALTIME_STORE_ROOT + '/config').once('value');
       if (snapshot.exists()) return snapshot.val();
     } catch (error) {
-      console.warn('Realtime config read failed; using legacy fallback.', error);
+      console.warn('Realtime config read failed; keeping current store status.', error);
     }
+    return null;
   }
   const url = KEDAI_GIST_URL;
   try { 
-    console.log('Fetching kedai.json from:', url);
     const r = await fetch(url + '?cb=' + Date.now(), { cache:'no-store' }); 
-    console.log('Response status:', r.status);
     if (r.ok) {
-      const text = await r.text();
-      console.log('Response text:', text);
-      const data = JSON.parse(text);
-      console.log('Parsed data:', data);
-      return data;
+      return await r.json();
     }
   } catch(e) {
     console.error("Gist fetch error:", e);
@@ -1588,6 +1589,19 @@ function initPromoBannerDrag() {
   root.addEventListener('touchcancel', dragEnd);
   root.addEventListener('click', blockClickAfterDrag, true);
   root.addEventListener('auxclick', blockClickAfterDrag, true);
+  root.addEventListener('click', event => {
+    const link = event.target.closest('a.promo-hero-slide');
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    let target;
+    try { target = new URL(link.href, window.location.href); } catch (error) { return; }
+    const sameStore = target.hostname.replace(/^www\./, '') === window.location.hostname.replace(/^www\./, '');
+    if (!sameStore || !['/', '/index.htm'].includes(target.pathname) || !['game', 'part', 'item'].some(key => target.searchParams.has(key))) return;
+    event.preventDefault();
+    const previousUrl = window.location.href;
+    history.replaceState(null, '', target.pathname + target.search + target.hash);
+    if (!openGameFromUrl()) window.location.assign(target.href);
+    else if (previousUrl !== window.location.href) window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   root.addEventListener('dragstart', event => event.preventDefault());
   root.addEventListener('mouseenter', stopPromoBannerTimer);
   root.addEventListener('mouseleave', () => {
@@ -2043,6 +2057,7 @@ function changelogBackdrop(e) {
   if (e.target === document.getElementById('changelog-modal')) dismissChangelog();
 }
 function initChangelog() {
+  if (isDirectCatalogVisit()) return;
   try {
     if (!localStorage.getItem(CHANGELOG_STORAGE_KEY)) {
       setTimeout(() => openChangelog(false), 1000);
@@ -2486,9 +2501,9 @@ function showAnnouncementModal(config) {
     ? '<label class="h4sx-announcement-hide"><input type="checkbox" id="h4sx-announcement-hide"><span>Jangan tunjuk lagi selama ' + config.cooldownDays + ' hari</span></label>'
     : '';
   const media = '<div class="h4sx-announcement-media">' +
-    (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="">' : '') +
+    (safeImage ? '<img class="h4sx-announcement-image" src="' + escapeHtml(safeImage) + '" alt="' + escapeHtml(config.title || 'Makluman H4SX') + '">' : '') +
     '<div class="h4sx-announcement-icon"' + (safeImage ? ' hidden' : '') + '><i class="fa-solid ' + icon + '"></i></div></div>';
-  modal.innerHTML = '<section class="h4sx-announcement-card" role="dialog" aria-modal="true" aria-labelledby="h4sx-announcement-title">' +
+  modal.innerHTML = '<section class="h4sx-announcement-card' + (safeImage ? ' has-image' : '') + '" role="dialog" aria-modal="true" aria-labelledby="h4sx-announcement-title">' +
     '<button class="h4sx-announcement-close" type="button" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>' +
     media + '<div class="h4sx-announcement-content"><span class="h4sx-announcement-kicker">' + escapeHtml(config.kicker) + '</span>' +
     '<h2 id="h4sx-announcement-title">' + escapeHtml(config.title) + '</h2>' +
@@ -2531,57 +2546,53 @@ function checkAndShowAnnouncement() {
   }
   showAnnouncementModal(config);
 }
-function isTimeWithinRange(currentTime, startTime, endTime) {
-  const [startHour, startMin] = startTime.split(':').map(Number);
-  const [endHour, endMin] = endTime.split(':').map(Number);
-  
-  const currentTotal = currentTime.getHours() * 60 + currentTime.getMinutes();
-  const startTotal = startHour * 60 + startMin;
-  const endTotal = endHour * 60 + endMin;
-  
-  // LOGIK BARU: SOKONG KEDAI LAJAK TENGAH MALAM
-  if (startTotal < endTotal) {
-    // Kes Biasa: Contoh 09:00 pagi hingga 23:00 malam (Hari yang sama)
-    return currentTotal >= startTotal && currentTotal < endTotal;
-  } else {
-    // Kes Lintas Tengah Malam: Contoh 09:00 pagi hingga 03:00 pagi (Lajak ke esok hari)
-    return currentTotal >= startTotal || currentTotal < endTotal;
-  }
+function parseBusinessTime(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  const match = text.match(/^(\d{1,2})[:.](\d{2})(?::\d{2})?\s*(am|pm|pagi|petang|malam)?$/);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const period = match[3];
+  if (minute > 59 || hour > (period ? 12 : 23) || (period && hour === 0)) return null;
+  if (period === 'am' || period === 'pagi') hour %= 12;
+  if (period === 'pm' || period === 'petang' || period === 'malam') hour = (hour % 12) + 12;
+  return hour * 60 + minute;
 }
 
-function getDayNameInMalay(date) {
-  const days = ["Ahad", "Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu"];
-  return days[date.getDay()];
+function malaysiaBusinessClock(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kuala_Lumpur', weekday: 'long', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(now);
+  const part = type => parts.find(item => item.type === type)?.value;
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return { minuteOfDay: Number(part('hour')) * 60 + Number(part('minute')), dayIndex: weekdays.indexOf(part('weekday')) };
+}
+
+function isTimeWithinRange(currentMinute, startMinute, endMinute) {
+  if (startMinute === endMinute) return true;
+  if (startMinute < endMinute) return currentMinute >= startMinute && currentMinute < endMinute;
+  return currentMinute >= startMinute || currentMinute < endMinute;
 }
 
 function shouldStoreCloseAutomatically(config) {
-  const now = new Date();
-  const klTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
-  
-  console.log('Checking store status...');
-  console.log('Current KL Time:', klTime.toString());
-  console.log('Config:', JSON.stringify(config, null, 2));
-  
-  // Check if today is a closed day
-  const todayName = getDayNameInMalay(klTime);
-  console.log('Today (MY):', todayName);
-  
-  if (config.tutup_hari && config.tutup_hari.includes(todayName)) {
-    console.log('Store closed: Hari Tutup');
-    return { closed: true, reason: "Hari Tutup" };
+  const clock = malaysiaBusinessClock();
+  const start = parseBusinessTime(config.buka_jam);
+  const end = parseBusinessTime(config.tutup_jam);
+  if ((config.buka_jam || config.tutup_jam) && (start === null || end === null)) {
+    console.warn('Format waktu operasi tidak sah:', config.buka_jam, config.tutup_jam);
   }
-  
-  // Check time range
-  if (config.buka_jam && config.tutup_jam) {
-    console.log('Checking time range:', config.buka_jam, '-', config.tutup_jam);
-    if (!isTimeWithinRange(klTime, config.buka_jam, config.tutup_jam)) {
-      console.log('Store closed: Luar Waktu Operasi');
-      return { closed: true, reason: "Luar Waktu Operasi" };
-    }
+
+  // Waktu 00:00–03:30 masih milik jadual hari sebelumnya jika kedai buka lintas tengah malam.
+  const continuedFromYesterday = start !== null && end !== null && start > end && clock.minuteOfDay < end;
+  const scheduleDay = (clock.dayIndex + (continuedFromYesterday ? 6 : 0)) % 7;
+  const malayDays = ['Ahad', 'Isnin', 'Selasa', 'Rabu', 'Khamis', 'Jumaat', 'Sabtu'];
+  if (config.tutup_hari && typeof config.tutup_hari.includes === 'function' && config.tutup_hari.includes(malayDays[scheduleDay])) {
+    return { closed: true, reason: 'Hari Tutup' };
   }
-  
-  console.log('Store is OPEN!');
-  return { closed: false, reason: "" };
+  if (start !== null && end !== null && !isTimeWithinRange(clock.minuteOfDay, start, end)) {
+    return { closed: true, reason: 'Luar Waktu Operasi' };
+  }
+  return { closed: false, reason: '' };
 }
 
 function updateBusinessClock() {
@@ -2595,6 +2606,18 @@ function updateBusinessClock() {
   }).format(new Date());
 }
 
+function businessHoursLabel(config) {
+  const start = parseBusinessTime(config.buka_jam);
+  const end = parseBusinessTime(config.tutup_jam);
+  if (start === null || end === null) return config.business_hours_text || 'Waktu operasi sedang dikemas kini';
+  const format = minutes => {
+    const hour = Math.floor(minutes / 60);
+    return (hour % 12 || 12) + ':' + String(minutes % 60).padStart(2, '0') + (hour < 12 ? ' PG' : ' PTG');
+  };
+  const hasClosedDays = Array.isArray(config.tutup_hari) && config.tutup_hari.length > 0;
+  return (hasClosedDays ? 'Waktu operasi' : 'Setiap hari') + ': ' + format(start) + ' – ' + format(end);
+}
+
 function updateBusinessHoursDisplay(config, isOpen) {
   const hoursTextEl = document.getElementById('business-hours-text');
   const statusTextEl = document.getElementById('bh-status-text');
@@ -2602,9 +2625,7 @@ function updateBusinessHoursDisplay(config, isOpen) {
   const statusEl = document.getElementById('bh-status');
   updateBusinessClock();
   
-  if (hoursTextEl && config.business_hours_text) {
-    hoursTextEl.textContent = config.business_hours_text;
-  }
+  if (hoursTextEl) hoursTextEl.textContent = businessHoursLabel(config);
   
   if (statusTextEl && statusDotEl && statusEl) {
     if (isOpen) {
@@ -2627,9 +2648,16 @@ async function checkStore() {
   const d = await fetchKedaiJson();
   
   if (!d) {
-    console.log('No data received from gist! Using default config.');
+    if (realtimeDb) {
+      // Never replace the Firebase schedule with stale legacy hours while a read is unavailable.
+      if (!kedaiConfigLoaded && overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+      return;
+    }
+    console.warn('No store config available; using default settings.');
   } else {
-    console.log('Data from gist:', d);
     const normalizedConfig = normalizeKedaiConfig(d);
     // Update current config with gist data
     if (normalizedConfig) {
@@ -2776,7 +2804,7 @@ function showClosure(title, status, message, type = 'closed') {
   if (statusEl) statusEl.textContent = status;
   if (messageEl) messageEl.innerHTML = message;
   if (hoursPillEl && hoursTextEl) {
-    const hoursText = currentStoreConfig.business_hours_text || 'Isnin - Ahad: 9AM - 12AM';
+    const hoursText = businessHoursLabel(currentStoreConfig);
     hoursTextEl.textContent = hoursText.replace(/\s*\|\s*$/, '');
     hoursPillEl.style.display = 'inline-flex';
   }
@@ -2818,7 +2846,7 @@ function showClosure(title, status, message, type = 'closed') {
     overlayGuard.observe(document.documentElement, { childList: true, subtree: true });
   }
 })();
-checkStore(); setInterval(checkStore, 60000);
+setInterval(checkStore, 60000);
 const DEFAULT_GAMES = [
   { name:'Blox Fruits',           img:'https://i.ibb.co/PzPfy9mw/image-2026-03-20-030340981.png', oos:false, badge:'hot' },
   { name:'Brookhaven',            img:'https://i.ibb.co/0RXVgfmt/image.png',                        oos:false, badge:'new' },
@@ -5638,6 +5666,7 @@ function bootStoreApp() {
   loadGames().then(renderGames);
   loadInv().then(renderPurchasePopup);
   startRealtimeConfigSync();
+  if (!realtimeDb) checkStore().catch(error => console.warn('Store status check failed:', error));
   startPurchasePopupSync();
   startWebsiteIntroConfigSync();
   startCustomerHubConfigSync();

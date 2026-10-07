@@ -3,46 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#70c9f5">
+<meta name="theme-color" content="#071427">
 <title>H4SX Store · HS Intro</title>
 <style>
-:root{--bg:#70c9f5;--sky:#d0f2ff;--ease:cubic-bezier(.65,0,.35,1)}
-*{box-sizing:border-box;margin:0}html,body{min-height:100%;background:var(--bg);color:#f2f6ff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}a{text-decoration:none;color:inherit}button:focus-visible,a:focus-visible{outline:2px solid var(--sky);outline-offset:5px}
-#intro{position:fixed;inset:0;z-index:10;background:radial-gradient(ellipse at 50% 42%,#1685d7 0%,#3ca9e8 40%,#91dbfa 85%,#c9efff 100%);display:grid;place-items:center;overflow:hidden;transition:opacity .65s ease,visibility 0s .65s}
-#intro.done{opacity:0;visibility:hidden;pointer-events:none}.identity{text-align:center;position:relative;transform:translateY(-10px)}
-.logo-wrap{width:clamp(160px,34vmin,235px);aspect-ratio:1;margin:auto;transform-origin:center;transition:transform 1.05s var(--ease),opacity .7s .15s;will-change:transform}.logo-wrap svg{width:100%;height:100%;display:block;overflow:visible}
-.outline{fill:none;stroke:#ddecff;stroke-width:.8;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.85}.outline.blue{stroke:#b6edff}.draw .outline{animation:draw 1.7s cubic-bezier(.5,.05,.25,1) forwards}.draw .outline.delay{animation-delay:.2s}.draw .outline.blue{animation-delay:.35s}
-.solid{opacity:0;transition:opacity .8s ease}.filled .solid{opacity:1}.filled .outline{opacity:0;transition:opacity .65s}.shine{opacity:0}.filled .shine{opacity:1}.shine-beam{transform:translateX(-160px)}.filled .shine-beam{animation:sweep 1.2s .25s ease-in-out both}
-.brand{font:italic bold clamp(26px,5vw,33px) Georgia,serif;letter-spacing:-.9px;margin-top:22px;opacity:0;transform:translateY(12px);transition:opacity .7s,transform .7s}.brand span{color:var(--sky)}.tagline{font-size:10px;letter-spacing:.4px;margin-top:12px;color:#e0f5ff;opacity:0;transform:translateY(8px);transition:opacity .7s .12s,transform .7s .12s}.named .brand,.named .tagline{opacity:1;transform:translateY(0)}
-.entering .logo-wrap{transform:scale(17);opacity:0}.entering .brand,.entering .tagline{opacity:0;transform:translateY(12px);transition:opacity .25s,transform .4s}.halo{position:absolute;inset:-45%;border-radius:50%;background:radial-gradient(circle,#4099e510,transparent 60%);opacity:0;pointer-events:none;transition:opacity 1s}.filled .halo{opacity:1}.entering .halo{opacity:0}
-@keyframes draw{to{stroke-dashoffset:0}}@keyframes sweep{to{transform:translateX(160px)}}
-
-/* Latar langit bergerak, dilukis dengan CSS tanpa fail gambar luaran. */
-.sky-scene{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.sunlight{position:absolute;inset:-30%;background:conic-gradient(from 155deg at 65% 0%,transparent 0deg,#ffffff1a 9deg,transparent 18deg,#ffffff0d 31deg,transparent 46deg);animation:light-drift 18s ease-in-out infinite alternate}
-.cloud{position:absolute;width:clamp(350px,60vw,900px);height:clamp(150px,28vw,320px);background:radial-gradient(ellipse at 20% 65%,#fff9 0,transparent 43%),radial-gradient(ellipse at 42% 47%,#ffff 0,transparent 40%),radial-gradient(ellipse at 65% 60%,#fffd 0,transparent 42%),radial-gradient(ellipse at 82% 75%,#fff9 0,transparent 43%);filter:blur(14px);will-change:transform;animation:cloud-drift 22s ease-in-out infinite alternate}
-.c1{left:-20%;bottom:-9%;opacity:.85}.c2{right:-28%;bottom:0;opacity:.72;animation-delay:-9s;animation-duration:26s}.c3{left:-24%;top:0%;opacity:.35;transform:scale(.7);animation-duration:32s;animation-delay:-17s}.c4{right:-28%;top:-8%;opacity:.5;animation-duration:28s;animation-delay:-11s}.c5{left:15%;bottom:-23%;width:90vw;opacity:.9;animation-duration:30s;animation-delay:-15s}
-.identity{z-index:1}.logo-wrap svg{filter:drop-shadow(0 12px 18px #075d982f)}.brand{text-shadow:0 3px 16px #07588f35}.halo{background:radial-gradient(circle,#daf6ff1a,transparent 65%)}
-.spark{position:absolute;width:3px;height:3px;border-radius:50%;background:#fff;box-shadow:0 0 10px #fff8;opacity:0;animation:spark-float 6s ease-in-out infinite}.p1{left:22%;top:32%;animation-delay:-1s}.p2{left:77%;top:57%;animation-delay:-3s}.p3{left:64%;top:22%;animation-delay:-4s}.p4{left:31%;top:73%;animation-delay:-2s}.p5{left:85%;top:36%;animation-delay:-5s}.p6{left:52%;top:83%;animation-delay:-.5s}
-@keyframes cloud-drift{from{transform:translate3d(-25px,8px,0)}to{transform:translate3d(45px,-14px,0)}}
-@keyframes light-drift{to{transform:rotate(6deg);opacity:.6}}
-@keyframes spark-float{0%,100%{opacity:0;transform:translateY(12px) scale(.5)}45%{opacity:.65}70%{opacity:.1;transform:translateY(-22px) scale(1)}}
-
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.logo-wrap{will-change:auto}}
+:root{--sky:#63d9ff;--mint:#4be4c3}
+*{box-sizing:border-box;margin:0}html,body{min-height:100%;background:#071427;color:#f4faff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:focus-visible{outline:2px solid var(--sky);outline-offset:4px}
+#intro{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 42%,#17416b 0%,#0b223d 31%,#071427 70%);transition:opacity .38s ease,visibility .38s}
+#intro::before{content:'';position:absolute;width:min(76vmin,620px);aspect-ratio:1;border:1px solid #76dfff1a;border-radius:50%;box-shadow:0 0 0 85px #77dfff08,0 0 0 170px #77dfff05;animation:orbit 8s ease-in-out infinite alternate}
+#intro::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,#61d8ff0c 50%,transparent 65%);transform:translateX(-80%);animation:ambient 3.2s ease-out both;pointer-events:none}
+#intro.done{opacity:0;visibility:hidden;pointer-events:none}.identity{position:relative;z-index:1;display:grid;justify-items:center;text-align:center;padding:24px;transform:translateY(-8px)}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;color:#9adff5;font-size:10px;font-weight:800;letter-spacing:3px;text-transform:uppercase;opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s}.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
+.logo-wrap{display:grid;place-items:center;width:clamp(144px,31vmin,210px);aspect-ratio:1;margin:28px auto 8px;padding:21px;border:1px solid #a8e9ff35;border-radius:38px;background:linear-gradient(145deg,#ffffff12,#ffffff05);box-shadow:0 24px 80px #020b1d80,inset 0 1px #ffffff33;opacity:0;transform:translateY(16px) scale(.94);transition:opacity .5s,transform .65s cubic-bezier(.16,1,.3,1)}.logo-wrap svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 8px 16px #28b7fa55)}
+.outline{fill:none;stroke:#e1f7ff;stroke-width:1;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1}.outline.blue{stroke:#67d9ff}.draw .outline{animation:draw .9s ease forwards}.draw .outline.delay{animation-delay:.12s}.draw .outline.blue{animation-delay:.2s}.solid{opacity:0;transition:opacity .35s}.filled .solid{opacity:1}.filled .outline{opacity:0;transition:opacity .3s}.shine{opacity:0}.filled .shine{opacity:1}.shine-beam{transform:translateX(-160px)}.filled .shine-beam{animation:sweep .8s ease-in-out both}
+.brand{font-size:clamp(30px,6vw,43px);font-weight:900;letter-spacing:-2px;line-height:1.1;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s}.brand span{color:var(--sky)}.tagline{margin-top:12px;color:#afcce1;font-size:clamp(11px,2.2vw,13px);letter-spacing:.25px;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s}.named .eyebrow,.named .brand,.named .tagline,.draw .logo-wrap{opacity:1;transform:none}
+.progress{width:min(180px,44vw);height:3px;margin-top:30px;overflow:hidden;border-radius:99px;background:#ffffff25;opacity:0;transition:opacity .4s}.progress::after{content:'';display:block;width:100%;height:100%;background:linear-gradient(90deg,#1dbcf2,var(--mint));transform:translateX(-100%);animation:load 2.35s linear forwards}.named .progress{opacity:1}
+.skip{position:absolute;z-index:2;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));padding:10px 15px;border:1px solid #ffffff38;border-radius:999px;background:#ffffff12;color:#d6f4ff;font-size:11px;font-weight:700;opacity:0;transition:opacity .4s,background .2s}.skip:hover{background:#ffffff23}.draw .skip{opacity:1}
+.entering .identity{opacity:0;transform:translateY(-18px) scale(1.02);transition:opacity .28s,transform .3s}.entering .skip{opacity:0}
+@keyframes draw{to{stroke-dashoffset:0}}@keyframes sweep{to{transform:translateX(160px)}}@keyframes orbit{to{transform:scale(1.05);opacity:.55}}@keyframes ambient{to{transform:translateX(80%)}}@keyframes load{to{transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
 <div id="intro" aria-label="Animasi pembukaan H4SX Store">
-<div class="sky-scene" aria-hidden="true">
-  <div class="sunlight"></div>
-  <div class="cloud c1"></div><div class="cloud c2"></div>
-  <div class="cloud c3"></div><div class="cloud c4"></div>
-  <div class="cloud c5"></div>
-  <i class="spark p1"></i><i class="spark p2"></i><i class="spark p3"></i>
-  <i class="spark p4"></i><i class="spark p5"></i><i class="spark p6"></i>
-</div>
-<div class="identity"><div class="halo" aria-hidden="true"></div><div class="logo-wrap">
+<div class="identity"><div class="eyebrow">H4SX DIGITAL STORE</div><div class="logo-wrap">
 <svg viewBox="0 0 120 120" role="img" aria-label="Logo HS">
 <defs>
 <linearGradient id="white" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#c5d8ed"/></linearGradient>
@@ -60,25 +44,30 @@
 <path class="outline blue" pathLength="1" d="M53 32H84L99 47H55L82 74V88L68 102H39V86H65L43 64L37 57V47Z"/>
 <g class="shine" clip-path="url(#logo-clip)"><g class="shine-beam"><path d="M-40 0H-12L80 120H52Z" fill="url(#beam)"/></g></g>
 </svg>
-</div><div class="brand">H4SX<span>Store</span></div><div class="tagline">Your world of gaming &amp; digital.</div></div>
+</div><div class="brand">H4SX <span>STORE</span></div><div class="tagline">Game, item dan servis digital pilihan anda.</div><div class="progress" aria-hidden="true"></div></div>
+<button class="skip" type="button" id="skip-intro">Terus ke kedai →</button>
 </div>
 <script>
 (function(){
   var intro=document.getElementById('intro');
+  var finished=false;
+  function finish(){
+    if(finished)return;
+    finished=true;
+    intro.classList.add('done');
+    parent.postMessage({type:'h4sx-intro-enter'},'*');
+  }
+  document.getElementById('skip-intro').addEventListener('click',finish);
   if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     intro.classList.add('filled','named');
-    setTimeout(function(){parent.postMessage({type:'h4sx-intro-enter'},'*');},450);
+    setTimeout(finish,250);
     return;
   }
-  setTimeout(function(){intro.classList.add('draw');},180);
-  setTimeout(function(){intro.classList.add('filled');},2250);
-  setTimeout(function(){intro.classList.add('named');},2700);
-  setTimeout(function(){intro.classList.add('entering');},5250);
-  setTimeout(function(){
-    intro.classList.add('done');
-    document.dispatchEvent(new CustomEvent('intro:done'));
-    parent.postMessage({type:'h4sx-intro-enter'},'*');
-  },5900);
+  setTimeout(function(){intro.classList.add('draw');},100);
+  setTimeout(function(){intro.classList.add('filled');},950);
+  setTimeout(function(){intro.classList.add('named');},1100);
+  setTimeout(function(){intro.classList.add('entering');},2550);
+  setTimeout(finish,2850);
 })();
 </script>
 </body>
