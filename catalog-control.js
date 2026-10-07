@@ -108,6 +108,13 @@ function storeMetaUpdates() {
   };
 }
 
+function requestProductSheetSync(path = '') {
+  if (path && path !== 'inventory' && path !== 'games') return;
+  // Called only AFTER Firebase confirms the write; optional sync cannot fail a save.
+  try { window.dispatchEvent(new CustomEvent('h4sx:catalog-saved')); }
+  catch (error) { console.warn('Product Sheet notification unavailable.'); }
+}
+
 function readStoredList(key) {
   try {
     const value = JSON.parse(localStorage.getItem(key) || '[]');
@@ -158,6 +165,7 @@ async function undoLastChange() {
       const updates = {...storeMetaUpdates(), [entry.path]:entry.before};
       await withTimeout(database.ref(ROOT).update(updates), 'Undo Firebase');
     }
+    requestProductSheetSync(entry.path);
     history.pop();
     writeStoredList(UNDO_STORAGE_KEY, history);
     notify('Undo siap: ' + entry.label);
@@ -174,6 +182,7 @@ async function saveStorePath(path, value, message, undoLabel = message || ('Ubah
   const before = (await withTimeout(database.ref(ROOT + '/' + path).once('value'), 'Sediakan Undo')).val();
   const updates = {...storeMetaUpdates(), [path]:value};
   await withTimeout(database.ref(ROOT).update(updates), 'Simpan Firebase');
+  requestProductSheetSync(path);
   rememberUndo(path, before, undoLabel.replace(/[.!]+$/, ''));
   if (message) notify(message);
 }
@@ -182,6 +191,7 @@ async function replaceStoreRoot(value, label, message) {
   if (!auth.currentUser) throw new Error('Sesi admin sudah tamat. Log masuk semula.');
   const before = (await withTimeout(database.ref(ROOT).once('value'), 'Sediakan Undo')).val() || {};
   await withTimeout(database.ref(ROOT).set(value), label, 35000);
+  requestProductSheetSync();
   rememberUndo('', before, label);
   if (message) notify(message);
 }

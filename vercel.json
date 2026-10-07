@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/product-sheet-sync.js": { "maxDuration": 60 }
+  },
+  "crons": [{ "path": "/api/product-sheet-sync", "schedule": "0 0 * * *" }],
+  "rewrites": [{ "source": "/", "destination": "/index.htm" }]
+}
