@@ -590,6 +590,46 @@ let storeConfig = {
   }
 };
 
+const DEFAULT_MARKET_LOGO = 'https://i.imgur.com/cLPulXQ.png';
+const DEFAULT_MARKET_COLORS = { primaryColor:'#0ea5e9', secondaryColor:'#7c3aed', accentColor:'#10b981' };
+function applyWebsiteTheme(config = storeConfig) {
+  const theme = config?.websiteTheme && typeof config.websiteTheme === 'object' ? config.websiteTheme : {};
+  const validColor = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback;
+  const primary = validColor(theme.primaryColor, DEFAULT_MARKET_COLORS.primaryColor);
+  const secondary = validColor(theme.secondaryColor, DEFAULT_MARKET_COLORS.secondaryColor);
+  const accent = validColor(theme.accentColor, DEFAULT_MARKET_COLORS.accentColor);
+  const mix = (hex, target, amount) => {
+    const parts = [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16));
+    return '#' + parts.map(part => Math.round(part + (target - part) * amount).toString(16).padStart(2, '0')).join('');
+  };
+  const glow = (hex, opacity) => 'rgba(' + [1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16)).join(',') + ',' + opacity + ')';
+  const colors = {
+    '--primary':primary, '--sky':primary, '--primary2':mix(primary,255,.24), '--sky2':mix(primary,255,.24),
+    '--primary3':mix(primary,0,.18), '--sky3':mix(primary,0,.18), '--primary-hover':mix(primary,0,.18), '--sky-hover':mix(primary,0,.18),
+    '--primary-glow':glow(primary,.25), '--sky-glow':glow(primary,.25),
+    '--primary-gradient':'linear-gradient(135deg, ' + primary + ', ' + mix(primary,255,.24) + ')',
+    '--secondary':secondary, '--ps-secondary':secondary, '--secondary2':mix(secondary,255,.24),
+    '--secondary-glow':glow(secondary,.18), '--secondary-gradient':'linear-gradient(135deg, ' + secondary + ', ' + mix(secondary,255,.24) + ')',
+    '--accent':accent, '--green':accent, '--accent2':mix(accent,255,.24), '--accent-glow':glow(accent,.18),
+    '--gradient-aurora':'linear-gradient(135deg, ' + primary + ', ' + accent + ', ' + secondary + ')',
+    '--gradient-aurora-bg':'linear-gradient(135deg, ' + glow(primary,.08) + ', ' + glow(accent,.06) + ', ' + glow(secondary,.06) + ')'
+  };
+  Object.entries(colors).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', primary);
+  const logo = document.getElementById('market-logo');
+  if (logo) {
+    const logoUrl = String(theme.logoImage || '').trim();
+    const nextUrl = /^https:\/\//i.test(logoUrl) ? logoUrl : DEFAULT_MARKET_LOGO;
+    logo.onerror = () => {
+      logo.onerror = null;
+      logo.src = DEFAULT_MARKET_LOGO;
+      document.getElementById('market-favicon')?.setAttribute('href', DEFAULT_MARKET_LOGO);
+    };
+    if (logo.src !== nextUrl) logo.src = nextUrl;
+    document.getElementById('market-favicon')?.setAttribute('href', nextUrl);
+  }
+}
+
 function normalizeWhatsAppTarget(value, fallback = DEFAULT_WA_NUMBER) {
   const raw = String(value || '').trim();
   const linkMatch = raw.match(/https?:\/\/(?:www\.)?wa\.me\/([a-z0-9._-]+)/i);
@@ -2685,6 +2725,7 @@ async function checkStore() {
       updatePaymentUI();
       updateWarnBoxUI();
       applyPrimaryWhatsAppNumber(storeConfig);
+      applyWebsiteTheme(storeConfig);
       syncCustomerOrderFeature();
     }
     renderPromoBanner(currentStoreConfig);
@@ -3236,6 +3277,7 @@ async function loadInv() {
       updatePaymentUI();
       updateWarnBoxUI();
       applyPrimaryWhatsAppNumber(storeConfig);
+      applyWebsiteTheme(storeConfig);
     }
 
     inventory = tempInventory.map(item => {
@@ -3329,6 +3371,7 @@ async function loadInv() {
           updatePaymentUI();
           updateWarnBoxUI();
           applyPrimaryWhatsAppNumber(storeConfig);
+          applyWebsiteTheme(storeConfig);
         }
         
         // Clean inventory items
@@ -5659,6 +5702,7 @@ function startCustomerLeaderboardSync() {
 function bootStoreApp() {
   cleanHardRefreshParam();
   applyPrimaryWhatsAppNumber(storeConfig);
+  applyWebsiteTheme(storeConfig);
   initPwaInstall();
   restoreCart();
   updateBadge();
@@ -5693,6 +5737,7 @@ function startRealtimeConfigSync() {
   realtimeConfigListening = true;
   realtimeDb.ref(REALTIME_STORE_ROOT + '/config').on('value', snapshot => {
     if (!snapshot.exists()) return;
+    applyWebsiteTheme(snapshot.val());
     checkStore().then(() => {
       if (isReviewAreaVisible() && db && !unsubscribeReviews) loadReviews();
     }).catch(error => console.warn('Realtime store config refresh failed:', error));

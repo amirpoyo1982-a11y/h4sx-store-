@@ -1315,6 +1315,12 @@ function writeConfigEditor() {
   byId('quick-reviews-area').checked = storeConfig.reviews_section_visible !== false && String(storeConfig.reviews_section_visible).toLowerCase() !== 'false';
   byId('quick-banner').checked = storeConfig.promo_banner_active === true || String(storeConfig.promo_banner_active).toLowerCase() === 'true';
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
+  const websiteTheme = storeConfig.websiteTheme && typeof storeConfig.websiteTheme === 'object' ? storeConfig.websiteTheme : {};
+  byId('market-logo-image').value = websiteTheme.logoImage || '';
+  showMarketLogoPreview();
+  byId('market-primary-color').value = /^#[0-9a-f]{6}$/i.test(websiteTheme.primaryColor || '') ? websiteTheme.primaryColor : '#0ea5e9';
+  byId('market-secondary-color').value = /^#[0-9a-f]{6}$/i.test(websiteTheme.secondaryColor || '') ? websiteTheme.secondaryColor : '#7c3aed';
+  byId('market-accent-color').value = /^#[0-9a-f]{6}$/i.test(websiteTheme.accentColor || '') ? websiteTheme.accentColor : '#10b981';
   const announcement = storeConfig.announcement && typeof storeConfig.announcement === 'object' && !Array.isArray(storeConfig.announcement) ? storeConfig.announcement : {};
   byId('announcement-active').checked = announcement.active === true || String(announcement.active ?? storeConfig.announcement_active).toLowerCase() === 'true';
   byId('announcement-id').value = announcement.id ?? storeConfig.announcement_id ?? '';
@@ -1343,6 +1349,58 @@ byId('announcement-new-id').addEventListener('click', () => {
   const stamp = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('')
     + '-' + [String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0')].join('');
   byId('announcement-id').value = 'announcement-' + stamp;
+});
+
+function showMarketLogoPreview() {
+  const preview = byId('market-logo-preview');
+  const logoUrl = byId('market-logo-image').value.trim();
+  preview.onerror = () => { preview.onerror = null; preview.src = 'https://i.imgur.com/cLPulXQ.png'; };
+  preview.src = /^https:\/\//i.test(logoUrl) ? logoUrl : 'https://i.imgur.com/cLPulXQ.png';
+}
+byId('market-logo-image').addEventListener('change', showMarketLogoPreview);
+byId('market-logo-upload').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const file = byId('market-logo-file').files?.[0];
+  let savedKey = '';
+  try { savedKey = localStorage.getItem(IMGBB_KEY_STORAGE) || ''; } catch (error) {}
+  const key = byId('imgbb-api-key').value.trim() || savedKey;
+  if (!key) return notify('Simpan API key ImgBB di bahagian Tetapan dahulu.', true);
+  if (!file || !['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)) return notify('Pilih fail gambar logo yang sah.', true);
+  if (file.size > 32 * 1024 * 1024) return notify('Gambar logo melebihi had 32MB.', true);
+  setBusy(button, true, 'Uploading...');
+  try {
+    const form = new FormData();
+    form.append('image', file, file.name);
+    form.append('name', 'h4sx-market-logo');
+    const response = await fetchWithTimeout('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), {method:'POST', body:form}, 45000);
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data?.url) throw new Error(result?.error?.message || 'Upload logo gagal.');
+    byId('market-logo-image').value = result.data.display_url || result.data.url;
+    showMarketLogoPreview();
+    notify('Logo berjaya diupload. Tekan Simpan identiti market untuk paparkan di website.');
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+});
+
+byId('save-market-theme').addEventListener('click', async event => {
+  const button = event.currentTarget;
+  const logoImage = byId('market-logo-image').value.trim();
+  if (logoImage && !/^https:\/\//i.test(logoImage)) return notify('URL logo market mesti bermula dengan https://', true);
+  const value = {
+    ...(storeConfig.websiteTheme && typeof storeConfig.websiteTheme === 'object' ? storeConfig.websiteTheme : {}),
+    logoImage,
+    primaryColor: byId('market-primary-color').value,
+    secondaryColor: byId('market-secondary-color').value,
+    accentColor: byId('market-accent-color').value
+  };
+  setBusy(button, true, 'Menyimpan...');
+  try {
+    await saveStorePath('config/websiteTheme', value, 'Logo dan warna market sudah disimpan.');
+    const current = JSON.parse(byId('config-editor').value || '{}');
+    current.websiteTheme = value;
+    byId('config-editor').value = JSON.stringify(current, null, 2);
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
 });
 
 byId('save-announcement').addEventListener('click', async event => {

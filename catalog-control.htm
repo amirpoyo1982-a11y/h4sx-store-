@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=36-announcement-center">
+  <link rel="stylesheet" href="catalog-control.css?v=37-market-theme">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=36-announcement-center"></script>
+  <script defer src="catalog-control.js?v=37-market-theme"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -128,6 +128,19 @@
         <div class="imgbb-settings">
           <div><span>IMAGE HOSTING</span><h3>ImgBB API</h3><p>Key disimpan dalam browser admin ini sahaja dan tidak dihantar ke Firebase atau GitHub.</p></div>
           <label>API key ImgBB<div class="key-input"><input id="imgbb-api-key" type="password" autocomplete="off" placeholder="Paste API key ImgBB"><button type="button" class="ghost" id="toggle-imgbb-key" title="Tunjuk atau sembunyikan key"><i class="fa-solid fa-eye"></i></button><button type="button" class="primary" id="save-imgbb-key"><i class="fa-solid fa-key"></i> Simpan key</button></div></label>
+        </div>
+        <div class="announcement-settings">
+          <div class="announcement-settings-head">
+            <div><span>IDENTITI MARKET</span><h3>Logo &amp; warna website</h3><p>Tukar logo di bar atas dan warna utama market. Logo intro dan logo Helper tidak berubah.</p></div>
+          </div>
+          <div class="announcement-settings-grid">
+            <label class="wide">URL logo market<input id="market-logo-image" type="url" placeholder="https://..." autocomplete="url"><small>Kosongkan untuk guna logo asal. Guna pautan gambar terus (PNG atau WebP digalakkan).</small></label>
+            <div class="market-logo-upload wide"><img id="market-logo-preview" src="https://i.imgur.com/cLPulXQ.png" alt="Preview logo market"><input id="market-logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"><button type="button" class="ghost" id="market-logo-upload"><i class="fa-solid fa-cloud-arrow-up"></i> Upload logo ke ImgBB</button></div>
+            <label>Warna utama<input id="market-primary-color" type="color" value="#0ea5e9"></label>
+            <label>Warna kedua<input id="market-secondary-color" type="color" value="#7c3aed"></label>
+            <label>Warna aksen<input id="market-accent-color" type="color" value="#10b981"></label>
+          </div>
+          <button type="button" class="primary" id="save-market-theme"><i class="fa-solid fa-floppy-disk"></i> Simpan identiti market</button>
         </div>
         <div class="announcement-settings">
           <div class="announcement-settings-head">
