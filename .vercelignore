@@ -1,9 +1,0 @@
-tests/
-public/
-firebase-database.rules.json
-.firebase/
-.env*
-**/.env*
-**/node_modules/
-*-service-account*.json
-*serviceAccount*.json
