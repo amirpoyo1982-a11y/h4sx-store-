@@ -6482,6 +6482,7 @@ window.openQuickPreviewFullDetail = openQuickPreviewFullDetail;
 window.buyQuickPreviewProduct = buyQuickPreviewProduct;
 let currentProductItems = [];
 let currentProductBanner = '';
+const dismissedGamePurchaseNotices = new Set();
 let currentProductFilter = 'all';
 let selectedPermanentFruitId = null;
 let activeGameConsultationConfig = null;
@@ -6823,7 +6824,7 @@ function renderProductGrid() {
   document.getElementById('pv-count').textContent = items.length + ' item tersedia' + (currentProductFilter !== 'all' ? ' - ' + active.label : '');
   renderProductFilters();
   if (!items.length) {
-    grid.innerHTML = currentProductBanner + (consultationSection || '<p class="product-empty">Tiada item untuk filter ini.</p>');
+    grid.innerHTML = currentProductBanner + renderGamePurchaseNotice(currentGame) + (consultationSection || '<p class="product-empty">Tiada item untuk filter ini.</p>');
     return;
   }
   if (currentProductFilter === 'all') {
@@ -6842,9 +6843,9 @@ function renderProductGrid() {
       sections.push(renderProductSubsection(middleSubcats[0] || 'Posisi Tengah', middleItems));
     }
     if (bottomItems.length) sections.push(renderProductSubsection('Posisi Bawah', bottomItems));
-    grid.innerHTML = currentProductBanner + consultationSection + sections.join('');
+    grid.innerHTML = currentProductBanner + renderGamePurchaseNotice(currentGame) + consultationSection + sections.join('');
   } else {
-    grid.innerHTML = currentProductBanner + consultationSection + items.map(productCardHTML).join('');
+    grid.innerHTML = currentProductBanner + renderGamePurchaseNotice(currentGame) + consultationSection + items.map(productCardHTML).join('');
   }
   setTimeout(initScrollReveal, 100);
 }
@@ -6902,8 +6903,16 @@ function gamePurchaseNotice(name) {
 }
 function renderGamePurchaseNotice(name) {
   const notice = gamePurchaseNotice(name);
-  if (!notice) return '';
-  return '<aside class="game-purchase-notice" role="note"><div class="game-purchase-notice-icon"><i class="fa-solid fa-circle-info"></i></div><div class="game-purchase-notice-copy"><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div></aside>';
+  const key = normalizeKey(name);
+  if (!notice || dismissedGamePurchaseNotices.has(key)) return '';
+  return '<aside class="game-purchase-notice" role="status"><div class="game-purchase-notice-icon"><i class="fa-solid fa-circle-info"></i></div><div class="game-purchase-notice-copy"><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div><button type="button" class="game-purchase-notice-close" aria-label="Tutup notis" onclick="dismissGamePurchaseNotice(\'' + escapeHtml(key) + '\', this)"><i class="fa-solid fa-xmark"></i></button></aside>';
+}
+function dismissGamePurchaseNotice(key, button) {
+  dismissedGamePurchaseNotices.add(normalizeKey(key));
+  const notice = button?.closest('.game-purchase-notice');
+  if (!notice) return;
+  notice.classList.add('is-closing');
+  setTimeout(() => notice.remove(), 180);
 }
 function renderGames() {
   renderPlatformFilters();
@@ -6937,7 +6946,6 @@ function openGame(name, options = {}) {
   if (name === 'Robux Via Log in') {
     banner = '<div style="grid-column:1/-1;background:rgba(245,158,11,0.06);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;"><i class="fa-solid fa-circle-info" style="color:var(--sky);font-size:16px;flex-shrink:0;margin-top:2px"></i><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--sky);margin-bottom:6px"><i class="fa-solid fa-circle-info"></i> Cara Top Up Via Log In</div><div style="font-size:13px;color:var(--ink);line-height:1.9;font-weight:300"><i class="fa-brands fa-whatsapp"></i> <strong>Hubungi Admin</strong> via WhatsApp dan hantar username & password Roblox.<br><i class="fa-solid fa-clock"></i> Proses antara <strong>1-25 minit</strong>.<br><i class="fa-solid fa-shield-halved"></i> Akaun dipulangkan segera selepas top up selesai.<br><i class="fa-solid fa-lock"></i> Pastikan tiada <strong>2FA</strong> aktif.</div><a href="https://wa.me/' + WA_NUMBER + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 14px;background:var(--sky);color:#fff;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;"><i class="fa-brands fa-whatsapp"></i> DM Admin</a></div></div>';
   }
-  banner += renderGamePurchaseNotice(name);
   currentProductItems = items;
   currentProductBanner = banner;
   currentProductFilter = 'all';
