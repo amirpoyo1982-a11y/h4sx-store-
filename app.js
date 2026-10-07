@@ -6903,7 +6903,7 @@ function gamePurchaseNotice(name) {
 function renderGamePurchaseNotice(name) {
   const notice = gamePurchaseNotice(name);
   if (!notice) return '';
-  return '<aside class="game-purchase-notice"><div class="game-purchase-notice-icon"><i class="fa-solid fa-shield-halved"></i></div><div><p>MAKLUMAT PESANAN</p><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><i class="fa-solid fa-check"></i><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div></aside>';
+  return '<aside class="game-purchase-notice" role="note"><div class="game-purchase-notice-icon"><i class="fa-solid fa-circle-info"></i></div><div class="game-purchase-notice-copy"><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div></aside>';
 }
 function renderGames() {
   renderPlatformFilters();
