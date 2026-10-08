@@ -10917,3 +10917,6 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 
 /* Animated Noto Emoji in the quick navigation */
 .storefront-tabs .tab-emoji{width:22px;height:22px;display:inline-grid;place-items:center;flex:none}.storefront-tabs .tab-emoji picture,.storefront-tabs .tab-emoji img{display:block;width:22px;height:22px;object-fit:contain}.storefront-tabs .tab-emoji picture[hidden],.storefront-tabs .tab-emoji i[hidden]{display:none}.storefront-tabs .tab-emoji i:not([hidden]){font-size:.85rem}.emoji-credit{font-size:10px;line-height:1.5;color:#64748b}.emoji-credit a{color:var(--primary);text-decoration:none}.emoji-credit a:hover{text-decoration:underline}
+
+/* Animated emoji in the phone dock */
+.bottom-nav .tab-emoji{width:24px;height:24px;display:inline-grid;place-items:center;flex:none}.bottom-nav .tab-emoji picture,.bottom-nav .tab-emoji img{display:block;width:24px;height:24px;object-fit:contain}.bottom-nav .tab-emoji picture[hidden],.bottom-nav .tab-emoji i[hidden]{display:none}.bottom-nav .tab-emoji i:not([hidden]){font-size:18px}

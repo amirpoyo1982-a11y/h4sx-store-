@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-08-animated-nav-v1"/>
+  <meta name="h4sx-build" content="2026-10-08-mobile-nav-v1"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -15,7 +15,7 @@
   <meta property="og:description" content="Semak katalog produk digital, harga dan stok terkini di H4SX STORE Malaysia.">
   <link rel="canonical" href="https://www.h4sxmy.xyz/">
   <meta property="og:url" content="https://www.h4sxmy.xyz/">
-  <link id="market-favicon" rel="icon" type="image/png" href="https://i.imgur.com/cLPulXQ.png">
+  <link id="market-favicon" rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="assets/icons/h4sx-app-192.png">
   <script type="application/ld+json">
@@ -59,12 +59,12 @@
       const params = new URLSearchParams(location.search);
       let seen = false;
       try { seen = sessionStorage.getItem('h4sx-intro-seen') === '1'; } catch (error) {}
-      if (!seen && !['preview', 'game', 'part', 'item'].some(key => params.has(key))) {
+      if (!seen && !['preview', 'game', 'part', 'item', 'review', 'order', 'redeem', 'promo', 'vote'].some(key => params.has(key))) {
         document.documentElement.classList.add('h4sx-opening-active');
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=animated-nav-v1-20261008">
+  <link rel="stylesheet" href="styles.css?v=mobile-nav-v1-20261008">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -90,7 +90,7 @@
     const startIntro = () => {
       if (started || closed || !frame) return;
       started = true;
-      autoEnterTimer = window.setTimeout(closeIntro, 3500);
+      autoEnterTimer = window.setTimeout(closeIntro, matchMedia('(prefers-reduced-motion: reduce)').matches ? 150 : matchMedia('(max-width: 820px)').matches ? 2200 : 3500);
       frame.src = frame.dataset.src;
     };
     frame?.addEventListener('load', () => {
@@ -195,7 +195,7 @@
 <nav id="main-nav">
   <div class="nav-inner">
     <button class="nav-brand" onclick="showHome()">
-      <div class="nav-logo"><img id="market-logo" src="https://i.imgur.com/cLPulXQ.png" alt="H4SX" decoding="async" fetchpriority="high"></div>
+      <div class="nav-logo"><img id="market-logo" src="assets/market-logo.webp" alt="H4SX" decoding="async" fetchpriority="high"></div>
       <span class="nav-wordmark">H4SX STORE</span>
     </button>
     <button class="nav-store-search" type="button" onclick="openSearch()" aria-label="Cari game atau item">
@@ -228,7 +228,7 @@
 </nav>
 <div class="storefront-tabs" aria-label="Akses pantas katalog">
   <button type="button" onclick="showHome()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/home.png"><img src="assets/animated-nav/home.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-house" hidden></i></span><span>Utama</span></button>
-  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/roblox.png"><img src="assets/animated-nav/roblox.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-cube" hidden></i></span><span>Roblox</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/roblox-cube.png"><img src="assets/animated-nav/roblox-cube.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-cube" hidden></i></span><span>Roblox</span></button>
   <button type="button" data-customer-hub-link onclick="showCustomerHub()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/customers.png"><img src="assets/animated-nav/customers.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-trophy" hidden></i></span><span>Pelanggan</span></button>
   <button type="button" onclick="openOrderHistory()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/orders.png"><img src="assets/animated-nav/orders.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span><span>Semak Pesanan</span></button>
   <button type="button" onclick="openH4ReviewForm()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/write-review.png"><img src="assets/animated-nav/write-review.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-pen-to-square" hidden></i></span><span>Hantar Ulasan</span></button>
@@ -325,7 +325,7 @@
     <section class="custom-vote reveal is-hidden" id="custom-vote-section" aria-live="polite" aria-label="Undian H4SX">
       <div class="custom-vote-card">
         <div class="custom-vote-head">
-          <div class="custom-vote-icon"><img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX STORE"></div>
+          <div class="custom-vote-icon"><img src="assets/market-logo.webp" loading="lazy" alt="H4SX STORE"></div>
           <div><span id="custom-vote-status">UNDIAN H4SX</span><h2 id="custom-vote-title">Vote H4SX</h2><p id="custom-vote-description">Pilih cadangan anda.</p></div>
           <div class="custom-vote-total"><strong id="custom-vote-total">0</strong><span>undi</span></div>
         </div>
@@ -591,11 +591,11 @@
 <!-- BOTTOM NAV -->
 <div class="bottom-nav">
   <div class="bottom-nav-inner">
-    <button class="bn-item active" onclick="showHome()"><i class="fa-solid fa-house"></i>Home</button>
-    <button class="bn-item" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
-    <button class="bn-item bn-cart" onclick="toggleCart()"><i class="fa-solid fa-bag-shopping"></i>Cart<span id="bn-badge" class="bn-badge"></span></button>
-    <button class="bn-item" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i>Histori</button>
-    <a href="https://wa.me/6285178259060" target="_blank" class="bn-item"><i class="fa-brands fa-whatsapp"></i>Support</a>
+    <button class="bn-item active" onclick="showHome()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/home.png"><img src="assets/animated-nav/home.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-house" hidden></i></span>Home</button>
+    <button class="bn-item" onclick="openSearch()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/search.png"><img src="assets/animated-nav/search.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-magnifying-glass" hidden></i></span>Search</button>
+    <button class="bn-item bn-cart" onclick="toggleCart()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/cart.png"><img src="assets/animated-nav/cart.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-bag-shopping" hidden></i></span>Cart<span id="bn-badge" class="bn-badge"></span></button>
+    <button class="bn-item" onclick="openOrderHistory()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/orders.png"><img src="assets/animated-nav/orders.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span>Histori</button>
+    <a href="https://wa.me/6285178259060" target="_blank" class="bn-item"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/support.png"><img src="assets/animated-nav/support.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-brands fa-whatsapp" hidden></i></span>Support</a>
   </div>
 </div>
 <!-- BUSINESS HOURS DISPLAY -->
@@ -616,12 +616,12 @@
 <!-- H4SX HELPER -->
 <div class="ai-side-assistant" id="ai-side-assistant" aria-live="polite">
   <button class="ai-float-bubble" id="ai-float-bubble" onclick="openAiHelper()" aria-label="Buka H4SX Helper">
-    <img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async">
+    <img src="assets/h4sx-helper-logo.webp" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async" onerror="this.onerror=null;this.src='assets/h4sx-helper-logo.png'">
     <span class="ai-float-dot"></span>
   </button>
   <aside class="ai-chat-panel" id="ai-helper-modal" role="dialog" aria-modal="false" aria-labelledby="ai-helper-title">
     <div class="ai-chat-head">
-      <div class="ai-avatar"><img src="assets/h4sx-helper-logo.png" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async"></div>
+      <div class="ai-avatar"><img src="assets/h4sx-helper-logo.webp" alt="H4SX Helper" class="ai-helper-logo-img" decoding="async" onerror="this.onerror=null;this.src='assets/h4sx-helper-logo.png'"></div>
       <div>
         <div class="ai-helper-kicker">H4SX Helper</div>
         <h2 id="ai-helper-title">Tanya tentang H4SX</h2>
@@ -1050,7 +1050,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=price-drop-v62-20261008"></script>
+<script defer src="app.js?v=mobile-nav-v1-20261008"></script>
 
 </body>
 </html>

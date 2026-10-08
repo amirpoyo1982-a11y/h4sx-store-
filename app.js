@@ -2,6 +2,24 @@
 // --- REVIEW SYSTEM NOTICE POPUP ---
 const REVIEW_SYSTEM_POPUP_KEY = 'h4sx_review_system_notice_hidden_until';
 const REVIEW_SYSTEM_HIDE_MS = 90 * 60 * 1000;
+let autoPopupShownThisPage = false;
+const AUTO_POPUP_CONFIG_DEADLINE = Date.now() + 6000;
+
+function waitForAutoPopupConfig(retry) {
+  if (kedaiConfigLoaded) return false;
+  if (Date.now() < AUTO_POPUP_CONFIG_DEADLINE) window.setTimeout(retry, 450);
+  return true;
+}
+function autoAnnouncementPending() {
+  const config = getAnnouncementConfig();
+  return config.active && config.id && !isAnnouncementHidden(config) && !dismissedAnnouncementIds.has(config.id);
+}
+function autoChangelogPending() {
+  try { return !localStorage.getItem(CHANGELOG_STORAGE_KEY); } catch (error) { return true; }
+}
+function autoStoreClosed() {
+  return document.getElementById('closure-overlay')?.style.display === 'flex';
+}
 
 // Keep the phone layout at its intended scale, including Safari gesture zoom.
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(eventName => {
@@ -19,8 +37,11 @@ function shouldShowReviewSystemPopup() {
 
 function openReviewSystemPopup() {
   const popup = document.getElementById('review-system-popup');
-  if (!popup || !shouldShowReviewSystemPopup()) return;
-  // Let the opening animation and store announcement finish before showing a second dialog.
+  if (!popup || !shouldShowReviewSystemPopup() || autoPopupShownThisPage || isDirectCatalogVisit()) return;
+  if (waitForAutoPopupConfig(openReviewSystemPopup)) return;
+  // An announcement or changelog gets the single automatic popup slot first.
+  if (autoAnnouncementPending() || autoChangelogPending() || autoStoreClosed()) return;
+  // Wait for the intro or a customer-opened dialog to finish.
   if (document.getElementById('h4sx-intro-host') ||
       document.getElementById('h4sx-announcement-modal')?.classList.contains('show') ||
       document.querySelector('.order-modal.show, #changelog-modal.show, #product-modal.show')) {
@@ -29,6 +50,7 @@ function openReviewSystemPopup() {
   }
   popup.classList.add('show');
   popup.setAttribute('aria-hidden', 'false');
+  autoPopupShownThisPage = true;
 }
 
 function closeReviewSystemPopup(fromButton) {
@@ -55,7 +77,7 @@ function initReviewSystemPopup() {
 
 function isDirectCatalogVisit() {
   const params = new URLSearchParams(window.location.search);
-  return ['preview', 'game', 'part', 'item'].some(key => params.has(key));
+  return ['preview', 'game', 'part', 'item', 'review', 'order', 'redeem', 'promo', 'vote'].some(key => params.has(key));
 }
 
 // --- DATE & TIME DISPLAY ---
@@ -606,6 +628,8 @@ let storeConfig = {
 };
 
 const DEFAULT_MARKET_LOGO = 'https://i.imgur.com/cLPulXQ.png';
+const DEFAULT_MARKET_LOGO_DISPLAY = 'assets/market-logo.webp';
+const DEFAULT_MARKET_FAVICON = 'assets/favicon.png';
 const DEFAULT_MARKET_COLORS = { primaryColor:'#0ea5e9', secondaryColor:'#7c3aed', accentColor:'#10b981' };
 function applyWebsiteTheme(config = storeConfig) {
   const theme = config?.websiteTheme && typeof config.websiteTheme === 'object' ? config.websiteTheme : {};
@@ -634,17 +658,17 @@ function applyWebsiteTheme(config = storeConfig) {
   const logo = document.getElementById('market-logo');
   if (logo) {
     const logoUrl = String(theme.logoImage || '').trim();
-    const nextUrl = /^https:\/\//i.test(logoUrl) ? logoUrl : DEFAULT_MARKET_LOGO;
+    const nextUrl = /^https:\/\//i.test(logoUrl) && logoUrl !== DEFAULT_MARKET_LOGO ? logoUrl : DEFAULT_MARKET_LOGO_DISPLAY;
     const requestedScale = Number(theme.logoScale);
     const logoScale = Number.isFinite(requestedScale) ? Math.min(3, Math.max(1, requestedScale / 100)) : 1;
     logo.style.setProperty('--market-logo-scale', String(logoScale));
     logo.onerror = () => {
       logo.onerror = null;
       logo.src = DEFAULT_MARKET_LOGO;
-      document.getElementById('market-favicon')?.setAttribute('href', DEFAULT_MARKET_LOGO);
+      document.getElementById('market-favicon')?.setAttribute('href', DEFAULT_MARKET_FAVICON);
     };
     if (logo.src !== nextUrl) logo.src = nextUrl;
-    document.getElementById('market-favicon')?.setAttribute('href', nextUrl);
+    document.getElementById('market-favicon')?.setAttribute('href', nextUrl === DEFAULT_MARKET_LOGO_DISPLAY ? DEFAULT_MARKET_FAVICON : nextUrl);
   }
 }
 
@@ -1745,6 +1769,9 @@ function openChangelog(manual) {
   if (!modal) return;
   if (manual) window.clearTimeout(openChangelog.pendingTimer);
   else {
+    if (isDirectCatalogVisit() || autoPopupShownThisPage) return;
+    if (waitForAutoPopupConfig(() => openChangelog(false))) return;
+    if (autoAnnouncementPending() || autoStoreClosed()) return;
     try { if (localStorage.getItem(CHANGELOG_STORAGE_KEY)) return; } catch (error) {}
   }
   if (!manual && (document.getElementById('h4sx-intro-host') ||
@@ -1760,6 +1787,7 @@ function openChangelog(manual) {
   if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
   if (timeEl && typeof CHANGELOG_DATA !== 'undefined' && !window.H4SX_LAST_PUBLISH_AT) timeEl.textContent = CHANGELOG_DATA.time || 'Terkini';
   modal.classList.add('show');
+  autoPopupShownThisPage = true;
   document.body.style.overflow = 'hidden';
 }
 function closeChangelog() {
@@ -2570,6 +2598,7 @@ function closeAnnouncementModal(modal) {
   setTimeout(() => modal.remove(), 240);
 }
 function showAnnouncementModal(config) {
+  if (autoPopupShownThisPage) return;
   if (document.getElementById('h4sx-intro-host') ||
       document.getElementById('review-system-popup')?.classList.contains('show') ||
       document.querySelector('.order-modal.show, #changelog-modal.show, #product-modal.show')) {
@@ -2627,6 +2656,7 @@ function showAnnouncementModal(config) {
   document.addEventListener('keydown', onKeydown);
   modal._announcementCleanup = () => document.removeEventListener('keydown', onKeydown);
   document.body.appendChild(modal);
+  autoPopupShownThisPage = true;
   requestAnimationFrame(() => modal.classList.add('show'));
 }
 function checkAndShowAnnouncement() {
@@ -8503,7 +8533,6 @@ function toast(msg, err, name, count) {
     }
   }
 })();
-initChangelog();
 initReviewSystemPopup();
 
 const H4RF_DIRECT_MODE = new URLSearchParams(window.location.search).get('review') === 'submit';
