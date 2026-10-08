@@ -1733,20 +1733,31 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v6.0';
+const CHANGELOG_VERSION = 'v6.1';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
-  const value = release?.date ? new Date(release.date) : null;
+  const value = release?.releasedAt ? new Date(release.releasedAt) : null;
   return value && !Number.isNaN(value.getTime()) ? value : null;
 }
 function openChangelog(manual) {
   const modal = document.getElementById('changelog-modal');
   if (!modal) return;
+  if (manual) window.clearTimeout(openChangelog.pendingTimer);
+  else {
+    try { if (localStorage.getItem(CHANGELOG_STORAGE_KEY)) return; } catch (error) {}
+  }
+  if (!manual && (document.getElementById('h4sx-intro-host') ||
+      document.getElementById('h4sx-announcement-modal')?.classList.contains('show') ||
+      document.getElementById('review-system-popup')?.classList.contains('show'))) {
+    window.clearTimeout(openChangelog.pendingTimer);
+    openChangelog.pendingTimer = window.setTimeout(() => openChangelog(false), 900);
+    return;
+  }
   const dateEl = document.getElementById('changelog-date-text');
   const timeEl = document.getElementById('changelog-time-text');
   const releaseDate = getChangelogReleaseDate();
-  if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
   if (timeEl && typeof CHANGELOG_DATA !== 'undefined') timeEl.textContent = CHANGELOG_DATA.time || 'Terkini';
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -1762,6 +1773,7 @@ function closeChangelog() {
   }
 }
 function dismissChangelog() {
+  window.clearTimeout(openChangelog.pendingTimer);
   try { localStorage.setItem(CHANGELOG_STORAGE_KEY, '1'); } catch (e) {}
   closeChangelog();
 }
@@ -1822,17 +1834,30 @@ async function downloadChangelogImage() {
     const pad = 40;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    const marketStyle = getComputedStyle(document.documentElement);
+    const marketColor = (name, fallback) => {
+      const value = marketStyle.getPropertyValue(name).trim();
+      return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+    };
+    const marketPrimary = marketColor('--primary', '#0ea5e9');
+    const marketSecondary = marketColor('--secondary', '#7c3aed');
+    const marketAccent = marketColor('--accent', '#10b981');
+    const channel = (hex, index) => parseInt(hex.slice(index, index + 2), 16);
+    const darkenForText = hex => '#' + [1, 3, 5].map(index => Math.round(channel(hex, index) * .4 + channel('#0f172a', index) * .6).toString(16).padStart(2, '0')).join('');
+    const marketPrimaryDark = darkenForText(marketPrimary);
+    const marketAccentDark = darkenForText(marketAccent);
+    const secondaryIsPale = [1, 3, 5].every(index => channel(marketSecondary, index) > 190);
     canvas.width = width;
     canvas.height = height;
 
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, '#e8f8ff');
+    bg.addColorStop(0, '#f4f8fb');
     bg.addColorStop(.48, '#ffffff');
-    bg.addColorStop(1, '#e1f7ff');
+    bg.addColorStop(1, '#eef4f8');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'rgba(14,165,233,.09)';
+    ctx.fillStyle = marketPrimary + '16';
     for (let i = 0; i < 22; i++) {
       ctx.beginPath();
       ctx.arc((i * 271) % width, 54 + (i * 139) % (height - 110), 34 + (i % 5) * 10, 0, Math.PI * 2);
@@ -1842,22 +1867,22 @@ async function downloadChangelogImage() {
     roundRectCanvas(ctx, pad, pad, width - pad * 2, height - pad * 2, 32);
     ctx.fillStyle = 'rgba(255,255,255,.86)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(14,165,233,.22)';
+    ctx.strokeStyle = marketPrimary + '38';
     ctx.lineWidth = 3;
     ctx.stroke();
 
     const topGrad = ctx.createLinearGradient(pad, pad, width - pad, pad);
-    topGrad.addColorStop(0, '#0ea5e9');
-    topGrad.addColorStop(.55, '#06b6d4');
-    topGrad.addColorStop(1, '#22c55e');
+    topGrad.addColorStop(0, marketPrimary);
+    topGrad.addColorStop(.55, marketAccent);
+    topGrad.addColorStop(1, secondaryIsPale ? marketPrimary : marketSecondary);
     ctx.fillStyle = topGrad;
     roundRectCanvas(ctx, pad + 16, pad + 16, width - pad * 2 - 32, 7, 4);
     ctx.fill();
 
     const logoGrad = ctx.createLinearGradient(74, 72, 206, 204);
-    logoGrad.addColorStop(0, '#38d5ff');
-    logoGrad.addColorStop(.55, '#0ea5e9');
-    logoGrad.addColorStop(1, '#0a3e7a');
+    logoGrad.addColorStop(0, marketPrimaryDark);
+    logoGrad.addColorStop(.55, marketAccentDark);
+    logoGrad.addColorStop(1, '#0f172a');
     roundRectCanvas(ctx, 74, 72, 132, 132, 30);
     ctx.fillStyle = logoGrad;
     ctx.fill();
@@ -1870,7 +1895,7 @@ async function downloadChangelogImage() {
     ctx.font = '1000 34px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText('SX', 101, 166);
 
-    ctx.fillStyle = '#0ea5e9';
+    ctx.fillStyle = marketPrimaryDark;
     ctx.font = '1000 31px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText('H4SX STORE', 230, 112);
     ctx.fillStyle = '#06152d';
@@ -1884,9 +1909,9 @@ async function downloadChangelogImage() {
     ctx.fillText(metaText, 230, 216);
 
     roundRectCanvas(ctx, width - 330, 91, 220, 76, 38);
-    ctx.fillStyle = '#e0f4ff';
+    ctx.fillStyle = marketPrimary + '1c';
     ctx.fill();
-    ctx.fillStyle = '#075985';
+    ctx.fillStyle = '#0f172a';
     ctx.font = '1000 30px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText(totalItems + ' item', width - 280, 140);
 
@@ -1897,18 +1922,18 @@ async function downloadChangelogImage() {
       { x: 1362, y: 260, w: 610, h: 800 }
     ];
     const metaMap = {
-      added: { color: '#10b981', soft: '#eafff7', symbol: '+' },
-      fixed: { color: '#0ea5e9', soft: '#e9f8ff', symbol: '+' },
+      added: { color: marketPrimary, soft: marketPrimary + '18', symbol: '+' },
+      fixed: { color: marketAccent, soft: marketAccent + '18', symbol: '+' },
       removed: { color: '#ef4444', soft: '#fff0f1', symbol: '-' }
     };
 
     sections.forEach((section, sectionIndex) => {
       const col = columns[sectionIndex] || columns[columns.length - 1];
-      const meta = metaMap[section.type] || { color: '#f59e0b', soft: '#fff8e8', symbol: '+' };
+      const meta = metaMap[section.type] || { color: marketSecondary, soft: marketSecondary + '18', symbol: '+' };
       roundRectCanvas(ctx, col.x, col.y, col.w, col.h, 26);
       ctx.fillStyle = 'rgba(255,255,255,.88)';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(14,165,233,.16)';
+      ctx.strokeStyle = marketPrimary + '28';
       ctx.lineWidth = 2;
       ctx.stroke();
 
@@ -1932,7 +1957,7 @@ async function downloadChangelogImage() {
         roundRectCanvas(ctx, col.x + 22, y, col.w - 44, itemH, 18);
         ctx.fillStyle = '#ffffff';
         ctx.fill();
-        ctx.strokeStyle = 'rgba(14,165,233,.13)';
+        ctx.strokeStyle = marketPrimary + '20';
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -1950,7 +1975,7 @@ async function downloadChangelogImage() {
       }
     });
 
-    ctx.fillStyle = '#0ea5e9';
+    ctx.fillStyle = marketPrimaryDark;
     ctx.font = '1000 26px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText('H4SX STORE', 74, height - 80);
     ctx.fillStyle = '#64748b';
