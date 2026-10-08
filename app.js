@@ -72,6 +72,14 @@ updateDateTime();
 setInterval(updateDateTime, 1000);
 
 // --- RECEIPT FUNCTIONS ---
+function boldWhatsAppMessage(message) {
+  return String(message ?? '').replace(/\r\n?/g, '\n').split('\n').map(line => {
+    const text = line.trim();
+    if (!text || /^[-=_]{3,}$/.test(text) || /^https?:\/\/\S+$/i.test(text)) return line;
+    if (text.includes('*')) return line;
+    return '*' + text + '*';
+  }).join('\n');
+}
 let currentReceiptText = '';
 let html2CanvasPromise = null;
 
@@ -169,7 +177,7 @@ Terima kasih kerana membeli di H4SX STORE!
   
   // Update WA link
   const waLink = document.getElementById('receipt-wa-link');
-  waLink.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(currentReceiptText)}`;
+  waLink.href = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(boldWhatsAppMessage(currentReceiptText))}`;
   
   // Show modal
   const modal = document.getElementById('receipt-modal');
@@ -1072,7 +1080,7 @@ function sendCustomerOrderToWhatsApp() {
   if (!activeCustomerOrderId || !activeCustomerOrder) return;
   const phone = normalizeWhatsAppTarget(WA_NUMBER, DEFAULT_WA_NUMBER);
   const message = customerOrderWhatsAppMessage(activeCustomerOrderWhatsAppMode);
-  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener');
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(boldWhatsAppMessage(message)), '_blank', 'noopener');
   closeCustomerOrderWhatsAppPrompt();
   toast('WhatsApp dibuka. Tekan Send untuk hantar order.');
 }
@@ -1270,7 +1278,7 @@ function openCustomerOrderReceipt() {
   document.getElementById('receipt-items').innerHTML = items.map(item => '<div class="receipt-item-line"><div><div class="receipt-item-name">' + escapeHtml(item.name) + '</div><div class="receipt-item-qty">x' + Number(item.qty || 1) + '</div></div><div class="receipt-item-price">' + formatCustomerOrderMoney(item.lineTotal) + '</div></div>').join('');
   document.getElementById('receipt-total').textContent = formatCustomerOrderMoney(activeCustomerOrder.total);
   currentReceiptText = 'H4SX STORE - RESIT PEMBELIAN\n============================\nNo. Resit: ' + activeCustomerOrderId + '\nStatus: Completed\n\nItem Dibeli:\n' + items.map(item => '- ' + item.name + ' x' + Number(item.qty || 1) + ' = ' + formatCustomerOrderMoney(item.lineTotal)).join('\n') + '\n\n============================\nJumlah: ' + formatCustomerOrderMoney(activeCustomerOrder.total) + '\n============================\nTerima kasih kerana membeli di H4SX STORE!';
-  document.getElementById('receipt-wa-link').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(currentReceiptText);
+  document.getElementById('receipt-wa-link').href = 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(boldWhatsAppMessage(currentReceiptText));
   closeCustomerOrder();
   document.getElementById('receipt-modal')?.classList.add('show');
 }
@@ -6695,7 +6703,7 @@ function showConsultationConfirm(config = {}) {
   let redirectTimer = null;
   let progressTimer = null;
   let redirectStarted = false;
-  const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || defaultConsultationMessage(config.title))));
+  const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(boldWhatsAppMessage(config.message || defaultConsultationMessage(config.title))));
   const close = () => {
     if (redirectTimer) clearTimeout(redirectTimer);
     if (progressTimer) clearInterval(progressTimer);
