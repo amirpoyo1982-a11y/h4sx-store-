@@ -10933,3 +10933,38 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 
 /* Animated emoji in the phone dock */
 .bottom-nav .tab-emoji{width:24px;height:24px;display:inline-grid;place-items:center;flex:none}.bottom-nav .tab-emoji picture,.bottom-nav .tab-emoji img{display:block;width:24px;height:24px;object-fit:contain}.bottom-nav .tab-emoji picture[hidden],.bottom-nav .tab-emoji i[hidden]{display:none}.bottom-nav .tab-emoji i:not([hidden]){font-size:18px}
+
+/* Give game names a clear hierarchy beside their artwork. */
+@media (min-width: 981px) {
+  .market-layout-v2 #shop-section > #game-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important; }
+  .market-layout-v2 #shop-section #game-grid .gc {
+    grid-template-columns: 120px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 11px !important;
+    background: linear-gradient(125deg, #fff 58%, #f5fbff) !important;
+  }
+  .market-layout-v2 #shop-section #game-grid .gc-icon-wrap { width: 120px !important; }
+  .market-layout-v2 #shop-section #game-grid .gc-name {
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    align-content: center;
+    text-align: left !important;
+    min-width: 0;
+    padding: 8px 4px !important;
+    font-size: 15px !important;
+    line-height: 1.3;
+    letter-spacing: -.25px;
+  }
+  .market-layout-v2 #shop-section #game-grid .gc-name .game-name-emoji { width: 25px; height: 25px; }
+}
+@media (max-width: 980px) {
+  .market-layout-v2 #shop-section #game-grid .gc-name {
+    min-height: 42px !important;
+    padding: 8px 3px 4px !important;
+    flex-wrap: nowrap !important;
+    font-size: 13px !important;
+    line-height: 1.25;
+  }
+  .market-layout-v2 #shop-section #game-grid .gc-name .game-name-emoji { width: 22px; height: 22px; }
+}
+.market-layout-v2 #shop-section #game-grid .gc-name span:last-child{min-width:0;overflow-wrap:anywhere}
