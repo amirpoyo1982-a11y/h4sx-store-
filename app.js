@@ -5863,11 +5863,6 @@ function stockState(item) {
   if (s <= 5) return { type:'low', label:'Limited ' + s };
   return { type:'ready', label:'Ready Stock' };
 }
-function getStockBadge(item) {
-  const state = stockState(item);
-  if (state.type === 'unknown') return '';
-  return '<span class="stock-badge ' + state.type + '">' + escapeHtml(state.label) + '</span>';
-}
 function getUpdatedText(item) {
   const raw = item.updatedAt || item.lastUpdated || item.updateDate || item.updated || item.dikemaskini;
   if (!raw) return '';
@@ -6913,7 +6908,8 @@ function productCardHTML(item) {
   const itemBadgeObj = item && item.productBadge ? item.productBadge : null;
   const badgePos = (itemBadgeObj && (itemBadgeObj.position || itemBadgeObj.pos)) || item.badgePosition || item.promoPosition || globalBadge.position || 'top';
   const badgeAlign = (itemBadgeObj && (itemBadgeObj.align || itemBadgeObj.horizontalAlign)) || item.badgeAlign || item.promoAlign || globalBadge.align || 'left';
-  const promo = item.promoLabel ? '<div class="ptag ptag-pos-' + escapeHtml(String(badgePos)) + ' ptag-align-' + escapeHtml(String(badgeAlign)) + '">' + escapeHtml(item.promoLabel) + '</div>' : '';
+  const newBadgeClass = /^(new|baru)$/i.test(String(item.promoLabel || '').trim()) ? ' ptag-new' : '';
+  const promo = item.promoLabel ? '<div class="ptag' + newBadgeClass + ' ptag-pos-' + escapeHtml(String(badgePos)) + ' ptag-align-' + escapeHtml(String(badgeAlign)) + '">' + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
   if (isPromotedEnabled(item) && item.promotedBy) {
     promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
@@ -6949,7 +6945,7 @@ function productCardHTML(item) {
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
   const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + getStockBadge(item) + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -7305,7 +7301,7 @@ function doSearch(q) {
         : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>');
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled style="height:26px;font-size:9px">HABIS</button>' : '<button class="pbuy whatsapp-buy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WA</button>';
-    return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + getStockBadge(item) + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
+    return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
 document.addEventListener('keydown', e => {
