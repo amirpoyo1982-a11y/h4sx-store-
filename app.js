@@ -20,6 +20,13 @@ function shouldShowReviewSystemPopup() {
 function openReviewSystemPopup() {
   const popup = document.getElementById('review-system-popup');
   if (!popup || !shouldShowReviewSystemPopup()) return;
+  // Let the opening animation and store announcement finish before showing a second dialog.
+  if (document.getElementById('h4sx-intro-host') ||
+      document.getElementById('h4sx-announcement-modal')?.classList.contains('show') ||
+      document.querySelector('.order-modal.show, #changelog-modal.show, #product-modal.show')) {
+    window.setTimeout(openReviewSystemPopup, 1200);
+    return;
+  }
   popup.classList.add('show');
   popup.setAttribute('aria-hidden', 'false');
 }
@@ -43,7 +50,7 @@ function closeReviewSystemPopup(fromButton) {
 
 function initReviewSystemPopup() {
   if (isDirectCatalogVisit()) return;
-  setTimeout(openReviewSystemPopup, 650);
+  setTimeout(openReviewSystemPopup, 1800);
 }
 
 function isDirectCatalogVisit() {
@@ -2536,6 +2543,13 @@ function closeAnnouncementModal(modal) {
   setTimeout(() => modal.remove(), 240);
 }
 function showAnnouncementModal(config) {
+  if (document.getElementById('h4sx-intro-host') ||
+      document.getElementById('review-system-popup')?.classList.contains('show') ||
+      document.querySelector('.order-modal.show, #changelog-modal.show, #product-modal.show')) {
+    window.clearTimeout(showAnnouncementModal.pendingTimer);
+    showAnnouncementModal.pendingTimer = window.setTimeout(checkAndShowAnnouncement, 1200);
+    return;
+  }
   const existing = document.getElementById('h4sx-announcement-modal');
   if (existing && existing.dataset.announcementId === config.id) return;
   if (existing) existing.remove();
@@ -6023,6 +6037,20 @@ function resetPromoTurnstile() {
     try { window.turnstile.reset(promoTurnstileWidgetId); } catch (_) {}
   }
 }
+let promoTurnstileLoadPromise = null;
+function loadPromoTurnstile() {
+  if (window.turnstile) return Promise.resolve();
+  if (promoTurnstileLoadPromise) return promoTurnstileLoadPromise;
+  promoTurnstileLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.onload = () => window.turnstile ? resolve() : reject(new Error('turnstile-not-ready'));
+    script.onerror = () => reject(new Error('turnstile-not-ready'));
+    document.head.appendChild(script);
+  }).catch(error => { promoTurnstileLoadPromise = null; throw error; });
+  return promoTurnstileLoadPromise;
+}
 function ensurePromoTurnstile() {
   const container = document.getElementById('product-modal-promo-turnstile');
   if (!container || !window.turnstile) throw new Error('turnstile-not-ready');
@@ -6046,6 +6074,7 @@ function ensurePromoTurnstile() {
   return promoTurnstileWidgetId;
 }
 async function verifyPromoTurnstile() {
+  await loadPromoTurnstile();
   const widgetId = ensurePromoTurnstile();
   resetPromoTurnstile();
   const token = await new Promise((resolve, reject) => {

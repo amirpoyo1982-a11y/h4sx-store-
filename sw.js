@@ -1,16 +1,10 @@
-const CACHE_NAME = 'h4sx-pwa-20261008-v73';
+const CACHE_NAME = 'h4sx-pwa-20261008-v74';
 const APP_SHELL = [
-  './',
   './index.htm',
-  './styles.css?v=consult-skip-v7-20261008',
+  './styles.css?v=market-preview-v1-20261008',
+  './app.js?v=market-preview-v1-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
-  './app.js?v=bold-whatsapp-v9-20261008',
-  './changelog-loader.js?v=v6-store-upgrade-20261001',
-  './manifest.webmanifest',
-  './assets/h4sx-helper-logo.png',
-  './assets/icons/h4sx-app-192.png',
-  './assets/icons/h4sx-app-512.png',
-  './assets/icons/h4sx-app-maskable-512.png'
+  './manifest.webmanifest'
 ];
 
 self.addEventListener('install', event => {
@@ -37,7 +31,7 @@ self.addEventListener('fetch', event => {
       fetch(request)
         .then(response => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(navigationCacheKey, copy));
+          if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(navigationCacheKey, copy));
           return response;
         })
         .catch(() => caches.match(navigationCacheKey))

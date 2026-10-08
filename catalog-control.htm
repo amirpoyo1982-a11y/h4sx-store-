@@ -8,11 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=38-market-logo-size">
+  <link rel="stylesheet" href="catalog-control.css?v=39-market-preview">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=38-market-logo-size"></script>
+  <script defer src="catalog-control.js?v=39-market-preview"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
@@ -33,7 +33,7 @@
     <section id="control-view" hidden>
       <header class="topbar">
         <div><p class="eyebrow">FIREBASE REALTIME</p><h1>Catalog Control</h1><small id="sync-status">Menyambung...</small></div>
-        <div class="top-actions"><button id="undo-last" class="ghost undo-button" disabled><i class="fa-solid fa-rotate-left"></i><span>Undo</span></button><a href="index.htm?preview=1" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Website</a><button id="logout-btn" class="ghost"><i class="fa-solid fa-right-from-bracket"></i> Log keluar</button></div>
+        <div class="top-actions"><button id="undo-last" class="ghost undo-button" disabled><i class="fa-solid fa-rotate-left"></i><span>Undo</span></button><button id="copy-admin-uid" type="button" class="ghost" title="Salin UID Firebase akaun yang sedang log masuk"><i class="fa-solid fa-fingerprint"></i> Salin UID</button><a href="index.htm?preview=1" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Website</a><button id="logout-btn" class="ghost"><i class="fa-solid fa-right-from-bracket"></i> Log keluar</button></div>
       </header>
 
       <div class="stats">
@@ -141,7 +141,7 @@
             <label>Warna kedua<input id="market-secondary-color" type="color" value="#7c3aed"></label>
             <label>Warna aksen<input id="market-accent-color" type="color" value="#10b981"></label>
           </div>
-          <button type="button" class="primary" id="save-market-theme"><i class="fa-solid fa-floppy-disk"></i> Simpan identiti market</button>
+          <div class="theme-preview-actions"><button type="button" class="ghost" data-theme-preview="desktop"><i class="fa-solid fa-desktop"></i> Preview desktop</button><button type="button" class="ghost" data-theme-preview="mobile"><i class="fa-solid fa-mobile-screen"></i> Preview telefon</button><button type="button" class="primary" id="save-market-theme"><i class="fa-solid fa-floppy-disk"></i> Simpan identiti market</button></div>
         </div>
         <div class="announcement-settings">
           <div class="announcement-settings-head">
@@ -160,7 +160,7 @@
             <label>Tempoh sembunyi<select id="announcement-cooldown"><option value="1">1 hari</option><option value="3">3 hari</option><option value="7">7 hari</option><option value="14">14 hari</option><option value="30">30 hari</option></select></label>
             <div class="announcement-switches"><label class="switch"><input id="announcement-show-dont-show" type="checkbox"><span></span> Pilihan jangan tunjuk lagi</label><label class="switch"><input id="announcement-new-tab" type="checkbox"><span></span> Buka link di tab baru</label></div>
           </div>
-          <button type="button" class="primary" id="save-announcement"><i class="fa-solid fa-floppy-disk"></i> Simpan Announcement</button>
+          <div class="theme-preview-actions"><button type="button" class="ghost" data-theme-preview="desktop"><i class="fa-solid fa-desktop"></i> Preview desktop</button><button type="button" class="ghost" data-theme-preview="mobile"><i class="fa-solid fa-mobile-screen"></i> Preview telefon</button><button type="button" class="primary" id="save-announcement"><i class="fa-solid fa-floppy-disk"></i> Simpan Announcement</button></div>
         </div>
         <div class="quick-settings">
           <label class="switch"><input id="quick-open" type="checkbox"><span></span> Kedai buka</label>
@@ -246,6 +246,19 @@
       <p class="eyebrow">PREVIEW DRAFT</p><h2 id="preview-title">Preview</h2>
       <div id="preview-content"></div>
       <div class="modal-actions"><button type="button" class="primary" id="preview-ok"><i class="fa-solid fa-check"></i> Tutup preview</button></div>
+    </section>
+  </div>
+  <div id="theme-preview-modal" class="modal" hidden>
+    <section class="modal-card theme-preview-card" role="dialog" aria-modal="true" aria-labelledby="theme-preview-title">
+      <button type="button" class="modal-close" id="theme-preview-close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+      <p class="eyebrow">PREVIEW SEBELUM SIMPAN</p><h2 id="theme-preview-title">Paparan market</h2>
+      <div class="theme-preview-switch"><button type="button" class="ghost" data-theme-preview-switch="desktop">Desktop</button><button type="button" class="ghost" data-theme-preview-switch="mobile">Telefon</button></div>
+      <div id="theme-preview-screen" class="theme-preview-screen" aria-label="Preview tetapan market dan announcement">
+        <div class="theme-preview-header"><span class="theme-preview-logo"><img id="theme-preview-logo" alt="Logo market"></span><strong>H4SX STORE</strong><span class="theme-preview-menu">☰</span></div>
+        <div class="theme-preview-hero"><span>H4SX STORE</span><h3>Item game pilihan anda</h3><p>Semak produk, harga dan stok terkini.</p><span class="theme-preview-cta">Lihat katalog</span></div>
+        <div id="theme-preview-announcement" class="theme-preview-announcement"><div id="theme-preview-image-wrap" class="theme-preview-image-wrap"><img id="theme-preview-image" alt="Gambar announcement"></div><div class="theme-preview-copy"><small id="theme-preview-kicker"></small><h3 id="theme-preview-announcement-title"></h3><p id="theme-preview-message"></p><span id="theme-preview-button"></span></div></div>
+      </div>
+      <p class="hint">Preview menggunakan nilai dalam borang sekarang. Tiada perubahan dihantar ke Firebase sehingga anda tekan Simpan.</p>
     </section>
   </div>
 </body>

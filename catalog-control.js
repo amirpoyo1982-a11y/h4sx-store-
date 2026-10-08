@@ -272,6 +272,12 @@ auth.onAuthStateChanged(user => {
 });
 
 byId('undo-last').addEventListener('click', undoLastChange);
+byId('copy-admin-uid').addEventListener('click', async () => {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return notify('Log masuk dahulu untuk melihat UID.', true);
+  try { await navigator.clipboard.writeText(uid); notify('UID admin disalin: ' + uid); }
+  catch (error) { notify('UID admin: ' + uid); }
+});
 
 byId('login-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -1366,6 +1372,38 @@ function syncMarketLogoScale() {
 }
 byId('market-logo-image').addEventListener('change', showMarketLogoPreview);
 byId('market-logo-scale').addEventListener('input', syncMarketLogoScale);
+function openThemePreview(mode = 'desktop') {
+  const modal = byId('theme-preview-modal');
+  const screen = byId('theme-preview-screen');
+  const logo = byId('theme-preview-logo');
+  const image = byId('theme-preview-image');
+  const logoUrl = byId('market-logo-image').value.trim();
+  const imageUrl = byId('announcement-image').value.trim();
+  screen.classList.toggle('is-mobile', mode === 'mobile');
+  screen.style.setProperty('--preview-primary', byId('market-primary-color').value);
+  screen.style.setProperty('--preview-secondary', byId('market-secondary-color').value);
+  screen.style.setProperty('--preview-accent', byId('market-accent-color').value);
+  logo.src = /^https:\/\//i.test(logoUrl) ? logoUrl : 'https://i.imgur.com/cLPulXQ.png';
+  logo.style.transform = 'scale(' + (Math.min(300, Math.max(100, Number(byId('market-logo-scale').value) || 100)) / 100) + ')';
+  const hasImage = /^https:\/\//i.test(imageUrl);
+  if (hasImage) image.src = imageUrl;
+  else image.removeAttribute('src');
+  byId('theme-preview-image-wrap').hidden = !hasImage;
+  byId('theme-preview-kicker').textContent = (byId('announcement-active').checked ? '' : 'BELUM AKTIF · ') + (byId('announcement-kicker').value.trim() || 'MAKLUMAT H4SX');
+  byId('theme-preview-announcement-title').textContent = byId('announcement-title').value.trim() || 'Tajuk announcement';
+  const message = byId('announcement-message').value.trim();
+  const text = new DOMParser().parseFromString(message, 'text/html').body.textContent?.trim();
+  byId('theme-preview-message').textContent = text || 'Mesej announcement akan dipaparkan di sini.';
+  byId('theme-preview-button').textContent = byId('announcement-button-text').value.trim() || 'Saya faham';
+  modal.hidden = false;
+  byId('theme-preview-close').focus();
+}
+function closeThemePreview() { byId('theme-preview-modal').hidden = true; }
+document.querySelectorAll('[data-theme-preview]').forEach(button => button.addEventListener('click', () => openThemePreview(button.dataset.themePreview)));
+document.querySelectorAll('[data-theme-preview-switch]').forEach(button => button.addEventListener('click', () => openThemePreview(button.dataset.themePreviewSwitch)));
+byId('theme-preview-close').addEventListener('click', closeThemePreview);
+byId('theme-preview-modal').addEventListener('click', event => { if (event.target === event.currentTarget) closeThemePreview(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape' && !byId('theme-preview-modal').hidden) closeThemePreview(); });
 byId('market-logo-upload').addEventListener('click', async event => {
   const button = event.currentTarget;
   const file = byId('market-logo-file').files?.[0];
