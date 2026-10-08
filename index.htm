@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-08-price-drop-v62"/>
+  <meta name="h4sx-build" content="2026-10-08-animated-nav-v1"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=price-drop-v62-20261008">
+  <link rel="stylesheet" href="styles.css?v=animated-nav-v1-20261008">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -227,14 +227,14 @@
   </div>
 </nav>
 <div class="storefront-tabs" aria-label="Akses pantas katalog">
-  <button type="button" onclick="showHome()"><i class="fa-solid fa-house"></i><span>Utama</span></button>
-  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><i class="fa-solid fa-cube"></i><span>Roblox</span></button>
-  <button type="button" data-customer-hub-link onclick="showCustomerHub()"><i class="fa-solid fa-trophy"></i><span>Pelanggan</span></button>
-  <button type="button" onclick="openOrderHistory()"><i class="fa-solid fa-receipt"></i><span>Semak Pesanan</span></button>
-  <button type="button" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span>Hantar Ulasan</span></button>
-  <button type="button" onclick="goSection('reviews')"><i class="fa-solid fa-star"></i><span>Ulasan</span></button>
-  <button type="button" onclick="goSection('guide')"><i class="fa-solid fa-book-open"></i><span>Panduan</span></button>
-  <button type="button" onclick="goSection('faq')"><i class="fa-solid fa-circle-question"></i><span>FAQ</span></button>
+  <button type="button" onclick="showHome()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/home.png"><img src="assets/animated-nav/home.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-house" hidden></i></span><span>Utama</span></button>
+  <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/roblox.png"><img src="assets/animated-nav/roblox.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-cube" hidden></i></span><span>Roblox</span></button>
+  <button type="button" data-customer-hub-link onclick="showCustomerHub()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/customers.png"><img src="assets/animated-nav/customers.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-trophy" hidden></i></span><span>Pelanggan</span></button>
+  <button type="button" onclick="openOrderHistory()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/orders.png"><img src="assets/animated-nav/orders.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span><span>Semak Pesanan</span></button>
+  <button type="button" onclick="openH4ReviewForm()"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/write-review.png"><img src="assets/animated-nav/write-review.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-pen-to-square" hidden></i></span><span>Hantar Ulasan</span></button>
+  <button type="button" onclick="goSection('reviews')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/reviews.png"><img src="assets/animated-nav/reviews.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-star" hidden></i></span><span>Ulasan</span></button>
+  <button type="button" onclick="goSection('guide')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/guide.png"><img src="assets/animated-nav/guide.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-book-open" hidden></i></span><span>Panduan</span></button>
+  <button type="button" onclick="goSection('faq')"><span class="tab-emoji"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/animated-nav/faq.png"><img src="assets/animated-nav/faq.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-circle-question" hidden></i></span><span>FAQ</span></button>
 </div>
 <!-- MOBILE MENU -->
 <div id="mob-menu">
@@ -442,7 +442,7 @@
       </div>
     </section>
     <footer>
-      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a></div>
+      <div class="foot-left">&copy; 2026 H4SX STORE. All rights reserved. <a href="javascript:void(0)" onclick="openChangelog(true)" style="color:var(--primary);font-weight:700;text-decoration:none;">Changelog</a><br><small class="emoji-credit">Emoji animasi: <a href="https://googlefonts.github.io/noto-emoji-animation/" target="_blank" rel="noopener noreferrer">Google Noto Emoji</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a></small></div>
       <div class="foot-social">
         <a href="https://www.tiktok.com/@h4sxshop?lang=en" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
         <a href="https://wa.me/6285178259060" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
