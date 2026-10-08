@@ -6654,7 +6654,7 @@ function showConsultationConfirm(config = {}) {
   const destinationUrl = String(config.destinationUrl || '').trim();
   const isReviewDestination = config.variant === 'review';
   const oldModal = document.getElementById('consultation-confirm-modal');
-  if (oldModal) oldModal.remove();
+  if (oldModal) (oldModal._closeConsultation || (() => oldModal.remove()))();
   const modal = document.createElement('div');
   modal.id = 'consultation-confirm-modal';
   modal.className = 'consult-confirm-modal' + (isReviewDestination ? ' is-review' : '');
@@ -6664,7 +6664,9 @@ function showConsultationConfirm(config = {}) {
   const buttonText = escapeHtml(String(config.buttonText || 'Pergi WhatsApp'));
   const iconClass = escapeHtml(String(config.iconClass || (isReviewDestination ? 'fa-solid fa-comments' : 'fa-brands fa-whatsapp')));
   const loadingTitle = escapeHtml(String(config.loadingTitle || (isReviewDestination ? 'Sedang membuka H4SX Review' : 'Sedang membuka WhatsApp')));
-  const loadingText = escapeHtml(String(config.loadingText || (isReviewDestination ? 'Anda akan dibawa ke laman review dalam' : 'Semakan selesai dalam')));
+  const loadingText = escapeHtml(String(config.loadingText || (isReviewDestination ? 'Laman review dibuka automatik dalam' : 'Chat dibuka automatik dalam')));
+  const guideText = isReviewDestination ? 'Lihat rating dan pengalaman pelanggan H4SX.' : 'Semak pilihan, harga dan cara pembelian terus dengan admin.';
+  const skipText = isReviewDestination ? 'Terus ke laman review' : 'Terus ke WhatsApp sekarang';
   const paymentUrl = paymentCatalogUrl(config);
   const paymentButton = paymentUrl
     ? '<button type="button" class="consult-confirm-payment"><i class="fa-solid fa-qrcode"></i> Lihat QR Pembayaran</button>'
@@ -6675,8 +6677,9 @@ function showConsultationConfirm(config = {}) {
     '<span class="consult-confirm-kicker">' + kicker + '</span>' +
     '<h3 id="consult-confirm-title">' + title + '</h3>' +
     '<p>' + description + '</p>' +
-    '<div class="consult-confirm-loading" aria-live="polite" hidden><div class="consult-confirm-loader-icon"><i class="' + iconClass + '"></i></div><div><strong>' + loadingTitle + '</strong><span>' + loadingText + ' <b>5</b> saat</span></div><div class="consult-confirm-progress"><i></i></div></div>' +
-    '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Cancel</button><button type="button" class="consult-confirm-go' + (isReviewDestination ? ' review-confirm-go' : ' whatsapp-buy') + '"><i class="' + iconClass + '"></i> ' + buttonText + '</button></div>' +
+    '<div class="consult-confirm-guide"><i class="fa-solid fa-circle-check"></i><span>' + guideText + '</span></div>' +
+    '<div class="consult-confirm-loading" aria-live="polite" hidden><div class="consult-confirm-loader-icon"><i class="' + iconClass + '"></i></div><div><strong>' + loadingTitle + '</strong><span>' + loadingText + ' <b>5</b> saat</span></div><div class="consult-confirm-progress"><i></i></div><button type="button" class="consult-confirm-skip">' + skipText + ' <i class="fa-solid fa-arrow-right"></i></button></div>' +
+    '<div class="consult-confirm-actions' + (paymentButton ? ' has-payment' : '') + '">' + paymentButton + '<button type="button" class="consult-confirm-cancel">Batal</button><button type="button" class="consult-confirm-go' + (isReviewDestination ? ' review-confirm-go' : ' whatsapp-buy') + '"><i class="' + iconClass + '"></i> ' + buttonText + '</button></div>' +
   '</div>';
   const dialog = modal.querySelector('.consult-confirm-dialog');
   const loading = modal.querySelector('.consult-confirm-loading');
@@ -6684,10 +6687,22 @@ function showConsultationConfirm(config = {}) {
   const loadingBar = loading?.querySelector('.consult-confirm-progress i');
   let redirectTimer = null;
   let progressTimer = null;
+  let redirectStarted = false;
+  const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
   const close = () => {
     if (redirectTimer) clearTimeout(redirectTimer);
     if (progressTimer) clearInterval(progressTimer);
     modal.remove();
+  };
+  modal._closeConsultation = close;
+  const navigateNow = () => {
+    if (redirectStarted) return;
+    redirectStarted = true;
+    if (redirectTimer) clearTimeout(redirectTimer);
+    if (progressTimer) clearInterval(progressTimer);
+    modal.querySelector('.consult-confirm-skip').disabled = true;
+    close();
+    window.location.assign(targetUrl);
   };
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   modal.querySelector('.consult-confirm-close').addEventListener('click', close);
@@ -6696,6 +6711,7 @@ function showConsultationConfirm(config = {}) {
     window.open(paymentUrl, '_blank', 'noopener');
     close();
   });
+  modal.querySelector('.consult-confirm-skip').addEventListener('click', navigateNow);
   modal.querySelector('.consult-confirm-go').addEventListener('click', () => {
     const goButton = modal.querySelector('.consult-confirm-go');
     if (redirectTimer || !goButton) return;
@@ -6714,10 +6730,7 @@ function showConsultationConfirm(config = {}) {
     };
     updateProgress();
     progressTimer = setInterval(updateProgress, 100);
-    redirectTimer = setTimeout(() => {
-      const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
-      window.location.assign(targetUrl);
-    }, duration);
+    redirectTimer = setTimeout(navigateNow, duration);
   });
   document.body.appendChild(modal);
   requestAnimationFrame(() => modal.classList.add('show'));

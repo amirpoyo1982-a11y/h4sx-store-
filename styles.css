@@ -1972,7 +1972,7 @@ nav {
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgba(219, 244, 255, .38);
+  background: rgba(31, 77, 99, .38);
   backdrop-filter: blur(7px);
   opacity: 0;
   pointer-events: none;
@@ -1981,25 +1981,27 @@ nav {
 .consult-confirm-modal.show { opacity: 1; pointer-events: auto; }
 .consult-confirm-dialog {
   position: relative;
-  width: min(100%, 390px);
-  padding: 28px;
-  border: 1px solid rgba(56, 189, 248, .34);
-  border-radius: 20px;
-  background: linear-gradient(145deg, #ffffff, #eefaff);
-  box-shadow: 0 24px 65px rgba(12, 74, 110, .24);
+  width: min(100%, 420px);
+  padding: 30px;
+  border: 1px solid color-mix(in srgb, var(--primary) 25%, white);
+  border-radius: 24px;
+  background: linear-gradient(165deg, #fff 48%, color-mix(in srgb, var(--primary) 5%, white));
+  box-shadow: 0 28px 70px rgba(12, 74, 110, .22);
   text-align: center;
+  overflow: hidden;
   transform: translateY(14px) scale(.98);
   transition: transform .22s ease;
 }
+.consult-confirm-dialog::before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,var(--primary),var(--accent)); }
 .consult-confirm-modal.show .consult-confirm-dialog { transform: translateY(0) scale(1); }
 .consult-confirm-close {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 14px;
+  right: 14px;
   width: 34px;
   height: 34px;
   border: 1px solid #d9eef9;
-  border-radius: 10px;
+  border-radius: 50%;
   background: #fff;
   color: #475569;
   cursor: pointer;
@@ -2007,30 +2009,32 @@ nav {
 .consult-confirm-icon {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 12px;
-  border-radius: 17px;
+  width: 66px;
+  height: 66px;
+  margin: 4px auto 16px;
+  border-radius: 20px;
   background: linear-gradient(135deg, #25d366, #128c47);
   color: #fff;
-  font-size: 28px;
+  font-size: 31px;
   box-shadow: 0 12px 24px rgba(18, 140, 71, .25);
 }
-.consult-confirm-kicker { color: #0284c7; font-size: 10px; font-weight: 900; letter-spacing: 1px; }
-.consult-confirm-dialog h3 { margin: 7px 26px 8px; color: #0f172a; font-size: 21px; }
-.consult-confirm-dialog p { margin: 0; color: #53657b; font-size: 13px; line-height: 1.6; }
-.consult-confirm-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 10px; margin-top: 22px; }
-.consult-confirm-actions button { min-height: 45px; border-radius: 12px; font-weight: 800; cursor: pointer; }
-.consult-confirm-actions.has-payment .consult-confirm-payment { grid-column: 1 / -1; border: 1px solid rgba(14,165,233,.26); background: #effaff; color: #087dbb; }
+.consult-confirm-kicker { display:inline-flex; padding:6px 10px; border:1px solid color-mix(in srgb,var(--primary) 19%,white); border-radius:999px; background:color-mix(in srgb,var(--primary) 7%,white); color:var(--primary3); font-size:10px; font-weight:900; letter-spacing:1px; }
+.consult-confirm-dialog h3 { max-width:340px; margin:12px auto 8px; color:#102337; font-size:23px; line-height:1.25; letter-spacing:-.5px; }
+.consult-confirm-dialog p { max-width:340px; margin:0 auto; color:#526b7c; font-size:13px; line-height:1.6; }
+.consult-confirm-guide { display:flex; align-items:center; gap:9px; margin-top:20px; padding:11px 13px; border:1px solid color-mix(in srgb,var(--primary) 15%,white); border-radius:12px; background:color-mix(in srgb,var(--primary) 5%,white); color:#36576b; text-align:left; font-size:11px; font-weight:650; line-height:1.45; }
+.consult-confirm-guide i { color:var(--accent); font-size:14px; flex:0 0 auto; }
+.consult-confirm-actions { display:grid; grid-template-columns:.8fr 1.2fr; gap:10px; margin-top:17px; }
+.consult-confirm-actions button { min-height:46px; border-radius:12px; font-weight:800; cursor:pointer; }
+.consult-confirm-actions.has-payment .consult-confirm-payment { grid-column:1/-1; border:1px solid color-mix(in srgb,var(--primary) 25%,white); background:#fff; color:var(--primary3); }
 .consult-confirm-payment i { margin-right: 5px; }
-.consult-confirm-cancel { border: 1px solid #cfe8f7; background: #fff; color: #334155; }
-.consult-confirm-go { border: 0; }
+.consult-confirm-cancel { border:1px solid #d7e8ef; background:#fff; color:#526579; }
+.consult-confirm-go { border:0; }
 .consult-confirm-loading {
   display: grid;
   grid-template-columns: 38px 1fr;
   gap: 10px 12px;
   align-items: center;
-  margin-top: 18px;
+  margin-top: 17px;
   padding: 12px;
   border: 1px solid rgba(34,197,94,.24);
   border-radius: 14px;
@@ -2070,6 +2074,9 @@ nav {
   background: linear-gradient(90deg, #22c55e, #06b6d4);
   transition: width .1s linear;
 }
+.consult-confirm-skip { grid-column:1/-1; display:flex; align-items:center; justify-content:center; gap:7px; min-height:38px; border:0; border-radius:9px; background:#fff; color:#087c52; font-size:11px; font-weight:900; cursor:pointer; }
+.consult-confirm-skip:hover { background:#e9fbf1; }
+.consult-confirm-skip:disabled { opacity:.55; cursor:wait; }
 .consult-confirm-dialog.is-loading .consult-confirm-go { opacity: .62; cursor: wait; }
 .consult-confirm-modal.is-review .consult-confirm-icon,
 .consult-confirm-modal.is-review .consult-confirm-loader-icon {
@@ -2084,6 +2091,8 @@ nav {
 .consult-confirm-modal.is-review .consult-confirm-loading span { color: #47758b; }
 .consult-confirm-modal.is-review .consult-confirm-loading b { color: #0284c7; }
 .consult-confirm-modal.is-review .consult-confirm-progress { background: rgba(14,165,233,.14); }
+.consult-confirm-modal.is-review .consult-confirm-skip { color:var(--primary3); }
+.consult-confirm-modal.is-review .consult-confirm-skip:hover { background:color-mix(in srgb,var(--primary) 8%,white); }
 .review-confirm-go {
   border: 0;
   color: #fff;
@@ -2093,8 +2102,8 @@ nav {
 @keyframes consultWhatsappPulse { 50% { transform: scale(.9); box-shadow: 0 4px 10px rgba(22,163,74,.18); } }
 @media (max-width: 480px) {
   .consult-confirm-modal { padding: 16px; }
-  .consult-confirm-dialog { padding: 24px 18px 18px; border-radius: 17px; }
-  .consult-confirm-dialog h3 { font-size: 19px; }
+  .consult-confirm-dialog { padding:25px 18px 18px; border-radius:20px; }
+  .consult-confirm-dialog h3 { font-size:21px; }
 }
 
 /* Image-first announcement popup. */
