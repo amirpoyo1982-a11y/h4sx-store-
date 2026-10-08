@@ -605,20 +605,43 @@ function adminGameEmojiChoice(name, choice) {
   if (/robux|roblox/i.test(name)) return 'cube';
   return 'none';
 }
+function adminGameEmojiImages(value) {
+  const url = String(value || '').trim();
+  if (!/^https:\/\/[^\s]+$/i.test(url)) return [];
+  const page = url.match(/^https:\/\/(?:www\.)?emoji\.gg\/emoji\/([a-z0-9-]+)\/?(?:[?#].*)?$/i);
+  if (!page) return [url];
+  const base = 'https://cdn3.emoji.gg/emojis/' + page[1];
+  return [base + '.gif', base + '.png', base + '.webp'];
+}
 function syncGameNameEmojiPreview() {
   const choice = byId('g-name-emoji').value;
   byId('g-name-emoji-url-wrap').hidden = choice !== 'custom';
   const preview = byId('g-name-emoji-preview');
   const image = preview.querySelector('img');
+  const status = preview.querySelector('small');
   const name = byId('g-name').value.trim() || 'Nama game';
   preview.querySelector('strong').textContent = name;
   const resolved = adminGameEmojiChoice(name, choice);
   const preset = ADMIN_GAME_EMOJI_PRESETS[resolved];
-  const url = preset ? 'assets/animated-nav/' + preset + '.webp' : (resolved === 'custom' ? byId('g-name-emoji-url').value.trim() : '');
-  image.hidden = !url || !(preset || /^https:\/\/[^\s]+$/i.test(url));
-  if (!image.hidden) image.src = url;
-  else image.removeAttribute('src');
-  preview.querySelector('small').textContent = image.hidden ? 'Nama game kekal tanpa ikon' : 'Contoh paparan nama game';
+  const urls = preset ? ['assets/animated-nav/' + preset + '.webp']
+    : (resolved === 'custom' ? adminGameEmojiImages(byId('g-name-emoji-url').value) : []);
+  image.onload = null;
+  image.onerror = null;
+  image.hidden = true;
+  image.removeAttribute('src');
+  if (!urls.length) {
+    status.textContent = resolved === 'custom' ? 'Masukkan pautan HTTPS emoji.' : 'Nama game kekal tanpa ikon';
+    return;
+  }
+  let index = 0;
+  image.onload = () => { image.hidden = false; status.textContent = 'Contoh paparan nama game'; };
+  image.onerror = () => {
+    index += 1;
+    if (index < urls.length) image.src = urls[index];
+    else { image.hidden = true; status.textContent = 'Emoji gagal dimuat. Semak pautan gambar.'; }
+  };
+  status.textContent = 'Memuatkan preview emoji...';
+  image.src = urls[index];
 }
 function renderGames() {
   const q = byId('game-search').value.trim().toLowerCase();

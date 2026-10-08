@@ -7175,6 +7175,21 @@ function gameNameEmojiChoice(game) {
   if (/robux|roblox/i.test(name)) return 'cube';
   return 'none';
 }
+function gameNameEmojiImages(value) {
+  const url = String(value || '').trim();
+  if (!/^https:\/\/[^\s]+$/i.test(url)) return [];
+  const page = url.match(/^https:\/\/(?:www\.)?emoji\.gg\/emoji\/([a-z0-9-]+)\/?(?:[?#].*)?$/i);
+  if (!page) return [url];
+  const base = 'https://cdn3.emoji.gg/emojis/' + page[1];
+  return [base + '.gif', base + '.png', base + '.webp'];
+}
+function advanceGameNameEmojiImage(image) {
+  const next = image.dataset.fallbackPng || image.dataset.fallbackWebp;
+  if (image.dataset.fallbackPng) image.dataset.fallbackPng = '';
+  else image.dataset.fallbackWebp = '';
+  if (next) image.src = next;
+  else image.closest('.game-name-emoji').hidden = true;
+}
 function gameNameEmojiHTML(game) {
   const choice = gameNameEmojiChoice(game);
   if (choice === 'none') return '';
@@ -7183,8 +7198,9 @@ function gameNameEmojiHTML(game) {
     const base = 'assets/animated-nav/' + preset;
     return '<span class="game-name-emoji" aria-hidden="true"><picture><source media="(prefers-reduced-motion: reduce)" srcset="' + base + '.png"><img src="' + base + '.webp" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></picture></span>';
   }
-  if (!/^https:\/\/[^\s]+$/i.test(choice)) return '';
-  return '<span class="game-name-emoji custom" aria-hidden="true"><img src="' + escapeHtml(choice) + '" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></span>';
+  const urls = gameNameEmojiImages(choice);
+  if (!urls.length) return '';
+  return '<span class="game-name-emoji custom" aria-hidden="true"><img src="' + escapeHtml(urls[0]) + '" data-fallback-png="' + escapeHtml(urls[1] || '') + '" data-fallback-webp="' + escapeHtml(urls[2] || '') + '" alt="" loading="lazy" decoding="async" onerror="advanceGameNameEmojiImage(this)"></span>';
 }
 function renderGames() {
   renderPlatformFilters();
