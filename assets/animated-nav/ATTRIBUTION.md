@@ -18,4 +18,7 @@ These local assets were resized to 64×64 px and some animation frames were comb
 | Panduan | 📚 | https://fonts.gstatic.com/s/e/notoemoji/latest/1f4da/512.webp |
 | FAQ | ❓ | https://fonts.gstatic.com/s/e/notoemoji/latest/2753/512.webp |
 
+| Blox Fruits game name | 🍎 | https://fonts.gstatic.com/s/e/notoemoji/latest/1f34e/512.webp |
+| Fish It game name | 🎣 | https://fonts.gstatic.com/s/e/notoemoji/latest/1f3a3/512.webp |
+
 The animated blue Roblox cube is original H4SX Store artwork created for this navigation.

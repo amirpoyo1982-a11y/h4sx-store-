@@ -10916,5 +10916,16 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 /* Animated Noto Emoji in the quick navigation */
 .storefront-tabs .tab-emoji{width:22px;height:22px;display:inline-grid;place-items:center;flex:none}.storefront-tabs .tab-emoji picture,.storefront-tabs .tab-emoji img{display:block;width:22px;height:22px;object-fit:contain}.storefront-tabs .tab-emoji picture[hidden],.storefront-tabs .tab-emoji i[hidden]{display:none}.storefront-tabs .tab-emoji i:not([hidden]){font-size:.85rem}.emoji-credit{font-size:10px;line-height:1.5;color:#64748b}.emoji-credit a{color:var(--primary);text-decoration:none}.emoji-credit a:hover{text-decoration:underline}
 
+.market-layout-v2 #shop-section #game-grid .gc-name{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap}
+#pv-title{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.game-name-emoji{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle}
+.game-name-emoji picture,.game-name-emoji img{display:block;width:100%;height:100%;object-fit:contain}
+.game-name-emoji[hidden]{display:none}
+#pv-title .game-name-emoji{width:30px;height:30px}
+@media(prefers-reduced-motion:reduce){.game-name-emoji.custom{display:none}}
+
+/* Keep stock visible above the image actions and floating chat button. */
+#product-view .pc .pimg > .stock-badge,.search-card .pimg > .stock-badge{top:54px!important;bottom:auto!important;right:10px!important;left:auto!important;transform:none!important}
+
 /* Animated emoji in the phone dock */
 .bottom-nav .tab-emoji{width:24px;height:24px;display:inline-grid;place-items:center;flex:none}.bottom-nav .tab-emoji picture,.bottom-nav .tab-emoji img{display:block;width:24px;height:24px;object-fit:contain}.bottom-nav .tab-emoji picture[hidden],.bottom-nav .tab-emoji i[hidden]{display:none}.bottom-nav .tab-emoji i:not([hidden]){font-size:18px}

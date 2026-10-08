@@ -7165,6 +7165,31 @@ function renderGamePurchaseNotice(name) {
   if (!notice) return '';
   return '<aside class="game-purchase-notice" role="note"><div class="game-purchase-notice-icon"><i class="fa-solid fa-circle-info"></i></div><div class="game-purchase-notice-copy"><h3>' + escapeHtml(notice.title) + '</h3><ul>' + notice.lines.map(line => '<li><span>' + escapeHtml(line) + '</span></li>').join('') + '</ul></div></aside>';
 }
+const GAME_NAME_EMOJI_PRESETS = {
+  cube: 'roblox-cube', fruit: 'game-fruit', fishing: 'game-fishing',
+  home: 'home', trophy: 'customers'
+};
+function gameNameEmojiChoice(game) {
+  const choice = String(game?.nameEmoji || 'auto').trim();
+  if (choice !== 'auto') return choice;
+  const name = String(game?.name || '');
+  if (/blox\s*fruits?/i.test(name)) return 'fruit';
+  if (/fish\s*it/i.test(name)) return 'fishing';
+  if (/brookhaven/i.test(name)) return 'home';
+  if (/robux|roblox/i.test(name)) return 'cube';
+  return 'none';
+}
+function gameNameEmojiHTML(game) {
+  const choice = gameNameEmojiChoice(game);
+  if (choice === 'none') return '';
+  const preset = GAME_NAME_EMOJI_PRESETS[choice];
+  if (preset) {
+    const base = 'assets/animated-nav/' + preset;
+    return '<span class="game-name-emoji" aria-hidden="true"><picture><source media="(prefers-reduced-motion: reduce)" srcset="' + base + '.png"><img src="' + base + '.webp" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></picture></span>';
+  }
+  if (!/^https:\/\/[^\s]+$/i.test(choice)) return '';
+  return '<span class="game-name-emoji custom" aria-hidden="true"><img src="' + escapeHtml(choice) + '" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></span>';
+}
 function renderGames() {
   renderPlatformFilters();
   const visibleGames = catalogGames().sort((a, b) => Number(Boolean(a.oos)) - Number(Boolean(b.oos)));
@@ -7174,10 +7199,10 @@ function renderGames() {
     const consultation = getGameConsultationConfig(g.name);
     if (consultation && consultation.active) {
       const consultationBadge = '<div class="gc-badge consultation">' + escapeHtml(consultation.label || 'Konsultasi') + '</div>';
-      return '<div class="gc reveal consultation-game-card" onclick="openGameConsultation(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + consultationBadge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+      return '<div class="gc reveal consultation-game-card" onclick="openGameConsultation(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + consultationBadge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
     }
-    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
-    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + g.name.toUpperCase() + '</div></div>';
+    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
+    return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
   }).join('');
   initScrollReveal();
 }
@@ -7189,7 +7214,7 @@ function openGame(name, options = {}) {
   document.querySelectorAll('.gc').forEach(el => el.classList.remove('active'));
   let items = inventory.filter(i => isCustomerProductVisible(i) && gameGroupName(i) === name && !isPermanentFruitCatalogItem(i));
   items = sortProductsForDisplay(items);
-  document.getElementById('pv-title').textContent = name;
+  document.getElementById('pv-title').innerHTML = gameNameEmojiHTML(configuredGameByName(name) || { name }) + '<span>' + escapeHtml(name) + '</span>';
   document.getElementById('pv-count').textContent = items.length + ' item tersedia';
   const grid = document.getElementById('inventory-grid');
   if (grid) grid.innerHTML = renderProductSkeleton(6);

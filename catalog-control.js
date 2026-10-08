@@ -594,6 +594,32 @@ function renderProducts() {
   }).join('') : '<div class="empty">Belum ada produk.</div>';
 }
 
+const ADMIN_GAME_EMOJI_PRESETS = {
+  cube:'roblox-cube', fruit:'game-fruit', fishing:'game-fishing', home:'home', trophy:'customers'
+};
+function adminGameEmojiChoice(name, choice) {
+  if (choice !== 'auto') return choice;
+  if (/blox\s*fruits?/i.test(name)) return 'fruit';
+  if (/fish\s*it/i.test(name)) return 'fishing';
+  if (/brookhaven/i.test(name)) return 'home';
+  if (/robux|roblox/i.test(name)) return 'cube';
+  return 'none';
+}
+function syncGameNameEmojiPreview() {
+  const choice = byId('g-name-emoji').value;
+  byId('g-name-emoji-url-wrap').hidden = choice !== 'custom';
+  const preview = byId('g-name-emoji-preview');
+  const image = preview.querySelector('img');
+  const name = byId('g-name').value.trim() || 'Nama game';
+  preview.querySelector('strong').textContent = name;
+  const resolved = adminGameEmojiChoice(name, choice);
+  const preset = ADMIN_GAME_EMOJI_PRESETS[resolved];
+  const url = preset ? 'assets/animated-nav/' + preset + '.webp' : (resolved === 'custom' ? byId('g-name-emoji-url').value.trim() : '');
+  image.hidden = !url || !(preset || /^https:\/\/[^\s]+$/i.test(url));
+  if (!image.hidden) image.src = url;
+  else image.removeAttribute('src');
+  preview.querySelector('small').textContent = image.hidden ? 'Nama game kekal tanpa ikon' : 'Contoh paparan nama game';
+}
 function renderGames() {
   const q = byId('game-search').value.trim().toLowerCase();
   const filtered = games.filter(item => [item.name,item.platform,item.badge].join(' ').toLowerCase().includes(q));
@@ -997,7 +1023,10 @@ function collectEditorPayload() {
   const purchaseNoticeTitle = byId('g-purchase-notice-title').value.trim();
   const purchaseNoticeBody = byId('g-purchase-notice-body').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean).join('\n');
   if (purchaseNoticeEnabled && !purchaseNoticeBody) throw new Error('Isi sekurang-kurangnya satu baris untuk notis pembelian.');
-  const item = compact({ ...extra, name, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), purchaseNoticeEnabled, purchaseNoticeTitle:purchaseNoticeEnabled ? (purchaseNoticeTitle || 'Semak sebelum membuat pesanan') : null, purchaseNoticeBody:purchaseNoticeEnabled ? purchaseNoticeBody : null, consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+  const nameEmojiChoice = byId('g-name-emoji').value;
+  const nameEmoji = nameEmojiChoice === 'custom' ? byId('g-name-emoji-url').value.trim() : nameEmojiChoice;
+  if (nameEmojiChoice === 'custom' && !/^https:\/\/[^\s]+$/i.test(nameEmoji)) throw new Error('Masukkan URL HTTPS emoji yang sah.');
+  const item = compact({ ...extra, name, nameEmoji, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), purchaseNoticeEnabled, purchaseNoticeTitle:purchaseNoticeEnabled ? (purchaseNoticeTitle || 'Semak sebelum membuat pesanan') : null, purchaseNoticeBody:purchaseNoticeEnabled ? purchaseNoticeBody : null, consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
   return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
 }
 
@@ -1061,7 +1090,9 @@ byId('p-game').addEventListener('input', () => {
   syncPlatformFromProductGame();
 });
 byId('p-platform').addEventListener('input', () => selectPickerValue('p-platform-picker', byId('p-platform').value));
-byId('g-name').addEventListener('input', () => selectPickerValue('g-name-picker', byId('g-name').value));
+byId('g-name').addEventListener('input', () => { selectPickerValue('g-name-picker', byId('g-name').value); syncGameNameEmojiPreview(); });
+byId('g-name-emoji').addEventListener('change', syncGameNameEmojiPreview);
+byId('g-name-emoji-url').addEventListener('input', syncGameNameEmojiPreview);
 byId('g-platform').addEventListener('input', () => selectPickerValue('g-platform-picker', byId('g-platform').value));
 byId('p-game-picker').addEventListener('change', event => {
   if (!event.currentTarget.value) return;
@@ -1073,6 +1104,7 @@ byId('p-platform-picker').addEventListener('change', event => {
 });
 byId('g-name-picker').addEventListener('change', event => {
   if (event.currentTarget.value) byId('g-name').value = event.currentTarget.value;
+  syncGameNameEmojiPreview();
 });
 byId('g-platform-picker').addEventListener('change', event => {
   if (event.currentTarget.value) byId('g-platform').value = event.currentTarget.value;
@@ -1256,6 +1288,11 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   setEditorMode('game');
   refreshClassificationOptions();
   byId('g-name').value = item.name || ''; byId('g-platform').value = item.platform || '';
+  const savedEmoji = String(item.nameEmoji || 'auto');
+  byId('g-name-emoji').value = /^https:\/\//i.test(savedEmoji) ? 'custom' : savedEmoji;
+  if (!byId('g-name-emoji').value) byId('g-name-emoji').value = 'auto';
+  byId('g-name-emoji-url').value = /^https:\/\//i.test(savedEmoji) ? savedEmoji : '';
+  syncGameNameEmojiPreview();
   syncClassificationPickers();
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
   byId('g-active').checked = isAdminCatalogItemVisible(item);
@@ -1276,7 +1313,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-image-file').value = '';
   setImagePreview('game', null, byId('g-img').value);
   byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['name','platform','badge','badgeTitle','oos','active','hidden','img','image','video','purchaseNoticeEnabled','purchaseNoticeTitle','purchaseNoticeBody','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
+  const known = ['name','nameEmoji','platform','badge','badgeTitle','oos','active','hidden','img','image','video','purchaseNoticeEnabled','purchaseNoticeTitle','purchaseNoticeBody','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
