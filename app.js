@@ -6623,6 +6623,13 @@ function renderProductSkeleton(count = 6) {
     '</div>'
   )).join('');
 }
+function defaultConsultationMessage(name) {
+  const subject = String(name || 'produk ini').replace(/\s+/g, ' ').trim() || 'produk ini';
+  return '*Hi H4SX, saya nak tanya ' + subject + '.*';
+}
+function consultationMessage(name, ...customMessages) {
+  return customMessages.map(value => String(value ?? '').trim()).find(Boolean) || defaultConsultationMessage(name);
+}
 function inventoryConsultationConfig(item) {
   const source = item && (item.consultation ?? item.konsultasi ?? item.consult);
   const enabled = source === true || String(source).toLowerCase() === 'true' || (source && typeof source === 'object' && !Array.isArray(source));
@@ -6633,7 +6640,7 @@ function inventoryConsultationConfig(item) {
     label: raw.label || raw.badge || item.badge || 'Konsultasi',
     buttonText: raw.buttonText || item.consultationButton || 'Konsultasi WhatsApp',
     whatsapp: raw.whatsapp || item.whatsapp || item.phone || WA_NUMBER,
-    message: raw.message || item.consultationMessage || ('Hi H4SX, saya nak tanya ' + (item.name || 'produk ini') + '.')
+    message: consultationMessage(item.name, raw.message, item.consultationMessage)
   };
 }
 function isPromotedEnabled(item) {
@@ -6688,7 +6695,7 @@ function showConsultationConfirm(config = {}) {
   let redirectTimer = null;
   let progressTimer = null;
   let redirectStarted = false;
-  const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || 'Hi H4SX')));
+  const targetUrl = destinationUrl || ('https://wa.me/' + phone + '?text=' + encodeURIComponent(String(config.message || defaultConsultationMessage(config.title))));
   const close = () => {
     if (redirectTimer) clearTimeout(redirectTimer);
     if (progressTimer) clearInterval(progressTimer);
@@ -6906,7 +6913,7 @@ function getGameConsultationConfig(gameName = currentGame) {
     description: raw.description || raw.desc || game.consultationDescription || ('Chat admin untuk tanya servis dan item khas ' + gameName + '.'),
     buttonText: raw.buttonText || raw.button_text || raw.cta || game.consultationButton || 'Chat WhatsApp',
     whatsapp: raw.whatsapp || raw.phone || raw.number || game.whatsapp || game.phone || '',
-    message: raw.message || raw.text || game.consultationMessage || ('Hi H4SX, saya nak tanya ' + gameName + '.')
+    message: consultationMessage(gameName, raw.message, raw.text, game.consultationMessage)
   };
 }
 
