@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9, minimum-scale=0.9, user-scalable=no, viewport-fit=cover"/>
-  <meta name="h4sx-build" content="2026-10-08-changelog-v61"/>
+  <meta name="h4sx-build" content="2026-10-08-price-drop-v62"/>
   <title>H4SX STORE | MALAYSIA ITEM ROBLOX</title>
   <meta name="description" content="Katalog rasmi H4SX STORE Malaysia untuk item digital, akaun dan servis permainan. Semak produk, harga, stok dan hubungi admin melalui WhatsApp.">
   <meta name="theme-color" content="#0ea5e9">
@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=changelog-v61-20261008">
+  <link rel="stylesheet" href="styles.css?v=price-drop-v62-20261008">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -156,7 +156,7 @@
 <div id="changelog-modal" onclick="changelogBackdrop(event)">
   <div class="changelog-box" role="dialog" aria-labelledby="changelog-title" aria-modal="true">
     <div class="changelog-head">
-      <div class="changelog-badge"><i class="fa-solid fa-bolt"></i> TERBARU DI H4SX <span id="changelog-version">v6.1</span></div>
+      <div class="changelog-badge"><i class="fa-solid fa-bolt"></i> TERBARU DI H4SX <span id="changelog-version">v6.2</span></div>
       <div class="changelog-title" id="changelog-title">H4SX Lebih Lancar</div>
       <div class="changelog-datetime" id="changelog-datetime">
         <i class="fa-regular fa-calendar"></i>
@@ -177,7 +177,7 @@
   </div>
 </div>
 
-<script defer src="changelog-loader.js?v=changelog-v61-20261008"></script>
+<script defer src="changelog-loader.js?v=price-drop-v62-20261008"></script>
 <aside id="site-update-notice" class="site-update-notice" role="alertdialog" aria-live="assertive" aria-labelledby="site-update-notice-title" aria-hidden="true">
   <div class="site-update-notice-icon"><i class="fa-solid fa-arrows-rotate"></i><span></span></div>
   <div class="site-update-notice-copy">
@@ -371,11 +371,8 @@
       </button>
     </section>
     <section id="price-drop-alert" class="price-drop-alert is-hidden" aria-live="polite" aria-label="Harga baru turun">
-      <button type="button" class="price-drop-main" onclick="openPriceDropProduct()">
-        <span class="price-drop-icon"><i class="fa-solid fa-arrow-trend-down"></i></span>
-        <span class="price-drop-copy"><small>HARGA BARU TURUN</small><strong id="price-drop-product">Produk H4SX</strong><span><del id="price-drop-old">RM0.00</del><b id="price-drop-new">RM0.00</b><em id="price-drop-saving">Jimat RM0.00</em></span></span>
-        <span class="price-drop-action">Lihat Produk <i class="fa-solid fa-arrow-right"></i></span>
-      </button>
+      <div class="price-drop-head"><span class="price-drop-icon"><i class="fa-solid fa-arrow-trend-down"></i></span><span><small>HARGA BARU TURUN</small><strong>Diskaun terkini</strong></span><em id="price-drop-count">0 tawaran</em></div>
+      <div id="price-drop-list" class="price-drop-list"></div>
       <button type="button" class="price-drop-close" onclick="dismissPriceDropAlert()" aria-label="Tutup notis harga turun"><i class="fa-solid fa-xmark"></i></button>
     </section>
     <div class="div"></div>
@@ -1053,7 +1050,7 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=changelog-v61-20261008"></script>
+<script defer src="app.js?v=price-drop-v62-20261008"></script>
 
 </body>
 </html>

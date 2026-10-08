@@ -1733,11 +1733,11 @@ function renderPromoBanner(config = currentStoreConfig) {
   }
   initPromoBannerDrag();
 }
-const CHANGELOG_VERSION = 'v6.1';
+const CHANGELOG_VERSION = 'v6.2';
 const CHANGELOG_STORAGE_KEY = 'h4sx_changelog_' + CHANGELOG_VERSION + '_dismissed';
 function getChangelogReleaseDate() {
   const release = typeof CHANGELOG_DATA !== 'undefined' ? CHANGELOG_DATA : null;
-  const value = release?.releasedAt ? new Date(release.releasedAt) : null;
+  const value = window.H4SX_LAST_PUBLISH_AT ? new Date(window.H4SX_LAST_PUBLISH_AT) : (release?.releasedAt ? new Date(release.releasedAt) : null);
   return value && !Number.isNaN(value.getTime()) ? value : null;
 }
 function openChangelog(manual) {
@@ -1758,7 +1758,7 @@ function openChangelog(manual) {
   const timeEl = document.getElementById('changelog-time-text');
   const releaseDate = getChangelogReleaseDate();
   if (dateEl && releaseDate) dateEl.textContent = releaseDate.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
-  if (timeEl && typeof CHANGELOG_DATA !== 'undefined') timeEl.textContent = CHANGELOG_DATA.time || 'Terkini';
+  if (timeEl && typeof CHANGELOG_DATA !== 'undefined' && !window.H4SX_LAST_PUBLISH_AT) timeEl.textContent = CHANGELOG_DATA.time || 'Terkini';
   modal.classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -1903,7 +1903,9 @@ async function downloadChangelogImage() {
     ctx.fillText(data.title || 'Apa Yang Baru - H4SX STORE', 230, 172);
 
     const totalItems = (data.sections || []).reduce((sum, section) => sum + ((section.items || []).length), 0);
-    const metaText = (data.date || '') + '  |  ' + (data.time || '') + '  |  ' + (data.version || 'Latest');
+    const publishDate = getChangelogReleaseDate();
+    const displayDate = publishDate ? publishDate.toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric', timeZone:'Asia/Kuala_Lumpur' }) : (data.date || '');
+    const metaText = displayDate + '  |  ' + (window.H4SX_LAST_PUBLISH_AT ? 'Last publish' : (data.time || '')) + '  |  ' + (data.version || 'Latest');
     ctx.fillStyle = '#64748b';
     ctx.font = '800 28px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText(metaText, 230, 216);
@@ -3349,6 +3351,7 @@ async function loadInv() {
     } catch(e) {}
     syncInventoryGames();
     renderGames();
+    renderPriceDropAlert();
     openCatalogRouteFromUrl();
     updateProductSpotlight();
     return true;
@@ -3451,6 +3454,7 @@ async function loadInv() {
           try { localStorage.setItem('h4sx_inventory_cache', JSON.stringify(inventory)); } catch(e) {}
           syncInventoryGames();
           renderGames();
+          renderPriceDropAlert();
           openCatalogRouteFromUrl();
           break; 
         }
@@ -4659,26 +4663,41 @@ window.disableFlashDrop = disableFlashDrop;
 
 const PRICE_DROP_ALERT_PATH = REALTIME_STORE_ROOT + '/config/priceDropAlert';
 const PRICE_DROP_DISMISSED_KEY = 'h4sx_price_drop_dismissed';
-let priceDropAlert = { active:false };
+let priceDropAlert = { active:false, updatedAt:0, entries:[] };
 let priceDropAlertListening = false;
 
 function normalisePriceDropAlert(value) {
   const source = value && typeof value === 'object' ? value : {};
-  return {
-    active: source.active === true || String(source.active).toLowerCase() === 'true',
-    productId:String(source.productId ?? '').trim(),
-    productName:String(source.productName || '').trim(),
-    variantName:String(source.variantName || '').trim(),
-    oldPrice:Number(source.oldPrice || 0),
-    newPrice:Number(source.newPrice || 0),
-    updatedAt:Number(source.updatedAt || 0),
-    expiresAt:Number(source.expiresAt || 0)
-  };
+  const rawEntries = Array.isArray(source.entries) ? source.entries :
+    (source.entries && typeof source.entries === 'object' ? Object.values(source.entries) : []);
+  const legacy = source.productId ? [source] : [];
+  const entries = (rawEntries.length ? rawEntries : legacy).filter(Boolean).map(entry => ({
+    productId:String(entry.productId ?? '').trim(),
+    productName:String(entry.productName || '').trim(),
+    variantKey:String(entry.variantKey || '').trim(),
+    variantName:String(entry.variantName || '').trim(),
+    oldPrice:Number(entry.oldPrice), newPrice:Number(entry.newPrice),
+    updatedAt:Number(entry.updatedAt || 0), expiresAt:Number(entry.expiresAt || 0)
+  }));
+  return { active:source.active === true || String(source.active).toLowerCase() === 'true',
+    updatedAt:Number(source.updatedAt || 0), entries };
+}
+
+function livePriceDropEntries() {
+  const now = Date.now();
+  const seen = new Set();
+  return priceDropAlert.entries.filter(entry => {
+    const key = entry.productId + ':' + (entry.variantKey || entry.variantName);
+    if (!entry.productId || !entry.productName || !(entry.oldPrice > entry.newPrice) ||
+        (entry.expiresAt && now >= entry.expiresAt) || seen.has(key)) return false;
+    seen.add(key);
+    const item = inventory.find(product => String(product.id) === entry.productId);
+    return item ? isCustomerProductVisible(item) : !inventory.length;
+  }).sort((a,b) => b.updatedAt - a.updatedAt).slice(0,30);
 }
 
 function priceDropAlertIsLive() {
-  if (!priceDropAlert.active || !priceDropAlert.productName || !(priceDropAlert.oldPrice > priceDropAlert.newPrice)) return false;
-  if (priceDropAlert.expiresAt && Date.now() >= priceDropAlert.expiresAt) return false;
+  if (!priceDropAlert.active || !livePriceDropEntries().length) return false;
   try { return localStorage.getItem(PRICE_DROP_DISMISSED_KEY) !== String(priceDropAlert.updatedAt || ''); }
   catch (error) { return true; }
 }
@@ -4686,17 +4705,26 @@ function priceDropAlertIsLive() {
 function renderPriceDropAlert() {
   const root = document.getElementById('price-drop-alert');
   if (!root) return;
-  const live = priceDropAlertIsLive();
-  root.classList.toggle('is-hidden', !live);
-  if (!live) return;
-  const product = document.getElementById('price-drop-product');
-  const oldPrice = document.getElementById('price-drop-old');
-  const newPrice = document.getElementById('price-drop-new');
-  const saving = document.getElementById('price-drop-saving');
-  if (product) product.textContent = priceDropAlert.productName + (priceDropAlert.variantName ? ' — ' + priceDropAlert.variantName : '');
-  if (oldPrice) oldPrice.textContent = 'RM' + priceDropAlert.oldPrice.toFixed(2);
-  if (newPrice) newPrice.textContent = 'RM' + priceDropAlert.newPrice.toFixed(2);
-  if (saving) saving.textContent = 'Jimat RM' + (priceDropAlert.oldPrice - priceDropAlert.newPrice).toFixed(2);
+  const entries = livePriceDropEntries();
+  root.classList.toggle('is-hidden', !priceDropAlertIsLive());
+  if (!entries.length) return;
+  const count = document.getElementById('price-drop-count');
+  if (count) count.textContent = entries.length + ' tawaran';
+  const list = document.getElementById('price-drop-list');
+  if (!list) return;
+  list.replaceChildren(...entries.map(entry => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'price-drop-item';
+    button.setAttribute('aria-label', 'Lihat ' + entry.productName + ' harga baru RM' + entry.newPrice.toFixed(2));
+    button.innerHTML = '<span class="price-drop-copy"><strong></strong><span><del></del><b></b><em></em></span></span><span class="price-drop-action">Lihat Produk <i class="fa-solid fa-arrow-right"></i></span>';
+    button.querySelector('strong').textContent = entry.productName + (entry.variantName ? ' — ' + entry.variantName : '');
+    button.querySelector('del').textContent = 'RM' + entry.oldPrice.toFixed(2);
+    button.querySelector('b').textContent = 'RM' + entry.newPrice.toFixed(2);
+    button.querySelector('em').textContent = 'Jimat RM' + (entry.oldPrice - entry.newPrice).toFixed(2);
+    button.addEventListener('click', () => openPriceDropProduct(entry));
+    return button;
+  }));
 }
 
 function startPriceDropAlertSync() {
@@ -4713,12 +4741,14 @@ function dismissPriceDropAlert() {
   renderPriceDropAlert();
 }
 
-function openPriceDropProduct() {
-  const item = inventory.find(entry => String(entry.id) === priceDropAlert.productId)
-    || inventory.find(entry => String(entry.name || '').trim().toLowerCase() === priceDropAlert.productName.toLowerCase());
+function openPriceDropProduct(entry = livePriceDropEntries()[0]) {
+  if (!entry) return;
+  const item = inventory.find(product => String(product.id) === entry.productId)
+    || inventory.find(product => String(product.name || '').trim().toLowerCase() === entry.productName.toLowerCase());
   if (!item || !isCustomerProductVisible(item)) return toast('Produk ini belum tersedia.', true);
   openGame(gameGroupName(item), { itemId:item.id });
 }
+
 window.dismissPriceDropAlert = dismissPriceDropAlert;
 window.openPriceDropProduct = openPriceDropProduct;
 

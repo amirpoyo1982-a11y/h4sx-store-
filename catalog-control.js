@@ -1113,7 +1113,6 @@ function saveCurrentDraft() {
 function productPricePoints(item = {}) {
   const points = [];
   const base = Number(item.price);
-  if (Number.isFinite(base) && base >= 0) points.push({ key:'base', name:'', price:base });
   const source = Array.isArray(item.variants) ? item.variants : (Array.isArray(item.types) ? item.types : []);
   source.forEach((variant, index) => {
     const price = Number(variant?.price);
@@ -1121,30 +1120,56 @@ function productPricePoints(item = {}) {
     const id = String(variant?.id ?? variant?.name ?? index).trim().toLowerCase();
     points.push({ key:'variant:' + id, name:String(variant?.name || variant?.label || ('Variant ' + (index + 1))), price });
   });
+  if (!points.length && Number.isFinite(base) && base >= 0) points.push({ key:'base', name:'', price:base });
   return points;
 }
 
-function detectProductPriceDrop(previous, next) {
-  if (!previous || !next) return null;
+function detectProductPriceDrops(previous, next) {
+  if (!previous || !next) return [];
   const before = new Map(productPricePoints(previous).map(point => [point.key, point]));
   return productPricePoints(next).map(point => {
     const old = before.get(point.key);
-    return old && old.price - point.price >= 0.01 ? { oldPrice:old.price, newPrice:point.price, variantName:point.name, saving:old.price - point.price } : null;
-  }).filter(Boolean).sort((a, b) => b.saving - a.saving)[0] || null;
+    return old && old.price - point.price >= 0.01
+      ? { variantKey:point.key, variantName:point.name, oldPrice:old.price, newPrice:point.price }
+      : null;
+  }).filter(Boolean);
 }
 
-async function publishPriceDropAlert(item, drop) {
-  if (!drop || !auth.currentUser) return;
-  await withTimeout(database.ref(ROOT + '/config/priceDropAlert').set({
-    active:true,
-    productId:String(item.id),
-    productName:String(item.name || 'Produk H4SX'),
-    variantName:String(drop.variantName || ''),
-    oldPrice:Math.round(drop.oldPrice * 100) / 100,
-    newPrice:Math.round(drop.newPrice * 100) / 100,
-    updatedAt:firebase.database.ServerValue.TIMESTAMP,
-    expiresAt:Date.now() + (3 * 24 * 60 * 60 * 1000),
-    updatedBy:auth.currentUser.email || 'admin'
+async function publishPriceDropAlerts(item, drops) {
+  if (!auth.currentUser) return;
+  const now = Date.now();
+  const productId = String(item.id);
+  const currentPrices = new Map(productPricePoints(item).map(point => [point.key, point.price]));
+  const ref = database.ref(ROOT + '/config/priceDropAlert');
+  await withTimeout(ref.transaction(current => {
+    const source = current && typeof current === 'object' ? current : {};
+    let entries = Array.isArray(source.entries) ? source.entries.filter(Boolean) : [];
+    if (!entries.length && source.productId && Number(source.oldPrice) > Number(source.newPrice)) {
+      entries = [{ productId:String(source.productId), productName:String(source.productName || ''),
+        variantKey:String(source.variantKey || (source.variantName ? 'variant:' + String(source.variantName).toLowerCase() : 'base')),
+        variantName:String(source.variantName || ''), oldPrice:Number(source.oldPrice), newPrice:Number(source.newPrice),
+        updatedAt:Number(source.updatedAt || now), expiresAt:Number(source.expiresAt || 0) }];
+    }
+    entries = entries.filter(entry => entry && Number(entry.oldPrice) > Number(entry.newPrice) && (!entry.expiresAt || Number(entry.expiresAt) > now));
+    entries = entries.filter(entry => {
+      if (String(entry.productId) !== productId) return true;
+      if (drops.some(drop => drop.variantKey === String(entry.variantKey || 'base'))) return true;
+      const currentPrice = currentPrices.get(String(entry.variantKey || 'base'));
+      return currentPrice !== undefined && currentPrice < Number(entry.oldPrice) && Math.abs(currentPrice - Number(entry.newPrice)) < 0.01;
+    });
+    for (const drop of drops) {
+      const key = productId + ':' + drop.variantKey;
+      const existing = entries.find(entry => String(entry.productId) + ':' + String(entry.variantKey || 'base') === key);
+      entries = entries.filter(entry => String(entry.productId) + ':' + String(entry.variantKey || 'base') !== key);
+      entries.push({ productId, productName:String(item.name || 'Produk H4SX'), variantKey:drop.variantKey,
+        variantName:String(drop.variantName || ''), oldPrice:Math.round((existing ? Math.max(Number(existing.oldPrice), drop.oldPrice) : drop.oldPrice) * 100) / 100,
+        newPrice:Math.round(drop.newPrice * 100) / 100, updatedAt:now,
+        expiresAt:now + (3 * 24 * 60 * 60 * 1000) });
+    }
+    entries.sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+    entries = entries.slice(0, 30);
+    if (!drops.length && entries.length === (Array.isArray(source.entries) ? source.entries.filter(Boolean).length : (source.productId ? 1 : 0))) return;
+    return { active:entries.length > 0, entries, updatedAt:now, updatedBy:auth.currentUser.email || 'admin' };
   }), 'Simpan Price Drop Alert');
 }
 
@@ -1152,16 +1177,15 @@ async function publishPayload(payload, message) {
   if (payload.mode === 'product') {
     const next = [...products];
     const previous = payload.index === null || payload.index < 0 ? null : products[payload.index];
-    const drop = detectProductPriceDrop(previous, payload.item);
-    if (drop && !productPricePoints(payload.item).some(point => point.key !== 'base') && !(Number(payload.item.originalPrice) > drop.newPrice)) payload.item.originalPrice = drop.oldPrice;
+    const drops = detectProductPriceDrops(previous, payload.item);
+    const baseDrop = drops.find(drop => drop.variantKey === 'base');
+    if (baseDrop && !productPricePoints(payload.item).some(point => point.key !== 'base') && !(Number(payload.item.originalPrice) > baseDrop.newPrice)) payload.item.originalPrice = baseDrop.oldPrice;
     if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;
     await saveArray('inventory', next, message || 'Produk dipublish ke website.');
-    if (drop) {
-      try {
-        await publishPriceDropAlert(payload.item, drop);
-        notify('Harga turun dikesan — Price Drop Alert dipaparkan selama 3 hari.');
-      } catch (error) { notify('Produk disimpan, tetapi Price Drop Alert gagal: ' + error.message, true); }
-    }
+    try {
+      await publishPriceDropAlerts(payload.item, drops);
+      if (drops.length) notify(drops.length + ' harga turun dikesan — dipaparkan selama 3 hari.');
+    } catch (error) { notify('Produk disimpan, tetapi notis harga turun gagal: ' + error.message, true); }
   } else {
     const next = [...games];
     if (payload.index === null || payload.index < 0) next.push(payload.item); else next[payload.index] = payload.item;

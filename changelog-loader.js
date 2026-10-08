@@ -4,7 +4,7 @@ const CHANGELOG_DATA = {
   date: '8 Oktober 2026',
   releasedAt: '2026-10-08T00:00:00+08:00',
   time: 'Update pelanggan',
-  version: 'v6.1',
+  version: 'v6.2',
   sections: [
     {
       type: 'added',
@@ -19,6 +19,7 @@ const CHANGELOG_DATA = {
       title: 'Banner & game',
       items: [
         { icon: 'fa-hand-pointer', text: '<strong>Banner boleh diseret</strong><br>Gerakkan promosi ke kiri atau kanan tanpa tersalah buka pautan.' },
+        { icon: 'fa-tags', text: '<strong>Semua harga turun dipaparkan</strong><br>Setiap produk atau pilihan yang turun harga kini ada baris sendiri dengan jumlah jimat.' },
         { icon: 'fa-circle-exclamation', text: '<strong>Notis game lebih jelas</strong><br>Maklumat penting sebelum membeli dipaparkan pada game yang berkaitan.' }
       ]
     },
@@ -87,3 +88,22 @@ function renderChangelog(data) {
 }
 
 renderChangelog(CHANGELOG_DATA);
+
+// Last-Modified comes from the deployed index.htm, so the publish date updates with each Vercel deployment.
+async function loadLastPublishedAt() {
+  if (location.protocol === 'file:') return;
+  try {
+    const url = new URL('./index.htm', location.href);
+    const response = await fetch(url, { method:'HEAD', cache:'no-store' });
+    if (!response.ok) return;
+    const value = response.headers.get('Last-Modified');
+    const published = value ? new Date(value) : null;
+    if (!published || Number.isNaN(published.getTime()) || published.getTime() > Date.now() + 300000) return;
+    window.H4SX_LAST_PUBLISH_AT = published.toISOString();
+    const dateEl = document.getElementById('changelog-date-text');
+    const timeEl = document.getElementById('changelog-time-text');
+    if (dateEl) dateEl.textContent = published.toLocaleDateString('ms-MY', { day:'numeric', month:'long', year:'numeric', timeZone:'Asia/Kuala_Lumpur' });
+    if (timeEl) timeEl.textContent = 'Last publish · ' + published.toLocaleTimeString('ms-MY', { hour:'numeric', minute:'2-digit', timeZone:'Asia/Kuala_Lumpur' });
+  } catch (error) { console.warn('Tarikh publish tidak dapat disemak:', error); }
+}
+loadLastPublishedAt();
