@@ -24,6 +24,11 @@ select{width:100%;border:1px solid var(--line);border-radius:11px;background:#07
 .game-name-emoji-preview{min-height:62px;display:flex;align-items:center;gap:10px;padding:10px 13px;border:1px solid rgba(34,181,255,.28);border-radius:12px;background:#0b2036}
 .game-name-emoji-preview img{width:36px;height:36px;object-fit:contain;flex:none}
 .game-name-emoji-preview img[hidden]{display:none}
+.draft-preview .inline-name-emoji{display:inline-block;width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:7px}
+.draft-preview .inline-name-emoji[hidden]{display:none}
+.emoji-badge-editor{padding:12px;border:1px solid rgba(34,181,255,.25);border-radius:12px;background:#0b2036}
+.emoji-badge-editor summary{cursor:pointer;font-weight:800;color:#f5f9ff}
+.emoji-badge-editor .form-grid{margin:12px 0 8px}
 .game-name-emoji-preview strong{font-size:14px;color:#f5f9ff}
 .game-name-emoji-preview small{margin-left:auto;color:var(--muted);font-size:10px}
 #g-name-emoji-url-wrap[hidden]{display:none}

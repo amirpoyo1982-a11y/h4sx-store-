@@ -613,28 +613,20 @@ function adminGameEmojiImages(value) {
   const base = 'https://cdn3.emoji.gg/emojis/' + page[1];
   return [base + '.gif', base + '.png', base + '.webp'];
 }
-function syncGameNameEmojiPreview() {
-  const choice = byId('g-name-emoji').value;
-  byId('g-name-emoji-url-wrap').hidden = choice !== 'custom';
-  const preview = byId('g-name-emoji-preview');
+function loadAdminEmojiPreview(preview, label, urls) {
   const image = preview.querySelector('img');
   const status = preview.querySelector('small');
-  const name = byId('g-name').value.trim() || 'Nama game';
-  preview.querySelector('strong').textContent = name;
-  const resolved = adminGameEmojiChoice(name, choice);
-  const preset = ADMIN_GAME_EMOJI_PRESETS[resolved];
-  const urls = preset ? ['assets/animated-nav/' + preset + '.webp']
-    : (resolved === 'custom' ? adminGameEmojiImages(byId('g-name-emoji-url').value) : []);
+  preview.querySelector('strong').textContent = label;
   image.onload = null;
   image.onerror = null;
   image.hidden = true;
   image.removeAttribute('src');
   if (!urls.length) {
-    status.textContent = resolved === 'custom' ? 'Masukkan pautan HTTPS emoji.' : 'Nama game kekal tanpa ikon';
+    status.textContent = 'Tiada emoji dipilih';
     return;
   }
   let index = 0;
-  image.onload = () => { image.hidden = false; status.textContent = 'Contoh paparan nama game'; };
+  image.onload = () => { image.hidden = false; status.textContent = 'Contoh paparan'; };
   image.onerror = () => {
     index += 1;
     if (index < urls.length) image.src = urls[index];
@@ -642,6 +634,37 @@ function syncGameNameEmojiPreview() {
   };
   status.textContent = 'Memuatkan preview emoji...';
   image.src = urls[index];
+}
+function syncProductEmojiPreview(field) {
+  const isName = field === 'name';
+  const inputId = isName ? 'p-name-emoji' : 'p-subcategory-emoji';
+  const previewId = isName ? 'p-name-emoji-preview' : 'p-subcategory-emoji-preview';
+  const labelId = isName ? 'p-name' : 'p-subcategory';
+  loadAdminEmojiPreview(byId(previewId), byId(labelId).value.trim() || (isName ? 'Nama produk' : 'Subcategory'), adminGameEmojiImages(byId(inputId).value));
+}
+const ADMIN_PRODUCT_BADGE_EMOJIS = ["badgeEmoji","stockEmoji","promoEmoji","videoEmoji","updatedEmoji","pinEmoji"];
+function emojiInputId(key, prefix = 'p') { return prefix + '-' + key.replace(/[A-Z]/g, letter => '-' + letter.toLowerCase()); }
+function syncBadgeEmojiPreview(mode = 'product') {
+  if (mode === 'game') {
+    loadAdminEmojiPreview(byId('g-badge-emoji-preview'), byId('g-badge').value.trim() || 'Badge game', adminGameEmojiImages(byId('g-badge-emoji').value));
+    return;
+  }
+  const labels = { badgeEmoji:byId('p-badge').value.trim() || 'Badge utama', stockEmoji:'Ready Stock / Habis', promoEmoji:'Promo', videoEmoji:'Video', updatedEmoji:'Tarikh kemas kini', pinEmoji:'PIN' };
+  ADMIN_PRODUCT_BADGE_EMOJIS.forEach(key => {
+    const id = emojiInputId(key);
+    loadAdminEmojiPreview(byId(id + '-preview'), labels[key], adminGameEmojiImages(byId(id).value));
+  });
+}
+function syncGameNameEmojiPreview() {
+  const choice = byId('g-name-emoji').value;
+  byId('g-name-emoji-url-wrap').hidden = choice !== 'custom';
+  const preview = byId('g-name-emoji-preview');
+  const name = byId('g-name').value.trim() || 'Nama game';
+  const resolved = adminGameEmojiChoice(name, choice);
+  const preset = ADMIN_GAME_EMOJI_PRESETS[resolved];
+  const urls = preset ? ['assets/animated-nav/' + preset + '.webp']
+    : (resolved === 'custom' ? adminGameEmojiImages(byId('g-name-emoji-url').value) : []);
+  loadAdminEmojiPreview(preview, name, urls);
 }
 function renderGames() {
   const q = byId('game-search').value.trim().toLowerCase();
@@ -1032,7 +1055,13 @@ function collectEditorPayload() {
     const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
     if (duplicate) throw new Error('ID produk sudah digunakan.');
     const isConsultation = byId('p-consultation').checked;
-    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), active:byId('p-active').checked, pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+    const nameEmoji = byId('p-name-emoji').value.trim();
+    const subcategoryEmoji = byId('p-subcategory-emoji').value.trim();
+    const badgeEmojiValues = Object.fromEntries(ADMIN_PRODUCT_BADGE_EMOJIS.map(key => [key, byId(emojiInputId(key)).value.trim()]));
+    if (nameEmoji && !adminGameEmojiImages(nameEmoji).length) throw new Error('URL emoji nama produk mesti HTTPS.');
+    if (subcategoryEmoji && !adminGameEmojiImages(subcategoryEmoji).length) throw new Error('URL emoji subcategory mesti HTTPS.');
+    if (Object.values(badgeEmojiValues).some(url => url && !adminGameEmojiImages(url).length)) throw new Error('URL emoji badge mesti HTTPS.');
+    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), nameEmoji, subcategoryEmoji, ...badgeEmojiValues, game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), active:byId('p-active').checked, pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
     if (!item.name || !item.game) throw new Error('Nama produk dan game diperlukan.');
     if (!isConsultation && (!Number.isFinite(item.price) || item.price < 0)) throw new Error('Harga produk tidak sah.');
     return { mode:'product', item, index:editingKey, targetKey:editingKey === null ? '' : String(products[editingKey]?.id ?? '') };
@@ -1049,7 +1078,9 @@ function collectEditorPayload() {
   const nameEmojiChoice = byId('g-name-emoji').value;
   const nameEmoji = nameEmojiChoice === 'custom' ? byId('g-name-emoji-url').value.trim() : nameEmojiChoice;
   if (nameEmojiChoice === 'custom' && !/^https:\/\/[^\s]+$/i.test(nameEmoji)) throw new Error('Masukkan URL HTTPS emoji yang sah.');
-  const item = compact({ ...extra, name, nameEmoji, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), purchaseNoticeEnabled, purchaseNoticeTitle:purchaseNoticeEnabled ? (purchaseNoticeTitle || 'Semak sebelum membuat pesanan') : null, purchaseNoticeBody:purchaseNoticeEnabled ? purchaseNoticeBody : null, consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+  const badgeEmoji = byId('g-badge-emoji').value.trim();
+  if (badgeEmoji && !adminGameEmojiImages(badgeEmoji).length) throw new Error('URL emoji badge game mesti HTTPS.');
+  const item = compact({ ...extra, name, nameEmoji, badgeEmoji, platform:byId('g-platform').value.trim(), badge:byId('g-badge').value.trim(), oos:byId('g-oos').checked, active:byId('g-active').checked, img:byId('g-img').value.trim(), purchaseNoticeEnabled, purchaseNoticeTitle:purchaseNoticeEnabled ? (purchaseNoticeTitle || 'Semak sebelum membuat pesanan') : null, purchaseNoticeBody:purchaseNoticeEnabled ? purchaseNoticeBody : null, consultation:isConsultation, whatsapp:isConsultation ? byId('g-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('g-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('g-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
   return { mode:'game', item, index:editingKey, targetKey:editingKey === null ? '' : String(games[editingKey]?.name ?? '') };
 }
 
@@ -1116,6 +1147,13 @@ byId('p-platform').addEventListener('input', () => selectPickerValue('p-platform
 byId('g-name').addEventListener('input', () => { selectPickerValue('g-name-picker', byId('g-name').value); syncGameNameEmojiPreview(); });
 byId('g-name-emoji').addEventListener('change', syncGameNameEmojiPreview);
 byId('g-name-emoji-url').addEventListener('input', syncGameNameEmojiPreview);
+byId('g-badge-emoji').addEventListener('input', () => syncBadgeEmojiPreview('game'));
+byId('g-badge').addEventListener('input', () => syncBadgeEmojiPreview('game'));
+ADMIN_PRODUCT_BADGE_EMOJIS.forEach(key => byId(emojiInputId(key)).addEventListener('input', () => syncBadgeEmojiPreview('product')));
+byId('p-badge').addEventListener('input', () => syncBadgeEmojiPreview('product'));
+  [['p-name-emoji','name'],['p-name','name'],['p-subcategory-emoji','subcategory'],['p-subcategory','subcategory']].forEach(([id, field]) => {
+    byId(id).addEventListener('input', () => syncProductEmojiPreview(field));
+  });
 byId('g-platform').addEventListener('input', () => selectPickerValue('g-platform-picker', byId('g-platform').value));
 byId('p-game-picker').addEventListener('change', event => {
   if (!event.currentTarget.value) return;
@@ -1143,12 +1181,26 @@ function setEditorMode(mode) {
   gameFields.querySelectorAll('input,select,textarea,button').forEach(control => { control.disabled = productActive; });
 }
 
+function advanceAdminPreviewEmoji(image) {
+  const next = image.dataset.fallbackPng || image.dataset.fallbackWebp;
+  if (image.dataset.fallbackPng) image.dataset.fallbackPng = '';
+  else image.dataset.fallbackWebp = '';
+  if (next) image.src = next;
+  else image.hidden = true;
+}
+function adminPreviewEmojiHTML(value) {
+  const urls = adminGameEmojiImages(value);
+  if (!urls.length) return '';
+  return '<img class="inline-name-emoji" src="' + escapeHtml(urls[0]) + '" data-fallback-png="' + escapeHtml(urls[1] || '') + '" data-fallback-webp="' + escapeHtml(urls[2] || '') + '" alt="" onerror="advanceAdminPreviewEmoji(this)">';
+}
 function showItemPreview(mode, item) {
   const image = item.img || item.image || item.poster || '';
   const isVideo = /\.(mp4|webm|mov)(\?|#|$)/i.test(image);
   const media = image ? (isVideo ? '<video src="' + escapeHtml(image) + '" controls muted></video>' : '<img src="' + escapeHtml(image) + '" alt="">') : '<div class="preview-empty"><i class="fa-solid fa-image"></i><span>Tiada gambar</span></div>';
   byId('preview-title').textContent = item.name || (mode === 'game' ? 'Preview game' : 'Preview produk');
-  byId('preview-content').innerHTML = '<article class="draft-preview">' + media + '<div><span class="preview-type">' + (mode === 'game' ? 'GAME' : 'PRODUK') + '</span><h3>' + escapeHtml(item.name || 'Tanpa nama') + '</h3>' + (mode === 'product' ? '<strong>RM' + Number(item.price || 0).toFixed(2) + '</strong><small>Stok: ' + escapeHtml(item.stock ?? '-') + ' • ' + escapeHtml(item.game || '-') + '</small>' : '<small>' + escapeHtml(item.platform || '-') + (item.oos ? ' • Soon' : '') + '</small>') + '<p>' + escapeHtml(item.desc || item.description || 'Tiada penerangan.') + '</p></div></article><details class="preview-json"><summary>Lihat data JSON</summary><pre>' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre></details>';
+  const nameEmoji = adminPreviewEmojiHTML(item.nameEmoji);
+  const subcategoryEmoji = mode === 'product' ? adminPreviewEmojiHTML(item.subcategoryEmoji) : '';
+  byId('preview-content').innerHTML = '<article class="draft-preview">' + media + '<div><span class="preview-type">' + (mode === 'game' ? 'GAME' : 'PRODUK') + '</span><h3>' + nameEmoji + escapeHtml(item.name || 'Tanpa nama') + '</h3>' + (mode === 'product' ? '<strong>RM' + Number(item.price || 0).toFixed(2) + '</strong><small>Stok: ' + escapeHtml(item.stock ?? '-') + ' • ' + subcategoryEmoji + escapeHtml(item.subcategory || item.game || '-') + '</small>' : '<small>' + escapeHtml(item.platform || '-') + (item.oos ? ' • Soon' : '') + '</small>') + '<p>' + escapeHtml(item.desc || item.description || 'Tiada penerangan.') + '</p></div></article><details class="preview-json"><summary>Lihat data JSON</summary><pre>' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre></details>';
   byId('preview-modal').hidden = false;
 }
 
@@ -1281,6 +1333,12 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   if (!byId('p-platform').value) syncPlatformFromProductGame();
   syncClassificationPickers();
   byId('p-subcategory').value = item.subcategory || ''; byId('p-badge').value = item.promoLabel || item.badge || '';
+  byId('p-name-emoji').value = item.nameEmoji || '';
+  byId('p-subcategory-emoji').value = item.subcategoryEmoji || '';
+  ADMIN_PRODUCT_BADGE_EMOJIS.forEach(key => { byId(emojiInputId(key)).value = item[key] || ''; });
+  syncBadgeEmojiPreview('product');
+  syncProductEmojiPreview('name');
+  syncProductEmojiPreview('subcategory');
   byId('p-display-position').value = ['top','middle','bottom'].includes(item.displayPosition) ? item.displayPosition : 'middle';
   byId('p-pinned').checked = item.pinned === true || String(item.pinned).toLowerCase() === 'true';
   byId('p-active').checked = isAdminCatalogItemVisible(item);
@@ -1298,7 +1356,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','active','hidden','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
+  const known = ['id','name','nameEmoji','subcategoryEmoji',...ADMIN_PRODUCT_BADGE_EMOJIS,'game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','active','hidden','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }
@@ -1318,6 +1376,8 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   syncGameNameEmojiPreview();
   syncClassificationPickers();
   byId('g-badge').value = item.badge || item.badgeTitle || ''; byId('g-oos').checked = item.oos === true;
+  byId('g-badge-emoji').value = item.badgeEmoji || '';
+  syncBadgeEmojiPreview('game');
   byId('g-active').checked = isAdminCatalogItemVisible(item);
   byId('g-img').value = item.img || item.image || item.video || '';
   const hasPurchaseNoticeSetting = Object.prototype.hasOwnProperty.call(item, 'purchaseNoticeEnabled');
@@ -1336,7 +1396,7 @@ function openGameEditor(item = {}, index = null, draftId = '') {
   byId('g-image-file').value = '';
   setImagePreview('game', null, byId('g-img').value);
   byId('g-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['name','nameEmoji','platform','badge','badgeTitle','oos','active','hidden','img','image','video','purchaseNoticeEnabled','purchaseNoticeTitle','purchaseNoticeBody','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
+  const known = ['name','nameEmoji','badgeEmoji','platform','badge','badgeTitle','oos','active','hidden','img','image','video','purchaseNoticeEnabled','purchaseNoticeTitle','purchaseNoticeBody','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }

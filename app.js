@@ -5870,14 +5870,17 @@ function getUpdatedText(item) {
   if (Number.isNaN(d.getTime())) return String(raw).slice(0, 28);
   return d.toLocaleDateString('ms-MY', { day:'numeric', month:'short' });
 }
+function badgeIconHTML(value, icon) {
+  return customNameEmojiHTML(value) || '<i class="fa-solid ' + icon + '"></i>';
+}
 function productMiniStatusHTML(item) {
   const chips = [];
   const state = stockState(item);
-  if (state.type !== 'unknown') chips.push('<span class="pstatus-chip ' + state.type + '"><i class="fa-solid fa-box"></i>' + escapeHtml(state.label) + '</span>');
-  if (item.promoLabel || productPromoConfig(item) || (item.originalPrice && item.originalPrice > item.price)) chips.push('<span class="pstatus-chip promo"><i class="fa-solid fa-tag"></i>Promo</span>');
-  if (isVideoMediaUrl(productMediaUrl(item), item)) chips.push('<span class="pstatus-chip video"><i class="fa-solid fa-play"></i>Video</span>');
+  if (state.type !== 'unknown') chips.push('<span class="pstatus-chip ' + state.type + '">' + badgeIconHTML(item.stockEmoji, 'fa-box') + escapeHtml(state.label) + '</span>');
+  if (item.promoLabel || productPromoConfig(item) || (item.originalPrice && item.originalPrice > item.price)) chips.push('<span class="pstatus-chip promo">' + badgeIconHTML(item.promoEmoji, 'fa-tag') + 'Promo</span>');
+  if (isVideoMediaUrl(productMediaUrl(item), item)) chips.push('<span class="pstatus-chip video">' + badgeIconHTML(item.videoEmoji, 'fa-play') + 'Video</span>');
   const updated = getUpdatedText(item);
-  if (updated || item.recentlyUpdated) chips.push('<span class="pstatus-chip updated"><i class="fa-solid fa-clock-rotate-left"></i>' + escapeHtml(updated || 'Updated') + '</span>');
+  if (updated || item.recentlyUpdated) chips.push('<span class="pstatus-chip updated">' + badgeIconHTML(item.updatedEmoji, 'fa-clock-rotate-left') + escapeHtml(updated || 'Updated') + '</span>');
   return chips.length ? '<div class="pstatus-row">' + chips.slice(0, 3).join('') + '</div>' : '';
 }
 function productVariants(item) {
@@ -6679,7 +6682,7 @@ function openProductQuickPreview(id) {
   const variantsWrap = document.getElementById('quick-preview-variants');
   if (media) media.innerHTML = renderMediaHTML(item, 'quick-preview');
   if (game) game.textContent = gameGroupName(item) || item.platform || 'PRODUK H4SX';
-  if (name) name.textContent = item.name || 'Produk';
+  if (name) name.innerHTML = customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name || 'Produk');
   if (price) price.innerHTML = (variants.length ? '<small>Dari</small>' : '') + '<strong>RM' + promo.final.toFixed(2) + '</strong>' + (promo.valid ? '<del>RM' + promo.base.toFixed(2) + '</del>' : ((item.originalPrice && Number(item.originalPrice) > Number(item.price)) ? '<del>RM' + Number(item.originalPrice).toFixed(2) + '</del>' : ''));
   const out = isOutOfStock(item);
   const stockLabel = out ? 'Habis stok' : (item.stock != null ? Math.max(0, Number(item.stock)) + ' stok tersedia' : 'Tersedia');
@@ -6890,12 +6893,12 @@ function sortProductsForDisplay(items) {
 }
 function productCardHTML(item) {
   const consultation = inventoryConsultationConfig(item);
-  const pinnedLabel = isProductPinned(item) ? '<div class="product-pinned-label"><i class="fa-solid fa-thumbtack"></i> PIN</div>' : '';
+  const pinnedLabel = isProductPinned(item) ? '<div class="product-pinned-label">' + badgeIconHTML(item.pinEmoji, 'fa-thumbtack') + ' PIN</div>' : '';
   if (consultation && consultation.active) {
-    const badge = '<div class="ptag consultation-item-badge"><i class="fa-solid fa-headset"></i> ' + escapeHtml(consultation.label) + '</div>';
+    const badge = '<div class="ptag consultation-item-badge">' + badgeIconHTML(item.badgeEmoji, 'fa-headset') + escapeHtml(consultation.label) + '</div>';
     return '<div class="pc reveal consultation-inventory-card" id="product-' + item.id + '">' + badge +
       '<div class="pimg" role="button" tabindex="0" onclick="openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')}">' + renderMediaHTML(item, 'card') + '</div>' +
-      '<div class="pbody">' + pinnedLabel + '<div class="pname">' + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
+      '<div class="pbody">' + pinnedLabel + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name || 'Konsultasi') + '</div><p class="pdesc">' + escapeHtml(item.desc || 'Tanya admin untuk pilihan gamepass dan harga semasa.') + '</p><div class="pactions"><button class="pbuy whatsapp-buy" onclick="event.stopPropagation();openInventoryConsultation(\'' + String(item.id).replace(/'/g, "\\\\'") + '\')"><i class="fa-brands fa-whatsapp"></i> ' + escapeHtml(consultation.buttonText) + '</button></div></div></div>';
   }
   const oos = isOutOfStock(item);
   // Determine badge position/align with per-item override support.
@@ -6909,7 +6912,7 @@ function productCardHTML(item) {
   const badgePos = (itemBadgeObj && (itemBadgeObj.position || itemBadgeObj.pos)) || item.badgePosition || item.promoPosition || globalBadge.position || 'top';
   const badgeAlign = (itemBadgeObj && (itemBadgeObj.align || itemBadgeObj.horizontalAlign)) || item.badgeAlign || item.promoAlign || globalBadge.align || 'left';
   const newBadgeClass = /^(new|baru)$/i.test(String(item.promoLabel || '').trim()) ? ' ptag-new' : '';
-  const promo = item.promoLabel ? '<div class="ptag' + newBadgeClass + ' ptag-pos-' + escapeHtml(String(badgePos)) + ' ptag-align-' + escapeHtml(String(badgeAlign)) + '">' + escapeHtml(item.promoLabel) + '</div>' : '';
+  const promo = item.promoLabel ? '<div class="ptag' + newBadgeClass + ' ptag-pos-' + escapeHtml(String(badgePos)) + ' ptag-align-' + escapeHtml(String(badgeAlign)) + '">' + customNameEmojiHTML(item.badgeEmoji) + escapeHtml(item.promoLabel) + '</div>' : '';
   let promotedByHTML = '';
   if (isPromotedEnabled(item) && item.promotedBy) {
     promotedByHTML = '<div class="product-promoted"><i class="fa-solid fa-star"></i>Promoted by ' + escapeHtml(item.promotedBy) + '</div>';
@@ -6945,7 +6948,7 @@ function productCardHTML(item) {
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
   const quickBar = buildQuickBarHTML(item, oos);
   const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -6965,6 +6968,7 @@ function activeProductFilters() {
         id: 'sub:' + normalizeKey(sub),
         label: sub,
         icon: /buah|fruit/i.test(sub) ? 'fa-apple-whole' : 'fa-list',
+        emoji: currentProductItems.find(item => productSubcategory(item) === sub && item.subcategoryEmoji)?.subcategoryEmoji || '',
         test: item => productSubcategory(item) === sub
     }));
     return [base[0], ...subFilters, ...base.slice(1)];
@@ -6978,7 +6982,7 @@ function renderProductFilters() {
     .map(f => ({ ...f, count: productFilterCount(f) }))
     .filter(f => f.id === 'all' || f.count > 0);
   bar.innerHTML = filters.map(f =>
-    '<button class="product-filter-chip' + (currentProductFilter === f.id ? ' active' : '') + '" onclick="setProductFilter(\'' + f.id + '\')"><i class="fa-solid ' + f.icon + '"></i><span>' + f.label + '</span><b>' + f.count + '</b></button>'
+    '<button class="product-filter-chip' + (currentProductFilter === f.id ? ' active' : '') + '" onclick="setProductFilter(\'' + f.id + '\')">' + (f.emoji ? customNameEmojiHTML(f.emoji) : '<i class="fa-solid ' + f.icon + '"></i>') + '<span>' + escapeHtml(f.label) + '</span><b>' + f.count + '</b></button>'
   ).join('');
 }
 function setProductFilter(filter) {
@@ -7062,8 +7066,9 @@ function openPermanentFruitConsultation() {
 }
 function renderProductSubsection(label, items) {
   const icon = /pin/i.test(label) ? 'fa-thumbtack' : (/atas/i.test(label) ? 'fa-arrow-up' : (/bawah/i.test(label) ? 'fa-arrow-down' : (/buah|fruit/i.test(label) ? 'fa-apple-whole' : (/akun|joki/i.test(label) ? 'fa-user-gear' : 'fa-boxes-stacked'))));
+  const categoryEmoji = currentProductItems.find(item => productSubcategory(item) === label && item.subcategoryEmoji)?.subcategoryEmoji || '';
   return '<section class="product-subsection reveal">' +
-    '<div class="product-subhead"><div><i class="fa-solid ' + icon + '"></i><span>' + escapeHtml(label) + '</span></div><b>' + items.length + ' item</b></div>' +
+    '<div class="product-subhead"><div>' + (categoryEmoji ? customNameEmojiHTML(categoryEmoji) : '<i class="fa-solid ' + icon + '"></i>') + '<span>' + escapeHtml(label) + '</span></div><b>' + items.length + ' item</b></div>' +
     '<div class="product-subgrid">' + items.map(productCardHTML).join('') + '</div>' +
   '</section>';
 }
@@ -7190,6 +7195,11 @@ function advanceGameNameEmojiImage(image) {
   if (next) image.src = next;
   else image.closest('.game-name-emoji').hidden = true;
 }
+function customNameEmojiHTML(value) {
+  const urls = gameNameEmojiImages(value);
+  if (!urls.length) return '';
+  return '<span class="game-name-emoji custom" aria-hidden="true"><img src="' + escapeHtml(urls[0]) + '" data-fallback-png="' + escapeHtml(urls[1] || '') + '" data-fallback-webp="' + escapeHtml(urls[2] || '') + '" alt="" loading="lazy" decoding="async" onerror="advanceGameNameEmojiImage(this)"></span>';
+}
 function gameNameEmojiHTML(game) {
   const choice = gameNameEmojiChoice(game);
   if (choice === 'none') return '';
@@ -7198,22 +7208,20 @@ function gameNameEmojiHTML(game) {
     const base = 'assets/animated-nav/' + preset;
     return '<span class="game-name-emoji" aria-hidden="true"><picture><source media="(prefers-reduced-motion: reduce)" srcset="' + base + '.png"><img src="' + base + '.webp" alt="" loading="lazy" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></picture></span>';
   }
-  const urls = gameNameEmojiImages(choice);
-  if (!urls.length) return '';
-  return '<span class="game-name-emoji custom" aria-hidden="true"><img src="' + escapeHtml(urls[0]) + '" data-fallback-png="' + escapeHtml(urls[1] || '') + '" data-fallback-webp="' + escapeHtml(urls[2] || '') + '" alt="" loading="lazy" decoding="async" onerror="advanceGameNameEmojiImage(this)"></span>';
+  return customNameEmojiHTML(choice);
 }
 function renderGames() {
   renderPlatformFilters();
   const visibleGames = catalogGames().sort((a, b) => Number(Boolean(a.oos)) - Number(Boolean(b.oos)));
   document.getElementById('game-grid').innerHTML = visibleGames.map(g => {
     const badgeMeta = getGameBadgeMeta(g.badge || g.badgeTitle || g.badgeText || g.titleBadge || g.label);
-    const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + escapeHtml(badgeMeta.text) + '</div>' : '';
+    const badge = badgeMeta ? '<div class="gc-badge ' + badgeMeta.key + '">' + customNameEmojiHTML(g.badgeEmoji) + escapeHtml(badgeMeta.text) + '</div>' : '';
     const consultation = getGameConsultationConfig(g.name);
     if (consultation && consultation.active) {
-      const consultationBadge = '<div class="gc-badge consultation">' + escapeHtml(consultation.label || 'Konsultasi') + '</div>';
+      const consultationBadge = '<div class="gc-badge consultation">' + customNameEmojiHTML(g.badgeEmoji) + escapeHtml(consultation.label || 'Konsultasi') + '</div>';
       return '<div class="gc reveal consultation-game-card" onclick="openGameConsultation(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + consultationBadge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
     }
-    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">Soon</div></div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
+    if (g.oos) return '<div class="gc oos reveal"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '<div class="oos-pill">' + customNameEmojiHTML(g.badgeEmoji) + 'Soon</div></div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
     return '<div class="gc reveal" onclick="openGame(\'' + g.name.replace(/'/g,"\\'") + '\')"><div class="gc-icon-wrap">' + badge + renderMediaHTML(g, 'game') + '</div><div class="gc-name">' + gameNameEmojiHTML(g) + '<span>' + escapeHtml(g.name.toUpperCase()) + '</span></div></div>';
   }).join('');
   initScrollReveal();
@@ -7317,7 +7325,7 @@ function doSearch(q) {
         : '<span class="pprice" style="font-size:15px">RM' + Number(item.price).toFixed(2) + '</span>');
     const oos = isOutOfStock(item);
     const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled style="height:26px;font-size:9px">HABIS</button>' : '<button class="pbuy whatsapp-buy" style="height:26px;font-size:9px" onclick="event.stopPropagation();closeSearch();buyNowItem(' + item.id + ')"><i class="fa-brands fa-whatsapp"></i> WA</button>';
-    return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
+    return '<div class="pc search-card" onclick="closeSearch();openGame(\'' + gameGroupName(item).replace(/'/g,"\\'") + '\')"><div class="pimg" style="height:110px" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="event.stopPropagation();openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();event.stopPropagation();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'search') + '</div><div class="pbody" style="padding:10px">' + productMiniStatusHTML(item) + '<div class="pname" style="font-size:13px">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><div class="psold" style="font-size:10px;margin-bottom:6px">' + escapeHtml(gameGroupName(item)) + '</div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><div>' + pHTML + '</div>' + buyBtn + '</div></div></div>';
   }).join('');
 }
 document.addEventListener('keydown', e => {
@@ -8242,7 +8250,7 @@ function openProductImage(id, options = {}) {
   const descEl = document.getElementById('product-modal-desc');
   const summaryEl = document.getElementById('product-modal-summary');
   if (gameEl) gameEl.textContent = item.game || '';
-  if (nameEl) nameEl.textContent = item.name || 'Item';
+  if (nameEl) nameEl.innerHTML = customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name || 'Item');
   if (priceEl) priceEl.textContent = 'RM' + Number(item.price || 0).toFixed(2);
   if (oldPriceEl) oldPriceEl.textContent = (item.originalPrice && item.originalPrice > item.price) ? 'RM' + item.originalPrice : '';
   if (descEl) descEl.textContent = item.desc || 'Tiada description.';
