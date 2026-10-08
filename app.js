@@ -2941,11 +2941,6 @@ function showClosure(title, status, message, type = 'closed') {
     if (typeof toast === 'function') toast(message);
   };
 
-  document.addEventListener('contextmenu', event => {
-    event.preventDefault();
-    notifyBlocked('Klik kanan dinyahaktifkan pada H4SX STORE.');
-  }, { capture: true });
-
   document.addEventListener('keydown', event => {
     const key = String(event.key || '').toLowerCase();
     const modifier = event.ctrlKey || event.metaKey;
