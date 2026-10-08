@@ -3801,6 +3801,8 @@ details.faq[open] .faq-ic {
   animation: tin 0.3s ease; border-left: 4px solid var(--primary);
 }
 .toast.err { border-left-color: var(--red); }
+.toast-message { min-width: 0; overflow-wrap: anywhere; }
+.toast-count { flex: none; margin-left: auto; padding: 2px 8px; border-radius: 999px; color: #075985; background: #e0f2fe; font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; }
 @keyframes tin { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
 footer {

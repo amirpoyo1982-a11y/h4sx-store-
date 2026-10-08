@@ -8458,25 +8458,54 @@ async function shareCartItems() {
   }, 'Senarai item dalam cart sudah disalin!', 'Copy senarai item ini:');
 }
 function toast(msg, err, name, count) {
-  const c = document.getElementById('toasts'); if (!c) return;
-  
-  // Refresh toast for same item
-  if (name) {
-    const existing = document.querySelectorAll('.toast');
-    existing.forEach(t => { if (t.dataset.item === name) t.remove(); });
+  const container = document.getElementById('toasts');
+  if (!container) return;
+  const key = JSON.stringify([String(msg), Boolean(err), String(name || '')]);
+  let card = container.querySelector('.toast');
+  const repeated = card?.dataset.toastKey === key;
+  if (!repeated) {
+    if (card) {
+      clearTimeout(card._dismissTimer);
+      clearTimeout(card._removeTimer);
+    }
+    container.replaceChildren();
+    card = document.createElement('div');
+    card.className = 'toast' + (err ? ' err' : '');
+    card.dataset.toastKey = key;
+    card._repeatCount = 0;
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid ' + (err ? 'fa-circle-exclamation' : 'fa-check') + ' t-ic';
+    card.appendChild(icon);
+    const message = document.createElement('span');
+    message.className = 'toast-message';
+    if (name) {
+      const item = document.createElement('strong');
+      item.textContent = name;
+      message.appendChild(item);
+      message.appendChild(document.createTextNode(' '));
+    }
+    message.appendChild(document.createTextNode(String(msg)));
+    card.appendChild(message);
+    container.appendChild(card);
   }
-  const t = document.createElement('div'); 
-  t.className = 'toast' + (err?' err':'');
-  if (name) t.dataset.item = name;
-  let content = '<i class="fa-solid ' + (err?'fa-circle-exclamation':'fa-check') + ' t-ic"></i>' + (name ? '<strong>' + name + '</strong> ' : '') + msg;
-  if (count && count > 1) content += '<span class="toast-count">' + count + 'x</span>';
-  
-  t.innerHTML = content;
-  c.appendChild(t);
-  
-  setTimeout(() => { 
-    t.style.animation = 'tout 0.3s ease forwards';
-    setTimeout(()=>t.remove(),300); 
+  card._repeatCount += 1;
+  const explicitCount = Number(count);
+  const displayCount = Number.isFinite(explicitCount) && explicitCount > 1 ? explicitCount : card._repeatCount;
+  let badge = card.querySelector('.toast-count');
+  if (displayCount > 1) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'toast-count';
+      card.appendChild(badge);
+    }
+    badge.textContent = displayCount + 'x';
+  } else if (badge) badge.remove();
+  clearTimeout(card._dismissTimer);
+  clearTimeout(card._removeTimer);
+  card.style.animation = '';
+  card._dismissTimer = setTimeout(() => {
+    card.style.animation = 'tout 0.3s ease forwards';
+    card._removeTimer = setTimeout(() => card.remove(), 300);
   }, 2500);
 }
 // Initialize 3D Background from Config
