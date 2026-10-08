@@ -1,36 +1,36 @@
 {
   "rules": {
     "store": {
-      ".read": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID'",
-      ".write": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID'",
+      ".read": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
+      ".write": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
       "inventory": { ".read": true, ".validate": "newData.hasChildren()" },
       "games": { ".read": true, ".validate": "newData.hasChildren()" },
       "config": { ".read": true, ".validate": "newData.hasChildren()" },
       "customer_orders": {
-        ".read": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID'",
+        ".read": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
         "$orderId": {
           ".read": true,
-          ".write": "(auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID') || (!data.exists() && newData.child('id').val() === $orderId && newData.child('status').val() === 'Menunggu Pembayaran')",
+          ".write": "(auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3') || (!data.exists() && newData.child('id').val() === $orderId && newData.child('status').val() === 'Menunggu Pembayaran')",
           ".validate": "newData.hasChildren(['id','items','total','status','createdAt','phoneMasked']) && newData.child('id').val() === $orderId && newData.child('items').hasChildren() && newData.child('total').isNumber() && newData.child('total').val() >= 0 && newData.child('createdAt').isNumber() && newData.child('phoneMasked').isString()",
-          "adminNote": { ".validate": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID' && newData.isString() && newData.val().length <= 400" },
-          "adminNoteUpdatedAt": { ".validate": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID' && newData.isNumber()" },
-          "deliveryCipher": { ".validate": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID' && newData.hasChildren(['v','iv','data']) && newData.child('v').val() === 1 && newData.child('iv').isString() && newData.child('data').isString() && newData.child('data').val().length <= 10000" },
-          "deliveryUpdatedAt": { ".validate": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID' && newData.isNumber()" }
+          "adminNote": { ".validate": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3' && newData.isString() && newData.val().length <= 400" },
+          "adminNoteUpdatedAt": { ".validate": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3' && newData.isNumber()" },
+          "deliveryCipher": { ".validate": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3' && newData.hasChildren(['v','iv','data']) && newData.child('v').val() === 1 && newData.child('iv').isString() && newData.child('data').isString() && newData.child('data').val().length <= 10000" },
+          "deliveryUpdatedAt": { ".validate": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3' && newData.isNumber()" }
         }
       },
       "customer_payment_claims": {
-        ".read": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID'",
+        ".read": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
         "$orderId": {
           ".read": true,
-          ".write": "(auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID') || (!data.exists() && root.child('store/customer_orders').child($orderId).exists() && newData.child('orderId').val() === $orderId)",
+          ".write": "(auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3') || (!data.exists() && root.child('store/customer_orders').child($orderId).exists() && newData.child('orderId').val() === $orderId)",
           ".validate": "newData.hasChildren(['orderId','claimedAt']) && newData.child('orderId').val() === $orderId && newData.child('claimedAt').isNumber()"
         }
       }
     },
     "customer_order_private": {
-      ".read": "auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID'",
+      ".read": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
       "$orderId": {
-        ".write": "(auth != null && auth.uid === 'REPLACE_WITH_ADMIN_UID') || (!data.exists() && newData.hasChildren(['customerName','phone','createdAt']))",
+        ".write": "(auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3') || (!data.exists() && newData.hasChildren(['customerName','phone','createdAt']))",
         ".validate": "newData.hasChildren(['customerName','phone','createdAt']) && newData.child('customerName').isString() && newData.child('customerName').val().length > 0 && newData.child('customerName').val().length <= 60 && newData.child('phone').isString() && newData.child('phone').val().length >= 9 && newData.child('phone').val().length <= 15 && newData.child('createdAt').isNumber()",
         "deliveryToken": { ".validate": "newData.isString() && newData.val().matches(/^[a-fA-F0-9]{64}$/)" }
       }

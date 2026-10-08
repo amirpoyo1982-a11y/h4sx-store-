@@ -6,9 +6,9 @@ Kod storefront dan `catalog-control.htm` menggunakan database berikut:
 
 1. Buka Firebase Console untuk projek `h4sx-6712c`.
 2. Pergi ke **Build > Realtime Database**, cipta database di region Singapore/Asia Southeast jika belum ada.
-3. Pastikan akaun admin Email/Password sudah wujud di **Authentication > Users**. Log masuk ke `/catalog-control.htm` dan tekan **Salin UID** di bar atas.
-4. Dalam `firebase-database.rules.json`, gantikan **semua** `REPLACE_WITH_ADMIN_UID` dengan UID admin yang disalin. Semak tiada placeholder tertinggal sebelum publish. UID bukan password atau secret.
-5. Salin rules yang telah diisi UID ke **Build > Realtime Database > Rules**, kemudian Publish. Jangan publish fail asal yang masih ada placeholder kerana akses admin akan terkunci.
+3. Pastikan akaun admin Email/Password sudah wujud di **Authentication > Users**. Log masuk ke `/catalog-control.htm` dan tekan **Salin UID** di bar atas untuk semak akaun yang sedang digunakan.
+4. `firebase-database.rules.json` kini mengandungi UID admin tersebut. Jika akaun admin berubah, gantikan UID lama pada setiap semakan rules dengan UID akaun baru sebelum publish. UID bukan password atau secret.
+5. Salin rules ke **Build > Realtime Database > Rules**, kemudian Publish. Semak UID dalam rules sepadan dengan akaun admin sebelum publish supaya akses tidak terkunci.
 6. Buka `/catalog-control.htm`, log masuk, pergi ke **Import & Backup**, kemudian tekan **Import ke Firebase** sekali sahaja.
 7. Selepas data berjaya diimport, semua edit produk, game dan setting dibuat dari halaman control tersebut dan storefront menerima update secara realtime.
 
