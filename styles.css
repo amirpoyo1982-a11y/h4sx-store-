@@ -10928,8 +10928,8 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .pname .game-name-emoji,.product-filter-chip .game-name-emoji,.product-subhead .game-name-emoji{width:20px;height:20px;margin-right:5px}
 .ptag .game-name-emoji,.gc-badge .game-name-emoji,.oos-pill .game-name-emoji,.pstatus-chip .game-name-emoji,.product-pinned-label .game-name-emoji{width:15px;height:15px;margin-right:4px}
 #product-modal-name .game-name-emoji,#quick-preview-name .game-name-emoji{width:26px;height:26px;margin-right:6px}
-/* Keep NEW clear of the Quick View button, even when a badge position was configured. */
-#product-view .pc > .ptag-new{top:10px!important;bottom:auto!important;left:10px!important;right:auto!important;transform:none!important;max-width:calc(100% - 64px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Keep every product image badge in the top-left, away from Quick View. */
+#product-view .pc > .ptag{top:10px!important;bottom:auto!important;left:10px!important;right:auto!important;transform:none!important;max-width:calc(100% - 74px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
 
 /* Animated emoji in the phone dock */
 .bottom-nav .tab-emoji{width:24px;height:24px;display:inline-grid;place-items:center;flex:none}.bottom-nav .tab-emoji picture,.bottom-nav .tab-emoji img{display:block;width:24px;height:24px;object-fit:contain}.bottom-nav .tab-emoji picture[hidden],.bottom-nav .tab-emoji i[hidden]{display:none}.bottom-nav .tab-emoji i:not([hidden]){font-size:18px}
