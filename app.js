@@ -1361,12 +1361,21 @@ function flagOff(value) {
 }
 function isPreviewBypass() {
   const params = new URLSearchParams(window.location.search);
-  const cacheKey = 'h4sx_preview_bypass';
+  const legacyKey = 'h4sx_preview_bypass';
+  const sessionKey = 'h4sx_preview_session';
   const isOff = value => ['0', 'false', 'off', 'no'].includes(String(value || '').trim().toLowerCase());
-  // Older builds persisted preview across visits. Remove that stale bypass;
-  // preview now applies only to the URL that explicitly requests it.
-  try { localStorage.removeItem(cacheKey); } catch (error) {}
-  return params.has('preview') && !isOff(params.get('preview') || '1');
+  // Preview survives internal navigation in this tab, but never leaks into a new tab.
+  try { localStorage.removeItem(legacyKey); } catch (error) {}
+  if (params.has('preview')) {
+    const enabled = !isOff(params.get('preview') || '1');
+    try {
+      if (enabled) sessionStorage.setItem(sessionKey, '1');
+      else sessionStorage.removeItem(sessionKey);
+    } catch (error) {}
+    return enabled;
+  }
+  try { return sessionStorage.getItem(sessionKey) === '1'; }
+  catch (error) { return false; }
 }
 let promoBannerIndex = 0;
 let promoBannerSlides = [];
