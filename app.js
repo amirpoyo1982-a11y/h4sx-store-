@@ -1363,24 +1363,10 @@ function isPreviewBypass() {
   const params = new URLSearchParams(window.location.search);
   const cacheKey = 'h4sx_preview_bypass';
   const isOff = value => ['0', 'false', 'off', 'no'].includes(String(value || '').trim().toLowerCase());
-
-  if (params.has('preview')) {
-    const value = params.get('preview') || '1';
-    try {
-      if (isOff(value)) {
-        localStorage.removeItem(cacheKey);
-        return false;
-      }
-      localStorage.setItem(cacheKey, '1');
-    } catch (error) {}
-    return true;
-  }
-
-  try {
-    return localStorage.getItem(cacheKey) === '1';
-  } catch (error) {
-    return false;
-  }
+  // Older builds persisted preview across visits. Remove that stale bypass;
+  // preview now applies only to the URL that explicitly requests it.
+  try { localStorage.removeItem(cacheKey); } catch (error) {}
+  return params.has('preview') && !isOff(params.get('preview') || '1');
 }
 let promoBannerIndex = 0;
 let promoBannerSlides = [];
@@ -2762,23 +2748,25 @@ function updateBusinessHoursDisplay(config, isOpen) {
   }
 }
 
-async function checkStore() {
+async function checkStore(configData) {
   console.log('Running checkStore...');
   const overlay = document.getElementById('closure-overlay');
   const closureIconEl = document.getElementById('closure-icon');
 
-  const d = await fetchKedaiJson();
+  // Firebase is authoritative for opening the store; the legacy Gist may be stale.
+  const d = configData === undefined ? (realtimeDb ? await fetchKedaiJson() : null) : configData;
   
   if (!d) {
-    if (realtimeDb) {
-      // Never replace the Firebase schedule with stale legacy hours while a read is unavailable.
-      if (!kedaiConfigLoaded && overlay) {
-        overlay.style.display = 'none';
-        document.body.style.overflow = '';
-      }
+    // A failed or missing config must never make a closed store appear open.
+    if (isPreviewBypass()) {
+      if (overlay) overlay.style.display = 'none';
+      document.body.style.overflow = '';
       return;
     }
-    console.warn('No store config available; using default settings.');
+    console.warn('Store config unavailable; keeping the storefront closed until the next check.');
+    if (overlay) showClosure('Status Kedai Belum Dapat Disahkan', 'SEMENTARA DITUTUP', 'Sambungan ke status kedai terganggu. Sila cuba semula sebentar lagi.', 'closed');
+    updateBusinessHoursDisplay(currentStoreConfig, false);
+    return;
   } else {
     const normalizedConfig = normalizeKedaiConfig(d);
     // Update current config with gist data
@@ -5815,7 +5803,10 @@ function bootStoreApp() {
   loadGames().then(renderGames);
   loadInv().then(renderPurchasePopup);
   startRealtimeConfigSync();
-  if (!realtimeDb) checkStore().catch(error => console.warn('Store status check failed:', error));
+  checkStore().catch(error => {
+    console.warn('Store status check failed:', error);
+    if (!isPreviewBypass()) showClosure('Status Kedai Belum Dapat Disahkan', 'SEMENTARA DITUTUP', 'Sambungan ke status kedai terganggu. Sila cuba semula sebentar lagi.', 'closed');
+  });
   startPurchasePopupSync();
   startWebsiteIntroConfigSync();
   startCustomerHubConfigSync();
@@ -5841,12 +5832,15 @@ function startRealtimeConfigSync() {
   if (!realtimeDb || realtimeConfigListening) return;
   realtimeConfigListening = true;
   realtimeDb.ref(REALTIME_STORE_ROOT + '/config').on('value', snapshot => {
-    if (!snapshot.exists()) return;
+    if (!snapshot.exists()) { checkStore(null); return; }
     applyWebsiteTheme(snapshot.val());
-    checkStore().then(() => {
+    checkStore(snapshot.val()).then(() => {
       if (isReviewAreaVisible() && db && !unsubscribeReviews) loadReviews();
     }).catch(error => console.warn('Realtime store config refresh failed:', error));
-  }, error => console.warn('Realtime config listener failed:', error));
+  }, error => {
+    console.warn('Realtime config listener failed:', error);
+    checkStore(null);
+  });
 }
 
 if (document.readyState === 'loading') {
