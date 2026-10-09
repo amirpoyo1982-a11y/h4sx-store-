@@ -2770,6 +2770,7 @@ async function checkStore(configData) {
     if (isPreviewBypass()) {
       if (overlay) overlay.style.display = 'none';
       document.body.style.overflow = '';
+      updateBusinessHoursDisplay(currentStoreConfig, false);
       return;
     }
     console.warn('Store config unavailable; keeping the storefront closed until the next check.');
@@ -2817,14 +2818,6 @@ async function checkStore(configData) {
   syncCustomerOrderFeature();
   if (!activeCustomerOrderId) resumeCustomerOrderFromUrl();
 
-  if (isPreviewBypass()) {
-    if (overlay) overlay.style.display = 'none';
-    document.body.style.overflow = '';
-    updateBusinessHoursDisplay(currentStoreConfig, true);
-    checkAndShowAnnouncement();
-    return;
-  }
-  
   if (!overlay) {
     console.log('Closure overlay not found!');
     // Still check announcements even if no overlay
@@ -2861,6 +2854,15 @@ async function checkStore(configData) {
     }
   }
   
+  if (isPreviewBypass()) {
+    // Preview grants access to the page, not an "open" store status.
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    updateBusinessHoursDisplay(currentStoreConfig, !shouldClose);
+    checkAndShowAnnouncement();
+    return;
+  }
+
   if (shouldClose) {
     console.log(`Showing ${closureType} popup`);
     const announcementModal = document.getElementById('h4sx-announcement-modal');
