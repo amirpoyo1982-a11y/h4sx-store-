@@ -874,6 +874,16 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const badgeOverlayBg       = document.getElementById('badgeOverlayBg');
   const badgePanelModal      = document.getElementById('badgePanelModal');
   const badgeTextInput       = document.getElementById('badgeTextInput');
+  const badgeSizeInput = document.getElementById('badgeSizeInput');
+  const badgeSizeOutput = document.getElementById('badgeSizeOutput');
+  function badgeSizePercent(value) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? Math.max(70, Math.min(200, number)) : 100;
+  }
+  document.getElementById('badgeSizeReset').addEventListener('click', () => {
+    badgeSizeInput.value = '100';
+    kemaskiniBadgePreview();
+  });
   const badgeEmojiInput = document.getElementById('badgeEmojiInput');
   const badgeEmojiStatus = document.getElementById('badgeEmojiStatus');
   const badgeColorInput      = document.getElementById('badgeColorInput');
@@ -913,7 +923,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const bg = rainbow
       ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
       : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+    return `zoom:${badgeSizePercent(data.badgeSize) / 100}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
   }
   function medalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
@@ -1016,8 +1026,9 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       ? reviewEmojiMarkup(data.customCheckGif) : '';
     return `<span class="custom-check${gif ? ' is-gif' : ''}" style="--check-color:${color}" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>${gif}</span>`;
   }
-  function bukaBadgeModal(id, teksSedia, warnaSedia, warnaTextSedia, warnaKeduaSedia, gradientSedia, animasiSedia, glowSedia, rainbowSedia, checkSedia, checkColorSedia, verifiedDisorok, emojiSedia, checkTypeSedia, checkGifSedia) {
+  function bukaBadgeModal(id, teksSedia, warnaSedia, warnaTextSedia, warnaKeduaSedia, gradientSedia, animasiSedia, glowSedia, rainbowSedia, checkSedia, checkColorSedia, verifiedDisorok, emojiSedia, checkTypeSedia, checkGifSedia, sizeSedia) {
     editingBadgeId = id;
+    badgeSizeInput.value = badgeSizePercent(sizeSedia);
     badgeEmojiInput.value = emojiSedia || '';
     badgeTextInput.value = teksSedia || '';
     badgeColorInput.value = warnaHexSah(warnaSedia, '#2fa8e0');
@@ -1044,11 +1055,13 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     editingBadgeId = null;
   }
   function kemaskiniBadgePreview() {
+    badgeSizeOutput.textContent = `${badgeSizePercent(badgeSizeInput.value)}%`;
     const teks = badgeTextInput.value.trim() || 'Preview';
     badgeLivePreview.innerHTML = reviewEmojiMarkup(badgeEmojiInput.value, 'badgeEmojiStatus') + escapeHtml(teks);
     reviewEmojiStatus(badgeEmojiInput, badgeEmojiStatus);
     badgeLivePreview.className = 'verified-badge custom-badge' + (badgeAnimatedToggle.checked || badgeRainbowToggle.checked ? ' is-animated' : '') + (badgeRainbowToggle.checked ? ' is-rainbow' : '');
     badgeLivePreview.style.cssText = badgeStyle({
+      badgeSize: badgeSizePercent(badgeSizeInput.value),
       badgeColor: badgeColorInput.value,
       badgeColor2: badgeColorInput2.value,
       badgeTextColor: badgeTextColorInput.value,
@@ -1066,7 +1079,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     customCheckLivePreview.classList.toggle('is-disabled', !customCheckEnabledToggle.checked);
     if (gifSelected) reviewEmojiStatus(customCheckGifInput, customCheckGifStatus);
   }
-  [badgeEmojiInput, badgeTextInput, badgeColorInput2, badgeColorInput, badgeTextColorInput, badgeGlowColorInput, badgeGradientToggle, badgeAnimatedToggle, badgeRainbowToggle, customCheckEnabledToggle, customCheckColorInput, customCheckTypeSelect, customCheckGifInput]
+  [badgeSizeInput, badgeEmojiInput, badgeTextInput, badgeColorInput2, badgeColorInput, badgeTextColorInput, badgeGlowColorInput, badgeGradientToggle, badgeAnimatedToggle, badgeRainbowToggle, customCheckEnabledToggle, customCheckColorInput, customCheckTypeSelect, customCheckGifInput]
     .filter(Boolean).forEach(el => el.addEventListener('input', kemaskiniBadgePreview));
   customCheckTypeSelect.addEventListener('change', () => {
     if (customCheckTypeSelect.value === 'gif') customCheckEnabledToggle.checked = true;
@@ -1258,6 +1271,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     if (checkGifMode && !checkGif) throw new Error('Isi URL GIF centang dahulu.');
     return {
       badgeText: teks || null,
+      badgeSize: teks ? badgeSizePercent(badgeSizeInput.value) : null,
       badgeEmoji: teks ? reviewEmojiValue(badgeEmojiInput, 'Emoji role') : null,
       badgeColor: teks ? badgeColorInput.value : null,
       badgeColor2: teks ? badgeColorInput2.value : null,
@@ -1310,6 +1324,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const dataDoc = allDocs.find(d=>d.id===editingBadgeId) || {};
     simpanBadgePayload({
       badgeText: null,
+      badgeSize: null,
       badgeEmoji: null,
       badgeColor: null,
       badgeColor2: null,
@@ -3655,7 +3670,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       btnSaveEditTime.addEventListener("click",()=>simpanEditMasa(id, editTimeInput.value, btnSaveEditTime, data));
       btnBadge.addEventListener("click", ()=>{
         if(!mintaAdmin())return;
-        bukaBadgeModal(id, data.badgeText, data.badgeColor, data.badgeTextColor, data.badgeColor2, data.badgeGradient, data.badgeAnimated, data.badgeGlowColor, data.badgeRainbow, data.customCheckEnabled, data.customCheckColor, data.hideVerifiedBadge, data.badgeEmoji, data.customCheckType, data.customCheckGif);
+        bukaBadgeModal(id, data.badgeText, data.badgeColor, data.badgeTextColor, data.badgeColor2, data.badgeGradient, data.badgeAnimated, data.badgeGlowColor, data.badgeRainbow, data.customCheckEnabled, data.customCheckColor, data.hideVerifiedBadge, data.badgeEmoji, data.customCheckType, data.customCheckGif, data.badgeSize);
       });
       btnProfile.addEventListener("click", ()=>{
         if(!mintaAdmin())return;

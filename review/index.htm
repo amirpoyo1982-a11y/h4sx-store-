@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=review-no-loader-20261011">
+  <link rel="stylesheet" href="/review/review-style.css?v=badge-size-20261011">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -291,6 +291,10 @@
   <div class="admin-form-group">
     <label>Teks Badge</label>
     <input type="text" id="badgeTextInput" maxlength="24" placeholder="Cth: ADMIN RASMI, STAFF, PEMBELI VIP..." style="width:100%;padding:10px 12px;border:1.5px solid var(--line-mid);border-radius:8px;font-size:13px;font-family:inherit;">
+    <label for="badgeSizeInput">Saiz badge <output id="badgeSizeOutput" for="badgeSizeInput">100%</output></label>
+    <input type="range" id="badgeSizeInput" min="70" max="200" step="5" value="100" style="width:100%">
+    <button type="button" id="badgeSizeReset" class="btn-secondary">Reset saiz 100%</button>
+    <small>Laraskan 70%–200%. Teks dan GIF dalam badge ikut saiz ini.</small>
     <label for="badgeEmojiInput" class="review-emoji-label">GIF / emoji bergerak sebelah role</label>
     <input type="url" id="badgeEmojiInput" maxlength="2048" placeholder="https://emoji.gg/emoji/980648-spooky">
     <small id="badgeEmojiStatus" class="review-emoji-status">Pautan HTTPS GIF, WebP, PNG atau halaman emoji.gg.</small>

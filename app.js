@@ -5238,7 +5238,7 @@ function badgeStyle(data = {}) {
     const bg = rainbow
       ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
       : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+    return `zoom:${Number.isFinite(Number(data.badgeSize)) && Number(data.badgeSize) > 0 ? Math.max(70, Math.min(200, Number(data.badgeSize))) / 100 : 1}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
   }
   function reviewIdentityMedalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
