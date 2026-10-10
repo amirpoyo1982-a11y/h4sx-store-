@@ -407,3 +407,7 @@ body.review-rewrite-v3.midmonth-refresh {
 .review-admin-identity-choice input { flex: 0 0 auto; width: 16px; height: 16px; margin: 1px 0 0; }
 .review-admin-identity-choice small { display: block; margin-top: 3px; color: #5f8294; font-size: 10px; font-weight: 500; }
 :root[data-theme="dark"] .review-admin-identity-choice { border-color: #276888; background: #112d40; color: #cbf3ff; }
+/* Phone review layout at the requested 90% scale. */
+@media (max-width:640px) {
+  body.review-rewrite-v3 { zoom:0.9; }
+}
