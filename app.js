@@ -9093,7 +9093,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('Kod review perlu dibersihkan oleh admin:', codeDeleteError);
       }
       try {
+        const [replySettings, latestReview] = await Promise.all([db.collection('config').doc('review_admin').get(), reviewRef.get()]);
+        const replyData = latestReview.data() || {};
+        if ((!replySettings.exists || replySettings.data().autoReply !== false) && replyData.autoReplyDisabled !== true && replyData.balasanDibuang !== true && !String(replyData.balasanAdmin || '').trim()) {
         await reviewRef.update({ balasanAdmin: `Terima kasih, ${customerName}! Kami hargai ulasan anda kepada H4SX STORE. Sokongan anda membantu kami terus memperbaiki servis.`, balasanPada: firebase.firestore.FieldValue.serverTimestamp(), ...(suggestionUsed ? { cdg: true, cadanganDigunakan: true } : {}) });
+        }
       } catch (replyError) { console.warn('Auto reply review tidak dapat disimpan.', replyError); }
       form.reset();
       selectedColor = null; selectedEmoji = null; profileImage = null; feedbackImage = null; suggestionUsed = false;

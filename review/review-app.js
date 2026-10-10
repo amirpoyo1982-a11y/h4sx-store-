@@ -1134,10 +1134,13 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return `Terima kasih, ${replyName}! Kami hargai masa anda memberi ulasan kepada H4SX STORE. Sokongan anda membantu pelanggan lain lebih yakin, dan kami akan terus perbaiki servis supaya pengalaman anda lebih kemas, laju dan selamat. 🙏💙`;
   }
 
-  async function autoReplyEnabledForNewReview() {
+  function reviewAllowsAutoReply(data = {}) {
+    return data.autoReplyDisabled !== true && data.balasanDibuang !== true && !String(data.balasanAdmin || '').trim();
+  }
+  async function autoReplyEnabledForNewReview(reviewRef) {
     try {
-      const settings = await getDoc(doc(db, "config", "review_admin"));
-      return !settings.exists() || settings.data().autoReply !== false;
+      const [settings, review] = await Promise.all([getDoc(doc(db, "config", "review_admin")), getDoc(reviewRef)]);
+      return (!settings.exists() || settings.data().autoReply !== false) && reviewAllowsAutoReply(review.data() || {});
     } catch (error) {
       console.warn("Tetapan auto balas tidak dapat disemak; review tetap disimpan tanpa auto balas.", error);
       return false;
@@ -1146,7 +1149,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
 
   function withAutoReply(payload, dataDoc = {}) {
     const next = { ...payload };
-    if (reviewAdminSettings.autoReply !== false && !dataDoc.balasanAdmin?.trim() && dataDoc.balasanDibuang !== true) {
+    if (reviewAdminSettings.autoReply !== false && reviewAllowsAutoReply(dataDoc)) {
       next.balasanAdmin = buildAutoReply(dataDoc.nama || payload.nama);
       next.balasanPada = serverTimestamp();
     }
@@ -3123,7 +3126,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       // jadi auto-reply ni kena dihantar sebagai 'update' selepas create berjaya —
       // sah ikut rules 'update' sebab nama/bintang/ulasan/diciptaPada tak diubah.
       try {
-        if (await autoReplyEnabledForNewReview()) {
+        if (await autoReplyEnabledForNewReview(reviewRef)) {
           await updateDoc(reviewRef, {
             balasanAdmin: buildAutoReply(nama),
             balasanPada: serverTimestamp()
@@ -3195,7 +3198,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     btn.textContent = "Menyimpan...";
     try {
       const payload = { ulasan: ulasanBaru, ulasanDieditPada: serverTimestamp() };
-      if (reviewAdminSettings.autoReply !== false && !dataDoc.balasanAdmin?.trim()) {
+      if (reviewAdminSettings.autoReply !== false && reviewAllowsAutoReply(dataDoc)) {
         payload.balasanAdmin = buildAutoReply(dataDoc.nama);
         payload.balasanPada = serverTimestamp();
       }
@@ -3228,7 +3231,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     btn.textContent = "Menyimpan...";
     try {
       const payload = { diciptaPada: Timestamp.fromDate(date), masaDieditPada: serverTimestamp() };
-      if (reviewAdminSettings.autoReply !== false && !dataDoc.balasanAdmin?.trim()) {
+      if (reviewAdminSettings.autoReply !== false && reviewAllowsAutoReply(dataDoc)) {
         payload.balasanAdmin = buildAutoReply(dataDoc.nama);
         payload.balasanPada = serverTimestamp();
       }
@@ -3612,6 +3615,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             <button class="btn-padam-ulasan admin-action-btn admin-action-delete" type="button" title="Padam ulasan secara kekal" aria-label="Padam ulasan">Padam</button>
           </div>
           <div class="admin-reply-form" data-nosnippet>
+            <label class="badge-switch"><input class="review-auto-reply-toggle" type="checkbox" ${data.autoReplyDisabled!==true?"checked":""}> Auto balas untuk ulasan ini</label>
+            <small>Suis utama auto balas mesti ON. Balasan manual masih boleh dihantar.</small>
             <textarea maxlength="400" placeholder="Taip balasan rasmi H4SX STORE...">${adaBalasan?escapeHtml(data.balasanAdmin):""}</textarea>
             <div class="admin-reply-form-actions">
               <button class="btn-hantar-balasan">Hantar Balasan</button>
@@ -3623,6 +3628,20 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
       const form=card.querySelector(".admin-reply-form");
       const ta=form.querySelector("textarea");
+      const autoReplyToggle = form.querySelector('.review-auto-reply-toggle');
+      autoReplyToggle.addEventListener('change', async () => {
+        if (!mintaAdmin()) { autoReplyToggle.checked = data.autoReplyDisabled !== true; return; }
+        const disabled = !autoReplyToggle.checked;
+        autoReplyToggle.disabled = true;
+        try {
+          await updateDoc(doc(db, 'ratings', id), { autoReplyDisabled:disabled });
+          showToast(disabled ? 'Auto balas dimatikan untuk ulasan ini.' : 'Auto balas dibenarkan untuk ulasan ini.', 'success');
+        } catch (error) {
+          autoReplyToggle.checked = data.autoReplyDisabled !== true;
+          console.error('Tetapan auto balas ulasan gagal:', error);
+          showToast('Tetapan auto balas gagal disimpan.', 'error');
+        } finally { autoReplyToggle.disabled = false; }
+      });
       const btnH=form.querySelector(".btn-hantar-balasan");
       const btnB=form.querySelector(".btn-batal-balasan");
       const toggleB=card.querySelector(".reply-toggle-btn");
@@ -3734,7 +3753,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           // Rules 'update' anda wajibkan balasanAdmin sentiasa string sah (1-400 aksara).
           // Kalau ulasan lama ni tak pernah dapat balasan lagi, isi dulu auto-reply
           // supaya update pin ni tak ditolak oleh Firestore rules.
-          if (reviewAdminSettings.autoReply !== false && !data.balasanAdmin?.trim()) {
+          if (reviewAdminSettings.autoReply !== false && reviewAllowsAutoReply(data)) {
             payload.balasanAdmin = buildAutoReply(data.nama);
             payload.balasanPada = serverTimestamp();
           }
