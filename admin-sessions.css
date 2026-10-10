@@ -18,5 +18,7 @@
 .h4sx-session-device-head .is-revoked { color:#8d6370; background:#f3eaf0; }
 .h4sx-session-device p { color:#0989b5; font-size:10px; }
 .h4sx-session-device small,.h4sx-session-panel footer { color:#688599; font-size:10px; line-height:1.7; }
+.h4sx-session-device-actions { display:flex; justify-content:flex-end; margin-top:9px; }
+.h4sx-session-device-actions button { color:#b33142; background:#fff1f3; border-color:#f2bbc3; }
 .h4sx-session-panel footer { display:block; margin-top:15px; }
 @media(max-width:600px) { .h4sx-session-overlay { padding:9px; } .h4sx-session-panel { padding:16px; max-height:92dvh; } }

@@ -13,16 +13,22 @@ function response() {
 function fixture(overrides = {}) {
   const calls=[];
   const devices={};
+  const store={admin_sessions_private:{[UID]:{devices,blockedSessions:{}}}};
+  let cutoff=0;
+  const get=path=>path.split('/').reduce((value,key)=>value?.[key],store);
+  const put=(path,value)=>{const keys=path.split('/'),key=keys.pop();const parent=keys.reduce((value,key)=>value[key]??=( {} ),store);if(value===null)delete parent[key];else parent[key]=value;};
   const auth = {
     async verifyIdToken(token, revoked) { calls.push(['verify',token,revoked]); return { uid:UID, auth_time:100 }; },
-    async revokeRefreshTokens(uid) { calls.push(['revoke',uid]); },
-    async getUser(uid) { calls.push(['user',uid]); return { tokensValidAfterTime:new Date(200000).toISOString() }; }, ...overrides
+    async revokeRefreshTokens(uid) { calls.push(['revoke',uid]); cutoff=200000; },
+    async getUser(uid) { calls.push(['user',uid]); return { tokensValidAfterTime:new Date(cutoff).toISOString() }; }, ...overrides
   };
   const reference = path => ({
     child(child) { return reference(path + '/' + child); },
-    async set(value) { calls.push(['set',path,value]); },
-    async transaction(fn) { devices[path.split('/').at(-1)] = fn(null); calls.push(['transaction',path]); },
-    orderByChild() { return this; }, limitToLast() { return this; }, async once() { return { val:() => devices }; }
+    async set(value) { put(path,value);calls.push(['set',path,value]); },
+    async update(values) { for(const [key,value] of Object.entries(values))put(path+'/'+key,value);calls.push(['update',path]); },
+    async remove() { put(path,null);calls.push(['remove',path]); },
+    async transaction(fn) { const next=fn(get(path)||null);if(next===undefined)return{committed:false};put(path,next);calls.push(['transaction',path]);return{committed:true}; },
+    orderByChild() { return this; }, limitToLast() { return this; }, async once() { return { val:() => get(path) || null }; }
   });
   return { calls, devices, handler:createSessionsHandler(async () => ({ auth, database:{ref:reference}, firestore:{doc:path=>({ async set(value) { calls.push(['firestore',path,value]); } })} })) };
 }
@@ -53,7 +59,7 @@ test('register under authenticated UID only, never a client-supplied UID', async
   assert.equal(Object.values(f.devices)[0].site,'review');
 });
 test('listing marks revoked history and current website/browser session', async () => {
-  const f=fixture();const registered=await call(f.handler);
+  const f=fixture({getUser:async()=>({tokensValidAfterTime:new Date(200000).toISOString()})});const registered=await call(f.handler);
   const listed=await call(f.handler,'list');
   assert.equal(listed.code,200);
   assert.equal(listed.data.devices[0].id,registered.data.sessionId);
@@ -78,7 +84,7 @@ test('device description avoids inventing a model when browser reports Android K
 function clientFixture(configured = true) {
   let callback, logoutCount=0, intervalCount=0;
   const context={ window:{}, crypto:webcrypto, localStorage:{getItem(){return DEVICE;},setItem(){}}, document:{hidden:false,addEventListener(){}},
-    fetch:async()=>({status:configured?200:503,ok:configured,json:async()=>configured?{success:true}:{code:'setup-required',error:'Setup required'}}),
+    fetch:async()=>({status:configured?200:503,ok:configured,json:async()=>configured?{success:true,sessionId:'current-session'}:{code:'setup-required',error:'Setup required'}}),
     AbortSignal, setInterval(){ intervalCount++; return intervalCount; }, clearInterval(){}, alert(){}, confirm(){return false;} };
   vm.runInNewContext(readFileSync(new URL('../admin-sessions.js',import.meta.url),'utf8'),context);
   const user={uid:UID,getIdToken:async()=>'FAKE',getIdTokenResult:async()=>({authTime:new Date(100000).toISOString()})};
@@ -94,4 +100,36 @@ test('client detects remote logout and ignores obsolete listeners after logout',
 });
 test('unconfigured backend does not start repeated session polling', async () => {
   const f=clientFixture(false);await new Promise(resolve=>setImmediate(resolve));assert.equal(f.intervalCount,0);
+});
+
+test('single logout blocks only the selected session and never revokes the whole Firebase account', async () => {
+  const f=fixture();const current=await call(f.handler);
+  const otherId='87654321-4321-4321-4321-cba987654321';
+  const other=await call(f.handler,'register',{body:{deviceId:otherId}});
+  const revoked=await call(f.handler,'revoke-one',{body:{sessionId:other.data.sessionId}});
+  assert.equal(revoked.code,200);assert.equal(revoked.data.current,false);
+  assert(!f.calls.some(call=>call[0]==='revoke'));
+  assert.equal((await call(f.handler,'check')).code,200);
+  assert.equal((await call(f.handler,'check',{body:{deviceId:otherId}})).code,401);
+  const list=await call(f.handler,'list');assert.equal(list.data.devices.find(item=>item.id===other.data.sessionId).revoked,true);
+  assert.equal(list.data.devices.find(item=>item.id===current.data.sessionId).revoked,false);
+});
+test('delete only terminated history, preserving block markers and other sessions', async () => {
+  const f=fixture();const current=await call(f.handler);
+  assert.equal((await call(f.handler,'delete-record',{body:{sessionId:current.data.sessionId}})).code,409);
+  const otherId='87654321-4321-4321-4321-cba987654321';const other=await call(f.handler,'register',{body:{deviceId:otherId}});
+  await call(f.handler,'revoke-one',{body:{sessionId:other.data.sessionId}});
+  assert.equal((await call(f.handler,'delete-record',{body:{sessionId:other.data.sessionId}})).code,200);
+  assert.equal(Object.keys(f.devices).length,1);
+  assert.equal((await call(f.handler,'register',{body:{deviceId:otherId}})).code,401);
+  assert.equal((await call(f.handler,'check')).code,200);
+});
+test('reject path injection and unknown target sessions', async () => {
+  const f=fixture();assert.equal((await call(f.handler,'revoke-one',{body:{sessionId:'../other-user'}})).code,400);
+  assert.equal((await call(f.handler,'delete-record',{body:{sessionId:'a'.repeat(64)}})).code,404);
+});
+test('client only logs out when its own session is targeted', async () => {
+  const f=clientFixture();await new Promise(resolve=>setImmediate(resolve));
+  f.callback({blockedSessions:{'other-session':123456}});assert.equal(f.logoutCount,0);
+  f.callback({blockedSessions:{'current-session':123456}});await new Promise(resolve=>setImmediate(resolve));assert.equal(f.logoutCount,1);
 });

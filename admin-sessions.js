@@ -3,6 +3,7 @@
   const ADMIN_UID = 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3';
   const ENDPOINT = 'https://www.h4sxmy.xyz/api/admin-sessions';
   let context = null, generation = 0, unsubscribe = null, timer = null, lastRegister = 0, panel = null;
+  let currentSessionId = '', signedInTime = 0, securityState = null, visibleDevices = [];
   let deviceId;
   try {
     deviceId = localStorage.getItem('h4sx_admin_device_id');
@@ -15,14 +16,14 @@
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const date = value => value ? new Date(value).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Belum direkod';
 
-  async function request(action) {
+  async function request(action, extra = {}) {
     const user = context?.user;
     const requestGeneration = generation;
     if (!user || user.uid !== ADMIN_UID) throw new Error('Login admin diperlukan.');
     const token = await user.getIdToken();
     const response = await fetch(ENDPOINT, {
       method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
-      body:JSON.stringify({ action, deviceId }), signal:AbortSignal.timeout(12000)
+      body:JSON.stringify({ action, deviceId, ...extra }), signal:AbortSignal.timeout(12000)
     });
     let data;
     try { data = await response.json(); } catch { throw new Error('API sesi belum tersedia. Semak deployment H4SX.'); }
@@ -31,6 +32,10 @@
       throw new Error('Sesi telah ditamatkan. Login semula.');
     }
     if (!response.ok) throw Object.assign(new Error(data.error || 'Pengurusan sesi gagal.'), {code:data.code});
+    if (action === 'register' && requestGeneration === generation) {
+      currentSessionId = data.sessionId;
+      applySecurityState();
+    }
     return data;
   }
 
@@ -57,6 +62,10 @@
     panel.addEventListener('click', event => { if (event.target === panel) close(); });
     panel.querySelector('[data-session-refresh]').addEventListener('click', refresh);
     panel.querySelector('[data-session-revoke]').addEventListener('click', revokeAll);
+    panel.querySelector('[data-session-list]').addEventListener('click', event => {
+      const button = event.target.closest('[data-device-action]');
+      if (button) deviceAction(button);
+    });
     document.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) close(); });
     return panel;
   }
@@ -82,9 +91,11 @@
       startValidation();
       const data = await request('list');
       if (current !== generation) return;
+      visibleDevices = data.devices;
       root.querySelector('[data-session-list]').innerHTML = data.devices.length ? data.devices.map(item =>
         '<article class="h4sx-session-device"><div class="h4sx-session-device-head"><strong>' + escape(item.device) + ' · ' + escape(item.browser) + '</strong><span class="' + (item.revoked ? 'is-revoked' : '') + '">' + (item.current ? 'Sesi ini' : item.revoked ? 'Sesi ditamatkan' : 'Belum ditamatkan') + '</span></div>' +
-        '<p>' + (item.site === 'review' ? 'H4SX Review' : 'H4SX Store') + '</p><small>Login: ' + escape(date(item.authTime)) + '<br>Aktiviti direkod: ' + escape(date(item.lastSeen)) + '</small></article>'
+        '<p>' + (item.site === 'review' ? 'H4SX Review' : 'H4SX Store') + '</p><small>Login: ' + escape(date(item.authTime)) + '<br>Aktiviti direkod: ' + escape(date(item.lastSeen)) + '</small>' +
+        '<div class="h4sx-session-device-actions"><button type="button" data-device-action="' + (item.revoked ? 'delete-record' : 'revoke-one') + '" data-device-id="' + escape(item.id) + '">' + (item.revoked ? 'Padam rekod' : 'Logout sesi ini') + '</button></div></article>'
       ).join('') : '<p>Belum ada perangkat direkod.</p>';
       status(data.devices.length + ' rekod perangkat. Rekod lama sebelum pemasangan tidak tersedia.');
       revokeButton.disabled = false;
@@ -93,6 +104,30 @@
       root.querySelector('[data-session-list]').textContent = '';
       status(error.message, true);
     } finally { refreshButton.disabled = false; }
+  }
+
+  async function deviceAction(button) {
+    const item = visibleDevices.find(device => device.id === button.dataset.deviceId);
+    if (!item) return;
+    const action = button.dataset.deviceAction;
+    const label = item.device + ' · ' + item.browser + ' (' + (item.site === 'review' ? 'H4SX Review' : 'H4SX Store') + ')';
+    const message = action === 'delete-record'
+      ? 'Padam rekod sesi yang sudah ditamatkan ini? ' + label
+      : 'Logout sesi ini sahaja? ' + label + (item.current ? '\nSesi yang sedang anda guna akan ditamatkan.' : '\nSesi lain kekal login.');
+    if (!confirm(message)) return;
+    button.disabled = true;
+    status(action === 'delete-record' ? 'Memadam rekod sesi…' : 'Menamatkan sesi terpilih…');
+    try {
+      const result = await request(action, { sessionId:item.id });
+      if (action === 'revoke-one' && result.current) {
+        const logout = context?.signOut;
+        if (logout) await logout();
+        close();
+        return;
+      }
+      if (action === 'revoke-one' && result.realtimeLogout === false) alert('Sesi disekat. Perangkat terpilih akan logout pada pemeriksaan seterusnya, biasanya dalam 60 saat ketika halaman terbuka.');
+      await refresh();
+    } catch (error) { status(error.message, true); button.disabled = false; }
   }
 
   async function revokeAll() {
@@ -115,16 +150,25 @@
     unsubscribe?.(); unsubscribe = null;
     clearInterval(timer); timer = null;
     context = next?.user?.uid === ADMIN_UID ? next : null;
+    currentSessionId = ''; signedInTime = 0; securityState = null; visibleDevices = [];
     if (!context) { close(); return; }
     const user = context.user;
     user.getIdTokenResult().then(result => {
       if (current !== generation) return;
-      const signedIn = Date.parse(result.authTime);
-      unsubscribe = context.watchRevocations(revokedAt => {
-        if (current === generation && Number(revokedAt) > signedIn) signOutEverywhereLocally().catch(() => {});
+      signedInTime = Date.parse(result.authTime);
+      unsubscribe = context.watchRevocations(value => {
+        if (current !== generation) return;
+        securityState = typeof value === 'number' ? { revokedAt:value } : value;
+        applySecurityState();
       });
     }).catch(() => {});
     request('register').then(() => { if (current === generation) { lastRegister = Date.now(); startValidation(); } }).catch(() => {});
+  }
+  function applySecurityState() {
+    if (!context || !securityState) return;
+    if (Number(securityState.revokedAt) > signedInTime || (currentSessionId && securityState.blockedSessions?.[currentSessionId])) {
+      signOutEverywhereLocally().catch(() => {});
+    }
   }
   function startValidation() {
     if (timer || !context) return;
@@ -138,6 +182,13 @@
 
   window.H4SXAdminSessions = {
     bind,
+    async endCurrentSession() {
+      if (!context) return;
+      try {
+        if (!currentSessionId) await request('register');
+        if (currentSessionId) await request('revoke-one', { sessionId:currentSessionId });
+      } catch { /* Normal local logout must work even when the API is offline. */ }
+    },
     open() {
       if (!context) { alert('Login admin dahulu untuk lihat perangkat.'); return; }
       ensurePanel().hidden = false;

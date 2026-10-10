@@ -39,4 +39,14 @@ ID token lama masih boleh sah sehingga satu jam pada akses database yang rules-n
 
 Jika credential belum dipasang, panel memaparkan **Backend sesi belum dikonfigurasi** dan butang logout semua dinyahaktifkan. Login dan logout biasa masih berfungsi.
 
+## Logout satu sesi dan padam sejarah
+
+Setiap rekod aktif mempunyai **Logout sesi ini**. Pilih satu rekod untuk logout browser pada website yang ditunjukkan; sesi lain kekal login. Satu telefon yang menggunakan website kedai dan review boleh mempunyai dua rekod berasingan.
+Tab yang online mengesan sekatan sesi, atau pada pemeriksaan API berikutnya (biasanya dalam 60 saat). Perangkat offline menyemaknya apabila halaman dibuka semula. Login baharu dibenarkan dan menghasilkan rekod sesi baharu.
+
+Rekod yang telah ditamatkan mempunyai **Padam rekod**. Backend menolak pemadaman rekod aktif. Memadam sejarah tidak memadam penanda sekatan sesi, jadi tab lama tidak boleh mendaftarkan semula rekod yang sama.
+Logout biasa juga cuba menandakan sesi semasa sebagai tamat; jika API offline, logout tempatan tetap berfungsi.
+
+Firebase tidak menawarkan pembatalan refresh token untuk satu browser tertentu. Logout individu ini ialah kawalan sesi website dan API H4SX; ia tidak membatalkan refresh token Firebase secara individu atau menyekat penggunaan token itu terus pada SDK/database di luar laman. **Logout semua perangkat** kekal menggunakan pembatalan token Firebase sebenar untuk akaun admin.
+
 Rujukan: https://firebase.google.com/docs/auth/admin/manage-sessions dan https://firebase.google.com/docs/admin/setup

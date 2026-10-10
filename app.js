@@ -4972,7 +4972,7 @@ async function adminOrderLogin(event) {
     syncOrderAdminUI(); toast('Admin berjaya log masuk.');
   } catch (error) { toast('Login gagal. Semak email atau password Firebase.', true); }
 }
-async function adminOrderLogout() { if (orderAuth) await orderAuth.signOut(); syncOrderAdminUI(); }
+async function adminOrderLogout() { await window.H4SXAdminSessions?.endCurrentSession(); if (orderAuth) await orderAuth.signOut(); syncOrderAdminUI(); }
 function handleOrderImageFile(file) {
   if (!file || !file.type?.startsWith('image/')) return toast('Sila pilih fail gambar.', true);
   pendingOrderImageFile = file;
@@ -5181,7 +5181,7 @@ if (orderAuth) orderAuth.onAuthStateChanged(() => {
   syncAdminProfileUI();
   window.H4SXAdminSessions?.bind({
     user:orderAuth.currentUser, signOut:() => orderAuth.signOut(),
-    watchRevocations:callback => db.collection('config').doc('admin_session_security').onSnapshot(snapshot => callback(snapshot.data()?.revokedAt || 0), () => {})
+    watchRevocations:callback => db.collection('config').doc('admin_session_security').onSnapshot(snapshot => callback(snapshot.data() || {}), () => {})
   });
 });
 

@@ -51,15 +51,44 @@ export function createSessionsHandler(getServices = firebaseServices) {
     const bearer = String(req.headers?.authorization || '').match(/^Bearer (\S+)$/)?.[1];
     if (!bearer || bearer.length > 10000) return res.status(401).json({ error:'Login admin diperlukan.' });
     const action = req.body?.action;
-    if (!['register', 'check', 'list', 'revoke-all'].includes(action)) return res.status(400).json({ error:'Tindakan tidak sah.' });
+    if (!['register', 'check', 'list', 'revoke-all', 'revoke-one', 'delete-record'].includes(action)) return res.status(400).json({ error:'Tindakan tidak sah.' });
     let stage = 'credential';
     try {
       const { auth, database, firestore } = await getServices();
       stage = 'auth';
       const token = await auth.verifyIdToken(bearer, true);
       if (token.uid !== ADMIN_UID) return res.status(403).json({ error:'Akaun ini bukan admin H4SX.' });
-      if (action === 'check') return res.status(200).json({ success:true });
       const root = database.ref('admin_sessions_private/' + token.uid);
+      const site = origin.includes('review.h4sxmy.xyz') ? 'review' : 'store';
+      const deviceId = String(req.body?.deviceId || '');
+      if (!/^[a-f0-9-]{16,64}$/i.test(deviceId)) return res.status(400).json({ error:'ID perangkat tidak sah.' });
+      const sessionId = createHash('sha256').update(site + ':' + deviceId + ':' + token.auth_time).digest('hex');
+      stage = 'session-check';
+      const blocked = await root.child('blockedSessions/' + sessionId).once('value');
+      if (blocked.val()) return res.status(401).json({ error:'Sesi perangkat ini telah ditamatkan. Login semula.' });
+      if (action === 'check') return res.status(200).json({ success:true });
+      if (action === 'revoke-one' || action === 'delete-record') {
+        stage = action;
+        const targetId = String(req.body?.sessionId || '');
+        if (!/^[a-f0-9]{64}$/.test(targetId)) return res.status(400).json({ error:'ID sesi tidak sah.' });
+        const targetRef = root.child('devices/' + targetId);
+        const [targetSnapshot, userRecord] = await Promise.all([targetRef.once('value'), auth.getUser(token.uid)]);
+        const target = targetSnapshot.val();
+        if (!target) return res.status(404).json({ error:'Rekod sesi tidak dijumpai. Muat semula senarai.' });
+        const isRevoked = Boolean(target.revokedAt) || Number(target.authTime) < (Date.parse(userRecord.tokensValidAfterTime) || 0);
+        if (action === 'delete-record') {
+          if (!isRevoked) return res.status(409).json({ error:'Logout sesi ini dahulu sebelum padam rekodnya.' });
+          // Keep the separate block marker so an old tab cannot register again.
+          await targetRef.remove();
+          return res.status(200).json({ success:true });
+        }
+        if (isRevoked) return res.status(200).json({ success:true, alreadyRevoked:true, current:targetId === sessionId });
+        const revokedAt = Date.now();
+        await root.update({ ['blockedSessions/' + targetId]:revokedAt, ['devices/' + targetId + '/revokedAt']:revokedAt });
+        let realtimeLogout = true;
+        await firestore.doc('config/admin_session_security').set({ blockedSessions:{ [targetId]:revokedAt } }, { merge:true }).catch(() => { realtimeLogout = false; });
+        return res.status(200).json({ success:true, current:targetId === sessionId, realtimeLogout });
+      }
       if (action === 'revoke-all') {
         stage = 'revoke';
         await auth.revokeRefreshTokens(token.uid);
@@ -69,22 +98,19 @@ export function createSessionsHandler(getServices = firebaseServices) {
         let realtimeLogout = true;
         await Promise.all([
           root.child('revokedAt').set(revokedAt),
-          firestore.doc('config/admin_session_security').set({ revokedAt })
+          firestore.doc('config/admin_session_security').set({ revokedAt }, { merge:true })
         ]).catch(() => { realtimeLogout = false; });
         return res.status(200).json({ success:true, revokedAt, realtimeLogout });
       }
-      const site = origin.includes('review.h4sxmy.xyz') ? 'review' : 'store';
-      const deviceId = String(req.body?.deviceId || '');
-      if (!/^[a-f0-9-]{16,64}$/i.test(deviceId)) return res.status(400).json({ error:'ID perangkat tidak sah.' });
-      const sessionId = createHash('sha256').update(site + ':' + deviceId + ':' + token.auth_time).digest('hex');
       if (action === 'register') {
         stage = 'database-register';
         const now = Date.now();
         const detail = describeDevice(req.headers['user-agent']);
-        await root.child('devices/' + sessionId).transaction(previous => ({
+        const result = await root.child('devices/' + sessionId).transaction(previous => previous?.revokedAt ? undefined : ({
           ...detail, site, authTime:Number(token.auth_time) * 1000,
           firstSeen:previous?.firstSeen || now, lastSeen:now
         }));
+        if (!result.committed) return res.status(401).json({ error:'Sesi perangkat ini telah ditamatkan. Login semula.' });
         return res.status(200).json({ success:true, sessionId });
       }
       stage = 'database-list';
@@ -96,7 +122,7 @@ export function createSessionsHandler(getServices = firebaseServices) {
         id, device:String(value.device || 'Perangkat'), browser:String(value.browser || 'Browser'),
         site:value.site === 'review' ? 'review' : 'store', firstSeen:Number(value.firstSeen) || 0,
         lastSeen:Number(value.lastSeen) || 0, authTime:Number(value.authTime) || 0,
-        revoked:Number(value.authTime) < revokedAt, current:id === sessionId
+        revoked:Boolean(value.revokedAt) || Number(value.authTime) < revokedAt, current:id === sessionId
       })).sort((a,b) => b.lastSeen - a.lastSeen);
       return res.status(200).json({ success:true, devices });
     } catch (error) {
