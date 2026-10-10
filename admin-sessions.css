@@ -1,0 +1,22 @@
+.h4sx-session-overlay { position:fixed; inset:0; z-index:2147483646; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(9,31,48,.56); }
+.h4sx-session-overlay[hidden] { display:none; }
+.h4sx-session-panel { box-sizing:border-box; width:min(590px,100%); max-height:85dvh; overflow:auto; padding:22px; border:1px solid #a9dff4; border-radius:20px; background:#f8fdff; color:#24485f; font-family:inherit; box-shadow:0 20px 65px #052e4a44; }
+.h4sx-session-panel header { display:flex; align-items:center; gap:12px; justify-content:space-between; margin-bottom:12px; }
+.h4sx-session-panel header small { color:#048bb9; font-size:9px; font-weight:900; letter-spacing:.1em; }
+.h4sx-session-panel h2 { margin:4px 0 0; font-size:21px; color:#153c57; }
+.h4sx-session-panel p { margin:8px 0; font-size:12px; line-height:1.6; }
+.h4sx-session-panel button { padding:9px 12px; border:1px solid #bce1ef; border-radius:10px; background:#e9f8ff; color:#087aa4; font:inherit; font-size:11px; font-weight:800; cursor:pointer; }
+.h4sx-session-panel button:disabled { opacity:.55; cursor:default; }
+.h4sx-session-panel header button { width:35px; padding:6px; font-size:22px; }
+.h4sx-session-actions { display:flex; flex-wrap:wrap; gap:8px; margin:15px 0; }
+.h4sx-session-actions [data-session-revoke] { color:#b33142; background:#fff1f3; border-color:#f2bbc3; }
+.h4sx-session-panel [data-session-status].is-error { color:#b33142; }
+.h4sx-session-device { padding:12px; margin-top:9px; border:1px solid #d2e8f2; border-radius:12px; background:white; }
+.h4sx-session-device-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+.h4sx-session-device-head strong { font-size:12px; }
+.h4sx-session-device-head span { padding:3px 6px; border-radius:6px; color:#008a72; background:#dcf9ef; font-size:8px; font-weight:800; }
+.h4sx-session-device-head .is-revoked { color:#8d6370; background:#f3eaf0; }
+.h4sx-session-device p { color:#0989b5; font-size:10px; }
+.h4sx-session-device small,.h4sx-session-panel footer { color:#688599; font-size:10px; line-height:1.7; }
+.h4sx-session-panel footer { display:block; margin-top:15px; }
+@media(max-width:600px) { .h4sx-session-overlay { padding:9px; } .h4sx-session-panel { padding:16px; max-height:92dvh; } }

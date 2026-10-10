@@ -65,6 +65,7 @@
     })();
   </script>
   <link rel="stylesheet" href="styles.css?v=review-desktop-compact-20261010">
+  <link rel="stylesheet" href="admin-sessions.css?v=20261010-1">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -910,6 +911,7 @@
     <div id="admin-profile-home" hidden>
       <div class="admin-profile-account"><span><i class="fa-solid fa-circle-check"></i><b id="admin-profile-email-display">Admin</b></span><button type="button" onclick="adminOrderLogout()"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log keluar</button></div>
       <div class="admin-profile-menu">
+        <button type="button" onclick="H4SXAdminSessions.open()"><span class="review"><i class="fa-solid fa-laptop"></i></span><div><strong>Perangkat & Sesi Admin</strong><small>Senarai login dan logout semua perangkat.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()"><span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian sedang OFF.</small></div><i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
@@ -1060,7 +1062,8 @@
   <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
-<script defer src="app.js?v=review-moderation-filter-20261010"></script>
+<script src="admin-sessions.js?v=20261010-1"></script>
+<script defer src="app.js?v=admin-sessions-20261010"></script>
 
 </body>
 </html>

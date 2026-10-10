@@ -1,5 +1,14 @@
 {
   "name": "h4sx-store",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "14.5.0"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "test:sessions": "node --test tests/admin-sessions.test.mjs"
+  }
 }

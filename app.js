@@ -5179,6 +5179,10 @@ async function copyInvoiceCode(code, button) {
 if (orderAuth) orderAuth.onAuthStateChanged(() => {
   syncOrderAdminUI();
   syncAdminProfileUI();
+  window.H4SXAdminSessions?.bind({
+    user:orderAuth.currentUser, signOut:() => orderAuth.signOut(),
+    watchRevocations:callback => db.collection('config').doc('admin_session_security').onSnapshot(snapshot => callback(snapshot.data()?.revokedAt || 0), () => {})
+  });
 });
 
 function fixMojibakeText(value) {
