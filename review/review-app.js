@@ -3286,6 +3286,18 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   setInterval(refreshRelativeReviewTimes, 60000);
 
+  async function setReviewVisibility(id, field, hidden, button) {
+    if (!mintaAdmin() || !['hidePinLabel', 'hideReviewTime'].includes(field)) return;
+    button.disabled = true;
+    try {
+      await updateDoc(doc(db, 'ratings', id), { [field]: hidden });
+      showToast(field === 'hidePinLabel' ? (hidden ? 'Label Pin disorok. Kedudukan semat kekal.' : 'Label Pin ditunjukkan.') : (hidden ? 'Tarikh dan masa disorok.' : 'Tarikh dan masa ditunjukkan.'), 'success');
+    } catch (error) {
+      console.error('Tetapan paparan ulasan gagal:', error);
+      showToast('Tetapan gagal disimpan. Cuba lagi.', 'error');
+    } finally { button.disabled = false; }
+  }
+
   async function padamBalasanAdmin(id, nama, btn) {
     if (!mintaAdmin()) return;
     if (!confirm(`Padam balasan admin untuk ulasan "${nama}"? Ulasan pelanggan tidak akan dipadam.`)) return;
@@ -3524,7 +3536,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           : data.hideVerifiedBadge === true ? "" : `<span class="verified-badge">Verified</span>`;
 
       const card=document.createElement("div");
-      card.className="review-card"+(data.pinned===true?" is-pinned":"")+(data.featured===true?" is-featured":"");
+      card.className="review-card"+(data.pinned===true && data.hidePinLabel!==true?" is-pinned":"")+(data.featured===true?" is-featured":"");
       card.dataset.reviewId = id;
       card.style.animationDelay=`${i*36}ms`;
       card.innerHTML=`
@@ -3533,7 +3545,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           <div class="review-header">
             <div class="buyer-name-container">
               ${data.featured===true?`<span class="featured-review-badge">Pilihan H4SX</span>`:""}
-              ${data.pinned===true?`<span class="pin-badge">📌 Disematkan</span>`:""}
+              ${data.pinned===true && data.hidePinLabel!==true?`<span class="pin-badge">📌 Disematkan</span>`:""}
               <span class="${nameClass(data)}" style="${nameStyle(data, isReviewAdmin)}">${reviewEmojiMarkup(data.nameEmoji)}${escapeHtml(namaDisorok)}</span>
               ${medalMarkup(data)}
               ${(rawBintang<0||rawBintang>5)?`<span style="background:linear-gradient(90deg,#f0a500,#e05252);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;">${rawBintang} Bintang</span>`:""}
@@ -3543,7 +3555,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             </div>
             <div class="star-display">${starHtml}</div>
           </div>
-          <div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>
+          ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan
             ?`<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(data.ulasan)}</p>
               ${gunaTextToggle ? `<button class="review-text-toggle" type="button" style="--toggle-color:${toggleColor};" data-open="${textMulaBuka ? "1" : "0"}" data-expand="${escapeHtml(expandLabel)}" data-collapse="${escapeHtml(collapseLabel)}">${escapeHtml(textMulaBuka ? collapseLabel : expandLabel)}</button>` : ""}`
@@ -3576,7 +3588,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             </div>
             <p class="admin-reply-text">${formatMessageText(data.balasanAdmin)}</p>
             <div class="admin-reply-footer">
-              <p class="admin-reply-time"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${masaBalasan || "Balasan H4SX"}</p>
+              ${data.hideReviewTime===true ? "" : `<p class="admin-reply-time"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${masaBalasan || "Balasan H4SX"}</p>`}
               <button class="admin-reply-copy" type="button" aria-label="Salin balasan H4SX"><i class="fa-regular fa-copy" aria-hidden="true"></i> Salin</button>
             </div>
           </div>`:""}
@@ -3586,6 +3598,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             <button class="btn-edit-ulasan admin-action-btn admin-action-review" title="Edit ulasan pelanggan">Edit Ulasan</button>
             <button class="btn-edit-masa admin-action-btn admin-action-time" title="Edit tarikh masa">Masa</button>
             <button class="btn-profile-ulasan admin-action-btn admin-action-profile" title="Edit nama, profil dan pingat">Profile</button>
+            <button type="button" class="btn-toggle-pin-label admin-action-btn" title="Sorok label dan hiasan pin tanpa membuang sematan">${data.hidePinLabel===true?"Tunjuk label Pin":"Sorok label Pin"}</button>
+            <button type="button" class="btn-toggle-review-time admin-action-btn" title="Tunjuk atau sorok tarikh dan masa ulasan serta balasan">${data.hideReviewTime===true?"Tunjuk tarikh/masa":"Sorok tarikh/masa"}</button>
             <button class="btn-pin-ulasan admin-action-btn admin-action-pin${data.pinned===true?" is-active":""}" title="Semat ulasan">${data.pinned===true?"Unpin":"Pin"}</button>
             <button class="btn-badge-ulasan admin-action-btn admin-action-badge" title="Edit role dan custom centang">Role ✓</button>
             <button class="btn-padam-ulasan admin-action-btn admin-action-delete" type="button" title="Padam ulasan secara kekal" aria-label="Padam ulasan">Padam</button>
@@ -3686,6 +3700,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         if(!mintaAdmin())return;
         bukaCustomerModal(id, data);
       });
+      card.querySelector('.btn-toggle-pin-label').addEventListener('click', event => setReviewVisibility(id, 'hidePinLabel', data.hidePinLabel !== true, event.currentTarget));
+      card.querySelector('.btn-toggle-review-time').addEventListener('click', event => setReviewVisibility(id, 'hideReviewTime', data.hideReviewTime !== true, event.currentTarget));
       btnPin.addEventListener("click", async ()=>{
         if(!mintaAdmin())return;
         const nakPin = data.pinned!==true;
@@ -3751,7 +3767,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           <div class="ss-avatar${data.profileImg || officialAdminReview ? " has-profile-image" : ""}" style="background:${warna}">${avatar}</div>
           <div class="ss-review-meta">
             <div class="ss-review-name">${escapeHtml(rawNama)}</div>
-            <div class="ss-review-date">${reviewDateText(data)}</div>
+            ${data.hideReviewTime===true ? "" : `<div class="ss-review-date">${reviewDateText(data)}</div>`}
           </div>
           <span class="ss-badge">${escapeHtml(badge)}</span>
         </div>

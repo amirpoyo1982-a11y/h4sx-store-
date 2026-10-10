@@ -5681,7 +5681,7 @@ function showReviewShowcasePopup(item, total) {
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
     '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + '<span class="review-popup-stars">' + stars + '</span>' +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></div>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
