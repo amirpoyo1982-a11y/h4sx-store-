@@ -1353,6 +1353,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const customerOverlayBg = document.getElementById('customerOverlayBg');
   const customerPanelModal = document.getElementById('customerPanelModal');
   const customerNameInput = document.getElementById('customerNameInput');
+  const customerShowRatingToggle = document.getElementById('customerShowRatingToggle');
   const nameEmojiInput = document.getElementById('nameEmojiInput');
   const nameEmojiStatus = document.getElementById('nameEmojiStatus');
   const medalEmojiInput = document.getElementById('medalEmojiInput');
@@ -1603,6 +1604,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     editingCustomerId = id;
     removeCustomerImage = false;
     customerNameInput.value = nama;
+    customerShowRatingToggle.checked = data.hideRating !== true;
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
     originalCustomerImage = data.profileImg || null;
@@ -1726,6 +1728,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const payload = {
       nama,
       nameEmoji,
+      hideRating: !customerShowRatingToggle.checked,
       warnaProfil: customerColorInput.value,
       emojiProfil: emoji || null,
       nameColorEnabled: nameColorEnabledToggle.checked,
@@ -3410,29 +3413,31 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       cleanupUsedReviewCodes(latestCodeSnapshot);
     }
     const publicRecords = allDocs.filter(item => !['hidden','rejected'].includes(String(item.moderationStatus || 'published')));
-    total = publicRecords.reduce((sum, item) => sum + clampBintang(item.bintang), 0);
-    count = publicRecords.length;
-    lima = publicRecords.filter(item => clampBintang(item.bintang) === 5).length;
+    const ratedRecords = publicRecords.filter(item => item.hideRating !== true);
+    total = ratedRecords.reduce((sum, item) => sum + clampBintang(item.bintang), 0);
+    count = ratedRecords.length;
+    lima = ratedRecords.filter(item => clampBintang(item.bintang) === 5).length;
     if (count===0) {
       purataSkor.textContent="0.0"; purataBintang.textContent="☆☆☆☆☆";
-      jumlahUlasanVal.textContent="0"; pctLima.textContent="—";
+      jumlahUlasanVal.textContent=String(publicRecords.length); pctLima.textContent="—";
     } else {
       const avg=(total/count).toFixed(1);
       purataSkor.textContent=avg;
       const r=clampBintang(Math.round(parseFloat(avg)));
       purataBintang.textContent="★".repeat(r)+"☆".repeat(5-r);
-      jumlahUlasanVal.textContent=count;
+      jumlahUlasanVal.textContent=String(publicRecords.length);
       pctLima.textContent=Math.round((lima/count)*100)+"%";
     }
     renderReviews();
     refreshAdminCenter();
-    handleLowRatingAlerts(allDocs);
+    handleLowRatingAlerts(allDocs.filter(item => item.hideRating !== true));
   });
 
   // ── Render ────────────────────────────────────────────────────
   function getCurrentReviewList() {
     let list=[...allDocs].filter(data => !["hidden", "rejected"].includes(String(data.moderationStatus || "published")));
     if (filterStar!=="all") {
+      list = list.filter(data => data.hideRating !== true);
       list = filterStar==="12" ? list.filter(d=>clampBintang(d.bintang)<=2) : list.filter(d=>clampBintang(d.bintang)===parseInt(filterStar));
     }
     if (reviewSearchTerm) {
@@ -3551,12 +3556,12 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${data.pinned===true && data.hidePinLabel!==true?`<span class="pin-badge">📌 Disematkan</span>`:""}
               <span class="${nameClass(data)}" style="${nameStyle(data, isReviewAdmin)}">${reviewEmojiMarkup(data.nameEmoji)}${escapeHtml(namaDisorok)}</span>
               ${medalMarkup(data)}
-              ${(rawBintang<0||rawBintang>5)?`<span style="background:linear-gradient(90deg,#f0a500,#e05252);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;">${rawBintang} Bintang</span>`:""}
+              ${data.hideRating!==true && (rawBintang<0||rawBintang>5)?`<span style="background:linear-gradient(90deg,#f0a500,#e05252);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;">${rawBintang} Bintang</span>`:""}
               ${verifiedTag}
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
             </div>
-            <div class="star-display">${starHtml}</div>
+            ${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan
@@ -3811,7 +3816,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           </div>
           <span class="ss-badge">${escapeHtml(badge)}</span>
         </div>
-        <div class="ss-stars">${stars}</div>
+        ${data.hideRating===true ? "" : `<div class="ss-stars">${stars}</div>`}
         <div class="ss-review-text">${formatMessageText(cleanText)}</div>
         ${replied ? `<div class="ss-admin-responded">Admin responded</div>` : ""}
       </div>`;
@@ -4079,11 +4084,12 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   function adminEmpty(text,icon="fa-inbox"){return `<div class="admin-empty-state"><i class="fa-solid ${icon}"></i><p>${escapeHtml(text)}</p></div>`;}
   function refreshAdminCenter(){if(!document.getElementById("adminReviewCenter"))return;renderAdminDashboard();renderAdminModeration();renderAdminCodes();renderAdminReports();renderAdminAudit();}
   function renderAdminDashboard(){
-    const total=allDocs.length, average=total?(allDocs.reduce((s,r)=>s+clampBintang(r.bintang),0)/total).toFixed(1):"0.0", start=new Date();start.setHours(0,0,0,0);
-    const today=allDocs.filter(r=>reviewRecordTime(r.diciptaPada)>=start.getTime()).length,low=allDocs.filter(r=>clampBintang(r.bintang)<=2).length,unreplied=allDocs.filter(r=>!r.balasanAdmin?.trim()).length,hidden=allDocs.filter(r=>adminReviewStatus(r)!=="published").length;
+    const rated = allDocs.filter(r => r.hideRating !== true);
+    const total=allDocs.length, average=rated.length?(rated.reduce((s,r)=>s+clampBintang(r.bintang),0)/rated.length).toFixed(1):"0.0", start=new Date();start.setHours(0,0,0,0);
+    const today=allDocs.filter(r=>reviewRecordTime(r.diciptaPada)>=start.getTime()).length,low=allDocs.filter(r=>r.hideRating!==true && clampBintang(r.bintang)<=2).length,unreplied=allDocs.filter(r=>!r.balasanAdmin?.trim()).length,hidden=allDocs.filter(r=>adminReviewStatus(r)!=="published").length;
     Object.entries({adminDashTotal:total,adminDashAverage:average,adminDashToday:today,adminDashLow:low,adminDashUnreplied:unreplied,adminDashHidden:hidden,adminModerationCount:low+unreplied+hidden}).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v;});
-    const starLabel=document.getElementById("adminDashStars");if(starLabel)starLabel.textContent=total?`${average} daripada 5 bintang`:"Belum ada rating";
-    const distribution=document.getElementById("adminRatingDistribution");if(distribution)distribution.innerHTML=[5,4,3,2,1].map(star=>{const count=allDocs.filter(r=>clampBintang(r.bintang)===star).length,pct=total?Math.round(count/total*100):0;return `<div class="admin-rating-row"><span>${star} bintang</span><i><b style="width:${pct}%"></b></i><strong>${count}</strong></div>`;}).join("");
+    const starLabel=document.getElementById("adminDashStars");if(starLabel)starLabel.textContent=rated.length?`${average} daripada 5 bintang`:"Belum ada rating";
+    const distribution=document.getElementById("adminRatingDistribution");if(distribution)distribution.innerHTML=[5,4,3,2,1].map(star=>{const count=rated.filter(r=>clampBintang(r.bintang)===star).length,pct=rated.length?Math.round(count/rated.length*100):0;return `<div class="admin-rating-row"><span>${star} bintang</span><i><b style="width:${pct}%"></b></i><strong>${count}</strong></div>`;}).join("");
     const lows=allDocs.filter(r=>clampBintang(r.bintang)<=2).slice(0,5),lowList=document.getElementById("adminLowReviewList");if(lowList)lowList.innerHTML=lows.length?lows.map(r=>`<div class="admin-mini-item"><div><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span>${escapeHtml(String(r.ulasan||"Rating sahaja").slice(0,70))}</span></div><b>${clampBintang(r.bintang)} bintang</b></div>`).join(""):adminEmpty("Tiada rating rendah.","fa-circle-check");
     const recent=document.getElementById("adminRecentAudit");if(recent)recent.innerHTML=adminAuditMarkup(adminAudit.slice(0,5));
   }

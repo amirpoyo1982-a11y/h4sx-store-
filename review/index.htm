@@ -376,6 +376,8 @@
 <div id="customerPanelModal" class="admin-panel-modal" data-nosnippet>
   <div class="admin-title">Edit Pelanggan</div>
   <div class="admin-form-group">
+    <label class="badge-switch"><input id="customerShowRatingToggle" type="checkbox" checked> Tunjuk bintang / rating ulasan</label>
+    <small>OFF: bintang disorok dan tidak dikira dalam purata. Rating asal kekal untuk diaktifkan semula.</small>
     <label>Nama Pelanggan</label>
     <input type="text" id="customerNameInput" maxlength="40" placeholder="Nama pelanggan">
     <label for="nameEmojiInput" class="review-emoji-label">GIF / emoji bergerak sebelah nama</label>
@@ -926,7 +928,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=individual-reply-20261011"></script>
+<script type="module" src="/review/review-app.js?v=rating-toggle-20261011"></script>
 </body>
 </html>
 

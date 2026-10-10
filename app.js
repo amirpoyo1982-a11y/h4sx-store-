@@ -5472,6 +5472,7 @@ function updateMainReviewStats(list = []) {
   if (!avgEl || !countEl || !starsEl) return;
 
   const ratings = list
+    .filter(item => item.hideRating !== true)
     .map(item => Number.parseInt(item.bintang ?? item.rating, 10))
     .filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
   const count = ratings.length;
@@ -5480,7 +5481,7 @@ function updateMainReviewStats(list = []) {
 
   if (!count) {
     avgEl.textContent = 'Belum ada';
-    countEl.textContent = 'Belum ada';
+    countEl.textContent = list.length ? String(list.length) : 'Belum ada';
     starsEl.classList.add('review-summary-pending');
     starsEl.textContent = 'Rating akan dipaparkan di sini';
     return;
@@ -5488,7 +5489,7 @@ function updateMainReviewStats(list = []) {
   starsEl.classList.remove('review-summary-pending');
 
   avgEl.textContent = count ? avg.toFixed(1) : 'â€”';
-  countEl.textContent = String(count);
+  countEl.textContent = String(list.length);
   starsEl.innerHTML = Array(5).fill(0).map((_, i) =>
     '<i class="fa-solid fa-star" style="color:' + (i < roundedStars ? '#fbbf24' : 'rgba(148,163,184,.42)') + '"></i>'
   ).join('');
@@ -5692,7 +5693,7 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + '<span class="review-popup-stars">' + stars + '</span>' +
+    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
