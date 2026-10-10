@@ -10992,3 +10992,21 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 :root[data-theme="dark"] .h4rf-story-builder { border-color:#28546d; background:#112a3b; }
 :root[data-theme="dark"] .h4rf-story-builder summary { color:#9bdfff; }
 @media(prefers-reduced-motion:reduce){.review-popup-name strong.is-animated,.review-popup-name strong.is-rainbow,.review-popup-roles .is-animated{animation:none}}
+/* Keep the review popup in the store's light H4SX palette. */
+#review-showcase-popup {
+  color:#173e58; background:linear-gradient(135deg,#ffffff,#eefbff);
+  border-color:#93def5; box-shadow:0 14px 35px rgba(10,135,175,.17),inset 0 1px 0 #fff;
+}
+#review-showcase-popup .review-popup-name strong { color:#173e58; }
+#review-showcase-popup .review-popup-text { color:#4b6d83; }
+#review-showcase-popup .review-popup-copy small { color:#6c8c9e; }
+#review-showcase-popup .review-popup-kicker { color:#079d80; }
+#review-showcase-popup .review-popup-kicker b { color:#6b98ac; }
+#review-showcase-popup .review-popup-avatar { background:linear-gradient(135deg,#08b7ea,#09bcad); box-shadow:0 5px 15px rgba(0,170,195,.16); }
+#review-showcase-popup .review-popup-drag,
+#review-showcase-popup .review-popup-close,
+#review-showcase-popup .review-popup-controls button { color:#008bbb; border-color:#b9e5f5; background:#edfaff; }
+#review-showcase-popup .review-popup-controls .review-popup-open { color:#fff; border-color:#06a7d4; background:#06a7d4; }
+#review-showcase-popup .review-popup-close:hover { color:#fff; border-color:#ef4444; background:#ef4444; }
+#review-showcase-popup .review-popup-drag:hover,
+#review-showcase-popup .review-popup-controls button:hover { color:#fff; background:#079cca; }

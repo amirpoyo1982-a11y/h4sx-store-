@@ -5305,6 +5305,9 @@ function reviewRecordTime(value) {
   const time = new Date(value || '').getTime();
   return Number.isFinite(time) ? time : 0;
 }
+function publicReviewRecords(list = []) {
+  return list.filter(item => !['hidden', 'rejected'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
+}
 function uniqueReviewRecords(list = []) {
   const seen = new Set();
   return list.filter(item => {
@@ -5420,7 +5423,7 @@ async function loadReviews() {
     unsubscribeReviews = db.collection('ratings')
       .orderBy('diciptaPada', 'desc')
       .onSnapshot(snapshot => {
-        const data = uniqueReviewRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const data = uniqueReviewRecords(publicReviewRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))));
         latestReviewStatsData = data;
         updateMainReviewStats(data);
         if (isReviewMaintenanceActive()) {
@@ -5651,6 +5654,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function renderReviews(list = []) {
+  list = publicReviewRecords(list);
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
   if (!isReviewAreaVisible()) {
