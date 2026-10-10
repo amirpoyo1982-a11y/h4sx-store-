@@ -11010,3 +11010,25 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 #review-showcase-popup .review-popup-close:hover { color:#fff; border-color:#ef4444; background:#ef4444; }
 #review-showcase-popup .review-popup-drag:hover,
 #review-showcase-popup .review-popup-controls button:hover { color:#fff; background:#079cca; }
+/* Compact review form for desktop, including the direct submit page. */
+@media (min-width:821px) {
+  .h4rf-dialog,html.review-submit-direct .h4rf-dialog { width:min(700px,calc(100vw - 48px)); max-height:min(86dvh,780px); border-radius:22px; }
+  .h4rf-head { padding:16px 18px; }
+  .h4rf-head-main { gap:11px; }
+  .h4rf-head-icon { width:44px; height:44px; flex-basis:44px; border-radius:13px; }
+  .h4rf-head h2 { font-size:1.25rem; }
+  .h4rf-head p { max-width:340px; font-size:.7rem; }
+  .h4rf-form { gap:10px; padding:13px; }
+  .h4rf-section { padding:13px; border-radius:15px; }
+  .h4rf-section-title,.h4rf-review-section .h4rf-section-title { margin-bottom:10px; }
+  .h4rf-grid,.h4rf-profile-section { gap:10px; }
+  .h4rf-field input,.h4rf-field select,.h4rf-url-row input { height:40px; padding:8px 11px; border-radius:10px; font-size:13px; }
+  .h4rf-field textarea { min-height:80px; padding:9px 11px; border-radius:10px; font-size:13px; }
+  .h4rf-profile { min-height:96px; gap:11px; padding:10px; border-radius:12px; }
+  .h4rf-avatar { width:54px; height:54px; flex-basis:54px; border-radius:15px; }
+  .h4rf-upload { min-height:96px; padding:8px; border-radius:12px; }
+  .h4rf-feedback { margin-top:10px; padding:10px; }
+  .h4rf-submit { min-width:180px; padding:11px 20px; border-radius:11px; }
+  .h4rf-story-fields { grid-template-columns:1fr 1fr; gap:9px; }
+  .h4rf-story-fields>.h4rf-field:nth-child(3),.h4rf-story-fields>small { grid-column:1/-1; }
+}
