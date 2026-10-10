@@ -5224,6 +5224,68 @@ function badgeStyle(data = {}) {
   const bg = gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1;
   return `background:${bg}; color:${text}; --badge-glow:${glow}; box-shadow:0 4px 16px -8px ${glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
 }
+  function reviewIdentityBadgeStyle(data = {}) {
+    const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
+    const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
+    const text = warnaHexSah(data.badgeTextColor, '#ffffff');
+    const glow = warnaHexSah(data.badgeGlowColor, c1);
+    const gradient = data.badgeGradient !== false;
+    const rainbow = data.badgeRainbow === true;
+    const bg = rainbow
+      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
+      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
+    return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+  }
+  function reviewIdentityMedalStyle(data = {}) {
+    const c1 = warnaHexSah(data.medalColor, '#f0a500');
+    const c2 = warnaHexSah(data.medalColor2, '#e05252');
+    const text = warnaHexSah(data.medalTextColor, '#ffffff');
+    const glow = warnaHexSah(data.medalGlowColor, c1);
+    const gradient = data.medalGradient !== false;
+    const rainbow = data.medalRainbow === true;
+    const outline = data.medalOutline === true;
+    const bg = rainbow
+      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
+      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
+    const border = outline ? `1.5px solid ${rainbow ? '#7c3aed' : glow}` : '1px solid rgba(255,255,255,.48)';
+    return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
+  }
+  function reviewIdentityNameStyle(data = {}, isReviewAdmin = false) {
+    if (data.nameColorEnabled !== true) {
+      return isReviewAdmin ? 'color: var(--accent);' : '';
+    }
+    const c1 = warnaHexSah(data.nameColor, '#2fa8e0');
+    const c2 = warnaHexSah(data.nameColor2, '#7c3aed');
+    const glow = warnaHexSah(data.nameGlowColor, c1);
+    const weight = ['700','800','900'].includes(String(data.nameWeight)) ? String(data.nameWeight) : '800';
+    const gradient = data.nameGradient !== false;
+    const rainbow = data.nameRainbow === true;
+    const base = `font-weight:${weight}; text-shadow:0 2px 12px ${glow}55;`;
+    if (rainbow) return `${base} color:#ff3158; background:linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+    if (!gradient) return `${base} color:${c1};`;
+    return `${base} color:${c1}; background:linear-gradient(120deg, ${c1}, ${c2}, ${c1}); background-size:230% 230%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+  }
+  function reviewIdentityNameClass(data = {}) {
+    const rainbow = data.nameColorEnabled === true && data.nameRainbow === true;
+    const animated = data.nameColorEnabled === true && (rainbow || (data.nameAnimated !== false && data.nameGradient !== false));
+    return 'buyer-name custom-name' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '');
+  }
+
+function reviewIdentityCheck(data = {}) {
+  if (data.customCheckEnabled !== true) return '';
+  const color = warnaHexSah(data.customCheckColor, '#0284c7');
+  const gif = data.customCheckType === 'gif' ? customNameEmojiHTML(data.customCheckGif) : '';
+  return '<span class="review-identity-check' + (gif ? ' is-gif' : '') + '" style="--check-color:' + color + '" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>' + gif + '</span>';
+}
+function reviewIdentityRole(data = {}) {
+  const text = String(data.badgeText || data.role || '').trim();
+  const animated = data.badgeAnimated !== false || data.badgeRainbow === true;
+  const badge = text ? '<span class="review-identity-role' + (animated ? ' is-animated' : '') + '" style="' + reviewIdentityBadgeStyle(data) + '">' + customNameEmojiHTML(data.badgeEmoji) + escapeHtml(text) + '</span>' : '';
+  const medalText = String(data.medalText || '').trim();
+  const medal = medalText ? '<span class="review-identity-medal' + (data.medalAnimated !== false || data.medalRainbow === true ? ' is-animated' : '') + '" style="' + reviewIdentityMedalStyle(data) + '">' + customNameEmojiHTML(data.medalEmoji) + escapeHtml(medalText) + '</span>' : '';
+  return badge + medal;
+}
+
 function toReviewTime(value) {
   if (!value) return 'Baru sahaja';
   const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
@@ -5508,7 +5570,7 @@ function showReviewShowcasePopup(item, total) {
     ? '<img src="' + escapeHtml(item.profileImg) + '" alt="Profil ' + escapeHtml(name) + '">'
     : escapeHtml(item.emojiProfil || initials);
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
-  const roleText = item.role || item.badgeText || 'Pembeli disahkan';
+  const roleMarkup = reviewIdentityRole(item);
   const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
   const imageButton = item.feedbackImg ? '<button id="review-popup-image" type="button" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image"></i></button>' : '';
   const pauseIcon = reviewShowcasePaused ? 'fa-play' : 'fa-pause';
@@ -5525,8 +5587,8 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<span class="review-popup-name"><strong>' + escapeHtml(name) + '</strong><i class="fa-solid fa-circle-check" title="Pembeli disahkan"></i></span><span class="review-popup-stars">' + stars + '</span>' +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + escapeHtml(roleText) + ' - ' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></div>' +
+    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + '<span class="review-popup-stars">' + stars + '</span>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span><small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small></span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
@@ -7198,7 +7260,7 @@ function advanceGameNameEmojiImage(image) {
   if (image.dataset.fallbackPng) image.dataset.fallbackPng = '';
   else image.dataset.fallbackWebp = '';
   if (next) image.src = next;
-  else image.closest('.game-name-emoji').hidden = true;
+  else { image.closest('.game-name-emoji').hidden = true; image.closest('.review-identity-check')?.classList.remove('is-gif'); }
 }
 function customNameEmojiHTML(value) {
   const urls = gameNameEmojiImages(value);
@@ -8835,6 +8897,25 @@ document.addEventListener('DOMContentLoaded', () => {
     review.value = 'cdg - ' + suggestions[Math.floor(Math.random() * suggestions.length)];
     suggestionUsed = true;
     charCount.textContent = `${review.value.length} / 500`;
+  });
+  document.getElementById('h4rf-story-build').addEventListener('click', () => {
+    const item = document.getElementById('h4rf-story-item').value.trim();
+    const time = document.getElementById('h4rf-story-time').value.trim();
+    const experience = document.getElementById('h4rf-story-experience').value.trim();
+    if (!item && !time && !experience) {
+      message('Isi pengalaman sebenar dahulu, kemudian susun ayat.', true);
+      document.getElementById('h4rf-story-experience').focus();
+      return;
+    }
+    const sentence = value => /[.!?]$/.test(value) ? value : value + '.';
+    const parts = [];
+    if (item) parts.push(sentence('Saya beli ' + item));
+    if (time) parts.push(sentence('Proses mengambil masa ' + time));
+    if (experience) parts.push(sentence(experience));
+    review.value = parts.join(' ').slice(0, 500);
+    suggestionUsed = false;
+    charCount.textContent = review.value.length + ' / 500';
+    review.focus();
   });
   modal.addEventListener('click', event => { if (event.target === modal) closeH4ReviewForm(); });
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm(); });
