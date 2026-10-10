@@ -8728,6 +8728,20 @@ window.openH4ReviewForm = openH4ReviewForm;
 window.closeH4ReviewForm = closeH4ReviewForm;
 window.returnToH4sxHome = returnToH4sxHome;
 
+function showH4ReviewSuccess(reviewId) {
+  const popup = document.getElementById('h4rf-success');
+  if (!popup) return;
+  document.getElementById('h4rf-success-view').href = 'https://review.h4sxmy.xyz/?reviewId=' + encodeURIComponent(reviewId);
+  document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
+  popup.hidden = false;
+  document.getElementById('h4rf-success-dismiss').focus();
+}
+function closeH4ReviewSuccess() {
+  document.getElementById('h4rf-success').hidden = true;
+  document.querySelector('#h4rf-modal .h4rf-dialog').inert = false;
+  document.getElementById('h4rf-submit').focus();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('h4rf-modal');
   const form = document.getElementById('h4rf-form');
@@ -8926,7 +8940,23 @@ document.addEventListener('DOMContentLoaded', () => {
     review.focus();
   });
   modal.addEventListener('click', event => { if (event.target === modal) closeH4ReviewForm(); });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm(); });
+  const successPopup = document.getElementById('h4rf-success');
+  document.getElementById('h4rf-success-dismiss').addEventListener('click', closeH4ReviewSuccess);
+  document.getElementById('h4rf-success-close').addEventListener('click', closeH4ReviewSuccess);
+  successPopup.addEventListener('click', event => { if (event.target === successPopup) closeH4ReviewSuccess(); });
+  document.addEventListener('keydown', event => {
+    if (!successPopup.hidden) {
+      if (event.key === 'Escape') { event.preventDefault(); closeH4ReviewSuccess(); }
+      if (event.key === 'Tab') {
+        const controls = successPopup.querySelectorAll('button, a[href]');
+        const first = controls[0], last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+      return;
+    }
+    if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm();
+  });
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -8970,10 +9000,8 @@ document.addEventListener('DOMContentLoaded', () => {
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
-      message('Ulasan berjaya dihantar. Membuka H4SX Review...');
-      setTimeout(() => {
-        window.location.assign('https://review.h4sxmy.xyz/?reviewId=' + encodeURIComponent(reviewRef.id));
-      }, 800);
+      message('Ulasan berjaya dihantar. Terima kasih!');
+      showH4ReviewSuccess(reviewRef.id);
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
       if (error.message === 'review-code-invalid') {

@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=review-desktop-compact-20261010">
+  <link rel="stylesheet" href="styles.css?v=review-success-choice-20261010">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
 </head>
 <body class="market-layout-v2">
@@ -440,6 +440,19 @@
           <div class="h4rf-submit-wrap"><span><i class="fa-solid fa-shield-heart"></i> Ulasan anda akan disemak sebelum dipaparkan.</span><button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button></div>
         </form>
       </section>
+      <div class="h4rf-success-overlay" id="h4rf-success" hidden>
+        <section class="h4rf-success-card" role="dialog" aria-modal="true" aria-labelledby="h4rf-success-title" aria-describedby="h4rf-success-copy">
+          <button id="h4rf-success-close" class="h4rf-success-close" type="button" aria-label="Tutup popup kejayaan">×</button>
+          <span class="h4rf-success-icon" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+          <small>TERIMA KASIH DARIPADA H4SX</small>
+          <h2 id="h4rf-success-title">Ulasan berjaya dihantar!</h2>
+          <p id="h4rf-success-copy">Ulasan anda sudah disimpan. Tekan “Lihat ulasan” jika mahu membukanya di H4SX Review.</p>
+          <div class="h4rf-success-actions">
+            <a id="h4rf-success-view" href="https://review.h4sxmy.xyz/">Lihat ulasan <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
+            <button id="h4rf-success-dismiss" type="button">Tutup</button>
+          </div>
+        </section>
+      </div>
     </div>
     <div class="div"></div>
     <section id="faq" class="section-panel" style="margin-bottom:48px">
@@ -1063,7 +1076,7 @@
 </aside>
 <div id="toasts"></div>
 <script src="admin-sessions.js?v=20261010-2"></script>
-<script defer src="app.js?v=admin-sessions-20261010-v2"></script>
+<script defer src="app.js?v=review-success-choice-20261010"></script>
 
 </body>
 </html>
