@@ -50,3 +50,7 @@ Logout biasa juga cuba menandakan sesi semasa sebagai tamat; jika API offline, l
 Firebase tidak menawarkan pembatalan refresh token untuk satu browser tertentu. Logout individu ini ialah kawalan sesi website dan API H4SX; ia tidak membatalkan refresh token Firebase secara individu atau menyekat penggunaan token itu terus pada SDK/database di luar laman. **Logout semua perangkat** kekal menggunakan pembatalan token Firebase sebenar untuk akaun admin.
 
 Rujukan: https://firebase.google.com/docs/auth/admin/manage-sessions dan https://firebase.google.com/docs/admin/setup
+
+## Halaman review dalam domain utama
+
+Selepas migrasi ke www.h4sxmy.xyz/review, login Firebase, ID perangkat dan logout browser dikongsi dengan website kedai. Rekod aktif pada domain utama ditunjukkan sebagai H4SX Store & Review; logout rekod itu mengeluarkan kedua-dua halaman pada browser tersebut. Identiti sesi kedai terdahulu dikekalkan. Rekod domain review lama masih boleh ditamatkan dan dipadam berasingan.

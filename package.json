@@ -9,6 +9,7 @@
     "node": "24.x"
   },
   "scripts": {
-    "test:sessions": "node --test tests/admin-sessions.test.mjs"
+    "test:sessions": "node --test tests/admin-sessions.test.mjs",
+    "test:migration": "node --test tests/admin-sessions.test.mjs tests/review-migration.test.mjs"
   }
 }

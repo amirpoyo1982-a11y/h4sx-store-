@@ -1,8 +1,8 @@
-const CACHE_NAME = 'h4sx-pwa-20261009-v90';
+const CACHE_NAME = 'h4sx-pwa-20261011-review-v91';
 const APP_SHELL = [
   './index.htm',
-  './styles.css?v=store-closure-v1-20261009',
-  './app.js?v=store-closure-v3-20261009',
+  './styles.css?v=review-success-choice-20261010',
+  './app.js?v=integrated-review-20261011',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './manifest.webmanifest'
@@ -27,7 +27,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin || url.pathname.includes('/api/')) return;
 
   if (request.mode === 'navigate') {
-    const navigationCacheKey = url.pathname.endsWith('/h4sx-intro.html') ? './h4sx-intro.html?v=hs-intro-v8-20261008' : './index.htm';
+    const navigationCacheKey = /^\/review(?:\/|$)/.test(url.pathname) ? '/review' : url.pathname.endsWith('/h4sx-intro.html') ? './h4sx-intro.html?v=hs-intro-v8-20261008' : './index.htm';
     event.respondWith(
       fetch(request)
         .then(response => {

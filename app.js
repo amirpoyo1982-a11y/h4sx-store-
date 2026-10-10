@@ -360,16 +360,16 @@ function getLocalHelperAnswer(question) {
     return 'Cara beli dekat H4SX:\n1. Pilih item dekat katalog.\n2. Tekan Beli WhatsApp.\n3. Admin semak stok dan bagi arahan bayaran rasmi.\n4. Bayar melalui QR DuitNow/TNG yang diberi admin.\n5. Screenshot resit dan hantar ke WhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   if (asksSafe) {
-    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://review.h4sxmy.xyz/\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
+    return 'Safe boss, tapi tetap semak item dulu sebelum bayar. Proses H4SX: bayar melalui QR rasmi, simpan screenshot resit, kemudian hantar bukti bayaran ke admin.\n\nReview pelanggan: https://www.h4sxmy.xyz/review\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   if (asksTime) {
     return 'Biasanya proses order sekitar 1-30 minit selepas resit diterima admin. Kalau stok/login/order tertentu perlukan semakan, mungkin ambil masa lebih lama.\n\nLepas bayar terus hantar resit: https://wa.me/' + WA_NUMBER;
   }
   if (asksReview) {
-    return 'Boleh tengok atau hantar review dekat sini:\nhttps://review.h4sxmy.xyz/\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/' + WA_NUMBER;
+    return 'Boleh tengok atau hantar review dekat sini:\nhttps://www.h4sxmy.xyz/review\n\nKalau kod review tak ada, minta admin bantu: https://wa.me/' + WA_NUMBER;
   }
   if (asksWebsite || wantsAdmin) {
-    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://review.h4sxmy.xyz/\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
+    return 'Alamat rasmi H4SX:\nWebsite utama: https://www.h4sxmy.xyz/\nWebsite review: https://www.h4sxmy.xyz/review\nChannel WhatsApp: ' + H4SX_CHANNEL_URL + '\n\nWhatsApp admin: https://wa.me/' + WA_NUMBER;
   }
   return 'Boleh boss. Untuk H4SX, saya boleh bantu pasal harga, stok, cara beli, proses order, resit, review dan link admin.\n\nCuba tanya contoh: "item paling murah apa?", "cara beli macam mana?", atau "ada stok untuk game ini?"';
 }
@@ -2005,7 +2005,7 @@ async function downloadChangelogImage() {
     ctx.fillText('H4SX STORE', 74, height - 80);
     ctx.fillStyle = '#64748b';
     ctx.font = '800 21px "Plus Jakarta Sans", Arial, sans-serif';
-    ctx.fillText('www.h4sxmy.xyz  |  review.h4sxmy.xyz', 74, height - 46);
+    ctx.fillText('www.h4sxmy.xyz  |  www.h4sxmy.xyz/review', 74, height - 46);
 
     const blob = await new Promise((resolve, reject) => {
       canvas.toBlob(result => result ? resolve(result) : reject(new Error('Canvas blob kosong')), 'image/png');
@@ -6940,7 +6940,7 @@ function showReviewWebsiteConfirm() {
     title: 'Buka Website Review?',
     description: 'Anda akan dibawa ke H4SX Review untuk melihat semua rating dan ulasan pelanggan.',
     buttonText: 'Pergi ke Review',
-    destinationUrl: 'https://review.h4sxmy.xyz/',
+    destinationUrl: 'https://www.h4sxmy.xyz/review',
     showPaymentCatalog: false
   });
 }
@@ -8731,7 +8731,7 @@ window.returnToH4sxHome = returnToH4sxHome;
 function showH4ReviewSuccess(reviewId) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
-  document.getElementById('h4rf-success-view').href = 'https://review.h4sxmy.xyz/?reviewId=' + encodeURIComponent(reviewId);
+  document.getElementById('h4rf-success-view').href = 'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
   document.getElementById('h4rf-success-dismiss').focus();

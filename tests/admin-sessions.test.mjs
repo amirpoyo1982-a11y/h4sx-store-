@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { webcrypto } from 'node:crypto';
+import { webcrypto, createHash } from 'node:crypto';
 import { createSessionsHandler, describeDevice } from '../api/admin-sessions.js';
 
 const UID = 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3';
@@ -132,4 +132,9 @@ test('client only logs out when its own session is targeted', async () => {
   const f=clientFixture();await new Promise(resolve=>setImmediate(resolve));
   f.callback({blockedSessions:{'other-session':123456}});assert.equal(f.logoutCount,0);
   f.callback({blockedSessions:{'current-session':123456}});await new Promise(resolve=>setImmediate(resolve));assert.equal(f.logoutCount,1);
+});
+test('combined website preserves existing store session identity', async () => {
+  const f=fixture();const result=await call(f.handler,'register',{headers:{origin:'https://www.h4sxmy.xyz'}});
+  assert.equal(result.data.sessionId,createHash('sha256').update('store:'+DEVICE+':100').digest('hex'));
+  assert.equal(Object.values(f.devices)[0].site,'combined');
 });

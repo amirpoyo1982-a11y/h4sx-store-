@@ -15,6 +15,7 @@
 
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const date = value => value ? new Date(value).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'Belum direkod';
+  const siteLabel = value => value === 'combined' ? 'H4SX Store & Review' : value === 'review' ? 'H4SX Review' : 'H4SX Store';
 
   async function request(action, extra = {}) {
     const user = context?.user;
@@ -53,7 +54,7 @@
     panel.hidden = true;
     panel.innerHTML = '<section class="h4sx-session-panel" role="dialog" aria-modal="true" aria-labelledby="h4sx-session-title">' +
       '<header><div><small>KESELAMATAN ADMIN</small><h2 id="h4sx-session-title">Perangkat & sesi login</h2></div><button type="button" data-session-close aria-label="Tutup senarai perangkat">×</button></header>' +
-      '<p>Senarai dikongsi oleh website kedai dan review. Nama perangkat dikenal pasti daripada browser, jadi model telefon mungkin tidak tersedia. Setiap browser dan website boleh mempunyai rekod berasingan.</p>' +
+      '<p>Kedai dan halaman /review berkongsi sesi pada domain yang sama. Nama perangkat dikenal pasti daripada browser; model telefon mungkin tidak tersedia. Rekod domain review lama kekal berasingan.</p>' +
       '<div class="h4sx-session-actions"><button type="button" data-session-refresh>Muat semula</button><button type="button" data-session-revoke disabled>Logout semua perangkat</button></div>' +
       '<p data-session-status role="status"></p><div data-session-list></div>' +
       '<footer>Sehingga 100 rekod terbaru, bermula selepas ciri ini diaktifkan. Masa menggunakan waktu Malaysia. “Sesi ini” merujuk browser dan website semasa.</footer></section>';
@@ -94,7 +95,7 @@
       visibleDevices = data.devices;
       root.querySelector('[data-session-list]').innerHTML = data.devices.length ? data.devices.map(item =>
         '<article class="h4sx-session-device"><div class="h4sx-session-device-head"><strong>' + escape(item.device) + ' · ' + escape(item.browser) + '</strong><span class="' + (item.revoked ? 'is-revoked' : '') + '">' + (item.current ? 'Sesi ini' : item.revoked ? 'Sesi ditamatkan' : 'Belum ditamatkan') + '</span></div>' +
-        '<p>' + (item.site === 'review' ? 'H4SX Review' : 'H4SX Store') + '</p><small>Login: ' + escape(date(item.authTime)) + '<br>Aktiviti direkod: ' + escape(date(item.lastSeen)) + '</small>' +
+        '<p>' + siteLabel(item.site) + '</p><small>Login: ' + escape(date(item.authTime)) + '<br>Aktiviti direkod: ' + escape(date(item.lastSeen)) + '</small>' +
         '<div class="h4sx-session-device-actions"><button type="button" data-device-action="' + (item.revoked ? 'delete-record' : 'revoke-one') + '" data-device-id="' + escape(item.id) + '">' + (item.revoked ? 'Padam rekod' : 'Logout sesi ini') + '</button></div></article>'
       ).join('') : '<p>Belum ada perangkat direkod.</p>';
       status(data.devices.length + ' rekod perangkat. Rekod lama sebelum pemasangan tidak tersedia.');
@@ -110,7 +111,7 @@
     const item = visibleDevices.find(device => device.id === button.dataset.deviceId);
     if (!item) return;
     const action = button.dataset.deviceAction;
-    const label = item.device + ' · ' + item.browser + ' (' + (item.site === 'review' ? 'H4SX Review' : 'H4SX Store') + ')';
+    const label = item.device + ' · ' + item.browser + ' (' + siteLabel(item.site) + ')';
     const message = action === 'delete-record'
       ? 'Padam rekod sesi yang sudah ditamatkan ini? ' + label
       : 'Logout sesi ini sahaja? ' + label + (item.current ? '\nSesi yang sedang anda guna akan ditamatkan.' : '\nSesi lain kekal login.');
