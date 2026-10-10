@@ -3570,8 +3570,17 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           <div class="admin-time-edit-form" data-nosnippet>
             <input type="datetime-local" value="${escapeHtml(timestampToDatetimeLocal(data.diciptaPada))}">
             <div class="admin-reply-form-actions">
+            <button type="button" class="btn-toggle-review-time admin-action-btn" title="Tunjuk atau sorok tarikh dan masa ulasan serta balasan">${data.hideReviewTime===true?"Tunjuk tarikh/masa":"Sorok tarikh/masa"}</button>
               <button class="btn-simpan-edit-masa">Simpan Masa</button>
               <button class="btn-batal-edit-masa">Batal</button>
+            </div>
+          </div>
+          <div class="admin-time-edit-form admin-pin-controls" data-nosnippet>
+            <strong>Tetapan semat</strong>
+            <div class="admin-reply-form-actions">
+            <button class="btn-pin-ulasan admin-action-btn admin-action-pin${data.pinned===true?" is-active":""}" title="Semat ulasan">${data.pinned===true?"Unpin":"Pin"}</button>
+            <button type="button" class="btn-toggle-pin-label admin-action-btn" title="Sorok label dan hiasan pin tanpa membuang sematan">${data.hidePinLabel===true?"Tunjuk label Pin":"Sorok label Pin"}</button>
+              <button type="button" class="btn-close-pin-controls">Tutup</button>
             </div>
           </div>
           ${adaFeedbackImg?`<button class="btn-see-feedback" type="button">See image</button>`:""}
@@ -3598,9 +3607,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             <button class="btn-edit-ulasan admin-action-btn admin-action-review" title="Edit ulasan pelanggan">Edit Ulasan</button>
             <button class="btn-edit-masa admin-action-btn admin-action-time" title="Edit tarikh masa">Masa</button>
             <button class="btn-profile-ulasan admin-action-btn admin-action-profile" title="Edit nama, profil dan pingat">Profile</button>
-            <button type="button" class="btn-toggle-pin-label admin-action-btn" title="Sorok label dan hiasan pin tanpa membuang sematan">${data.hidePinLabel===true?"Tunjuk label Pin":"Sorok label Pin"}</button>
-            <button type="button" class="btn-toggle-review-time admin-action-btn" title="Tunjuk atau sorok tarikh dan masa ulasan serta balasan">${data.hideReviewTime===true?"Tunjuk tarikh/masa":"Sorok tarikh/masa"}</button>
-            <button class="btn-pin-ulasan admin-action-btn admin-action-pin${data.pinned===true?" is-active":""}" title="Semat ulasan">${data.pinned===true?"Unpin":"Pin"}</button>
+            <button type="button" class="btn-open-pin-controls admin-action-btn admin-action-pin${data.pinned===true?" is-active":""}" title="Tetapan semat dan label pin" aria-expanded="false">Pin</button>
             <button class="btn-badge-ulasan admin-action-btn admin-action-badge" title="Edit role dan custom centang">Role ✓</button>
             <button class="btn-padam-ulasan admin-action-btn admin-action-delete" type="button" title="Padam ulasan secara kekal" aria-label="Padam ulasan">Padam</button>
           </div>
@@ -3632,6 +3639,18 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const btnCancelEditTime=card.querySelector(".btn-batal-edit-masa");
       const btnPadam=card.querySelector(".btn-padam-ulasan");
       const btnPin=card.querySelector(".btn-pin-ulasan");
+      const pinControls = card.querySelector('.admin-pin-controls');
+      const pinMenuButton = card.querySelector('.btn-open-pin-controls');
+      pinMenuButton.addEventListener('click', () => {
+        if (!mintaAdmin()) return;
+        pinControls.classList.toggle('show');
+        editTimeForm.classList.remove('show');
+        pinMenuButton.setAttribute('aria-expanded', String(pinControls.classList.contains('show')));
+      });
+      card.querySelector('.btn-close-pin-controls').addEventListener('click', () => {
+        pinControls.classList.remove('show');
+        pinMenuButton.setAttribute('aria-expanded', 'false');
+      });
       const btnProfile=card.querySelector(".btn-profile-ulasan");
       const btnBadge=card.querySelector(".btn-badge-ulasan");
       const btnSeeFeedback=card.querySelector(".btn-see-feedback");
@@ -3687,6 +3706,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       btnSaveEditReview.addEventListener("click",()=>simpanEditUlasan(id, editReviewTa.value, btnSaveEditReview, data));
       btnEditTime.addEventListener("click",()=>{
         if(!mintaAdmin())return;
+        pinControls.classList.remove("show");
+        pinMenuButton.setAttribute("aria-expanded", "false");
         editTimeForm.classList.toggle("show");
         if(editTimeForm.classList.contains("show")) editTimeInput.focus();
       });
