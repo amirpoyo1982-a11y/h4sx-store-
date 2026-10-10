@@ -1,8 +1,8 @@
-const CACHE_NAME = 'h4sx-pwa-20261011-badge-v92';
+const CACHE_NAME = 'h4sx-pwa-20261011-check-v93';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=review-success-choice-20261010',
-  './app.js?v=badge-size-20261011',
+  './app.js?v=check-size-20261011',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './manifest.webmanifest'

@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=badge-size-20261011">
+  <link rel="stylesheet" href="/review/review-style.css?v=check-size-20261011">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -340,6 +340,12 @@
           <option value="gif">GIF custom</option>
         </select>
       </label>
+      <div class="custom-check-size-field">
+        <label for="customCheckSizeInput">Saiz centang <output id="customCheckSizeOutput" for="customCheckSizeInput">100%</output></label>
+        <input type="range" id="customCheckSizeInput" min="70" max="200" step="5" value="100" style="width:100%">
+        <button type="button" id="customCheckSizeReset">Reset saiz 100%</button>
+        <small>Saiz centang biasa atau GIF, berasingan daripada badge.</small>
+      </div>
       <span class="custom-check" id="customCheckLivePreview" aria-label="Preview centang"><i class="fa-solid fa-check"></i></span>
       <div class="custom-check-gif-options" id="customCheckGifOptions" hidden>
         <label for="customCheckGifInput">URL GIF / emoji bergerak</label>
@@ -920,7 +926,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=review-no-loader-20261011"></script>
+<script type="module" src="/review/review-app.js?v=check-size-20261011"></script>
 </body>
 </html>
 

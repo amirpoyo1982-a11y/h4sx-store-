@@ -5557,3 +5557,7 @@ html.hide-review-replies .admin-reply-view-toggle, html.hide-review-replies .adm
   .review-rewrite-v3 .admin-reply-text { margin: 11px 12px 12px; font-size: 13px; }
   .review-rewrite-v3 .admin-reply-footer { padding: 6px 10px 6px 12px; }
 }
+
+.custom-check-picker .custom-check-size-field { flex: 1 1 100%; display: grid; gap: 7px; padding: 10px 0; }
+.custom-check-size-field input[type="range"] { accent-color: #0284c7; }
+.custom-check-size-field button { justify-self: start; border: 1px solid var(--line-mid); border-radius: 8px; padding: 6px 10px; background: var(--card, #fff); color: var(--text); font: inherit; cursor: pointer; }

@@ -5279,7 +5279,7 @@ function reviewIdentityCheck(data = {}) {
   if (data.customCheckEnabled !== true) return '';
   const color = warnaHexSah(data.customCheckColor, '#0284c7');
   const gif = data.customCheckType === 'gif' ? customNameEmojiHTML(data.customCheckGif) : '';
-  return '<span class="review-identity-check' + (gif ? ' is-gif' : '') + '" style="--check-color:' + color + '" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>' + gif + '</span>';
+  return '<span class="review-identity-check' + (gif ? ' is-gif' : '') + '" style="--check-color:' + color + ';zoom:' + (Number.isFinite(Number(data.customCheckSize)) && Number(data.customCheckSize) > 0 ? Math.max(70, Math.min(200, Number(data.customCheckSize))) / 100 : 1) + '" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>' + gif + '</span>';
 }
 function reviewIdentityRole(data = {}) {
   const text = String(data.badgeText || data.role || '').trim();
