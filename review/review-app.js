@@ -164,16 +164,6 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     }
   }
 
-  // -- Opening loader -----------------------------------
-  const pageLoader = document.getElementById("pageLoader");
-  function hidePageLoader() {
-    if (!pageLoader || pageLoader.classList.contains("hide")) return;
-    pageLoader.classList.add("hide");
-    setTimeout(() => pageLoader.remove(), 650);
-  }
-  window.addEventListener("load", () => setTimeout(hidePageLoader, 650));
-  setTimeout(hidePageLoader, 4200);
-
   // -- Light Dark mode ---------------------------------
   const btnThemeToggle = document.getElementById("btnThemeToggle");
   function setThemeMode(mode) {
