@@ -3602,6 +3602,7 @@ let reviewShowcaseConfig = { active:false, intervalSeconds:6, position:'top-left
 let reviewShowcaseConfigUnsubscribe = null;
 let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
+let reviewShowcasePinOrder = '';
 let reviewShowcaseDismissed = false;
 let reviewShowcasePaused = false;
 let reviewShowcaseCompact = false;
@@ -5398,6 +5399,17 @@ function reviewRecordTime(value) {
 function publicReviewRecords(list = []) {
   return list.filter(item => !['hidden', 'rejected'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
 }
+function orderedReviewShowcaseRecords(list = []) {
+  return publicReviewRecords(list).slice().sort((a, b) => {
+    const priority = Number(b.pinned === true) - Number(a.pinned === true);
+    if (priority) return priority;
+    if (a.pinned === true) {
+      const pinnedTime = reviewRecordTime(b.pinnedAt) - reviewRecordTime(a.pinnedAt);
+      if (pinnedTime) return pinnedTime;
+    }
+    return reviewRecordTime(b.diciptaPada || b.timestamp || b.date) - reviewRecordTime(a.diciptaPada || a.timestamp || a.date);
+  });
+}
 function uniqueReviewRecords(list = []) {
   const seen = new Set();
   return list.filter(item => {
@@ -5513,7 +5525,7 @@ async function loadReviews() {
     unsubscribeReviews = db.collection('ratings')
       .orderBy('diciptaPada', 'desc')
       .onSnapshot(snapshot => {
-        const data = uniqueReviewRecords(publicReviewRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))));
+        const data = uniqueReviewRecords(orderedReviewShowcaseRecords(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))));
         latestReviewStatsData = data;
         updateMainReviewStats(data);
         if (isReviewMaintenanceActive()) {
@@ -5744,7 +5756,12 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function renderReviews(list = []) {
-  list = publicReviewRecords(list);
+  list = orderedReviewShowcaseRecords(list);
+  const pinOrder = JSON.stringify(list.filter(item => item.pinned === true).map(item => item.id));
+  if (pinOrder !== reviewShowcasePinOrder) {
+    reviewShowcasePinOrder = pinOrder;
+    reviewShowcaseIndex = 0;
+  }
   const grid = document.getElementById('testi-grid');
   if (!grid) return;
   if (!isReviewAreaVisible()) {
