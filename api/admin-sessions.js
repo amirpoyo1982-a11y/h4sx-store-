@@ -52,13 +52,16 @@ export function createSessionsHandler(getServices = firebaseServices) {
     if (!bearer || bearer.length > 10000) return res.status(401).json({ error:'Login admin diperlukan.' });
     const action = req.body?.action;
     if (!['register', 'check', 'list', 'revoke-all'].includes(action)) return res.status(400).json({ error:'Tindakan tidak sah.' });
+    let stage = 'credential';
     try {
       const { auth, database, firestore } = await getServices();
+      stage = 'auth';
       const token = await auth.verifyIdToken(bearer, true);
       if (token.uid !== ADMIN_UID) return res.status(403).json({ error:'Akaun ini bukan admin H4SX.' });
       if (action === 'check') return res.status(200).json({ success:true });
       const root = database.ref('admin_sessions_private/' + token.uid);
       if (action === 'revoke-all') {
+        stage = 'revoke';
         await auth.revokeRefreshTokens(token.uid);
         const record = await auth.getUser(token.uid);
         const revokedAt = Date.parse(record.tokensValidAfterTime);
@@ -75,6 +78,7 @@ export function createSessionsHandler(getServices = firebaseServices) {
       if (!/^[a-f0-9-]{16,64}$/i.test(deviceId)) return res.status(400).json({ error:'ID perangkat tidak sah.' });
       const sessionId = createHash('sha256').update(site + ':' + deviceId + ':' + token.auth_time).digest('hex');
       if (action === 'register') {
+        stage = 'database-register';
         const now = Date.now();
         const detail = describeDevice(req.headers['user-agent']);
         await root.child('devices/' + sessionId).transaction(previous => ({
@@ -83,6 +87,7 @@ export function createSessionsHandler(getServices = firebaseServices) {
         }));
         return res.status(200).json({ success:true, sessionId });
       }
+      stage = 'database-list';
       const [snapshot, record] = await Promise.all([
         root.child('devices').orderByChild('lastSeen').limitToLast(100).once('value'), auth.getUser(token.uid)
       ]);
@@ -96,11 +101,17 @@ export function createSessionsHandler(getServices = firebaseServices) {
       return res.status(200).json({ success:true, devices });
     } catch (error) {
       if (error.code === 'sessions/setup-required') return res.status(503).json({ code:'setup-required', error:'Backend sesi belum dikonfigurasi. Tambah credential Firebase Admin dalam Vercel.' });
-      if (['auth/id-token-revoked','auth/id-token-expired','auth/user-disabled','auth/argument-error','auth/invalid-id-token','auth/user-not-found'].includes(error.code)) {
+      if (['auth/id-token-revoked','auth/id-token-expired','auth/user-disabled','auth/argument-error','auth/invalid-id-token','auth/user-not-found'].includes(error.code) || (stage === 'auth' && error.code === 'auth/invalid-argument')) {
         return res.status(401).json({ error:'Sesi telah tamat. Login semula.' });
       }
-      console.error('Admin sessions error:', error.code || 'unknown');
-      return res.status(500).json({ error:'Pengurusan sesi gagal. Cuba lagi.' });
+      const code = /^[a-z0-9_/-]{1,100}$/i.test(String(error.code || '')) ? String(error.code) : 'unknown';
+      console.error('Admin sessions error:', stage, code);
+      const hint = ['app/invalid-credential','auth/invalid-credential'].includes(code)
+        ? 'Credential Firebase Admin tidak sah. Semak JSON asal dan status key service account.'
+        : code === 'auth/insufficient-permission' || code === 'PERMISSION_DENIED'
+          ? 'Service account tidak mempunyai akses yang diperlukan pada Firebase.'
+          : 'Pengurusan sesi gagal.';
+      return res.status(500).json({ code, stage, error:hint + ' (' + stage + ': ' + code + ')' });
     }
   };
 }
