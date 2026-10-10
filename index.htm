@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=review-success-choice-20261010">
+  <link rel="stylesheet" href="styles.css?v=flash-price-20261011">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
 </head>
 <body class="market-layout-v2">
@@ -945,13 +945,17 @@
     <button class="order-modal-close" onclick="closeFlashDropAdmin()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-bolt"></i> Promosi masa terhad</div>
     <h2>Flash Drop</h2>
-    <p>Pilih produk dan masa tamat. Countdown pelanggan menggunakan masa sebenar dan hilang sendiri apabila tamat.</p>
+    <p>Pilih item, harga promo dan jadual waktu Malaysia. Harga kembali ke harga katalog secara automatik apabila tamat; kod promo tidak digabungkan sepanjang Flash Drop.</p>
     <form class="flash-drop-admin-form" onsubmit="saveFlashDrop(event)">
       <label class="vote-admin-toggle"><input id="flash-drop-active" type="checkbox"><span></span><b>Aktifkan Flash Drop</b></label>
-      <label>Produk<input id="flash-drop-product" list="flash-drop-products" autocomplete="off" placeholder="Pilih atau taip nama produk" required><datalist id="flash-drop-products"></datalist></label>
+      <label>Produk<select id="flash-drop-product" onchange="updateFlashDropProductSelection()" required></select></label>
+      <label>Type / pilihan<select id="flash-drop-variant" onchange="updateFlashDropOriginalPrice()"></select></label>
+      <small id="flash-drop-original-price">Pilih produk dahulu.</small>
+      <label>Harga promo (RM)<input id="flash-drop-promo-price" type="number" min="0" step="0.01" placeholder="Contoh: 5.00" required></label>
+      <label>Mula pada (waktu Malaysia)<input id="flash-drop-start-at" type="datetime-local" required></label>
       <label>Tajuk<input id="flash-drop-admin-title" maxlength="60" placeholder="Contoh: RedFinger Flash Drop" required></label>
       <label>Ayat ringkas<input id="flash-drop-admin-message" maxlength="120" placeholder="Contoh: Harga khas sehingga malam ini"></label>
-      <label>Tamat pada<input id="flash-drop-end-at" type="datetime-local" required></label>
+      <label>Tamat pada (waktu Malaysia)<input id="flash-drop-end-at" type="datetime-local" required></label>
       <div class="flash-drop-admin-actions"><button type="submit" class="btn-primary" id="flash-drop-save"><i class="fa-solid fa-floppy-disk"></i> Simpan Flash Drop</button><button type="button" class="btn-ghost" onclick="disableFlashDrop()"><i class="fa-solid fa-power-off"></i> Tutup Sekarang</button></div>
       <div class="vote-admin-status" id="flash-drop-admin-status">Pilih produk dan masa tamat.</div>
     </form>
@@ -1076,7 +1080,7 @@
 </aside>
 <div id="toasts"></div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
-<script defer src="app.js?v=check-size-20261011"></script>
+<script defer src="app.js?v=flash-price-20261011"></script>
 
 </body>
 </html>

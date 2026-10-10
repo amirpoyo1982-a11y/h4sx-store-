@@ -10694,8 +10694,8 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .flash-drop-admin-card { max-width:520px; }
 .flash-drop-admin-form { display:grid; gap:12px; margin-top:16px; }
 .flash-drop-admin-form > label:not(.vote-admin-toggle) { display:grid; gap:6px; color:#36556c; font-size:10px; font-weight:800; }
-.flash-drop-admin-form input:not([type="checkbox"]) { width:100%; min-height:43px; padding:0 12px; border:1px solid #cfe0eb; border-radius:10px; background:#fff; color:#17334c; outline:none; }
-.flash-drop-admin-form input:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.1); }
+.flash-drop-admin-form select, .flash-drop-admin-form input:not([type="checkbox"]) { width:100%; min-height:43px; padding:0 12px; border:1px solid #cfe0eb; border-radius:10px; background:#fff; color:#17334c; outline:none; }
+.flash-drop-admin-form select:focus, .flash-drop-admin-form input:focus { border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.1); }
 .flash-drop-admin-actions { display:grid; grid-template-columns:1fr auto; gap:9px; }
 .flash-drop-admin-actions button { min-height:42px; justify-content:center; }
 

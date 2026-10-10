@@ -853,7 +853,7 @@ function selectedCustomerOrderItem() {
 function syncCustomerOrderTotal() {
   const item = selectedCustomerOrderItem();
   const quantity = Math.max(1, Math.min(20, Number(document.getElementById('customer-order-qty')?.value || 1)));
-  const total = item ? Number(item.price || 0) * quantity : 0;
+  const total = item ? productPromoResult(item, savedProductPromoCode(item)).final * quantity : 0;
   const target = document.getElementById('customer-order-total');
   if (target) target.textContent = formatCustomerOrderMoney(total);
   return total;
@@ -973,7 +973,7 @@ async function submitCustomerOrder(event) {
   if (!phone) return toast('Nombor WhatsApp tidak sah.', true);
   if (!item) return toast('Pilih produk dahulu.', true);
   if (item.stock != null && quantity > Number(item.stock)) return toast('Kuantiti melebihi stok yang tersedia.', true);
-  const unitPrice = Number(item.price || 0);
+  const unitPrice = productPromoResult(item, savedProductPromoCode(item)).final;
   const total = unitPrice * quantity;
   if (!Number.isFinite(total) || total < 0) return toast('Harga produk tidak sah.', true);
   const original = button.innerHTML;
@@ -1399,7 +1399,8 @@ function productSpotlightItems() {
 
 function productSpotlightPrice(item) {
   const prices = productVariants(item).map(variant => Number(variant.price)).filter(price => Number.isFinite(price) && price >= 0);
-  const value = prices.length ? Math.min(...prices) : Number(item.price || 0);
+  const priceItem = flashDropStartingItem(item);
+  const value = productPromoResult(priceItem, savedProductPromoCode(priceItem)).final;
   return (prices.length ? 'Dari ' : '') + 'RM' + value.toFixed(2);
 }
 
@@ -4522,6 +4523,50 @@ const FLASH_DROP_CONFIG_PATH = REALTIME_STORE_ROOT + '/config/flashDrop';
 let flashDropConfig = { active:false };
 let flashDropConfigListening = false;
 let flashDropTimer = null;
+let flashDropClockOffset = 0;
+let flashDropPricingSignature = '';
+function flashDropNow() { return Date.now() + flashDropClockOffset; }
+function flashDropMalaysiaInput(timestamp) {
+  return new Date(Number(timestamp) + 8 * 3600000).toISOString().slice(0, 16);
+}
+function flashDropMalaysiaTimestamp(value) {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value || '') ? Date.parse(value + ':00+08:00') : NaN;
+}
+function flashDropPrice(item, config = flashDropConfig, now = flashDropNow()) {
+  const price = Number(config.promoPrice);
+  const base = Math.max(0, Number(item?.price || 0));
+  const matches = config.productId ? String(item?.id) === config.productId : String(item?.name || '').trim().toLowerCase() === config.productName.toLowerCase();
+  if (!flashDropIsLive(config, now) || !matches || config.promoPrice == null || !Number.isFinite(price) || price < 0 || price >= base) return null;
+  if (String(item?.variantId || '') !== String(config.variantId || '')) return null;
+  return Math.round(price * 100) / 100;
+}
+function flashDropStartingItem(item) {
+  const choices = productVariants(item).map(variant => effectiveProductItem(item, variant.id));
+  return choices.length ? choices.reduce((best, candidate) => productPromoResult(candidate, savedProductPromoCode(candidate)).final < productPromoResult(best, savedProductPromoCode(best)).final ? candidate : best) : item;
+}
+function refreshFlashDropPrices(force = false) {
+  const signature = JSON.stringify([flashDropIsLive(), flashDropConfig.productId, flashDropConfig.variantId, flashDropConfig.promoPrice]);
+  if (!force && signature === flashDropPricingSignature) return;
+  flashDropPricingSignature = signature;
+  if (currentGame) renderProductGrid();
+  renderCart();
+  if (document.getElementById('customer-order-modal')?.classList.contains('show')) syncCustomerOrderTotal();
+  const checkout = document.getElementById('co-items');
+  if (checkout && cartItems.length) {
+    let total = 0;
+    checkout.innerHTML = cartItems.map(ci => {
+      const item = inventory.find(entry => entry.id === ci.id);
+      if (!item) return '';
+      const line = getCartUnitPrice(item, ci) * ci.qty;
+      total += line;
+      return '<div class="order-row"><span class="or-name">' + escapeHtml(cartEntryName(item, ci)) + (ci.qty > 1 ? ' x' + ci.qty : '') + '</span><span class="or-price">RM' + line.toFixed(2) + '</span></div>';
+    }).join('');
+    document.getElementById('co-total').textContent = 'RM' + total.toFixed(2);
+  }
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  if (item && document.getElementById('product-modal')?.classList.contains('show')) renderProductModalSelection(item, false);
+  if (quickPreviewItemId != null && document.getElementById('quick-preview-modal')?.classList.contains('show')) openProductQuickPreview(quickPreviewItemId);
+}
 
 function normaliseFlashDrop(value) {
   const source = value && typeof value === 'object' ? value : {};
@@ -4531,12 +4576,15 @@ function normaliseFlashDrop(value) {
     productName: String(source.productName || '').trim(),
     title: String(source.title || 'Tawaran masa terhad').trim(),
     message: String(source.message || 'Tekan untuk lihat produk.').trim(),
+    startsAt: Number(source.startsAt || 0),
+    variantId: String(source.variantId || ''),
+    promoPrice: source.promoPrice == null || source.promoPrice === '' ? null : Number(source.promoPrice),
     endsAt: Number(source.endsAt || 0)
   };
 }
 
-function flashDropIsLive(config = flashDropConfig) {
-  return config.active && config.endsAt > Date.now() && Boolean(config.productId || config.productName);
+function flashDropIsLive(config = flashDropConfig, now = flashDropNow()) {
+  return config.active && (!config.startsAt || config.startsAt <= now) && config.endsAt > now && Boolean(config.productId || config.productName);
 }
 
 function syncFlashDropAdminMenu() {
@@ -4546,17 +4594,18 @@ function syncFlashDropAdminMenu() {
   if (!button) return;
   const live = flashDropIsLive();
   button.classList.toggle('is-active', live);
-  if (status) status.textContent = live ? (flashDropConfig.productName + ' sedang LIVE.') : (flashDropConfig.active && flashDropConfig.endsAt ? 'Flash Drop sudah tamat.' : 'Tawaran sedang OFF.');
+  if (status) status.textContent = live ? (flashDropConfig.productName + ' sedang LIVE.') : (flashDropConfig.active && flashDropConfig.startsAt > flashDropNow() ? 'Dijadualkan: ' + new Date(flashDropConfig.startsAt).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur' }) : (flashDropConfig.active && flashDropConfig.endsAt ? 'Flash Drop sudah tamat. Harga asal digunakan.' : 'Tawaran sedang OFF.'));
   if (icon) icon.className = 'fa-solid ' + (live ? 'fa-toggle-on' : 'fa-toggle-off');
 }
 
 function updateFlashDropCountdown() {
   const root = document.getElementById('flash-drop');
   if (!root) return;
-  const remaining = Math.max(0, flashDropConfig.endsAt - Date.now());
+  refreshFlashDropPrices();
+  const remaining = Math.max(0, flashDropConfig.endsAt - flashDropNow());
   if (!flashDropIsLive() || remaining <= 0) {
     root.classList.add('is-hidden');
-    if (flashDropTimer) { clearInterval(flashDropTimer); flashDropTimer = null; }
+    if (flashDropTimer && (!flashDropConfig.active || flashDropConfig.endsAt <= flashDropNow())) { clearInterval(flashDropTimer); flashDropTimer = null; }
     syncFlashDropAdminMenu();
     return;
   }
@@ -4578,23 +4627,30 @@ function renderFlashDrop() {
   if (!root) return;
   const live = flashDropIsLive();
   root.classList.toggle('is-hidden', !live);
+  refreshFlashDropPrices();
+  if (flashDropConfig.active && flashDropConfig.endsAt > flashDropNow() && !flashDropTimer) flashDropTimer = setInterval(renderFlashDrop, 1000);
   if (!live) {
-    if (flashDropTimer) { clearInterval(flashDropTimer); flashDropTimer = null; }
+    if (flashDropTimer && (!flashDropConfig.active || flashDropConfig.endsAt <= flashDropNow())) { clearInterval(flashDropTimer); flashDropTimer = null; }
     syncFlashDropAdminMenu();
     return;
   }
   const title = document.getElementById('flash-drop-title');
   const message = document.getElementById('flash-drop-message');
   if (title) title.textContent = flashDropConfig.title || flashDropConfig.productName;
-  if (message) message.textContent = flashDropConfig.message || flashDropConfig.productName;
+  const product = flashDropProduct();
+  const effective = effectiveProductItem(product, flashDropConfig.variantId);
+  const sale = flashDropPrice(effective);
+  if (message) message.textContent = (flashDropConfig.message || flashDropConfig.productName) + (sale != null ? ' • RM' + Number(effective.price).toFixed(2) + ' → RM' + sale.toFixed(2) : '');
   updateFlashDropCountdown();
-  if (!flashDropTimer) flashDropTimer = setInterval(updateFlashDropCountdown, 1000);
+  if (!flashDropTimer) flashDropTimer = setInterval(renderFlashDrop, 1000);
   syncFlashDropAdminMenu();
 }
 
 function startFlashDropSync() {
   if (!realtimeDb || flashDropConfigListening) return;
   flashDropConfigListening = true;
+  realtimeDb.ref('.info/serverTimeOffset').on('value', snapshot => { flashDropClockOffset = Number(snapshot.val()) || 0; renderFlashDrop(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) renderFlashDrop(); });
   realtimeDb.ref(FLASH_DROP_CONFIG_PATH).on('value', snapshot => {
     flashDropConfig = normaliseFlashDrop(snapshot.val());
     renderFlashDrop();
@@ -4613,11 +4669,27 @@ function openFlashDropProduct() {
 }
 
 function populateFlashDropProducts() {
-  const list = document.getElementById('flash-drop-products');
-  if (!list) return;
-  list.innerHTML = inventory.filter(isCustomerProductVisible).map(item => '<option value="' + escapeHtml(item.name) + '">' + escapeHtml(gameGroupName(item)) + '</option>').join('');
+  const select = document.getElementById('flash-drop-product');
+  if (!select) return;
+  select.innerHTML = '<option value="">Pilih produk...</option>' + inventory.filter(isCustomerProductVisible).map(item => '<option value="' + escapeHtml(String(item.id)) + '">' + escapeHtml(gameGroupName(item) + ' — ' + item.name) + '</option>').join('');
 }
-
+function updateFlashDropProductSelection(variantId = '') {
+  const item = inventory.find(entry => String(entry.id) === document.getElementById('flash-drop-product').value);
+  const select = document.getElementById('flash-drop-variant');
+  const variants = productVariants(item);
+  select.innerHTML = variants.length ? '<option value="">Pilih type...</option>' + variants.map(variant => '<option value="' + escapeHtml(variant.id) + '">' + escapeHtml(variant.name) + ' — RM' + Number(variant.price).toFixed(2) + '</option>').join('') : '<option value="">Harga produk biasa</option>';
+  select.value = variantId;
+  select.disabled = !variants.length;
+  select.required = Boolean(variants.length);
+  updateFlashDropOriginalPrice();
+}
+function updateFlashDropOriginalPrice() {
+  const item = inventory.find(entry => String(entry.id) === document.getElementById('flash-drop-product').value);
+  const effective = effectiveProductItem(item, document.getElementById('flash-drop-variant').value);
+  document.getElementById('flash-drop-original-price').textContent = item ? 'Harga asal katalog: RM' + Number(effective.price || 0).toFixed(2) : 'Pilih produk dahulu.';
+}
+window.updateFlashDropProductSelection = updateFlashDropProductSelection;
+window.updateFlashDropOriginalPrice = updateFlashDropOriginalPrice;
 function openFlashDropAdmin() {
   if (!orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
   populateFlashDropProducts();
@@ -4627,10 +4699,13 @@ function openFlashDropAdmin() {
   const message = document.getElementById('flash-drop-admin-message');
   const end = document.getElementById('flash-drop-end-at');
   if (active) active.checked = flashDropConfig.active;
-  if (product) product.value = flashDropConfig.productName || '';
+  if (product) product.value = flashDropConfig.productId || String(flashDropProduct()?.id || '');
+  updateFlashDropProductSelection(flashDropConfig.variantId);
+  document.getElementById('flash-drop-promo-price').value = flashDropConfig.promoPrice ?? '';
+  document.getElementById('flash-drop-start-at').value = flashDropMalaysiaInput(flashDropConfig.startsAt || flashDropNow());
   if (title) title.value = flashDropConfig.title || 'Flash Drop H4SX';
   if (message) message.value = flashDropConfig.message || '';
-  if (end) end.value = flashDropConfig.endsAt ? toDateTimeLocalValue(flashDropConfig.endsAt) : toDateTimeLocalValue(Date.now() + 3600000);
+  if (end) end.value = flashDropConfig.endsAt ? flashDropMalaysiaInput(flashDropConfig.endsAt) : flashDropMalaysiaInput(flashDropNow() + 3600000);
   closeAdminProfile();
   document.getElementById('flash-drop-admin-modal')?.classList.add('show');
 }
@@ -4643,10 +4718,18 @@ async function saveFlashDrop(event) {
   const productValue = document.getElementById('flash-drop-product')?.value.trim() || '';
   const item = inventory.find(entry => String(entry.id) === productValue) || inventory.find(entry => String(entry.name || '').trim().toLowerCase() === productValue.toLowerCase());
   if (!item) return toast('Pilih produk yang wujud dalam katalog.', true);
-  const endsAt = new Date(document.getElementById('flash-drop-end-at')?.value || '').getTime();
+  const startsAt = flashDropMalaysiaTimestamp(document.getElementById('flash-drop-start-at')?.value);
+  const endsAt = flashDropMalaysiaTimestamp(document.getElementById('flash-drop-end-at')?.value);
+  const variantId = document.getElementById('flash-drop-variant').value;
+  if (productVariants(item).length && !getProductVariant(item, variantId)) return toast('Pilih type yang mahu dijadikan Flash Drop.', true);
+  const effective = effectiveProductItem(item, variantId);
+  const priceInput = document.getElementById('flash-drop-promo-price').value.trim();
+  const promoPrice = Math.round(Number(priceInput) * 100) / 100;
+  if (!priceInput || !Number.isFinite(promoPrice) || promoPrice < 0 || promoPrice >= Number(effective.price)) return toast('Harga promo mesti lebih rendah daripada harga asal.', true);
+  if (!Number.isFinite(startsAt) || endsAt <= startsAt) return toast('Masa tamat mesti selepas masa mula (waktu Malaysia).', true);
   const active = Boolean(document.getElementById('flash-drop-active')?.checked);
   if (!Number.isFinite(endsAt)) return toast('Pilih masa tamat yang sah.', true);
-  if (active && endsAt <= Date.now()) return toast('Masa tamat mesti selepas waktu sekarang.', true);
+  if (active && endsAt <= flashDropNow()) return toast('Masa tamat mesti selepas waktu sekarang.', true);
   const button = event.submitter;
   if (button) button.disabled = true;
   try {
@@ -4654,6 +4737,9 @@ async function saveFlashDrop(event) {
       active,
       productId:String(item.id),
       productName:String(item.name || ''),
+      variantId,
+      promoPrice,
+      startsAt,
       title:document.getElementById('flash-drop-admin-title')?.value.trim() || 'Flash Drop H4SX',
       message:document.getElementById('flash-drop-admin-message')?.value.trim() || ('Tawaran khas untuk ' + item.name),
       endsAt,
@@ -4661,8 +4747,8 @@ async function saveFlashDrop(event) {
       updatedBy:orderAuth.currentUser.email || 'admin'
     });
     const status = document.getElementById('flash-drop-admin-status');
-    if (status) status.textContent = active ? 'Flash Drop sudah LIVE.' : 'Tetapan disimpan dalam keadaan OFF.';
-    toast(active ? 'Flash Drop sudah dihidupkan.' : 'Flash Drop disimpan sebagai OFF.');
+    if (status) status.textContent = active ? (startsAt > flashDropNow() ? 'Flash Drop dijadualkan. Harga promo akan bermula automatik.' : 'Flash Drop LIVE. Harga promo aktif.') : 'Tetapan disimpan dalam keadaan OFF.';
+    toast(active ? 'Jadual dan harga Flash Drop disimpan.' : 'Flash Drop disimpan sebagai OFF.');
   } catch (error) {
     console.error('Simpan Flash Drop gagal:', error);
     toast('Tak dapat simpan Flash Drop. Semak Firebase Rules.', true);
@@ -5992,7 +6078,7 @@ function productVariantPriceState(item, variant) {
     promoPhoneReady(variantItem, result.promo)
   );
   return {
-    base: Math.max(0, Number(variantItem?.price || 0)),
+    base: result.base,
     final: discounted ? result.final : Math.max(0, Number(variantItem?.price || 0)),
     discounted
   };
@@ -6091,6 +6177,11 @@ function productPromoConfig(item, requestedCode = '') {
   return promos.find(promo => promo.code === requested) || promos[0] || null;
 }
 function productPromoResult(item, suppliedCode) {
+  const flashPrice = flashDropPrice(item);
+  if (flashPrice != null) {
+    const base = Math.max(0, Number(item.price || 0));
+    return { valid:true, automatic:true, base, final:flashPrice, discount:base - flashPrice, expiresAt:flashDropConfig.endsAt, promo:{ code:'FLASH DROP', automatic:true, requirePhone:false, expiresAt:flashDropConfig.endsAt } };
+  }
   const entered = String(suppliedCode || '').trim().toUpperCase();
   const promo = productPromoConfig(item, entered);
   const base = Math.max(0, Number(item?.price || 0));
@@ -6102,6 +6193,7 @@ function productPromoResult(item, suppliedCode) {
   return { valid: true, base, final: Math.max(0, base - discount), promo, expiresAt, discount };
 }
 function promoPhoneVerificationRequired(item, promo) {
+  if (promo?.automatic) return false;
   return Boolean(productPromoConfig(item, promo?.code)?.requirePhone);
 }
 function promoPhoneUser() {
@@ -6347,6 +6439,7 @@ function promoDraftStorageKey(item) {
   return PROMO_DRAFT_PREFIX + String(item?.id || 'item');
 }
 function savedProductPromoCode(item) {
+  if (flashDropPrice(item) != null) return '';
   const saved = storedProductPromoCode(item);
   const result = productPromoResult(item, saved);
   const usableHere = result.valid && promoRedeemedOnThisDevice(item, result.promo) && promoPhoneReady(item, result.promo);
@@ -6369,7 +6462,7 @@ function storedProductPromoCode(item) {
 }
 function saveProductPromoDraft(item, code) {
   const result = productPromoResult(item, code);
-  if (result.valid && promoRedeemedOnThisDevice(item, result.promo)) localStorage.setItem(promoDraftStorageKey(item), result.promo.code);
+  if (result.valid && !result.automatic && promoRedeemedOnThisDevice(item, result.promo)) localStorage.setItem(promoDraftStorageKey(item), result.promo.code);
   else if (!String(code || '').trim() || result.reason === 'expired' || result.reason === 'not-started') localStorage.removeItem(promoDraftStorageKey(item));
   return result;
 }
@@ -6442,7 +6535,13 @@ function syncProductModalPromo(item) {
   if (!wrap || !input || !status) return;
   const result = productPromoResult(item, input.value);
   const promo = result.promo || productPromoConfig(item);
-  wrap.hidden = !promo;
+  wrap.hidden = !promo || result.automatic;
+  if (result.automatic) {
+    if (priceEl) priceEl.textContent = 'RM' + result.final.toFixed(2);
+    if (oldPriceEl) oldPriceEl.textContent = 'RM' + result.base.toFixed(2);
+    syncProductModalVariantPrices(inventory.find(entry => String(entry.id) === String(modalItemId)) || item);
+    return;
+  }
   if (!promo) {
     syncProductModalVariantPrices(inventory.find(entry => String(entry.id) === String(modalItemId)) || item);
     return;
@@ -6603,6 +6702,7 @@ function promoRedemptionState(item, promo) {
   return { deviceId: raw, expiresAt: 0 };
 }
 function promoRedeemedOnThisDevice(item, promo) {
+  if (promo?.automatic) return true;
   const state = promoRedemptionState(item, promo);
   if (!state) return false;
   const user = promoPhoneUser();
@@ -6610,6 +6710,7 @@ function promoRedeemedOnThisDevice(item, promo) {
   return Boolean(state.deviceId && state.deviceId === getPromoDeviceId());
 }
 function effectivePromoExpiry(item, promo) {
+  if (promo?.automatic) return promo.expiresAt;
   if (!promo) return 0;
   const state = promoRedemptionState(item, promo);
   const personalExpiry = Number(state?.expiresAt || 0);
@@ -6619,7 +6720,7 @@ function effectivePromoExpiry(item, promo) {
 }
 async function claimProductPromo(item, promoCode) {
   const result = productPromoResult(item, promoCode);
-  if (!promoCode) return true;
+  if (result.automatic || !promoCode) return true;
   if (!result.valid) {
     toast(result.reason === 'not-started' ? 'Promo ini belum bermula.' : (result.reason === 'expired' ? 'Promo ini telah tamat.' : 'Kod promo tidak sah.'), true);
     return false;
@@ -6747,7 +6848,7 @@ function openProductQuickPreview(id) {
   const variants = productVariants(item);
   const prices = variants.length ? variants.map(variant => Number(variant.price || 0)).filter(Number.isFinite) : [Number(item.price || 0)];
   const minPrice = prices.length ? Math.min(...prices) : 0;
-  const priceItem = variants.length ? { ...item, price:minPrice, originalPrice:0 } : item;
+  const priceItem = flashDropStartingItem(item);
   const promo = productPromoResult(priceItem, savedProductPromoCode(item));
   const media = document.getElementById('quick-preview-media');
   const game = document.getElementById('quick-preview-game');
@@ -6764,7 +6865,7 @@ function openProductQuickPreview(id) {
   if (stock) { stock.className = 'quick-preview-stock ' + (out ? 'out' : 'ready'); stock.innerHTML = '<i class="fa-solid ' + (out ? 'fa-box-open' : 'fa-circle-check') + '"></i> ' + escapeHtml(stockLabel); }
   if (variantsWrap) {
     variantsWrap.innerHTML = variants.length
-      ? '<small>PILIHAN TYPE</small><div>' + variants.slice(0, 8).map(variant => '<span class="' + (Number(variant.stock) === 0 ? 'sold-out' : '') + '"><b>' + escapeHtml(variant.name) + '</b><em>RM' + Number(variant.price || 0).toFixed(2) + '</em></span>').join('') + '</div>'
+      ? '<small>PILIHAN TYPE</small><div>' + variants.slice(0, 8).map(variant => '<span class="' + (Number(variant.stock) === 0 ? 'sold-out' : '') + '"><b>' + escapeHtml(variant.name) + '</b><em>RM' + productPromoResult(effectiveProductItem(item, variant.id), savedProductPromoCode(item)).final.toFixed(2) + '</em></span>').join('') + '</div>'
       : '<small>Produk ini tiada pilihan tambahan.</small>';
   }
   const modal = document.getElementById('quick-preview-modal');
@@ -7008,7 +7109,7 @@ function productCardHTML(item) {
   }
   const variants = productVariants(item);
   const startingPrice = variants.length ? Math.min(...variants.map(variant => Number(variant.price || 0))) : Number(item.price || 0);
-  const priceItem = variants.length ? { ...item, price: startingPrice, originalPrice: 0 } : item;
+  const priceItem = flashDropStartingItem(item);
   const appliedPromo = productPromoResult(priceItem, savedProductPromoCode(item));
   const pHTML = (variants.length ? '<span class="pprice-prefix">Dari</span>' : '') + (appliedPromo.valid
     ? '<span class="pprice">RM' + appliedPromo.final.toFixed(2) + '</span><span class="pprice-old">RM' + appliedPromo.base.toFixed(2) + '</span>'
@@ -7514,7 +7615,7 @@ async function generateProductPromoPoster(item) {
     const variants = productVariants(item).filter(variant => Number(variant.stock) !== 0).slice(0, 12);
     const variantPrices = variants.map(variant => Number(variant.price || 0)).filter(Number.isFinite);
     const basePrice = variantPrices.length ? Math.min(...variantPrices) : Number(item.price || 0);
-    const priceItem = variants.length ? { ...item, price:basePrice, originalPrice:0 } : item;
+    const priceItem = flashDropStartingItem(item);
     const promo = productPromoResult(priceItem, savedProductPromoCode(item));
     const desc = String(item.desc || item.description || 'Produk digital H4SX STORE.').replace(/\s+/g, ' ').trim().slice(0, 260);
     const stock = isOutOfStock(item) ? 'HABIS STOK' : (item.stock != null ? Number(item.stock) + ' STOK TERSEDIA' : 'TERSEDIA');
@@ -7795,9 +7896,9 @@ function addCart(input, originEl, options = {}) {
   const requestedPromo = typeof input === 'number' ? productPromoResult(effectiveItem, options.promoCode) : { valid: false };
   if (ex) {
     ex.qty += requestedQty;
-    if (requestedPromo.valid) ex.promoCode = requestedPromo.promo.code;
+    if (requestedPromo.valid && !requestedPromo.automatic) ex.promoCode = requestedPromo.promo.code;
   } else {
-    cartItems.push({ id: targetId, qty: requestedQty, ...(variant ? { variantId: variant.id, variantName: variant.name } : {}), ...(requestedPromo.valid ? { promoCode: requestedPromo.promo.code } : {}) });
+    cartItems.push({ id: targetId, qty: requestedQty, ...(variant ? { variantId: variant.id, variantName: variant.name } : {}), ...(requestedPromo.valid && !requestedPromo.automatic ? { promoCode: requestedPromo.promo.code } : {}) });
   }
   
   persistCart();
@@ -8507,7 +8608,7 @@ function buyNowItem(id, promoCode = '', options = {}) {
     'Game: ' + (item.game || item.gameGroup || '-'),
     'Kuantiti: ' + quantity,
     'Harga katalog: RM' + finalPrice.toFixed(2) + ' x ' + quantity + ' = RM' + (finalPrice * quantity).toFixed(2),
-    ...(promo.valid ? ['Kod promo: ' + promo.promo.code + ' (' + promo.promo.label + ')'] : []),
+    ...(promo.valid ? [promo.automatic ? 'Flash Drop: harga promo automatik (hingga ' + new Date(promo.expiresAt).toLocaleString('ms-MY', { timeZone:'Asia/Kuala_Lumpur' }) + ')'  : 'Kod promo: ' + promo.promo.code + ' (' + promo.promo.label + ')'] : []),
     ...(robloxProfile ? ['Username Roblox: @' + robloxProfile.username, 'Display Name: ' + robloxProfile.displayName, 'Roblox ID: ' + robloxProfile.id, 'Profil: ' + robloxProfile.profileUrl] : []),
     'Stok: ' + stock,
     '',
