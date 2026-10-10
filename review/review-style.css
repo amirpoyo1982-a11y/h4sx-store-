@@ -5561,3 +5561,8 @@ html.hide-review-replies .admin-reply-view-toggle, html.hide-review-replies .adm
 .custom-check-picker .custom-check-size-field { flex: 1 1 100%; display: grid; gap: 7px; padding: 10px 0; }
 .custom-check-size-field input[type="range"] { accent-color: #0284c7; }
 .custom-check-size-field button { justify-self: start; border: 1px solid var(--line-mid); border-radius: 8px; padding: 6px 10px; background: var(--card, #fff); color: var(--text); font: inherit; cursor: pointer; }
+
+.customer-preview-bar { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px); padding: 10px 14px; border: 1px solid #a9e3f6; border-radius: 14px; background: #effbff; color: #16405a; box-shadow: 0 5px 20px #12354b24; font-size: 12px; font-weight: 700; }
+.customer-preview-bar[hidden] { display: none !important; }
+.customer-preview-bar button { background: #009fd6; color: white; border: 0; border-radius: 9px; padding: 8px 12px; font: inherit; cursor: pointer; white-space: nowrap; }
+html.customer-preview #btnOpenAdminConfig, html.customer-preview .review-admin-identity-choice, html.customer-preview [data-admin-ctrl-row], html.customer-preview .admin-reply-form, html.customer-preview .admin-time-edit-form, html.customer-preview .admin-review-edit-form { display: none !important; }

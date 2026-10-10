@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=check-size-20261011">
+  <link rel="stylesheet" href="/review/review-style.css?v=preview-retry-20261011">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -165,11 +165,13 @@
   <div class="admin-btn-row">
     <button class="admin-btn admin-btn-save" id="btnSaveAdmin">Simpan</button>
     <button class="admin-btn admin-center-launch" id="btnOpenReviewCenter" type="button"><i class="fa-solid fa-chart-line"></i> Review Center</button>
+    <button class="admin-btn" id="btnPreviewCustomer" type="button"><i class="fa-solid fa-eye"></i> Preview pelanggan</button>
     <button class="admin-btn bulk-delete-btn" id="btnOpenBulkDelete" type="button">Delete Pilihan</button>
     <button class="admin-btn admin-btn-close" id="btnCloseAdmin">Tutup</button>
   </div>
 </div>
 
+<div id="customerPreviewBar" class="customer-preview-bar" hidden role="status"><span>Preview sebagai pelanggan</span><button id="btnExitCustomerPreview" type="button">Kembali ke admin</button></div>
 <!-- ADMIN REVIEW CENTER -->
 <div id="adminReviewCenterOverlay" class="admin-review-center-overlay" data-nosnippet>
   <section id="adminReviewCenter" class="admin-review-center" role="dialog" aria-modal="true" aria-labelledby="adminCenterTitle">
@@ -189,6 +191,7 @@
       <button type="button" data-admin-center-tab="moderation"><i class="fa-solid fa-list-check"></i><span>Moderasi</span><b id="adminModerationCount">0</b></button>
       <button type="button" data-admin-center-tab="codes"><i class="fa-solid fa-ticket"></i><span>Kod</span></button>
       <button type="button" data-admin-center-tab="reports"><i class="fa-solid fa-flag"></i><span>Laporan</span><b id="adminReportCount">0</b></button>
+      <button type="button" data-admin-center-tab="replies"><i class="fa-solid fa-reply"></i><span>Auto balas</span><b id="adminAutoReplyCount">0</b></button>
       <button type="button" data-admin-center-tab="tools"><i class="fa-solid fa-sliders"></i><span>Tools</span></button>
     </nav>
 
@@ -249,6 +252,12 @@
         <div id="adminReportList" class="admin-report-list"><div class="admin-empty-state"><i class="fa-solid fa-flag"></i><p>Belum ada laporan.</p></div></div>
       </div>
 
+      <div class="admin-center-panel" data-admin-center-panel="replies">
+        <div class="admin-center-section-head"><div><small>SEMAKAN BOT H4SX</small><h3>Auto balas belum berjaya</h3></div></div>
+        <p>Ulasan yang belum mendapat balasan dan masih membenarkan auto balas. Rekod lama tidak menyimpan sebab gagal; ulasan yang dimatikan atau balasannya dipadam sengaja dikecualikan.</p>
+        <p id="adminAutoReplyStatus" role="status"></p>
+        <div id="adminAutoReplyList" class="admin-moderation-list"></div>
+      </div>
       <div class="admin-center-panel" data-admin-center-panel="tools">
         <div class="admin-tools-grid">
           <section class="admin-tool-section">
@@ -928,7 +937,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=rating-toggle-20261011"></script>
+<script type="module" src="/review/review-app.js?v=preview-retry-20261011"></script>
 </body>
 </html>
 

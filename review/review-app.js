@@ -5,7 +5,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   import {
     getFirestore, collection, addDoc, onSnapshot,
     query, where, orderBy, serverTimestamp,
-    doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, deleteField, Timestamp
+    doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, deleteField, Timestamp, runTransaction
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
   import {
     getDatabase, ref as realtimeRef, onValue
@@ -366,6 +366,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   let latestCodeSnapshot = null;
   let usedReviewCodeIds = new Set();
   let reviewCodeCleanupRunning = false;
+  let customerPreviewMode = false;
   const adminOk = () => !!(currentUser && ADMIN_UIDS.includes(currentUser.uid));
   function mintaAdmin() {
     if (adminOk()) return true;
@@ -374,9 +375,12 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   }
   
   function updateAdminUi() {
-    const loggedIn = adminOk();
+    if (!adminOk()) customerPreviewMode = false;
+    const loggedIn = adminOk() && !customerPreviewMode;
+    document.documentElement.classList.toggle("customer-preview", customerPreviewMode);
+    document.getElementById("customerPreviewBar").hidden = !customerPreviewMode;
     document.documentElement.dataset.adminAuth = loggedIn ? 'true' : 'false';
-    if (!loggedIn) document.getElementById('adminOfficialReview').checked = false;
+    if (!adminOk()) document.getElementById('adminOfficialReview').checked = false;
     setTimeout(updatePreview, 0);
     if (btnLogoutAdmin) btnLogoutAdmin.style.display = loggedIn ? 'flex' : 'none';
     const adminMenuText = btnOpenAdminConfig?.querySelector('.admin-menu-text');
@@ -385,6 +389,20 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       row.style.removeProperty('display');
     });
   }
+  document.getElementById('btnPreviewCustomer').addEventListener('click', () => {
+    if (!mintaAdmin()) return;
+    customerPreviewMode = true;
+    tutupAdminPanel();
+    closeAdminReviewCenter();
+    updateAdminUi();
+    renderReviews();
+    window.scrollTo({ top:0, behavior:'smooth' });
+  });
+  document.getElementById('btnExitCustomerPreview').addEventListener('click', () => {
+    customerPreviewMode = false;
+    updateAdminUi();
+    renderReviews();
+  });
   function bukaAdminLogin() {
     adminLoginOverlayBg.classList.add('show');
     adminLoginModal.classList.add('show');
@@ -2675,7 +2693,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   function updatePreview() {
     const nama  = namaPelanggan.value.trim();
     const warna = pilihanWarna || warnaAuto(nama);
-    const officialLogo = adminOk() && document.getElementById("adminOfficialReview").checked;
+    const officialLogo = adminOk() && !customerPreviewMode && document.getElementById("adminOfficialReview").checked;
     const previewSrc = officialLogo ? H4SX_LOGO_URL : profileImgB64;
     const letter = avatarPreview.querySelector(".av-letter");
     avatarPreview.style.backgroundColor = warna;
@@ -3109,7 +3127,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         return;
       }
       await setDoc(reviewRef, dataToSave);
-      if (adminOk() && document.getElementById("adminOfficialReview").checked) {
+      if (adminOk() && !customerPreviewMode && document.getElementById("adminOfficialReview").checked) {
         try {
           await updateDoc(reviewRef, { adminAuthorUid:currentUser.uid, adminIdentityConfirmed:true });
         } catch (adminMarkError) {
@@ -4025,7 +4043,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   onSnapshot(doc(db,"config","review_admin"),snap=>{
     const remote=snap.exists()?snap.data():{};
     reviewAdminSettings={...DEFAULT_REVIEW_ADMIN_SETTINGS,...remote,replyTemplates:{...DEFAULT_REVIEW_ADMIN_SETTINGS.replyTemplates,...(remote.replyTemplates||{})}};
-    applyReviewAdminSettings(); renderReviews();
+    applyReviewAdminSettings(); renderReviews(); renderAdminAutoReplies();
   },applyReviewAdminSettings);
   function getAdminReplyTemplate(score,nama="pelanggan"){return String(reviewAdminSettings.replyTemplates?.[clampBintang(score)]||DEFAULT_REVIEW_ADMIN_SETTINGS.replyTemplates[clampBintang(score)]||"Terima kasih atas ulasan anda.").replaceAll("{nama}",nama);}
 
@@ -4082,7 +4100,47 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
   function adminReviewStatus(data){return ["published","hidden","rejected"].includes(data.moderationStatus)?data.moderationStatus:"published";}
   function adminEmpty(text,icon="fa-inbox"){return `<div class="admin-empty-state"><i class="fa-solid ${icon}"></i><p>${escapeHtml(text)}</p></div>`;}
-  function refreshAdminCenter(){if(!document.getElementById("adminReviewCenter"))return;renderAdminDashboard();renderAdminModeration();renderAdminCodes();renderAdminReports();renderAdminAudit();}
+  function refreshAdminCenter(){if(!document.getElementById("adminReviewCenter"))return;renderAdminDashboard();renderAdminModeration();renderAdminCodes();renderAdminReports();renderAdminAudit();renderAdminAutoReplies();}
+  function pendingAutoReplyRecords(records) {
+    return records.filter(data => reviewAllowsAutoReply(data) && adminReviewStatus(data) === 'published')
+      .sort((a, b) => reviewRecordTime(a.diciptaPada) - reviewRecordTime(b.diciptaPada));
+  }
+  function renderAdminAutoReplies() {
+    const box = document.getElementById('adminAutoReplyList');
+    if (!box) return;
+    const pending = pendingAutoReplyRecords(allDocs);
+    document.getElementById('adminAutoReplyCount').textContent = pending.length;
+    document.getElementById('adminAutoReplyStatus').textContent = reviewAdminSettings.autoReply === false ? 'Suis utama auto balas sedang OFF. Hidupkan dalam Tools sebelum cuba semula.' : pending.length + ' ulasan belum dibalas.';
+    box.innerHTML = pending.length ? pending.map(data => '<article class="admin-moderation-item"><div class="admin-moderation-copy"><strong>' + escapeHtml(data.nama || 'Pelanggan') + '</strong><p>' + escapeHtml(data.ulasan || 'Rating sahaja') + '</p><small>' + escapeHtml(reviewDateText(data)) + '</small></div><div class="admin-moderation-actions"><button type="button" data-retry-auto-reply="' + escapeHtml(data.id) + '"' + (reviewAdminSettings.autoReply === false ? ' disabled' : '') + '>Cuba semula</button></div></article>').join('') : adminEmpty('Tiada ulasan tertinggal yang membenarkan auto balas.');
+  }
+  async function retryAdminAutoReply(id, button) {
+    if (!mintaAdmin()) return;
+    button.disabled = true;
+    button.textContent = 'Mencuba...';
+    try {
+      const result = await runTransaction(db, async transaction => {
+        const settingsRef = doc(db, 'config', 'review_admin');
+        const reviewRef = doc(db, 'ratings', id);
+        const settings = await transaction.get(settingsRef);
+        const review = await transaction.get(reviewRef);
+        if (settings.exists() && settings.data().autoReply === false) return 'off';
+        if (!review.exists()) return 'missing';
+        const data = review.data();
+        if (!reviewAllowsAutoReply(data) || adminReviewStatus(data) !== 'published') return 'skip';
+        transaction.update(reviewRef, { balasanAdmin:buildAutoReply(data.nama), balasanPada:serverTimestamp() });
+        return 'replied';
+      });
+      showToast(result === 'replied' ? 'Bot H4SX berjaya membalas ulasan.' : result === 'off' ? 'Auto balas utama sedang OFF.' : 'Ulasan sudah dibalas, disorok atau auto balasnya dimatikan.', result === 'replied' ? 'success' : 'error');
+      renderAdminAutoReplies();
+    } catch (error) {
+      console.error('Cuba semula auto balas gagal:', error);
+      showToast('Auto balas masih gagal. Semak sambungan dan Firebase Rules.', 'error');
+    } finally { button.disabled = false; button.textContent = 'Cuba semula'; }
+  }
+  document.getElementById('adminAutoReplyList').addEventListener('click', event => {
+    const button = event.target.closest('[data-retry-auto-reply]');
+    if (button) retryAdminAutoReply(button.dataset.retryAutoReply, button);
+  });
   function renderAdminDashboard(){
     const rated = allDocs.filter(r => r.hideRating !== true);
     const total=allDocs.length, average=rated.length?(rated.reduce((s,r)=>s+clampBintang(r.bintang),0)/rated.length).toFixed(1):"0.0", start=new Date();start.setHours(0,0,0,0);
