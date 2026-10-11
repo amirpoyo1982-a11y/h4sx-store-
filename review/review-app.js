@@ -1586,6 +1586,16 @@ function reviewAnnouncementAction(config) {
     oldsupport: { text:'OLD SUPPORT', c1:'#0f2a45', c2:'#f0a500', textColor:'#ffffff', glow:'#f0a500', shape:'ticket', size:'lg', gradient:true, animated:false, outline:true }
   };
   let editingCustomerId = null;
+  const customerProfileScrollPositions = new Map();
+  function rememberCustomerProfileScroll() {
+    if (editingCustomerId && customerPanelModal.classList.contains('show')) customerProfileScrollPositions.set(String(editingCustomerId), customerPanelModal.scrollTop);
+  }
+  function restoreCustomerProfileScroll(id) {
+    if (String(editingCustomerId) !== String(id) || !customerPanelModal.classList.contains('show')) return;
+    customerPanelModal.scrollTop = customerProfileScrollPositions.get(String(id)) || 0;
+    btnSaveCustomer.focus({ preventScroll:true });
+  }
+  customerPanelModal.addEventListener('scroll', rememberCustomerProfileScroll, { passive:true });
   let removeCustomerImage = false;
   const customerImageUrl = document.getElementById('customerImageUrl');
   const btnPreviewCustomerImage = document.getElementById('btnPreviewCustomerImage');
@@ -1788,6 +1798,7 @@ function reviewAnnouncementAction(config) {
   setupColorEditors(customerPanelModal);
 
   function bukaCustomerModal(id, data = {}) {
+    rememberCustomerProfileScroll();
     const nama = data.nama || 'Pelanggan';
     editingCustomerId = id;
     removeCustomerImage = false;
@@ -1852,10 +1863,11 @@ function reviewAnnouncementAction(config) {
     kemaskiniCustomerPreview();
     customerOverlayBg.classList.add('show');
     customerPanelModal.classList.add('show');
-    setTimeout(() => customerNameInput.focus(), 50);
+    requestAnimationFrame(() => restoreCustomerProfileScroll(id));
   }
 
   function tutupCustomerModal() {
+    rememberCustomerProfileScroll();
     document.querySelectorAll('#customerChatBackgroundPreview video').forEach(video => { video.pause(); video.removeAttribute('src'); });
     document.getElementById('customerChatBackgroundPreview').dataset.config = '';
     customerOverlayBg.classList.remove('show');
