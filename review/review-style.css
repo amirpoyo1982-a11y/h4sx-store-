@@ -5587,11 +5587,14 @@ html.customer-preview #btnOpenAdminConfig, html.customer-preview .review-admin-i
 .announcement-style-preview button { padding:8px 12px; border:0; border-radius:9px; background:var(--announcement-label-bg); color:var(--announcement-label-text); opacity:1; }
 
 .review-chat-background { position:relative; isolation:isolate; overflow:hidden; border-radius:12px; margin:10px 0; background:var(--chat-shade,#fff); }
-.review-chat-background .review-chat-media { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; pointer-events:none; }
-.review-chat-background .review-chat-media .review-animated-emoji { display:block; width:100%; height:100%; margin:0; }
-.review-chat-background .review-chat-media img { width:100%; height:100%; object-fit:cover; }
-.review-chat-background .review-chat-shade { position:absolute; inset:0; background:var(--chat-shade,#fff); opacity:var(--chat-overlay,.75); z-index:-1; pointer-events:none; }
+:is(.review-chat-background, .review-card.has-custom-chat-background) .review-chat-media { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; pointer-events:none; }
+:is(.review-chat-background, .review-card.has-custom-chat-background) .review-chat-media .review-animated-emoji { display:block; width:100%; height:100%; margin:0; }
+:is(.review-chat-background, .review-card.has-custom-chat-background) .review-chat-media img { width:100%; height:100%; object-fit:cover; }
+:is(.review-chat-background, .review-card.has-custom-chat-background) .review-chat-shade { position:absolute; inset:0; background:var(--chat-shade,#fff); opacity:var(--chat-overlay,.75); z-index:-1; pointer-events:none; }
 body.review-rewrite-v3 .review-chat-background > p.buyer-feedback { margin:0 !important; background:transparent !important; border:0 !important; color:var(--chat-text,#173d56) !important; position:relative; }
-.review-chat-background.has-motion .review-chat-media { transform-origin:center; animation:reviewChatMotion 12s ease-in-out infinite alternate; }
+:is(.review-chat-background, .review-card.has-custom-chat-background).has-motion .review-chat-media { transform-origin:center; animation:reviewChatMotion 12s ease-in-out infinite alternate; }
 @keyframes reviewChatMotion { from { transform:perspective(700px) scale(1.12) rotateY(-3deg) translateX(-1%); } to { transform:perspective(700px) scale(1.16) rotateY(3deg) translateX(1%); } }
-@media (prefers-reduced-motion:reduce) { .review-chat-background.has-motion .review-chat-media { animation:none; } }
+@media (prefers-reduced-motion:reduce) { :is(.review-chat-background, .review-card.has-custom-chat-background).has-motion .review-chat-media { animation:none; } }
+
+body.review-rewrite-v3 .review-card.has-custom-chat-background { position:relative; isolation:isolate; overflow:hidden; background:var(--chat-shade,#fff) !important; }
+body.review-rewrite-v3 .review-card.has-custom-chat-background p.buyer-feedback { background:rgba(255,255,255,.12) !important; color:var(--chat-text,#173d56) !important; }

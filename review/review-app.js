@@ -1011,17 +1011,22 @@ function reviewChatBackgroundConfig(data = {}) {
     try { const parsed = new URL(String(data.chatBackgroundUrl || '').trim()); if (parsed.protocol === 'https:' && !parsed.username && !parsed.password && /\.(mp4|webm)$/i.test(parsed.pathname)) url = parsed.href; } catch (_) {}
   }
   const overlay = Number(data.chatBackgroundOverlay);
-  return { type, url, enabled:type !== 'none' && Boolean(url), motion:data.chatBackgroundMotion === true,
+  return { type, url, target:data.chatBackgroundTarget === 'message' ? 'message' : 'card', enabled:type !== 'none' && Boolean(url), motion:data.chatBackgroundMotion === true,
     shade:warnaHexSah(data.chatBackgroundShade, '#ffffff'), textColor:warnaHexSah(data.chatBackgroundTextColor, '#173d56'),
     overlay:data.chatBackgroundOverlay == null || !Number.isFinite(overlay) ? 75 : Math.max(0, Math.min(95, overlay)) };
 }
-function reviewChatBackgroundMarkup(data, content, preview = false) {
+function reviewChatBackgroundLayers(data, preview = false) {
   const config = reviewChatBackgroundConfig(data);
-  if (!config.enabled) return content;
+  if (!config.enabled) return '';
   const media = config.type === 'video'
     ? '<video class="review-chat-media" data-chat-video-src="' + escapeHtml(config.url) + '" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>'
     : '<span class="review-chat-media">' + reviewEmojiMarkup(data.chatBackgroundUrl, preview ? 'customerChatBackgroundStatus' : '') + '</span>';
-  return '<div class="review-chat-background' + (config.motion ? ' has-motion' : '') + '" style="--chat-shade:' + config.shade + ';--chat-overlay:' + config.overlay / 100 + ';--chat-text:' + config.textColor + ';">' + media + '<span class="review-chat-shade" aria-hidden="true"></span>' + content + '</div>';
+  return media + '<span class="review-chat-shade" aria-hidden="true"></span>';
+}
+function reviewChatBackgroundMarkup(data, content, preview = false) {
+  const config = reviewChatBackgroundConfig(data);
+  if (!config.enabled || (!preview && config.target === 'card')) return content;
+  return '<div class="review-chat-background' + (config.motion ? ' has-motion' : '') + '" style="--chat-shade:' + config.shade + ';--chat-overlay:' + config.overlay / 100 + ';--chat-text:' + config.textColor + ';">' + reviewChatBackgroundLayers(data, preview) + content + '</div>';
 }
 let reviewChatVideoObserver = null;
 function bindReviewChatVideos() {
@@ -1458,7 +1463,7 @@ function reviewAnnouncementAction(config) {
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
   const customerAnnouncementGifSize = document.getElementById('customerAnnouncementGifSize');
-  const chatBackgroundFields = ['Type','Url','Motion','Shade','Overlay','TextColor'];
+  const chatBackgroundFields = ['Target','Type','Url','Motion','Shade','Overlay','TextColor'];
   function chatBackgroundSettingsFromInputs() {
     const data = {};
     for (const field of chatBackgroundFields) { const input = document.getElementById('customerChatBackground' + field); data['chatBackground' + field] = input.type === 'checkbox' ? input.checked : input.type === 'range' ? Number(input.value) : input.value; }
@@ -3767,8 +3772,18 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const announcementConfig = reviewAnnouncementConfig(data);
       card.classList.toggle('is-announcement', announcementConfig.enabled);
       if (announcementConfig.enabled) card.style.cssText = reviewAnnouncementStyle(announcementConfig);
+      const chatBackground = reviewChatBackgroundConfig(data);
+      const outerBackground = chatBackground.enabled && chatBackground.target === 'card';
+      card.classList.toggle('has-custom-chat-background', outerBackground);
+      card.classList.toggle('has-motion', outerBackground && chatBackground.motion);
+      if (outerBackground) {
+        card.style.setProperty('--chat-shade', chatBackground.shade);
+        card.style.setProperty('--chat-overlay', chatBackground.overlay / 100);
+        card.style.setProperty('--chat-text', chatBackground.textColor);
+      }
       card.style.animationDelay=`${i*36}ms`;
       card.innerHTML=`
+        ${outerBackground ? reviewChatBackgroundLayers(data) : ""}
         <div class="avatar${hasImg ? " has-profile-image" : ""}${officialAdminReview ? " is-official-admin" : ""}" style="background:${warna}">${avatarInner}</div>
         <div class="review-content">
           <div class="review-header">
