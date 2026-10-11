@@ -1372,6 +1372,9 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const customerPanelModal = document.getElementById('customerPanelModal');
   const customerNameInput = document.getElementById('customerNameInput');
   const customerShowRatingToggle = document.getElementById('customerShowRatingToggle');
+  const customerAnnouncementGifInput = document.getElementById('customerAnnouncementGifInput');
+  const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
+  const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
   const nameEmojiInput = document.getElementById('nameEmojiInput');
   const nameEmojiStatus = document.getElementById('nameEmojiStatus');
   const medalEmojiInput = document.getElementById('medalEmojiInput');
@@ -1490,6 +1493,10 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   });
 
   function kemaskiniCustomerPreview() {
+    reviewEmojiStatus(customerAnnouncementGifInput, customerAnnouncementGifStatus);
+    const announcementPreview = document.getElementById('customerAnnouncementGifPreview');
+    announcementPreview.innerHTML = reviewEmojiMarkup(customerAnnouncementGifInput.value, 'customerAnnouncementGifStatus');
+    announcementPreview.hidden = !customerAnnouncementGifToggle.checked || !customerAnnouncementGifInput.value.trim();
     const nama = customerNameInput.value.trim() || 'Pelanggan';
     const warna = warnaHexSah(customerColorInput.value, warnaAuto(nama));
     const avatar = (customerEmojiInput.value.trim() || nama.charAt(0) || 'H').slice(0, 4).toUpperCase();
@@ -1623,6 +1630,8 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     removeCustomerImage = false;
     customerNameInput.value = nama;
     customerShowRatingToggle.checked = data.hideRating !== true;
+    customerAnnouncementGifInput.value = data.announcementGif || '';
+    customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
     originalCustomerImage = data.profileImg || null;
@@ -1684,7 +1693,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     }
   }
 
-  [customerNameInput, nameEmojiInput, medalEmojiInput, customerColorInput, customerEmojiInput, nameColorEnabledToggle, nameColorInput, nameColor2Input, nameGlowColorInput, nameGradientToggle, nameAnimatedToggle, nameRainbowToggle, nameWeightSelect, medalTextInput, medalColorInput, medalColor2Input, medalTextColorInput, medalGlowColorInput, medalShapeSelect, medalSizeSelect, medalGradientToggle, medalAnimatedToggle, medalOutlineToggle, medalRainbowToggle]
+  [customerAnnouncementGifInput, customerAnnouncementGifToggle, customerNameInput, nameEmojiInput, medalEmojiInput, customerColorInput, customerEmojiInput, nameColorEnabledToggle, nameColorInput, nameColor2Input, nameGlowColorInput, nameGradientToggle, nameAnimatedToggle, nameRainbowToggle, nameWeightSelect, medalTextInput, medalColorInput, medalColor2Input, medalTextColorInput, medalGlowColorInput, medalShapeSelect, medalSizeSelect, medalGradientToggle, medalAnimatedToggle, medalOutlineToggle, medalRainbowToggle]
     .forEach(el => {
       el.addEventListener('input', kemaskiniCustomerPreview);
       el.addEventListener('change', kemaskiniCustomerPreview);
@@ -1739,14 +1748,16 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     }
     const emoji = customerEmojiInput.value.trim();
     const medal = medalTextInput.value.trim();
-    let nameEmoji, medalEmoji;
-    try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); }
+    let nameEmoji, medalEmoji, announcementGif;
+    try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); announcementGif = reviewEmojiValue(customerAnnouncementGifInput, 'GIF pengumuman'); }
     catch (err) { showToast(err.message, 'error'); return; }
     const dataDoc = allDocs.find(d => d.id === editingCustomerId) || {};
     const payload = {
       nama,
       nameEmoji,
       hideRating: !customerShowRatingToggle.checked,
+      announcementGif,
+      announcementGifEnabled: customerAnnouncementGifToggle.checked,
       warnaProfil: customerColorInput.value,
       emojiProfil: emoji || null,
       nameColorEnabled: nameColorEnabledToggle.checked,
@@ -3579,7 +3590,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
             </div>
-            ${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}
+            <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" aria-label="GIF pengumuman">${reviewEmojiMarkup(data.announcementGif)}</span>` : ""}</div>
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan

@@ -11045,3 +11045,6 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .h4rf-success-actions button { border-color:#b8deed; color:#23708e; background:#fff; }
 .h4rf-success-actions a:hover { background:#008fb7; }
 .h4rf-success-actions button:hover { background:#e6f8ff; }
+
+.review-popup-announcement { display:inline-flex; margin:4px 0; }
+.review-popup-announcement .game-name-emoji { width:32px; height:32px; margin:0; }

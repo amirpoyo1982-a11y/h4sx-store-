@@ -5566,3 +5566,9 @@ html.hide-review-replies .admin-reply-view-toggle, html.hide-review-replies .adm
 .customer-preview-bar[hidden] { display: none !important; }
 .customer-preview-bar button { background: #009fd6; color: white; border: 0; border-radius: 9px; padding: 8px 12px; font: inherit; cursor: pointer; white-space: nowrap; }
 html.customer-preview #btnOpenAdminConfig, html.customer-preview .review-admin-identity-choice, html.customer-preview [data-admin-ctrl-row], html.customer-preview .admin-reply-form, html.customer-preview .admin-time-edit-form, html.customer-preview .admin-review-edit-form { display: none !important; }
+
+.review-header-extras { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-shrink:0; }
+.review-announcement-gif { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+.review-announcement-gif[hidden] { display:none !important; }
+.review-announcement-gif .review-animated-emoji { width:48px; height:48px; margin:0; }
+.review-announcement-gif .review-animated-emoji img { width:48px; height:48px; object-fit:contain; }
