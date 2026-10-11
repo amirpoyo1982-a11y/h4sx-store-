@@ -5572,3 +5572,5 @@ html.customer-preview #btnOpenAdminConfig, html.customer-preview .review-admin-i
 .review-announcement-gif[hidden] { display:none !important; }
 .review-announcement-gif .review-animated-emoji { width:48px; height:48px; margin:0; }
 .review-announcement-gif .review-animated-emoji img { width:48px; height:48px; object-fit:contain; }
+
+.announcement-upload-button { display:inline-flex !important; align-items:center; cursor:pointer; padding:8px 12px; border-radius:9px; background:#e5f7ff; color:#007eae; border:1px solid #afe5f8; font-weight:700; }

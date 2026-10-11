@@ -1003,6 +1003,13 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const attributes = urls.slice(1).map((url, index) => `data-fallback${index + 1}="${escapeHtml(url)}"`).join(' ');
     return `<span class="review-animated-emoji"><img src="${escapeHtml(urls[0])}" ${attributes} ${statusId ? `data-preview-status="${statusId}"` : ''} alt="" loading="${statusId ? 'eager' : 'lazy'}" decoding="async"></span>`;
   }
+  function announcementGifValueIsUpload(value) {
+    return /^data:image\/(?:gif|webp|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(String(value || '')) && String(value).length <= 550000;
+  }
+  function announcementGifMarkup(value, statusId = '') {
+    if (!announcementGifValueIsUpload(value)) return reviewEmojiMarkup(value, statusId);
+    return '<span class="review-animated-emoji"><img src="' + escapeHtml(value) + '"' + (statusId ? ' data-preview-status="' + statusId + '"' : '') + ' alt="" decoding="async"></span>';
+  }
   function reviewEmojiValue(input, label) {
     const value = input.value.trim();
     if (value && !reviewEmojiCandidates(value).length) throw new Error(label + ': gunakan pautan HTTPS yang sah.');
@@ -1375,6 +1382,39 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const customerAnnouncementGifInput = document.getElementById('customerAnnouncementGifInput');
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
+  let customerAnnouncementUploadedData = '';
+  const customerAnnouncementGifFile = document.getElementById('customerAnnouncementGifFile');
+  customerAnnouncementGifInput.addEventListener('input', () => { customerAnnouncementUploadedData = ''; });
+  customerAnnouncementGifFile.addEventListener('change', async () => {
+    const file = customerAnnouncementGifFile.files?.[0];
+    if (!file) return;
+    if (!['image/gif', 'image/webp', 'image/png'].includes(file.type) || file.size > 400 * 1024) {
+      showToast('Pilih GIF, WebP atau PNG maksimum 400 KB. Fail besar guna URL.', 'error');
+      customerAnnouncementGifFile.value = '';
+      return;
+    }
+    try {
+      const value = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Fail tidak dapat dibaca.'));
+        reader.readAsDataURL(file);
+      });
+      if (!announcementGifValueIsUpload(value)) throw new Error('Format gambar tidak sah.');
+      customerAnnouncementUploadedData = value;
+      customerAnnouncementGifInput.value = '';
+      customerAnnouncementGifInput.placeholder = 'Fail dipilih. Isi URL jika mahu ganti.';
+      customerAnnouncementGifToggle.checked = true;
+      kemaskiniCustomerPreview();
+      showToast('GIF dipilih. Tekan Simpan Profil untuk simpan.', 'success');
+    } catch (error) { showToast(error.message, 'error'); }
+    finally { customerAnnouncementGifFile.value = ''; }
+  });
+  document.getElementById('btnClearAnnouncementGif').addEventListener('click', () => {
+    customerAnnouncementUploadedData = '';
+    customerAnnouncementGifInput.value = '';
+    kemaskiniCustomerPreview();
+  });
   const nameEmojiInput = document.getElementById('nameEmojiInput');
   const nameEmojiStatus = document.getElementById('nameEmojiStatus');
   const medalEmojiInput = document.getElementById('medalEmojiInput');
@@ -1493,10 +1533,11 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   });
 
   function kemaskiniCustomerPreview() {
-    reviewEmojiStatus(customerAnnouncementGifInput, customerAnnouncementGifStatus);
+    if (customerAnnouncementUploadedData) customerAnnouncementGifStatus.textContent = 'Fail GIF dipilih / tersimpan.';
+    else reviewEmojiStatus(customerAnnouncementGifInput, customerAnnouncementGifStatus);
     const announcementPreview = document.getElementById('customerAnnouncementGifPreview');
-    announcementPreview.innerHTML = reviewEmojiMarkup(customerAnnouncementGifInput.value, 'customerAnnouncementGifStatus');
-    announcementPreview.hidden = !customerAnnouncementGifToggle.checked || !customerAnnouncementGifInput.value.trim();
+    announcementPreview.innerHTML = announcementGifMarkup(customerAnnouncementUploadedData || customerAnnouncementGifInput.value, 'customerAnnouncementGifStatus');
+    announcementPreview.hidden = !customerAnnouncementGifToggle.checked || !(customerAnnouncementUploadedData || customerAnnouncementGifInput.value.trim());
     const nama = customerNameInput.value.trim() || 'Pelanggan';
     const warna = warnaHexSah(customerColorInput.value, warnaAuto(nama));
     const avatar = (customerEmojiInput.value.trim() || nama.charAt(0) || 'H').slice(0, 4).toUpperCase();
@@ -1630,7 +1671,9 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     removeCustomerImage = false;
     customerNameInput.value = nama;
     customerShowRatingToggle.checked = data.hideRating !== true;
-    customerAnnouncementGifInput.value = data.announcementGif || '';
+    customerAnnouncementUploadedData = announcementGifValueIsUpload(data.announcementGif) ? data.announcementGif : '';
+    customerAnnouncementGifInput.value = customerAnnouncementUploadedData ? '' : data.announcementGif || '';
+    customerAnnouncementGifInput.placeholder = customerAnnouncementUploadedData ? 'Fail GIF tersimpan. Isi URL jika mahu ganti.' : 'URL GIF atau halaman emoji.gg';
     customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
@@ -1749,7 +1792,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const emoji = customerEmojiInput.value.trim();
     const medal = medalTextInput.value.trim();
     let nameEmoji, medalEmoji, announcementGif;
-    try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); announcementGif = reviewEmojiValue(customerAnnouncementGifInput, 'GIF pengumuman'); }
+    try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); announcementGif = customerAnnouncementUploadedData || reviewEmojiValue(customerAnnouncementGifInput, 'GIF pengumuman'); }
     catch (err) { showToast(err.message, 'error'); return; }
     const dataDoc = allDocs.find(d => d.id === editingCustomerId) || {};
     const payload = {
@@ -1792,6 +1835,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       try { payload.profileImg = customerImageLink(); }
       catch (err) { showToast(err.message, 'error'); customerImageUrl.focus(); return; }
     }
+    if (new TextEncoder().encode(JSON.stringify({ ...dataDoc, ...payload })).length > 850000) { showToast('Jumlah gambar terlalu besar. Guna URL untuk GIF pengumuman.', 'error'); return; }
     simpanCustomerPayload(payload, "Profil pelanggan berjaya dikemaskini.", dataDoc);
   });
   function getNamePayloadFromInputs() {
@@ -3590,7 +3634,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
             </div>
-            <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" aria-label="GIF pengumuman">${reviewEmojiMarkup(data.announcementGif)}</span>` : ""}</div>
+            <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" aria-label="GIF pengumuman">${announcementGifMarkup(data.announcementGif)}</span>` : ""}</div>
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan

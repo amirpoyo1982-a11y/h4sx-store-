@@ -5693,7 +5693,7 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" aria-label="GIF pengumuman">' + customNameEmojiHTML(item.announcementGif) + '</span>' : '') +
+    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
@@ -7388,6 +7388,11 @@ function advanceGameNameEmojiImage(image) {
   else image.dataset.fallbackWebp = '';
   if (next) image.src = next;
   else { image.closest('.game-name-emoji').hidden = true; image.closest('.review-identity-check')?.classList.remove('is-gif'); }
+}
+function reviewAnnouncementGifHTML(value) {
+  const raw = String(value || '');
+  if (/^data:image\/(?:gif|webp|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(raw) && raw.length <= 550000) return '<span class="game-name-emoji"><img src="' + escapeHtml(raw) + '" alt="" decoding="async" onerror="this.closest(\'.game-name-emoji\').hidden=true"></span>';
+  return customNameEmojiHTML(value);
 }
 function customNameEmojiHTML(value) {
   const urls = gameNameEmojiImages(value);
