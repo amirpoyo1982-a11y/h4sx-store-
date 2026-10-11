@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=announcement-style-20261011">
+  <link rel="stylesheet" href="/review/review-style.css?v=chat-background-20261011">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -398,6 +398,18 @@
       <label>Teks butang<input id="customerAnnouncementActionText" maxlength="40" placeholder="Contoh: Chat Admin"></label>
       <label>Link butang (HTTPS)<input id="customerAnnouncementActionUrl" type="url" maxlength="2048" placeholder="https://wa.me/60193263016"></label>
       <div id="customerAnnouncementStylePreview" class="announcement-style-preview" aria-label="Preview gaya pengumuman"></div>
+    </fieldset>
+    <fieldset class="admin-form-group announcement-settings"><legend>Background ruang mesej</legend>
+      <label>Jenis background<select id="customerChatBackgroundType"><option value="none">Tiada — guna tema asal</option><option value="image">Gambar / GIF / WebP</option><option value="video">Video MP4 / WebM</option></select></label>
+      <label>Link media (HTTPS)<input id="customerChatBackgroundUrl" type="url" maxlength="2048" placeholder="Pautan terus gambar, GIF, .mp4 atau .webm"></label>
+      <small>Guna pautan terus fail media; pautan YouTube / halaman video tidak boleh dimainkan sebagai background.</small>
+      <label class="badge-switch"><input id="customerChatBackgroundMotion" type="checkbox"> Efek gerak 3D ringan pada background</label>
+      <label>Warna lapisan<input id="customerChatBackgroundShade" type="color" value="#ffffff"></label>
+      <label for="customerChatBackgroundOverlay">Lapisan warna <output id="customerChatBackgroundOverlayOutput">75%</output></label>
+      <input id="customerChatBackgroundOverlay" type="range" min="0" max="95" step="5" value="75">
+      <label>Warna teks mesej<input id="customerChatBackgroundTextColor" type="color" value="#173d56"></label>
+      <small id="customerChatBackgroundStatus" role="status">Video dimainkan tanpa suara hanya ketika ruang mesej kelihatan.</small>
+      <div id="customerChatBackgroundPreview"></div>
     </fieldset>
     <label class="badge-switch"><input id="customerShowRatingToggle" type="checkbox" checked> Tunjuk bintang / rating ulasan</label>
     <small>OFF: bintang disorok dan tidak dikira dalam purata. Rating asal kekal untuk diaktifkan semula.</small>
@@ -961,7 +973,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=announcement-style-20261011"></script>
+<script type="module" src="/review/review-app.js?v=chat-background-20261011"></script>
 </body>
 </html>
 

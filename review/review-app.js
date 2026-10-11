@@ -1003,6 +1003,50 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const attributes = urls.slice(1).map((url, index) => `data-fallback${index + 1}="${escapeHtml(url)}"`).join(' ');
     return `<span class="review-animated-emoji"><img src="${escapeHtml(urls[0])}" ${attributes} ${statusId ? `data-preview-status="${statusId}"` : ''} alt="" loading="${statusId ? 'eager' : 'lazy'}" decoding="async"></span>`;
   }
+function reviewChatBackgroundConfig(data = {}) {
+  const type = ['image', 'video'].includes(data.chatBackgroundType) ? data.chatBackgroundType : 'none';
+  let url = '';
+  if (type === 'image') url = reviewEmojiCandidates(data.chatBackgroundUrl)[0] || '';
+  if (type === 'video') {
+    try { const parsed = new URL(String(data.chatBackgroundUrl || '').trim()); if (parsed.protocol === 'https:' && !parsed.username && !parsed.password && /\.(mp4|webm)$/i.test(parsed.pathname)) url = parsed.href; } catch (_) {}
+  }
+  const overlay = Number(data.chatBackgroundOverlay);
+  return { type, url, enabled:type !== 'none' && Boolean(url), motion:data.chatBackgroundMotion === true,
+    shade:warnaHexSah(data.chatBackgroundShade, '#ffffff'), textColor:warnaHexSah(data.chatBackgroundTextColor, '#173d56'),
+    overlay:data.chatBackgroundOverlay == null || !Number.isFinite(overlay) ? 75 : Math.max(0, Math.min(95, overlay)) };
+}
+function reviewChatBackgroundMarkup(data, content, preview = false) {
+  const config = reviewChatBackgroundConfig(data);
+  if (!config.enabled) return content;
+  const media = config.type === 'video'
+    ? '<video class="review-chat-media" data-chat-video-src="' + escapeHtml(config.url) + '" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>'
+    : '<span class="review-chat-media">' + reviewEmojiMarkup(data.chatBackgroundUrl, preview ? 'customerChatBackgroundStatus' : '') + '</span>';
+  return '<div class="review-chat-background' + (config.motion ? ' has-motion' : '') + '" style="--chat-shade:' + config.shade + ';--chat-overlay:' + config.overlay / 100 + ';--chat-text:' + config.textColor + ';">' + media + '<span class="review-chat-shade" aria-hidden="true"></span>' + content + '</div>';
+}
+let reviewChatVideoObserver = null;
+function bindReviewChatVideos() {
+  reviewChatVideoObserver?.disconnect();
+  const videos = document.querySelectorAll('video[data-chat-video-src]');
+  if (typeof IntersectionObserver === 'undefined') return;
+  reviewChatVideoObserver = new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      const video = entry.target;
+      if (entry.isIntersecting && !document.hidden) {
+        video.muted = true;
+        if (!video.getAttribute('src')) video.src = video.dataset.chatVideoSrc;
+        video.play().catch(() => {});
+      } else video.pause();
+    }
+  }, { threshold:0.05 });
+  videos.forEach(video => reviewChatVideoObserver.observe(video));
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) document.querySelectorAll('video[data-chat-video-src]').forEach(video => video.pause());
+  else bindReviewChatVideos();
+});
+document.addEventListener('error', event => {
+  if (event.target.matches?.('video[data-chat-video-src]') && event.target.closest('#customerChatBackgroundPreview')) document.getElementById('customerChatBackgroundStatus').textContent = 'Video tidak dapat dimuatkan. Semak pautan terus MP4/WebM.';
+}, true);
 function reviewAnnouncementConfig(data = {}) {
   let actionUrl = '';
   try {
@@ -1414,6 +1458,13 @@ function reviewAnnouncementAction(config) {
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
   const customerAnnouncementGifSize = document.getElementById('customerAnnouncementGifSize');
+  const chatBackgroundFields = ['Type','Url','Motion','Shade','Overlay','TextColor'];
+  function chatBackgroundSettingsFromInputs() {
+    const data = {};
+    for (const field of chatBackgroundFields) { const input = document.getElementById('customerChatBackground' + field); data['chatBackground' + field] = input.type === 'checkbox' ? input.checked : input.type === 'range' ? Number(input.value) : input.value; }
+    return data;
+  }
+  chatBackgroundFields.forEach(field => document.getElementById('customerChatBackground' + field).addEventListener('input', kemaskiniCustomerPreview));
   const announcementSettingFields = ['Enabled','Label','LabelColor','LabelTextColor','Background','Border','ActionEnabled','ActionText','ActionUrl'];
   function announcementSettingsFromInputs() {
     const data = {};
@@ -1579,6 +1630,17 @@ function reviewAnnouncementAction(config) {
   });
 
   function kemaskiniCustomerPreview() {
+    const chatSettings = chatBackgroundSettingsFromInputs();
+    const chatConfig = reviewChatBackgroundConfig(chatSettings);
+    const chatPreview = document.getElementById('customerChatBackgroundPreview');
+    const chatKey = JSON.stringify(chatSettings);
+    document.getElementById('customerChatBackgroundOverlayOutput').textContent = chatConfig.overlay + '%';
+    if (chatPreview.dataset.config !== chatKey) {
+      chatPreview.dataset.config = chatKey;
+      document.getElementById('customerChatBackgroundStatus').textContent = chatConfig.type === 'none' ? 'Tema asal digunakan.' : chatConfig.enabled ? 'Preview media. Video tanpa suara; efek gerak hanya pada background.' : 'Isi pautan media HTTPS yang sah. Video perlukan pautan terus .mp4 / .webm.';
+      chatPreview.innerHTML = reviewChatBackgroundMarkup(chatSettings, '<p class="buyer-feedback">Contoh mesej pengumuman. Laraskan lapisan warna supaya tulisan jelas dibaca.</p>', true);
+      bindReviewChatVideos();
+    }
     const announcementConfig = reviewAnnouncementConfig(announcementSettingsFromInputs());
     const stylePreview = document.getElementById('customerAnnouncementStylePreview');
     stylePreview.hidden = !announcementConfig.enabled;
@@ -1730,6 +1792,14 @@ function reviewAnnouncementAction(config) {
     customerAnnouncementGifInput.placeholder = customerAnnouncementUploadedData ? 'Fail GIF tersimpan. Isi URL jika mahu ganti.' : 'URL GIF atau halaman emoji.gg';
     customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
     customerAnnouncementGifSize.value = announcementGifSize(data.announcementGifSize);
+    const chatConfig = reviewChatBackgroundConfig(data);
+    for (const field of chatBackgroundFields) {
+      const input = document.getElementById('customerChatBackground' + field);
+      const key = field.charAt(0).toLowerCase() + field.slice(1);
+      if (input.type === 'checkbox') input.checked = chatConfig[key] === true;
+      else input.value = field === 'Url' ? data.chatBackgroundUrl || '' : chatConfig[key];
+    }
+    document.getElementById('customerChatBackgroundPreview').dataset.config = '';
     const announcementConfig = reviewAnnouncementConfig(data);
     for (const field of announcementSettingFields) {
       const input = document.getElementById('customerAnnouncement' + field);
@@ -1780,6 +1850,8 @@ function reviewAnnouncementAction(config) {
   }
 
   function tutupCustomerModal() {
+    document.querySelectorAll('#customerChatBackgroundPreview video').forEach(video => { video.pause(); video.removeAttribute('src'); });
+    document.getElementById('customerChatBackgroundPreview').dataset.config = '';
     customerOverlayBg.classList.remove('show');
     customerPanelModal.classList.remove('show');
     editingCustomerId = null;
@@ -1857,12 +1929,15 @@ function reviewAnnouncementAction(config) {
     try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); announcementGif = customerAnnouncementUploadedData || reviewEmojiValue(customerAnnouncementGifInput, 'GIF pengumuman'); }
     catch (err) { showToast(err.message, 'error'); return; }
     const dataDoc = allDocs.find(d => d.id === editingCustomerId) || {};
+    const chatBackgroundSettings = chatBackgroundSettingsFromInputs();
+    if (chatBackgroundSettings.chatBackgroundType !== 'none' && !reviewChatBackgroundConfig(chatBackgroundSettings).enabled) { showToast('Background mesej perlukan URL media HTTPS yang sah. Video guna pautan terus .mp4 / .webm.', 'error'); return; }
     const announcementSettings = announcementSettingsFromInputs();
     if (announcementSettings.announcementEnabled && announcementSettings.announcementActionEnabled && !reviewAnnouncementConfig(announcementSettings).actionUrl) {
       showToast('Isi link HTTPS yang sah untuk butang pengumuman.', 'error'); return;
     }
     const payload = {
       ...announcementSettings,
+      ...chatBackgroundSettings,
       nama,
       nameEmoji,
       hideRating: !customerShowRatingToggle.checked,
@@ -3605,6 +3680,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
 
   function renderReviews() {
+    document.querySelectorAll('video[data-chat-video-src]').forEach(video => video.pause());
+    reviewChatVideoObserver?.disconnect();
     const list = getCurrentReviewList();
     if (mobileReviewMedia.matches && !directReviewFocusHandled) {
       const directId = new URLSearchParams(window.location.search).get("reviewId");
@@ -3710,7 +3787,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan
-            ?`<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(data.ulasan)}</p>
+            ?`${reviewChatBackgroundMarkup(data, `<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(data.ulasan)}</p>`)}
               ${gunaTextToggle ? `<button class="review-text-toggle" type="button" style="--toggle-color:${toggleColor};" data-open="${textMulaBuka ? "1" : "0"}" data-expand="${escapeHtml(expandLabel)}" data-collapse="${escapeHtml(collapseLabel)}">${escapeHtml(textMulaBuka ? collapseLabel : expandLabel)}</button>` : ""}`
             :`<p class="buyer-no-text">— Tiada ulasan teks —</p>`}
           ${reviewAnnouncementAction(announcementConfig)}
@@ -3931,6 +4008,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         }
       });
     });
+    bindReviewChatVideos();
     focusDirectReview();
   }
 
