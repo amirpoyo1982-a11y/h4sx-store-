@@ -5668,6 +5668,12 @@ function hideReviewShowcasePopup() {
 function showReviewShowcasePopup(item, total) {
   if (reviewShowcaseDismissed) return;
   const popup = getReviewShowcasePopup();
+  const announcementConfig = reviewAnnouncementConfig(item);
+  popup.classList.toggle('is-announcement', announcementConfig.enabled);
+  popup.style.setProperty('--announcement-bg', announcementConfig.background);
+  popup.style.setProperty('--announcement-border', announcementConfig.border);
+  popup.style.setProperty('--announcement-label-bg', announcementConfig.labelColor);
+  popup.style.setProperty('--announcement-label-text', announcementConfig.labelTextColor);
   const rating = clampRating(item.bintang ?? item.rating);
   const name = item.nama || item.name || 'Pelanggan';
   const text = item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.';
@@ -5693,14 +5699,15 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + '</span></div>' +
+    reviewAnnouncementLabel(announcementConfig) + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
     '<button type="button" onclick="toggleReviewShowcaseSize()" title="' + sizeLabel + '" aria-label="' + sizeLabel + '"><i class="fa-solid ' + sizeIcon + '"></i></button>' +
     (total > 1 ? '<button type="button" onclick="changeReviewShowcase(-1)" title="Ulasan sebelumnya" aria-label="Ulasan sebelumnya"><i class="fa-solid fa-chevron-left"></i></button><button type="button" onclick="changeReviewShowcase(1)" title="Ulasan seterusnya" aria-label="Ulasan seterusnya"><i class="fa-solid fa-chevron-right"></i></button>' : '') + '</span>' +
     '<span class="review-popup-progress"></span>';
+  popup.querySelector('.review-announcement-action')?.addEventListener('click', event => event.stopPropagation());
   void popup.offsetWidth;
   popup.classList.add('is-visible');
   document.getElementById('review-popup-image')?.addEventListener('click', event => {
@@ -7388,6 +7395,33 @@ function advanceGameNameEmojiImage(image) {
   else image.dataset.fallbackWebp = '';
   if (next) image.src = next;
   else { image.closest('.game-name-emoji').hidden = true; image.closest('.review-identity-check')?.classList.remove('is-gif'); }
+}
+function reviewAnnouncementConfig(data = {}) {
+  let actionUrl = '';
+  try {
+    const url = new URL(String(data.announcementActionUrl || '').trim());
+    if (url.protocol === 'https:' && !url.username && !url.password) actionUrl = url.href;
+  } catch (_) {}
+  return {
+    enabled: data.announcementEnabled === true,
+    label: String(data.announcementLabel || 'Pengumuman H4SX').trim().slice(0, 60),
+    background: warnaHexSah(data.announcementBackground, '#effbff'),
+    border: warnaHexSah(data.announcementBorder, '#88dbf5'),
+    labelColor: warnaHexSah(data.announcementLabelColor, '#008ebd'),
+    labelTextColor: warnaHexSah(data.announcementLabelTextColor, '#ffffff'),
+    actionEnabled: data.announcementActionEnabled === true,
+    actionText: String(data.announcementActionText || 'Lihat lanjut').trim().slice(0, 40),
+    actionUrl
+  };
+}
+function reviewAnnouncementStyle(config) {
+  return '--announcement-bg:' + config.background + ';--announcement-border:' + config.border + ';--announcement-label-bg:' + config.labelColor + ';--announcement-label-text:' + config.labelTextColor + ';';
+}
+function reviewAnnouncementLabel(config) {
+  return config.enabled ? '<span class="review-announcement-label"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i> ' + escapeHtml(config.label) + '</span>' : '';
+}
+function reviewAnnouncementAction(config) {
+  return config.enabled && config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
 }
 function reviewAnnouncementGifSize(value) {
   const size = Number(value);

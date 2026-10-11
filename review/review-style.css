@@ -5574,3 +5574,14 @@ html.customer-preview #btnOpenAdminConfig, html.customer-preview .review-admin-i
 .review-announcement-gif .review-animated-emoji img { width:var(--announcement-gif-size, 48px); height:var(--announcement-gif-size, 48px); object-fit:contain; }
 
 .announcement-upload-button { display:inline-flex !important; align-items:center; cursor:pointer; padding:8px 12px; border-radius:9px; background:#e5f7ff; color:#007eae; border:1px solid #afe5f8; font-weight:700; }
+
+.review-announcement-label { display:inline-flex; align-items:center; gap:6px; max-width:100%; padding:5px 9px; border-radius:8px; background:var(--announcement-label-bg,#008ebd); color:var(--announcement-label-text,#fff); font-size:10px; font-weight:800; line-height:1.35; overflow-wrap:anywhere; }
+.review-announcement-action { display:inline-flex; align-items:center; justify-content:center; gap:7px; margin-top:10px; padding:8px 12px; border-radius:9px; background:var(--announcement-label-bg,#008ebd); color:var(--announcement-label-text,#fff); text-decoration:none; font-size:12px; font-weight:800; max-width:100%; overflow-wrap:anywhere; }
+
+.review-card.is-announcement, .midmonth-refresh .review-card.is-announcement { background:var(--announcement-bg,#effbff) !important; border:1px solid var(--announcement-border,#88dbf5) !important; box-shadow:0 5px 22px rgba(0,142,189,.08) !important; }
+.review-card .review-announcement-label { flex-basis:100%; width:fit-content; }
+.announcement-settings { border:1px solid var(--line-mid); border-radius:12px; padding:12px; display:grid; gap:10px; }
+.announcement-settings legend { padding:0 6px; font-size:12px; font-weight:800; }
+.announcement-style-preview { padding:14px; border:1px solid var(--announcement-border); border-radius:12px; background:var(--announcement-bg); color:#173d56; }
+.announcement-style-preview[hidden] { display:none; }
+.announcement-style-preview button { padding:8px 12px; border:0; border-radius:9px; background:var(--announcement-label-bg); color:var(--announcement-label-text); opacity:1; }

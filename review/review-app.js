@@ -1003,6 +1003,33 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const attributes = urls.slice(1).map((url, index) => `data-fallback${index + 1}="${escapeHtml(url)}"`).join(' ');
     return `<span class="review-animated-emoji"><img src="${escapeHtml(urls[0])}" ${attributes} ${statusId ? `data-preview-status="${statusId}"` : ''} alt="" loading="${statusId ? 'eager' : 'lazy'}" decoding="async"></span>`;
   }
+function reviewAnnouncementConfig(data = {}) {
+  let actionUrl = '';
+  try {
+    const url = new URL(String(data.announcementActionUrl || '').trim());
+    if (url.protocol === 'https:' && !url.username && !url.password) actionUrl = url.href;
+  } catch (_) {}
+  return {
+    enabled: data.announcementEnabled === true,
+    label: String(data.announcementLabel || 'Pengumuman H4SX').trim().slice(0, 60),
+    background: warnaHexSah(data.announcementBackground, '#effbff'),
+    border: warnaHexSah(data.announcementBorder, '#88dbf5'),
+    labelColor: warnaHexSah(data.announcementLabelColor, '#008ebd'),
+    labelTextColor: warnaHexSah(data.announcementLabelTextColor, '#ffffff'),
+    actionEnabled: data.announcementActionEnabled === true,
+    actionText: String(data.announcementActionText || 'Lihat lanjut').trim().slice(0, 40),
+    actionUrl
+  };
+}
+function reviewAnnouncementStyle(config) {
+  return '--announcement-bg:' + config.background + ';--announcement-border:' + config.border + ';--announcement-label-bg:' + config.labelColor + ';--announcement-label-text:' + config.labelTextColor + ';';
+}
+function reviewAnnouncementLabel(config) {
+  return config.enabled ? '<span class="review-announcement-label"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i> ' + escapeHtml(config.label) + '</span>' : '';
+}
+function reviewAnnouncementAction(config) {
+  return config.enabled && config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
+}
   function announcementGifSize(value) {
     const size = Number(value);
     return Number.isFinite(size) && size > 0 ? Math.max(50, Math.min(200, size)) : 100;
@@ -1387,6 +1414,16 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
   const customerAnnouncementGifSize = document.getElementById('customerAnnouncementGifSize');
+  const announcementSettingFields = ['Enabled','Label','LabelColor','LabelTextColor','Background','Border','ActionEnabled','ActionText','ActionUrl'];
+  function announcementSettingsFromInputs() {
+    const data = {};
+    for (const field of announcementSettingFields) {
+      const input = document.getElementById('customerAnnouncement' + field);
+      data['announcement' + field] = input.type === 'checkbox' ? input.checked : input.value;
+    }
+    return data;
+  }
+  announcementSettingFields.forEach(field => document.getElementById('customerAnnouncement' + field).addEventListener('input', kemaskiniCustomerPreview));
   document.getElementById('btnResetAnnouncementGifSize').addEventListener('click', () => {
     customerAnnouncementGifSize.value = '100';
     kemaskiniCustomerPreview();
@@ -1542,6 +1579,11 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   });
 
   function kemaskiniCustomerPreview() {
+    const announcementConfig = reviewAnnouncementConfig(announcementSettingsFromInputs());
+    const stylePreview = document.getElementById('customerAnnouncementStylePreview');
+    stylePreview.hidden = !announcementConfig.enabled;
+    stylePreview.style.cssText = reviewAnnouncementStyle(announcementConfig);
+    stylePreview.innerHTML = reviewAnnouncementLabel(announcementConfig) + '<p>Contoh paparan mesej pengumuman anda.</p>' + (announcementConfig.actionEnabled ? '<button type="button" disabled>' + escapeHtml(announcementConfig.actionText) + '</button>' : '');
     if (customerAnnouncementUploadedData) customerAnnouncementGifStatus.textContent = 'Fail GIF dipilih / tersimpan.';
     else reviewEmojiStatus(customerAnnouncementGifInput, customerAnnouncementGifStatus);
     const announcementPreview = document.getElementById('customerAnnouncementGifPreview');
@@ -1688,6 +1730,13 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     customerAnnouncementGifInput.placeholder = customerAnnouncementUploadedData ? 'Fail GIF tersimpan. Isi URL jika mahu ganti.' : 'URL GIF atau halaman emoji.gg';
     customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
     customerAnnouncementGifSize.value = announcementGifSize(data.announcementGifSize);
+    const announcementConfig = reviewAnnouncementConfig(data);
+    for (const field of announcementSettingFields) {
+      const input = document.getElementById('customerAnnouncement' + field);
+      const key = field.charAt(0).toLowerCase() + field.slice(1);
+      if (input.type === 'checkbox') input.checked = announcementConfig[key] === true;
+      else input.value = announcementConfig[key] || '';
+    }
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
     originalCustomerImage = data.profileImg || null;
@@ -1808,7 +1857,12 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     try { nameEmoji = reviewEmojiValue(nameEmojiInput, 'Emoji nama'); medalEmoji = reviewEmojiValue(medalEmojiInput, 'Emoji pingat'); announcementGif = customerAnnouncementUploadedData || reviewEmojiValue(customerAnnouncementGifInput, 'GIF pengumuman'); }
     catch (err) { showToast(err.message, 'error'); return; }
     const dataDoc = allDocs.find(d => d.id === editingCustomerId) || {};
+    const announcementSettings = announcementSettingsFromInputs();
+    if (announcementSettings.announcementEnabled && announcementSettings.announcementActionEnabled && !reviewAnnouncementConfig(announcementSettings).actionUrl) {
+      showToast('Isi link HTTPS yang sah untuk butang pengumuman.', 'error'); return;
+    }
     const payload = {
+      ...announcementSettings,
       nama,
       nameEmoji,
       hideRating: !customerShowRatingToggle.checked,
@@ -3633,12 +3687,16 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const card=document.createElement("div");
       card.className="review-card"+(data.pinned===true && data.hidePinLabel!==true?" is-pinned":"")+(data.featured===true?" is-featured":"");
       card.dataset.reviewId = id;
+      const announcementConfig = reviewAnnouncementConfig(data);
+      card.classList.toggle('is-announcement', announcementConfig.enabled);
+      if (announcementConfig.enabled) card.style.cssText = reviewAnnouncementStyle(announcementConfig);
       card.style.animationDelay=`${i*36}ms`;
       card.innerHTML=`
         <div class="avatar${hasImg ? " has-profile-image" : ""}${officialAdminReview ? " is-official-admin" : ""}" style="background:${warna}">${avatarInner}</div>
         <div class="review-content">
           <div class="review-header">
             <div class="buyer-name-container">
+              ${reviewAnnouncementLabel(announcementConfig)}
               ${data.featured===true?`<span class="featured-review-badge">Pilihan H4SX</span>`:""}
               ${data.pinned===true && data.hidePinLabel!==true?`<span class="pin-badge">📌 Disematkan</span>`:""}
               <span class="${nameClass(data)}" style="${nameStyle(data, isReviewAdmin)}">${reviewEmojiMarkup(data.nameEmoji)}${escapeHtml(namaDisorok)}</span>
@@ -3655,6 +3713,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             ?`<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(data.ulasan)}</p>
               ${gunaTextToggle ? `<button class="review-text-toggle" type="button" style="--toggle-color:${toggleColor};" data-open="${textMulaBuka ? "1" : "0"}" data-expand="${escapeHtml(expandLabel)}" data-collapse="${escapeHtml(collapseLabel)}">${escapeHtml(textMulaBuka ? collapseLabel : expandLabel)}</button>` : ""}`
             :`<p class="buyer-no-text">— Tiada ulasan teks —</p>`}
+          ${reviewAnnouncementAction(announcementConfig)}
           <div class="admin-review-edit-form" data-nosnippet>
             <textarea maxlength="500" placeholder="Edit ulasan pelanggan...">${escapeHtml(data.ulasan || "")}</textarea>
             <div class="admin-reply-form-actions">
