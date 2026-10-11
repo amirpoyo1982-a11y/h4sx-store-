@@ -11055,3 +11055,6 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 #review-showcase-popup.is-announcement { background:var(--announcement-bg,#effbff) !important; border-color:var(--announcement-border,#88dbf5) !important; }
 #review-showcase-popup .review-announcement-label { margin:0 0 5px; font-size:9px; }
 #review-showcase-popup .review-announcement-action { margin-top:6px; padding:6px 9px; font-size:10px; }
+
+#review-showcase-popup:not(.is-compact) { width:min(300px,calc(100vw - 32px)); padding:12px; }
+#review-showcase-popup .review-announcement-action, #review-showcase-popup .review-announcement-label { justify-self:start; width:fit-content; max-width:100%; }
