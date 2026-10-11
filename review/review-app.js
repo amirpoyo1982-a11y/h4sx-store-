@@ -1556,6 +1556,7 @@ function reviewAnnouncementAction(config) {
   const btnSuggestCustomerProfile = document.getElementById('btnSuggestCustomerProfile');
   const btnRemoveCustomerImage = document.getElementById('btnRemoveCustomerImage');
   const btnSaveCustomer = document.getElementById('btnSaveCustomer');
+  let customerSaveInProgress = false;
   const btnApplyNameAll = document.getElementById('btnApplyNameAll');
   const btnApplyMedalAll = document.getElementById('btnApplyMedalAll');
   const btnRemoveNameColor = document.getElementById('btnRemoveNameColor');
@@ -1864,7 +1865,9 @@ function reviewAnnouncementAction(config) {
   }
 
   async function simpanCustomerPayload(payload, mesejBerjaya, dataDoc) {
-    if (!editingCustomerId) return;
+    if (!editingCustomerId || customerSaveInProgress) return;
+    customerSaveInProgress = true;
+    btnSaveCustomer.disabled = true;
     try {
       await updateDoc(doc(db, "ratings", editingCustomerId), withAutoReply(payload, dataDoc));
       showToast(mesejBerjaya, "success");
@@ -1872,6 +1875,9 @@ function reviewAnnouncementAction(config) {
     } catch (err) {
       console.error(err);
       showToast("Gagal kemaskini pelanggan.", "error");
+    } finally {
+      customerSaveInProgress = false;
+      btnSaveCustomer.disabled = false;
     }
   }
 
@@ -1922,6 +1928,14 @@ function reviewAnnouncementAction(config) {
     btnRemoveCustomerImage.textContent = 'Gambar akan dibuang';
     kemaskiniCustomerPreview();
   });
+  function handleCustomerSaveShortcut(event) {
+    if (event.key !== 'Enter' || event.defaultPrevented || event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (!customerPanelModal.classList.contains('show') || btnSaveCustomer.disabled) return;
+    if (event.target?.isContentEditable || event.target?.closest('textarea, select, button, a, input[type="color"], input[type="file"]')) return;
+    event.preventDefault();
+    btnSaveCustomer.click();
+  }
+  customerPanelModal.addEventListener('keydown', handleCustomerSaveShortcut);
   btnSaveCustomer.addEventListener('click', () => {
     const nama = customerNameInput.value.trim();
     if (nama.length < 1 || nama.length > 40) {
