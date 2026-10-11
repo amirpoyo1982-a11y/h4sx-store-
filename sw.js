@@ -1,8 +1,8 @@
-const CACHE_NAME = 'h4sx-pwa-20261011-popup-v104';
+const CACHE_NAME = 'h4sx-pwa-20261011-identity-v105';
 const APP_SHELL = [
   './index.htm',
-  './styles.css?v=compact-popup-20261011',
-  './app.js?v=independent-link-20261011',
+  './styles.css?v=identity-backplate-20261011',
+  './app.js?v=identity-backplate-20261011',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './manifest.webmanifest'

@@ -1003,6 +1003,12 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const attributes = urls.slice(1).map((url, index) => `data-fallback${index + 1}="${escapeHtml(url)}"`).join(' ');
     return `<span class="review-animated-emoji"><img src="${escapeHtml(urls[0])}" ${attributes} ${statusId ? `data-preview-status="${statusId}"` : ''} alt="" loading="${statusId ? 'eager' : 'lazy'}" decoding="async"></span>`;
   }
+function reviewIdentityBackplateStyle(data = {}) {
+  const hex = warnaHexSah(data.identityBackplateColor, '#0b2238').slice(1);
+  const opacity = Number(data.identityBackplateOpacity);
+  const alpha = data.identityBackplateOpacity == null || !Number.isFinite(opacity) ? 0.85 : Math.max(0, Math.min(100, opacity)) / 100;
+  return '--identity-backplate:rgba(' + [0,2,4].map(index => parseInt(hex.slice(index, index + 2),16)).join(',') + ',' + alpha + ');';
+}
 function reviewChatBackgroundConfig(data = {}) {
   const type = ['image', 'video'].includes(data.chatBackgroundType) ? data.chatBackgroundType : 'none';
   let url = '';
@@ -1463,6 +1469,13 @@ function reviewAnnouncementAction(config) {
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
   const customerAnnouncementGifSize = document.getElementById('customerAnnouncementGifSize');
+  const identityBackplateFields = ['Enabled','Color','Opacity'];
+  function identityBackplateSettingsFromInputs() {
+    return { identityBackplateEnabled:document.getElementById('customerIdentityBackplateEnabled').checked,
+      identityBackplateColor:document.getElementById('customerIdentityBackplateColor').value,
+      identityBackplateOpacity:Number(document.getElementById('customerIdentityBackplateOpacity').value) };
+  }
+  identityBackplateFields.forEach(field => document.getElementById('customerIdentityBackplate' + field).addEventListener('input', kemaskiniCustomerPreview));
   const chatBackgroundFields = ['Target','Type','Url','Motion','Shade','Overlay','TextColor'];
   function chatBackgroundSettingsFromInputs() {
     const data = {};
@@ -1646,6 +1659,11 @@ function reviewAnnouncementAction(config) {
   });
 
   function kemaskiniCustomerPreview() {
+    const backplate = identityBackplateSettingsFromInputs();
+    const identityPreview = customerNamePreview.parentElement;
+    identityPreview.classList.toggle('review-identity-backplate', backplate.identityBackplateEnabled);
+    identityPreview.style.cssText = reviewIdentityBackplateStyle(backplate);
+    document.getElementById('customerIdentityBackplateOpacityOutput').textContent = backplate.identityBackplateOpacity + '%';
     const chatSettings = chatBackgroundSettingsFromInputs();
     const chatConfig = reviewChatBackgroundConfig(chatSettings);
     const chatPreview = document.getElementById('customerChatBackgroundPreview');
@@ -1809,6 +1827,9 @@ function reviewAnnouncementAction(config) {
     customerAnnouncementGifInput.placeholder = customerAnnouncementUploadedData ? 'Fail GIF tersimpan. Isi URL jika mahu ganti.' : 'URL GIF atau halaman emoji.gg';
     customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
     customerAnnouncementGifSize.value = announcementGifSize(data.announcementGifSize);
+    document.getElementById('customerIdentityBackplateEnabled').checked = data.identityBackplateEnabled === true;
+    document.getElementById('customerIdentityBackplateColor').value = warnaHexSah(data.identityBackplateColor, '#0b2238');
+    document.getElementById('customerIdentityBackplateOpacity').value = data.identityBackplateOpacity == null ? 85 : Math.max(0, Math.min(100, Number(data.identityBackplateOpacity) || 0));
     const chatConfig = reviewChatBackgroundConfig(data);
     for (const field of chatBackgroundFields) {
       const input = document.getElementById('customerChatBackground' + field);
@@ -1969,6 +1990,7 @@ function reviewAnnouncementAction(config) {
     const payload = {
       ...announcementSettings,
       ...chatBackgroundSettings,
+      ...identityBackplateSettingsFromInputs(),
       nama,
       nameEmoji,
       hideRating: !customerShowRatingToggle.checked,
@@ -3817,12 +3839,14 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${reviewAnnouncementLabel(announcementConfig)}
               ${data.featured===true?`<span class="featured-review-badge">Pilihan H4SX</span>`:""}
               ${data.pinned===true && data.hidePinLabel!==true?`<span class="pin-badge">📌 Disematkan</span>`:""}
+              ${data.identityBackplateEnabled===true ? `<span class="review-identity-backplate" style="${reviewIdentityBackplateStyle(data)}">` : ""}
               <span class="${nameClass(data)}" style="${nameStyle(data, isReviewAdmin)}">${reviewEmojiMarkup(data.nameEmoji)}${escapeHtml(namaDisorok)}</span>
               ${medalMarkup(data)}
               ${data.hideRating!==true && (rawBintang<0||rawBintang>5)?`<span style="background:linear-gradient(90deg,#f0a500,#e05252);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;">${rawBintang} Bintang</span>`:""}
               ${verifiedTag}
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
+              ${data.identityBackplateEnabled===true ? "</span>" : ""}
             </div>
             <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" style="--announcement-gif-size:${announcementGifSize(data.announcementGifSize) * 0.48}px" aria-label="GIF pengumuman">${announcementGifMarkup(data.announcementGif)}</span>` : ""}</div>
           </div>

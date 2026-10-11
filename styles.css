@@ -11058,3 +11058,7 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 
 #review-showcase-popup:not(.is-compact) { width:min(300px,calc(100vw - 32px)); padding:12px; }
 #review-showcase-popup .review-announcement-action, #review-showcase-popup .review-announcement-label { justify-self:start; width:fit-content; max-width:100%; }
+
+.review-identity-backplate { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; max-width:100%; width:fit-content; padding:6px 9px; border-radius:10px; background:var(--identity-backplate,rgba(11,34,56,.85)); border:1px solid rgba(255,255,255,.22); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+#review-showcase-popup .review-identity-backplate { justify-self:start; padding:5px 7px; gap:4px; }
+#review-showcase-popup .review-identity-backplate .review-popup-name { flex-basis:100%; }

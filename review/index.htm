@@ -415,6 +415,13 @@
       <small id="customerChatBackgroundStatus" role="status">Video dimainkan tanpa suara hanya ketika ruang mesej kelihatan.</small>
       <div id="customerChatBackgroundPreview"></div>
     </fieldset>
+    <fieldset class="admin-form-group announcement-settings"><legend>Lapik nama dan badge</legend>
+      <label class="badge-switch"><input id="customerIdentityBackplateEnabled" type="checkbox"> Aktifkan lapik nama &amp; badge</label>
+      <label>Warna lapik<input id="customerIdentityBackplateColor" type="color" value="#0b2238"></label>
+      <label for="customerIdentityBackplateOpacity">Ketebalan lapisan <output id="customerIdentityBackplateOpacityOutput">85%</output></label>
+      <input id="customerIdentityBackplateOpacity" type="range" min="0" max="100" step="5" value="85">
+      <small>Lapik hanya belakang nama, centang dan badge; warna nama asal dikekalkan. Preview pada nama di bawah.</small>
+    </fieldset>
     <label class="badge-switch"><input id="customerShowRatingToggle" type="checkbox" checked> Tunjuk bintang / rating ulasan</label>
     <small>OFF: bintang disorok dan tidak dikira dalam purata. Rating asal kekal untuk diaktifkan semula.</small>
     <label class="badge-switch"><input id="customerAnnouncementGifToggle" type="checkbox" checked> Tunjuk GIF pengumuman</label>
@@ -975,7 +982,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=remember-scroll-20261011"></script>
+<script type="module" src="/review/review-app.js?v=identity-backplate-20261011"></script>
 </body>
 </html>
 

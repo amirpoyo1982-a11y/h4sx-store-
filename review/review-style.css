@@ -5604,3 +5604,6 @@ body.review-rewrite-v3 .review-card.has-custom-chat-background p.buyer-feedback 
 .customer-profile-sticky-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
 #customerPanelModal .customer-profile-sticky-actions .admin-btn { padding:8px 12px; min-width:0; margin:0; white-space:nowrap; }
 :root[data-theme="dark"] #customerPanelModal .customer-profile-sticky-head { background:#0b1c2e; }
+
+.review-identity-backplate { display:inline-flex; align-items:center; flex-wrap:wrap; gap:6px; max-width:100%; width:fit-content; padding:6px 9px; border-radius:10px; background:var(--identity-backplate,rgba(11,34,56,.85)); border:1px solid rgba(255,255,255,.22); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.customer-preview-copy.review-identity-backplate small { color:#d8e7f1; flex-basis:100%; }
