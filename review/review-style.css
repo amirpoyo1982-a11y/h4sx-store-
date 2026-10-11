@@ -5598,3 +5598,9 @@ body.review-rewrite-v3 .review-chat-background > p.buyer-feedback { margin:0 !im
 
 body.review-rewrite-v3 .review-card.has-custom-chat-background { position:relative; isolation:isolate; overflow:hidden; background:var(--chat-shade,#fff) !important; }
 body.review-rewrite-v3 .review-card.has-custom-chat-background p.buyer-feedback { background:rgba(255,255,255,.12) !important; color:var(--chat-text,#173d56) !important; }
+
+#customerPanelModal .customer-profile-sticky-head { position:sticky; top:0; z-index:15; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 12px; margin-bottom:16px; background:var(--card,#fff); border-bottom:1px solid var(--line-mid); }
+#customerPanelModal .customer-profile-sticky-head .admin-title { margin:0; font-size:14px; }
+.customer-profile-sticky-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+#customerPanelModal .customer-profile-sticky-actions .admin-btn { padding:8px 12px; min-width:0; margin:0; white-space:nowrap; }
+:root[data-theme="dark"] #customerPanelModal .customer-profile-sticky-head { background:#0b1c2e; }
