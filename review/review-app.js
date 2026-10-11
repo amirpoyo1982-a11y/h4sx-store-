@@ -1003,6 +1003,10 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const attributes = urls.slice(1).map((url, index) => `data-fallback${index + 1}="${escapeHtml(url)}"`).join(' ');
     return `<span class="review-animated-emoji"><img src="${escapeHtml(urls[0])}" ${attributes} ${statusId ? `data-preview-status="${statusId}"` : ''} alt="" loading="${statusId ? 'eager' : 'lazy'}" decoding="async"></span>`;
   }
+  function announcementGifSize(value) {
+    const size = Number(value);
+    return Number.isFinite(size) && size > 0 ? Math.max(50, Math.min(200, size)) : 100;
+  }
   function announcementGifValueIsUpload(value) {
     return /^data:image\/(?:gif|webp|png);base64,[A-Za-z0-9+/]+={0,2}$/.test(String(value || '')) && String(value).length <= 550000;
   }
@@ -1382,6 +1386,11 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const customerAnnouncementGifInput = document.getElementById('customerAnnouncementGifInput');
   const customerAnnouncementGifToggle = document.getElementById('customerAnnouncementGifToggle');
   const customerAnnouncementGifStatus = document.getElementById('customerAnnouncementGifStatus');
+  const customerAnnouncementGifSize = document.getElementById('customerAnnouncementGifSize');
+  document.getElementById('btnResetAnnouncementGifSize').addEventListener('click', () => {
+    customerAnnouncementGifSize.value = '100';
+    kemaskiniCustomerPreview();
+  });
   let customerAnnouncementUploadedData = '';
   const customerAnnouncementGifFile = document.getElementById('customerAnnouncementGifFile');
   customerAnnouncementGifInput.addEventListener('input', () => { customerAnnouncementUploadedData = ''; });
@@ -1536,6 +1545,9 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     if (customerAnnouncementUploadedData) customerAnnouncementGifStatus.textContent = 'Fail GIF dipilih / tersimpan.';
     else reviewEmojiStatus(customerAnnouncementGifInput, customerAnnouncementGifStatus);
     const announcementPreview = document.getElementById('customerAnnouncementGifPreview');
+    const announcementSize = announcementGifSize(customerAnnouncementGifSize.value);
+    document.getElementById('customerAnnouncementGifSizeOutput').textContent = announcementSize + '%';
+    announcementPreview.style.setProperty('--announcement-gif-size', announcementSize * 0.48 + 'px');
     announcementPreview.innerHTML = announcementGifMarkup(customerAnnouncementUploadedData || customerAnnouncementGifInput.value, 'customerAnnouncementGifStatus');
     announcementPreview.hidden = !customerAnnouncementGifToggle.checked || !(customerAnnouncementUploadedData || customerAnnouncementGifInput.value.trim());
     const nama = customerNameInput.value.trim() || 'Pelanggan';
@@ -1675,6 +1687,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     customerAnnouncementGifInput.value = customerAnnouncementUploadedData ? '' : data.announcementGif || '';
     customerAnnouncementGifInput.placeholder = customerAnnouncementUploadedData ? 'Fail GIF tersimpan. Isi URL jika mahu ganti.' : 'URL GIF atau halaman emoji.gg';
     customerAnnouncementGifToggle.checked = data.announcementGifEnabled !== false;
+    customerAnnouncementGifSize.value = announcementGifSize(data.announcementGifSize);
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
     originalCustomerImage = data.profileImg || null;
@@ -1736,7 +1749,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     }
   }
 
-  [customerAnnouncementGifInput, customerAnnouncementGifToggle, customerNameInput, nameEmojiInput, medalEmojiInput, customerColorInput, customerEmojiInput, nameColorEnabledToggle, nameColorInput, nameColor2Input, nameGlowColorInput, nameGradientToggle, nameAnimatedToggle, nameRainbowToggle, nameWeightSelect, medalTextInput, medalColorInput, medalColor2Input, medalTextColorInput, medalGlowColorInput, medalShapeSelect, medalSizeSelect, medalGradientToggle, medalAnimatedToggle, medalOutlineToggle, medalRainbowToggle]
+  [customerAnnouncementGifSize, customerAnnouncementGifInput, customerAnnouncementGifToggle, customerNameInput, nameEmojiInput, medalEmojiInput, customerColorInput, customerEmojiInput, nameColorEnabledToggle, nameColorInput, nameColor2Input, nameGlowColorInput, nameGradientToggle, nameAnimatedToggle, nameRainbowToggle, nameWeightSelect, medalTextInput, medalColorInput, medalColor2Input, medalTextColorInput, medalGlowColorInput, medalShapeSelect, medalSizeSelect, medalGradientToggle, medalAnimatedToggle, medalOutlineToggle, medalRainbowToggle]
     .forEach(el => {
       el.addEventListener('input', kemaskiniCustomerPreview);
       el.addEventListener('change', kemaskiniCustomerPreview);
@@ -1801,6 +1814,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       hideRating: !customerShowRatingToggle.checked,
       announcementGif,
       announcementGifEnabled: customerAnnouncementGifToggle.checked,
+      announcementGifSize: announcementGifSize(customerAnnouncementGifSize.value),
       warnaProfil: customerColorInput.value,
       emojiProfil: emoji || null,
       nameColorEnabled: nameColorEnabledToggle.checked,
@@ -3634,7 +3648,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
             </div>
-            <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" aria-label="GIF pengumuman">${announcementGifMarkup(data.announcementGif)}</span>` : ""}</div>
+            <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" style="--announcement-gif-size:${announcementGifSize(data.announcementGifSize) * 0.48}px" aria-label="GIF pengumuman">${announcementGifMarkup(data.announcementGif)}</span>` : ""}</div>
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan

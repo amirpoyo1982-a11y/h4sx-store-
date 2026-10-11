@@ -5693,7 +5693,7 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
+    '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
@@ -7388,6 +7388,10 @@ function advanceGameNameEmojiImage(image) {
   else image.dataset.fallbackWebp = '';
   if (next) image.src = next;
   else { image.closest('.game-name-emoji').hidden = true; image.closest('.review-identity-check')?.classList.remove('is-gif'); }
+}
+function reviewAnnouncementGifSize(value) {
+  const size = Number(value);
+  return Number.isFinite(size) && size > 0 ? Math.max(50, Math.min(200, size)) : 100;
 }
 function reviewAnnouncementGifHTML(value) {
   const raw = String(value || '');

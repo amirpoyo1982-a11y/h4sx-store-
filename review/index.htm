@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=announcement-upload-20261011">
+  <link rel="stylesheet" href="/review/review-style.css?v=announcement-size-20261011">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -393,6 +393,9 @@
     <div class="admin-reply-form-actions"><label class="announcement-upload-button">Upload GIF pengumuman<input id="customerAnnouncementGifFile" type="file" accept="image/gif,image/webp,image/png" hidden></label><button id="btnClearAnnouncementGif" type="button">Buang GIF pengumuman</button></div>
     <small>Upload khas ini berasingan daripada gambar profil. Maksimum 400 KB; fail lebih besar boleh guna URL. Selepas pilih, tekan Simpan Profil.</small>
     <small id="customerAnnouncementGifStatus" class="review-emoji-status">Kosongkan jika tidak mahu GIF pengumuman.</small>
+    <label for="customerAnnouncementGifSize">Saiz GIF pengumuman <output id="customerAnnouncementGifSizeOutput" for="customerAnnouncementGifSize">100%</output></label>
+    <input id="customerAnnouncementGifSize" type="range" min="50" max="200" step="5" value="100" style="width:100%">
+    <button id="btnResetAnnouncementGifSize" type="button">Reset saiz 100%</button>
     <span id="customerAnnouncementGifPreview" class="review-announcement-gif" aria-label="Preview GIF pengumuman"></span>
     <label>Nama Pelanggan</label>
     <input type="text" id="customerNameInput" maxlength="40" placeholder="Nama pelanggan">
@@ -944,7 +947,7 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script type="module" src="/review/review-app.js?v=announcement-upload-20261011"></script>
+<script type="module" src="/review/review-app.js?v=announcement-size-20261011"></script>
 </body>
 </html>
 
