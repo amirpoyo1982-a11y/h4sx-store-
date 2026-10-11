@@ -1077,7 +1077,7 @@ function reviewAnnouncementLabel(config) {
   return config.enabled ? '<span class="review-announcement-label"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i> ' + escapeHtml(config.label) + '</span>' : '';
 }
 function reviewAnnouncementAction(config) {
-  return config.enabled && config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
+  return config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
 }
   function announcementGifSize(value) {
     const size = Number(value);
@@ -1648,7 +1648,7 @@ function reviewAnnouncementAction(config) {
     }
     const announcementConfig = reviewAnnouncementConfig(announcementSettingsFromInputs());
     const stylePreview = document.getElementById('customerAnnouncementStylePreview');
-    stylePreview.hidden = !announcementConfig.enabled;
+    stylePreview.hidden = !announcementConfig.enabled && !announcementConfig.actionEnabled;
     stylePreview.style.cssText = reviewAnnouncementStyle(announcementConfig);
     stylePreview.innerHTML = reviewAnnouncementLabel(announcementConfig) + '<p>Contoh paparan mesej pengumuman anda.</p>' + (announcementConfig.actionEnabled ? '<button type="button" disabled>' + escapeHtml(announcementConfig.actionText) + '</button>' : '');
     if (customerAnnouncementUploadedData) customerAnnouncementGifStatus.textContent = 'Fail GIF dipilih / tersimpan.';
@@ -1937,7 +1937,7 @@ function reviewAnnouncementAction(config) {
     const chatBackgroundSettings = chatBackgroundSettingsFromInputs();
     if (chatBackgroundSettings.chatBackgroundType !== 'none' && !reviewChatBackgroundConfig(chatBackgroundSettings).enabled) { showToast('Background mesej perlukan URL media HTTPS yang sah. Video guna pautan terus .mp4 / .webm.', 'error'); return; }
     const announcementSettings = announcementSettingsFromInputs();
-    if (announcementSettings.announcementEnabled && announcementSettings.announcementActionEnabled && !reviewAnnouncementConfig(announcementSettings).actionUrl) {
+    if (announcementSettings.announcementActionEnabled && !reviewAnnouncementConfig(announcementSettings).actionUrl) {
       showToast('Isi link HTTPS yang sah untuk butang pengumuman.', 'error'); return;
     }
     const payload = {
@@ -3771,7 +3771,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       card.dataset.reviewId = id;
       const announcementConfig = reviewAnnouncementConfig(data);
       card.classList.toggle('is-announcement', announcementConfig.enabled);
-      if (announcementConfig.enabled) card.style.cssText = reviewAnnouncementStyle(announcementConfig);
+      if (announcementConfig.enabled || announcementConfig.actionEnabled) card.style.cssText = reviewAnnouncementStyle(announcementConfig);
       const chatBackground = reviewChatBackgroundConfig(data);
       const outerBackground = chatBackground.enabled && chatBackground.target === 'card';
       card.classList.toggle('has-custom-chat-background', outerBackground);

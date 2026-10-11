@@ -7421,7 +7421,7 @@ function reviewAnnouncementLabel(config) {
   return config.enabled ? '<span class="review-announcement-label"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i> ' + escapeHtml(config.label) + '</span>' : '';
 }
 function reviewAnnouncementAction(config) {
-  return config.enabled && config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
+  return config.actionEnabled && config.actionUrl ? '<a class="review-announcement-action" href="' + escapeHtml(config.actionUrl) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(config.actionText) + ' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>' : '';
 }
 function reviewAnnouncementGifSize(value) {
   const size = Number(value);
