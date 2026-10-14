@@ -24,3 +24,16 @@ test('custom media rejects unsafe schemes and credentials; GIF upload and direct
  assert.equal(theme.overlay,95);assert.equal(theme.badgeSize,12);assert(!replyAppearanceCss(theme).includes('position:fixed'));
  assert.deepEqual(normalizeReplyAppearance(theme),theme);
 });
+
+import {replyImageCandidates,replyBackgroundType} from '../review/reply-theme.js';
+test('emoji.gg staff page resolves to actual media with PNG fallback instead of rendering HTML as an image',()=>{
+ assert.deepEqual(replyImageCandidates('https://emoji.gg/emoji/150633-staff'),['https://cdn3.emoji.gg/emojis/150633-staff.gif','https://cdn3.emoji.gg/emojis/150633-staff.png','https://cdn3.emoji.gg/emojis/150633-staff.webp']);
+ assert.deepEqual(replyImageCandidates('javascript:alert(1)'),[]);
+ assert.deepEqual(replyImageCandidates('data:image/gif;base64,AAAA'),['data:image/gif;base64,AAAA']);
+});
+test('pasted live wallpaper is detected even when an old saved type is image or none',()=>{
+ const url='https://motionbgs.com/media/6372/blue-haired-blind-girl.960x540.mp4';
+ for(const type of ['none','image','video']){const config=normalizeReplyAppearance({enabled:true,backgroundType:type,backgroundUrl:url});assert.equal(config.backgroundType,'video');assert.equal(config.backgroundUrl,url);}
+ assert.equal(replyBackgroundType('auto','https://example.com/a.gif'),'image');
+ assert.equal(normalizeReplyAppearance({backgroundType:'none',backgroundUrl:''}).backgroundType,'none');
+});

@@ -23,3 +23,8 @@
 
 .admin-reply-box.has-custom-reply>.review-chat-media .review-animated-emoji{display:block;width:100%;height:100%;margin:0}
 .admin-reply-box.has-custom-reply .admin-reply-footer{background:transparent!important;border-top-color:var(--reply-border)!important}
+
+/* Media stays above the card fill and below its content. */
+.admin-reply-box.has-custom-reply>.review-chat-media{z-index:0}
+.admin-reply-box.has-custom-reply>.review-chat-shade{z-index:1}
+.admin-reply-box.has-custom-reply>:is(.admin-reply-header,.admin-reply-text,.admin-reply-footer){position:relative;z-index:2}

@@ -1,4 +1,4 @@
-import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl} from '/review/reply-theme.js?v=20261015';
+import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType} from '/review/reply-theme.js?v=media-fix-20261015';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -3716,7 +3716,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
           <button class="admin-reply-view-toggle" type="button" aria-expanded="false">Balasan admin ↓</button>
           <div class="admin-reply-box${replyTheme.enabled?' has-custom-reply':''}" style="${replyAppearanceCss(replyTheme)}">${replyThemeLayers(replyTheme)}
             <div class="admin-reply-header">
-              <span class="admin-reply-identity"><img src="${escapeHtml(replyThemeLogo(replyTheme))}" class="admin-reply-avatar" alt="Logo H4SX STORE" loading="lazy" decoding="async"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+              <span class="admin-reply-identity">${replyThemeImage(replyThemeLogo(replyTheme),'logo')}<i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
               <div class="admin-reply-heading">
                 <span class="admin-reply-kicker">JAWAPAN RASMI</span>
                 <p class="admin-reply-label${replyThemeBadge(replyTheme)?' has-custom-reply-badge':''}">H4SX STORE${replyThemeBadge(replyTheme)}</p>
@@ -4121,15 +4121,30 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   // Admin Review Center
   function replyThemeEditorMarkup(solo=false){
     const field=(key,label,type='url')=>'<label>'+label+'<input data-reply-theme="'+key+'" type="'+type+'"'+(type==='url'?' placeholder="https://..."':'')+'></label>';
-    return '<details class="reply-theme-editor"><summary>'+(solo?'Custom solo — balasan ini sahaja':'Custom keseluruhan balasan admin')+'</summary><p class="reply-theme-help">'+(solo?'Matikan custom solo untuk ikut gaya keseluruhan.':'Semua balasan lama dan baharu, termasuk auto balas, ikut gaya ini kecuali kad dengan custom solo.')+'</p><div class="reply-theme-fields"><label class="reply-theme-wide"><span>'+(solo?'Gunakan custom solo':'Aktifkan custom keseluruhan')+'</span><input data-reply-theme-scope type="checkbox"></label>'+field('logoUrl','Gambar / logo admin')+field('badgeUrl','Badge custom / GIF')+'<label>Upload logo / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="logoUrl"></label><label>Upload badge / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="badgeUrl"></label><label>Background<select data-reply-theme="backgroundType"><option value="none">Tiada media</option><option value="image">Gambar / GIF</option><option value="video">Live wallpaper MP4 / WebM</option></select></label>'+field('backgroundUrl','Link background')+field('backgroundColor','Warna background','color')+field('textColor','Warna tulisan','color')+field('borderColor','Warna border','color')+'<label>Lapisan warna background <output data-reply-overlay-output></output><input type="range" min="0" max="95" data-reply-theme="overlay"></label><label>Saiz badge (px)<input type="number" min="12" max="64" data-reply-theme="badgeSize"></label></div><p class="reply-theme-help">Gunakan link terus gambar, GIF, MP4 atau WebM. Upload gambar/GIF maksimum 400KB. Padam link badge untuk kembali ke centang asal.</p><div class="reply-theme-preview"></div><p class="reply-theme-status" role="status"></p><button type="button" class="reply-theme-save">Simpan gaya '+(solo?'solo':'keseluruhan')+'</button></details>';
+    return '<details class="reply-theme-editor"><summary>'+(solo?'Custom solo — balasan ini sahaja':'Custom keseluruhan balasan admin')+'</summary><p class="reply-theme-help">'+(solo?'Matikan custom solo untuk ikut gaya keseluruhan.':'Semua balasan lama dan baharu, termasuk auto balas, ikut gaya ini kecuali kad dengan custom solo.')+'</p><div class="reply-theme-fields"><label class="reply-theme-wide"><span>'+(solo?'Gunakan custom solo':'Aktifkan custom keseluruhan')+'</span><input data-reply-theme-scope type="checkbox"></label>'+field('logoUrl','Gambar / logo admin')+field('badgeUrl','Badge custom / GIF')+'<label>Upload logo / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="logoUrl"></label><label>Upload badge / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="badgeUrl"></label><label>Background<select data-reply-theme="backgroundType"><option value="none">Tiada media</option><option value="image">Gambar / GIF</option><option value="video">Live wallpaper MP4 / WebM</option></select></label>'+field('backgroundUrl','Link background')+field('backgroundColor','Warna background','color')+field('textColor','Warna tulisan','color')+field('borderColor','Warna border','color')+'<label>Lapisan warna background <output data-reply-overlay-output></output><input type="range" min="0" max="95" data-reply-theme="overlay"></label><label>Saiz badge (px)<input type="number" min="12" max="64" data-reply-theme="badgeSize"></label></div><p class="reply-theme-help">Gunakan link terus gambar, GIF, MP4 atau WebM. Upload gambar/GIF maksimum 400KB. Link halaman emoji.gg juga disokong. Padam link badge untuk kembali ke centang asal.</p><div class="reply-theme-preview"></div><p class="reply-theme-status" role="status"></p><button type="button" class="reply-theme-save">Simpan gaya '+(solo?'solo':'keseluruhan')+'</button></details>';
+  }
+  function replyThemeImage(value,kind){
+    const urls=replyImageCandidates(value);if(!urls.length)return '';
+    const classes={logo:'admin-reply-avatar',badge:'reply-custom-badge',background:'review-chat-media'};
+    const fallback=urls.slice(1).map((url,index)=>' data-reply-fallback'+(index+1)+'="'+escapeHtml(url)+'"').join('');
+    return '<img class="'+classes[kind]+'" data-reply-media="'+kind+'" src="'+escapeHtml(urls[0])+'"'+fallback+' alt="'+(kind==='logo'?'Logo H4SX STORE':kind==='badge'?'Badge admin':'')+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
   }
   function replyThemeLayers(theme){
     if(!theme.enabled||theme.backgroundType==='none'||!theme.backgroundUrl)return '';
-    const config={chatBackgroundType:theme.backgroundType,chatBackgroundUrl:theme.backgroundUrl};
-    return reviewChatBackgroundLayers(config);
+    const media=theme.backgroundType==='video'?'<video class="review-chat-media" data-chat-video-src="'+escapeHtml(theme.backgroundUrl)+'" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>':replyThemeImage(theme.backgroundUrl,'background');
+    return media+'<span class="review-chat-shade" aria-hidden="true"></span>';
   }
   function replyThemeLogo(theme){return theme.enabled?theme.logoUrl:H4SX_LOGO_URL;}
-  function replyThemeBadge(theme){return theme.enabled&&theme.badgeUrl?'<img class="reply-custom-badge" src="'+escapeHtml(theme.badgeUrl)+'" alt="Badge admin" loading="lazy">':'';}
+  function replyThemeBadge(theme){return theme.enabled&&theme.badgeUrl?replyThemeImage(theme.badgeUrl,'badge'):'';}
+  document.addEventListener('error',event=>{
+    const image=event.target;if(!(image instanceof HTMLImageElement)||!image.dataset.replyMedia)return;
+    const next=image.dataset.replyFallback1||image.dataset.replyFallback2;
+    if(next){if(image.dataset.replyFallback1)delete image.dataset.replyFallback1;else delete image.dataset.replyFallback2;image.src=next;return;}
+    const status=image.closest('.reply-theme-editor')?.querySelector('.reply-theme-status');
+    if(status)status.textContent='Media '+image.dataset.replyMedia+' gagal dimuatkan. Semak link atau upload fail gambar/GIF.';
+    if(image.dataset.replyMedia==='badge'){image.closest('.admin-reply-label')?.classList.remove('has-custom-reply-badge');image.remove();}
+    else if(image.dataset.replyMedia==='logo'&&!image.dataset.replyDefault){image.dataset.replyDefault='true';image.src=H4SX_LOGO_URL;}
+  },true);
   function bindReplyThemeEditor(host,{solo=false,review={}}={}){
     const editor=host.querySelector('.reply-theme-editor');if(!editor)return;
     const scope=editor.querySelector('[data-reply-theme-scope]');
@@ -4142,8 +4157,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const read=()=>{const raw={enabled:solo?true:scope.checked};fields.forEach(input=>{raw[input.dataset.replyTheme]=input.dataset.uploadValue||input.value;});return normalizeReplyAppearance(raw);};
     const paint=()=>{const draft=read(),theme=solo&&!scope.checked?resolveReplyAppearance(reviewAdminSettings.replyAppearance):draft;
       editor.querySelector('[data-reply-overlay-output]').textContent=draft.overlay+'%';
-      preview.innerHTML='<div class="admin-reply-box'+(theme.enabled?' has-custom-reply':'')+'" style="'+replyAppearanceCss(theme)+'">'+replyThemeLayers(theme)+'<div class="admin-reply-header"><img class="admin-reply-avatar" src="'+escapeHtml(replyThemeLogo(theme))+'" alt="Pratonton logo"><p class="admin-reply-label'+(replyThemeBadge(theme)?' has-custom-reply-badge':'')+'">H4SX STORE'+replyThemeBadge(theme)+'</p></div><p class="admin-reply-text">Terima kasih atas ulasan anda! Ini pratonton balasan admin.</p></div>';bindReviewChatVideos();};
-    fields.forEach(input=>input.addEventListener('input',()=>{input.dataset.uploadValue='';paint();}));scope.addEventListener('change',paint);
+      preview.innerHTML='<div class="admin-reply-box'+(theme.enabled?' has-custom-reply':'')+'" style="'+replyAppearanceCss(theme)+'">'+replyThemeLayers(theme)+'<div class="admin-reply-header">'+replyThemeImage(replyThemeLogo(theme),'logo')+'<p class="admin-reply-label'+(replyThemeBadge(theme)?' has-custom-reply-badge':'')+'">H4SX STORE'+replyThemeBadge(theme)+'</p></div><p class="admin-reply-text">Terima kasih atas ulasan anda! Ini pratonton balasan admin.</p></div>';bindReviewChatVideos();};
+    fields.forEach(input=>input.addEventListener('input',()=>{input.dataset.uploadValue='';if(input.dataset.replyTheme==='backgroundUrl'){fields.find(el=>el.dataset.replyTheme==='backgroundType').value=replyBackgroundType('auto',input.value);}if(input.dataset.replyTheme==='backgroundType'&&input.value==='none'){fields.find(el=>el.dataset.replyTheme==='backgroundUrl').value='';}paint();}));scope.addEventListener('change',paint);
     editor.querySelectorAll('[data-reply-theme-upload]').forEach(input=>input.addEventListener('change',async()=>{
       const file=input.files?.[0];if(!file)return;uploads++;save.disabled=true;
       try{if(!/^image\/(gif|png|jpeg|webp)$/.test(file.type)||file.size>400000)throw Error('Pilih gambar/GIF maksimum 400KB.');
