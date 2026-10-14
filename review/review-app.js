@@ -2414,19 +2414,28 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   adminLoginOverlayBg.addEventListener('click', tutupAdminLogin);
   updateAdminUi();
 
-  btnOpenAdminConfig.addEventListener('click', async () => {
+  let adminPanelLoading=false,adminSaveBlockedByLoad=false;
+  async function openAdminSettings() {
     if (!mintaAdmin()) return;
-    syncReviewVoteAdmin();
-    
-    try {
-      const snap = await getDoc(doc(db, "config", "announcement"));
-      if (snap.exists()) adminAnnounceText.value = snap.data().text || DEFAULT_ANNOUNCEMENT_TEXT;
-      else adminAnnounceText.value = DEFAULT_ANNOUNCEMENT_TEXT;
-    } catch(e) {}
-    await loadAutoZixuConfig();
     adminOverlayBg.classList.add('show');
     adminPanelModal.classList.add('show');
-  });
+    if(adminPanelLoading)return;adminPanelLoading=true;
+    const status=document.getElementById('adminPanelLoadStatus');status.textContent='Memuatkan tetapan...';
+    const controls=[...adminPanelModal.querySelectorAll('#adminAnnounceText, [id^="autoZixu"], #btnSaveAdmin')].filter(el=>['INPUT','SELECT','TEXTAREA','BUTTON'].includes(el.tagName));
+    const disabled=controls.map(el=>el.disabled),saveWasDisabled=btnSaveAdmin.disabled&&!adminSaveBlockedByLoad;controls.forEach(el=>el.disabled=true);let timer,loaded=false;
+    try {
+      syncReviewVoteAdmin();
+      const [announcement,zixu]=await Promise.race([
+        Promise.all([getDoc(doc(db,'config','announcement')),getDoc(doc(db,'config',AUTO_ZIXU_CONFIG_ID))]),
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Sambungan Firebase lambat. Tutup dan buka Admin semula untuk cuba lagi.')),12000);})
+      ]);
+      if(!adminOk())return;
+      adminAnnounceText.value=announcement.exists()?announcement.data().text||DEFAULT_ANNOUNCEMENT_TEXT:DEFAULT_ANNOUNCEMENT_TEXT;
+      isiAutoZixuForm(zixu.exists()?zixu.data():DEFAULT_ZIXU_CONFIG);loaded=true;status.textContent='';
+    }catch(error){status.textContent=error.message||'Tetapan gagal dimuatkan. Buka semula Admin untuk cuba lagi.';}
+    finally{clearTimeout(timer);adminPanelLoading=false;controls.forEach((el,i)=>el.disabled=disabled[i]);btnSaveAdmin.disabled=loaded?saveWasDisabled:true;adminSaveBlockedByLoad=!loaded;}
+  }
+  btnOpenAdminConfig.addEventListener('click',openAdminSettings);
 
   function tutupAdminPanel() {
     adminOverlayBg.classList.remove('show');

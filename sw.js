@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20261014-profile-color-preview-v117';
+const CACHE_NAME = 'h4sx-pwa-20261014-admin-open-v118';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
