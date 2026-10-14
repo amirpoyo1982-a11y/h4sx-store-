@@ -1,4 +1,4 @@
-﻿:root {
+:root {
       /* ── Blue palette ikut website H4SX ── */
       --bg:          #eef4fb;
       --bg2:         #f5f9ff;
@@ -4937,7 +4937,7 @@ button, input, select, textarea { font-family: inherit !important; }
 .form-group input, .form-group textarea, .form-group select, .code-input, .sort-select { border: 1px solid var(--lounge-line) !important; border-radius: 9px !important; background: #fbfcfe !important; color: var(--lounge-ink) !important; box-shadow: none !important; }
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus, .code-input:focus { border-color: var(--lounge-blue) !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(40,120,255,.1) !important; }
 .profile-picker, .profile-image-section, .star-select-wrap, .feedback-image-picker { border: 1px solid var(--lounge-line) !important; border-radius: 11px !important; background: #f8fafc !important; box-shadow: none !important; }
-.avatar-preview { border-radius: 12px !important; background: var(--lounge-blue) !important; }
+.avatar-preview { border-radius: 12px !important; background: var(--lounge-blue); }
 .image-upload-tabs { padding: 4px !important; border-radius: 9px !important; background: #e9edf3 !important; }
 .img-tab { border: 0 !important; border-radius: 7px !important; }
 .img-tab.active { background: #fff !important; color: var(--lounge-blue) !important; box-shadow: 0 2px 7px rgba(23,32,51,.08) !important; }
