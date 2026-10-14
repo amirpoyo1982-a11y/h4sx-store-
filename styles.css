@@ -7364,7 +7364,7 @@ html.review-submit-direct .page-mesh,
 html.review-submit-direct #earth-bg,
 html.review-submit-direct .ai-chat-panel,
 html.review-submit-direct .ai-helper-bubble,
-html.review-submit-direct iframe,
+html.review-submit-direct iframe:not([src*="challenges.cloudflare.com"]),
 html.review-submit-direct [id*="balasan"],
 html.review-submit-direct [class*="balasan"] { display:none !important; }
 html.review-submit-direct #home-view > :not(.h4rf-modal) { display:none !important; }

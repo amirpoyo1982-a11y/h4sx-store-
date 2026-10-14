@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20261014-trash-captcha-v113';
+const CACHE_NAME = 'h4sx-pwa-20261014-trash-captcha-v114';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',

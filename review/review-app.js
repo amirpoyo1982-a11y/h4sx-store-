@@ -3290,6 +3290,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
     butangHantar.disabled = true;
     butangHantar.textContent = "Menghantar...";
+    document.getElementById('reviewSubmissionStatus').textContent='';
     try {
       const dataToSave={nama,bintang,ulasan:ulasan||'Tiada ulasan ditinggalkan.',cadanganDigunakan:gunaCadangan};
       if(pilihanWarna)dataToSave.warnaProfil=pilihanWarna;if(pilihanEmoji)dataToSave.emojiProfil=pilihanEmoji;if(profileImgB64)dataToSave.profileImg=profileImgB64;if(feedbackImgB64)dataToSave.feedbackImg=feedbackImgB64;
@@ -3315,8 +3316,9 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         return;
       }
       // Papar sebab sebenar terus dalam toast supaya senang debug tanpa F12
-      const sebab = err.code ? `(${err.code})` : (err.message || "");
-      showToast(`Gagal hantar ulasan ${sebab}. Cuba lagi.`, "error");
+      const sebab = err.message || err.code || 'Cuba lagi.';
+      document.getElementById('reviewSubmissionStatus').textContent=`Gagal hantar ulasan: ${sebab}`;
+      showToast(`Gagal hantar ulasan: ${sebab}`, "error");
     } finally {
       butangHantar.disabled = false; butangHantar.innerHTML = 'Hantar Ulasan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>';
     }
