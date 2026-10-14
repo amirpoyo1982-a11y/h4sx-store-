@@ -3365,7 +3365,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       document.querySelectorAll(".swatch,.emoji-opt").forEach(el=>el.classList.remove("active"));
       clearProfileImg(false); clearFeedbackImage(false); charCounter.textContent = "0 / 500"; updatePreview();
 
-      const submissionMessage=submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan berjaya diterbitkan. Terima kasih!';
+      const submissionMessage='Ulasan berjaya dihantar. Terima kasih!';
       document.getElementById('reviewSubmissionStatus').textContent=submissionMessage;showToast(submissionMessage,'success');
       if(submissionResult.status==='published')setMobileReviewTab('reviews',true);
     } catch(err) {
