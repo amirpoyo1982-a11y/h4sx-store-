@@ -29,6 +29,6 @@
 .admin-reply-box.has-custom-reply>.review-chat-shade{z-index:1}
 .admin-reply-box.has-custom-reply>:is(.admin-reply-header,.admin-reply-text,.admin-reply-footer){position:relative;z-index:2}
 
-/* Uploaded custom logos fill their frame without the old white mat. */
-.admin-reply-box.has-custom-reply .admin-reply-avatar{display:block;padding:0!important;border:0!important;background:transparent!important;object-fit:cover!important;box-sizing:border-box}
+/* All official reply logos fill their frame without a white mat. */
+.admin-reply-box .admin-reply-avatar{display:block;padding:0!important;border:0!important;background:transparent!important;object-fit:cover!important;box-sizing:border-box}
 .admin-reply-box.has-custom-reply>.review-chat-media{display:block;margin:0!important;padding:0!important;border:0!important;max-width:none;max-height:none;object-fit:cover!important}
