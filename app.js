@@ -5679,7 +5679,7 @@ function showReviewShowcasePopup(item, total) {
   const text = item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.';
   const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
   const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100) + '" alt="Profil ' + escapeHtml(name) + '">'
+    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="Profil ' + escapeHtml(name) + '">'
     : escapeHtml(item.emojiProfil || initials);
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleMarkup = reviewIdentityRole(item);
@@ -8963,7 +8963,7 @@ document.addEventListener('DOMContentLoaded', () => {
     storeProfileZoom.apply(avatarImg);
   };
   const setProfileImage = (value, keepEmoji = false) => {
-    storeProfileZoom.set(100);
+    storeProfileZoom.set(100);storeProfileZoom.setOffset(0);
     profileImage = value || null;
     if (!keepEmoji) {
       selectedEmoji = null;
@@ -9131,7 +9131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm();
   });
 
-  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-store-review-draft-v1',container:form,fields:['h4rf-code','h4rf-name','h4rf-rating','h4rf-review','h4rf-story-item','h4rf-story-time','h4rf-story-experience'],isOpen:()=>modal.classList.contains('show'),getExtra:()=>({selectedColor,selectedEmoji,profileImage,profileZoom:storeProfileZoom.get(),feedbackImage,suggestionUsed}),restoreExtra:extra=>{selectedColor=colors.includes(extra.selectedColor)?extra.selectedColor:null;selectedEmoji=emojiOptions.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImage=window.H4ReviewMedia.safeImage(extra.profileImage);storeProfileZoom.set(extra.profileZoom ?? 100);feedbackImage=window.H4ReviewMedia.safeImage(extra.feedbackImage);suggestionUsed=extra.suggestionUsed===true;updateAvatar();document.getElementById('h4rf-clear-profile').hidden=!profileImage;document.getElementById('h4rf-feedback-clear').hidden=!feedbackImage;feedbackStatus.textContent=feedbackImage?'Gambar feedback sudah dipilih.':'';charCount.textContent=review.value.length+' / 500';},onRestore:data=>{if(data.resume){openH4ReviewForm();message('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.');}}});
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-store-review-draft-v1',container:form,fields:['h4rf-code','h4rf-name','h4rf-rating','h4rf-review','h4rf-story-item','h4rf-story-time','h4rf-story-experience'],isOpen:()=>modal.classList.contains('show'),getExtra:()=>({selectedColor,selectedEmoji,profileImage,profileZoom:storeProfileZoom.get(),profileOffsetY:storeProfileZoom.getOffset(),feedbackImage,suggestionUsed}),restoreExtra:extra=>{selectedColor=colors.includes(extra.selectedColor)?extra.selectedColor:null;selectedEmoji=emojiOptions.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImage=window.H4ReviewMedia.safeImage(extra.profileImage);storeProfileZoom.set(extra.profileZoom ?? 100);storeProfileZoom.setOffset(extra.profileOffsetY ?? 0);feedbackImage=window.H4ReviewMedia.safeImage(extra.feedbackImage);suggestionUsed=extra.suggestionUsed===true;updateAvatar();document.getElementById('h4rf-clear-profile').hidden=!profileImage;document.getElementById('h4rf-feedback-clear').hidden=!feedbackImage;feedbackStatus.textContent=feedbackImage?'Gambar feedback sudah dipilih.':'';charCount.textContent=review.value.length+' / 500';},onRestore:data=>{if(data.resume){openH4ReviewForm();message('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.');}}});
   feedbackDraft.restore();
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -9148,11 +9148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar...';
     try {
       const payload={nama:customerName,bintang:Number(rating.value),ulasan:reviewText||'Tiada ulasan ditinggalkan.',cadanganDigunakan:suggestionUsed};
-      if(selectedColor)payload.warnaProfil=selectedColor;if(selectedEmoji)payload.emojiProfil=selectedEmoji;if(profileImage){payload.profileImg=profileImage;payload.profileZoom=storeProfileZoom.get();}if(feedbackImage)payload.feedbackImg=feedbackImage;
+      if(selectedColor)payload.warnaProfil=selectedColor;if(selectedEmoji)payload.emojiProfil=selectedEmoji;if(profileImage){payload.profileImg=profileImage;payload.profileZoom=storeProfileZoom.get();payload.profileOffsetY=storeProfileZoom.getOffset();}if(feedbackImage)payload.feedbackImg=feedbackImage;
       const submissionResult=await window.H4ReviewSubmit.submit({code:reviewCode,review:payload});
       feedbackDraft?.clear();
       form.reset();
-      selectedColor = null; selectedEmoji = null; profileImage = null; storeProfileZoom.set(100); feedbackImage = null; suggestionUsed = false;
+      selectedColor = null; selectedEmoji = null; profileImage = null; storeProfileZoom.set(100);storeProfileZoom.setOffset(0); feedbackImage = null; suggestionUsed = false;
       avatar.classList.remove('has-image'); avatarImg.src = ''; feedbackStatus.textContent = ''; charCount.textContent = '0 / 500';
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;

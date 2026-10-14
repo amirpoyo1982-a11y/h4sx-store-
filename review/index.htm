@@ -58,6 +58,7 @@
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
   <link rel="stylesheet" href="/admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=customer-edit-20261014">
+<link rel="stylesheet" href="/review/reply-theme.css?v=20261015">
 </head>
 <body class="review-rewrite-v3 midmonth-refresh">
 
@@ -278,6 +279,7 @@
             <small class="admin-field-help">Matikan auto balas bawaan laman untuk uji bot. Biarkan paparan balasan aktif supaya jawapan bot kelihatan. Balasan lama tidak terpadam.</small>
             <label class="admin-setting-toggle"><span>Masa relatif</span><input id="adminSettingRelativeTime" type="checkbox" checked></label>
             <label class="admin-setting-toggle"><span>Amaran rating rendah</span><input id="adminSettingLowAlert" type="checkbox" checked></label>
+            <div id="adminReplyThemeEditor"></div>
             <button id="btnSaveAdminDisplay" type="button"><i class="fa-solid fa-check"></i> Simpan Tetapan</button>
           </section>
           <section class="admin-tool-section">
@@ -986,10 +988,10 @@
 </div>
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
-<script src="/review-media.js?v=profile-zoom-20261015"></script>
+<script src="/review-media.js?v=reply-custom-position-20261015"></script>
 <script src="/review-submit-client.js?v=customer-edit-20261014"></script>
-<script type="module" src="/review/review-app.js?v=profile-zoom-20261015"></script>
-<script defer src="/review-edit-client.js?v=profile-zoom-20261015"></script>
+<script type="module" src="/review/review-app.js?v=reply-custom-position-20261015"></script>
+<script defer src="/review-edit-client.js?v=reply-custom-position-20261015"></script>
 </body>
 </html>
 

@@ -36,20 +36,25 @@
     let done=false;const finish=()=>{if(done)return;done=true;input.removeEventListener('change',finish);input.removeEventListener('cancel',finish);root.removeEventListener('focus',focused);root.setTimeout(()=>playing.forEach(video=>{const r=video.getBoundingClientRect();if(video.isConnected&&!root.document.hidden&&r.width&&r.height&&r.bottom>0&&r.top<root.innerHeight)video.play().catch(()=>{});}),300);};const focused=()=>root.setTimeout(finish,500);input.addEventListener('change',finish);input.addEventListener('cancel',finish);root.addEventListener('focus',focused);input.click();
   }
   function profileZoom(value){const n=Number(value);return Number.isFinite(n)?Math.max(50,Math.min(300,n)):100;}
-  function profileZoomStyle(value){const n=profileZoom(value);return 'transform:scale('+n/100+');object-fit:'+(n<100?'contain':'cover')+';transform-origin:center';}
+  function profileOffset(value){const n=Number(value);return Number.isFinite(n)?Math.max(-50,Math.min(50,n)):0;}
+  function profileZoomStyle(value,offset=0){const n=profileZoom(value);return 'transform:translateY('+profileOffset(offset)+'%) scale('+n/100+');object-fit:'+(n<100?'contain':'cover')+';transform-origin:center';}
   function createProfileZoom(anchor,onChange){
     const box=root.document.createElement('div');box.className='profile-zoom-control';
     box.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;font-size:13px';
     box.innerHTML='<span>Zoom gambar profil</span><button type="button" aria-label="Kecilkan gambar profil">−</button><input type="range" min="50" max="300" step="5" value="100" aria-label="Zoom gambar profil"><button type="button" aria-label="Besarkan gambar profil">+</button><output>100%</output><button type="button">Reset</button>';
+    box.insertAdjacentHTML('beforeend','<label style="display:flex;gap:8px;align-items:center;width:100%">Naik / turun<input class="profile-offset" type="range" min="-50" max="50" step="1" value="0" aria-label="Posisi menegak gambar profil"><output class="profile-offset-output">0%</output></label>');
     anchor.insertAdjacentElement('afterend',box);
     const input=box.querySelector('input'),output=box.querySelector('output'),buttons=box.querySelectorAll('button');
     input.style.cssText='flex:1;min-width:90px;width:120px;max-width:240px';
     buttons.forEach(b=>{b.style.cssText='min-width:34px;min-height:34px;border:1px solid #a9dced;border-radius:8px;background:#eaf8ff;color:#126480;cursor:pointer;padding:4px 8px';});
+    const offset=box.querySelector('.profile-offset'),offsetOutput=box.querySelector('.profile-offset-output');offset.style.cssText='flex:1;min-width:90px;width:120px;max-width:240px';
+    const setOffset=value=>{offset.value=profileOffset(value);offsetOutput.textContent=offset.value+'%';};
+    offset.addEventListener('input',()=>{setOffset(offset.value);onChange?.();});
     const set=value=>{input.value=profileZoom(value);output.textContent=input.value+'%';};
     const change=value=>{set(value);onChange?.();};
     input.addEventListener('input',()=>change(input.value));
-    buttons[0].addEventListener('click',()=>change(Number(input.value)-5));buttons[1].addEventListener('click',()=>change(Number(input.value)+5));buttons[2].addEventListener('click',()=>change(100));
-    return {get:()=>Number(input.value),set,apply(img){if(img){img.style.transform='scale('+Number(input.value)/100+')';img.style.objectFit=Number(input.value)<100?'contain':'cover';img.style.transformOrigin='center';}},box};
+    buttons[0].addEventListener('click',()=>change(Number(input.value)-5));buttons[1].addEventListener('click',()=>change(Number(input.value)+5));buttons[2].addEventListener('click',()=>{setOffset(0);change(100);});
+    return {get:()=>Number(input.value),set,getOffset:()=>Number(offset.value),setOffset,apply(img){if(img){img.style.transform='translateY('+Number(offset.value)+'%) scale('+Number(input.value)/100+')';img.style.objectFit=Number(input.value)<100?'contain':'cover';img.style.transformOrigin='center';}},box};
   }
   root.H4ReviewMedia={compressFile,createDraft,pickFile,safeImage,profileZoom,profileZoomStyle,createProfileZoom};
 })(window);

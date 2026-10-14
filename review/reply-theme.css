@@ -1,0 +1,25 @@
+/* Custom appearance belongs to the official reply card only. */
+.admin-reply-box.has-custom-reply{position:relative;isolation:isolate;overflow:hidden;background:var(--reply-bg)!important;border-color:var(--reply-border)!important}
+.admin-reply-box.has-custom-reply>.review-chat-media,.admin-reply-box.has-custom-reply>.review-chat-shade{position:absolute;inset:0;z-index:-1;pointer-events:none;width:100%;height:100%;object-fit:cover}
+.admin-reply-box.has-custom-reply>.review-chat-media img{width:100%;height:100%;object-fit:cover}
+.admin-reply-box.has-custom-reply>.review-chat-shade{background:var(--reply-bg);opacity:var(--chat-overlay)}
+.admin-reply-box.has-custom-reply :is(.admin-reply-label,.admin-reply-text,.admin-reply-kicker,.admin-reply-time){color:var(--reply-text)!important}
+.admin-reply-label.has-custom-reply-badge::after{display:none!important}
+.admin-reply-label .reply-custom-badge{width:var(--reply-badge-size,20px);height:var(--reply-badge-size,20px);object-fit:contain;vertical-align:middle;margin-left:5px}
+.reply-theme-editor{margin:12px 0;padding:12px;border:1px solid #bde3ee;border-radius:10px;background:#f7fcff;color:#173d56}
+.reply-theme-editor summary{cursor:pointer;font-weight:800}
+.reply-theme-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.reply-theme-fields label{display:grid;gap:5px;min-width:0;font-size:12px;font-weight:650}
+.reply-theme-fields :is(input,select){width:100%;min-width:0;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #badce8;border-radius:8px;color:#173d56;background:white}
+.reply-theme-fields input[type=checkbox]{width:18px;height:18px}
+.reply-theme-fields input[type=color]{height:38px;padding:3px}
+.reply-theme-fields .reply-theme-wide{grid-column:1/-1}
+.reply-theme-editor .reply-theme-help{font-size:12px;line-height:1.5;margin:10px 0;color:#527185}
+.reply-theme-preview .admin-reply-box{display:block;margin:12px 0}
+.reply-theme-editor .reply-theme-save{padding:9px 14px;background:#069bc3;color:white;border:0;border-radius:8px;font-weight:750;cursor:pointer}
+.reply-theme-editor button:disabled{opacity:.55;cursor:wait}
+:root[data-theme=dark] .reply-theme-editor{background:#172738;color:#dceeff}
+@media(max-width:520px){.reply-theme-fields{grid-template-columns:minmax(0,1fr)}}
+
+.admin-reply-box.has-custom-reply>.review-chat-media .review-animated-emoji{display:block;width:100%;height:100%;margin:0}
+.admin-reply-box.has-custom-reply .admin-reply-footer{background:transparent!important;border-top-color:var(--reply-border)!important}

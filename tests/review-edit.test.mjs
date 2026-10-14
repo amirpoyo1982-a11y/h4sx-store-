@@ -25,3 +25,9 @@ test('customer zoom edits keep the original expiry and preserve admin decoration
   assert.equal(saved.expiresAt,1000+EDIT_MS);assert.equal(d.values.get('review_pending/'+id).review.profileZoom,75);assert.equal(d.values.get('review_pending/'+id).review.badgeText,'VIP');
   await assert.rejects(customerEdit(d.firestore,token,{action:'save',code,review:{...review,profileZoom:999}},2100),/Zoom/);
 });
+
+test('customer can reposition the image without changing its original edit deadline',async()=>{
+ const d=await staged();const result=await customerEdit(d.firestore,token,{action:'save',code,review:{...review,profileOffsetY:20}},2000);
+ assert.equal(result.expiresAt,1000+EDIT_MS);assert.equal(d.values.get('review_pending/'+id).review.profileOffsetY,20);
+ const loaded=await customerEdit(d.firestore,token,{action:'load',code},2100);assert.equal(loaded.review.profileOffsetY,20);
+});

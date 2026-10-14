@@ -68,3 +68,10 @@ test('profile zoom survives private moderation and public approval; invalid scal
   assert.equal(d.values.get('ratings/review_H4SX-ZOOM1').profileZoom,175);
   for(const zoom of [49,301,'NaN','scale(99)'])assert.throws(()=>validateSubmission({...submission,review:{...submission.review,profileZoom:zoom}}),/Zoom/);
 });
+
+test('vertical profile position is validated and preserved during approval',async()=>{
+ const input={code:'H4SX-OFFSET',review:{nama:'Ali',bintang:5,ulasan:'Baik',profileOffsetY:-25,profileZoom:140}};
+ const d=database({'review_codes/H4SX-OFFSET':{}});await stageSubmission(d.firestore,input,false,1000);await decideSubmission(d.firestore,'review_H4SX-OFFSET','approve',2000);
+ assert.equal(d.values.get('ratings/review_H4SX-OFFSET').profileOffsetY,-25);
+ for(const value of [-51,51,'invalid'])assert.throws(()=>validateSubmission({...input,review:{...input.review,profileOffsetY:value}}),/Posisi/);
+});
