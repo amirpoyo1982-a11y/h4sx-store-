@@ -6,7 +6,7 @@ Laporan baharu disimpan oleh `/api/review-report` selepas token Cloudflare disah
 - ID browser dan alamat rangkaian dihash dengan HMAC. IP mentah tidak disimpan. Pelawat tanpa login tidak boleh dikenal pasti sebagai orang sebenar; orang pada rangkaian sama berkongsi had rangkaian.
 - 3 rangkaian berbeza dalam 24 jam menyebabkan `moderationStatus: hidden` dan `autoHiddenByReports: true`. Ulasan boleh disemak dalam Moderasi → Perlu semakan / Auto-sorok laporan. Ia tidak menggunakan auto-lulus 30 minit.
 - Moderasi → Laporan → Munculkan semula / Tutup Lapor / Aktifkan Lapor. Munculkan semula memulakan kumpulan kiraan report baharu. Tutup Lapor turut dikuatkuasakan di backend.
-- Admin UID yang disahkan boleh melapor tanpa had, termasuk ulasan yang butang Lapornya ditutup. Report admin ditanda `adminTest` dan tidak dikira untuk auto-sorok. Cloudflare masih diperlukan. Pelawat tidak boleh mengaktifkan mod ujian melalui payload.
+- Admin UID yang disahkan boleh melapor tanpa had, termasuk ulasan yang butang Lapornya ditutup. Report admin biasa tidak dikira untuk auto-sorok. Untuk uji auto-sorok sendiri, buka Moderasi → Laporan → **Aktifkan ujian auto-sorok** pada satu ulasan, kemudian report ulasan itu 3 kali dengan akaun admin. Kiraan ujian diasingkan daripada pelapor awam; ulasan benar-benar disorok pada laporan ketiga. **Munculkan semula** memulihkan ulasan dan mematikan mod ujian. Cloudflare masih diperlukan. Pelawat tidak boleh mengaktifkan mod ujian melalui payload.
 
 ## Environment
 
