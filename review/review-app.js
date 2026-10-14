@@ -2906,6 +2906,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   const WARNA = ['#2fa8e0','#7c5cbf','#22c47a','#f0a500','#e05252','#1a4470','#48a89e','#d96fb0'];
   const EMOJI  = ['😀','😎','🔥','🎮','👾','🐉','⚡','💎'];
   let pilihanWarna = null, pilihanEmoji = null, profileImgB64 = null, feedbackImgB64 = null;
+  let feedbackDraft = null;
   const NAMA_AUTO = [
     "Aiman", "Hakim", "Danish", "Aqil", "Farish", "Arif", "Nazri",
     "Syafiq", "Ammar", "Haziq", "Danial", "Adam", "Rizqi", "Rayyan", "Naufal",
@@ -3142,6 +3143,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   function setFeedbackImage(b64) {
     feedbackImgB64 = b64;
+    feedbackDraft?.save();
     btnClearFeedbackImage.classList.add("show");
     feedbackImagePreview.textContent = "Gambar feedback sudah dipilih. Ia hanya muncul bila orang tekan See image.";
     showToast("Gambar feedback berjaya dimuatkan.", "success");
@@ -3162,16 +3164,14 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     feedbackImageModal.classList.remove("show");
     feedbackImageModalImg.src = "";
   }
-  btnPickFeedbackImage.addEventListener("click", () => feedbackImageInput.click());
+  btnPickFeedbackImage.addEventListener("click", () => window.H4ReviewMedia.pickFile(feedbackImageInput,feedbackDraft));
   btnClearFeedbackImage.addEventListener("click", () => clearFeedbackImage(true));
-  feedbackImageInput.addEventListener("change", () => {
-    const f = feedbackImageInput.files[0];
-    if (!f) return;
-    if (!f.type.startsWith("image/")) { showToast("Fail feedback mesti gambar.", "error"); return; }
-    if (f.size > 5*1024*1024) { showToast("Gambar feedback terlalu besar. Max 5MB.", "error"); return; }
-    const r = new FileReader();
-    r.onload = e => compressFeedbackImage(e.target.result, setFeedbackImage);
-    r.readAsDataURL(f);
+  feedbackImageInput.addEventListener('change',async()=>{
+    const file=feedbackImageInput.files[0];if(!file)return;
+    feedbackImagePreview.textContent='Memproses gambar feedback...';butangHantar.disabled=true;btnPickFeedbackImage.disabled=true;
+    try{setFeedbackImage(await window.H4ReviewMedia.compressFile(file,900,.72));}
+    catch(error){feedbackImagePreview.textContent=error.message;showToast(error.message,'error');}
+    finally{butangHantar.disabled=suggestionTyping;btnPickFeedbackImage.disabled=false;feedbackImageInput.value='';}
   });
   btnCloseFeedbackImage.addEventListener("click", closeFeedbackImage);
   feedbackImageModal.addEventListener("click", e => {
@@ -3319,6 +3319,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if (!ulasanPelanggan.value.trim()) reviewSuggestionUsed = false;
   });
 
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-review-draft-v1',container:document.querySelector('.form-col'),fields:['kodVerification','namaPelanggan','pilihBintang','ulasanPelanggan','reviewStoryItem','reviewStoryTime','reviewStoryExperience'],isOpen:()=>true,getExtra:()=>({selectedColor:pilihanWarna,selectedEmoji:pilihanEmoji,profileImage:profileImgB64,feedbackImage:feedbackImgB64,suggestionUsed:reviewSuggestionUsed}),restoreExtra:extra=>{pilihanWarna=WARNA.includes(extra.selectedColor)?extra.selectedColor:null;pilihanEmoji=EMOJI.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImgB64=window.H4ReviewMedia.safeImage(extra.profileImage);feedbackImgB64=window.H4ReviewMedia.safeImage(extra.feedbackImage);reviewSuggestionUsed=extra.suggestionUsed===true;updatePreview();btnClearImg.classList.toggle('show',!!profileImgB64);btnClearFeedbackImage.classList.toggle('show',!!feedbackImgB64);feedbackImagePreview.textContent=feedbackImgB64?'Gambar feedback sudah dipilih.':'';charCounter.textContent=ulasanPelanggan.value.length+' / 500';},onRestore:()=>showToast('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.','info')});
+  feedbackDraft.restore();
   // ── Submit ────────────────────────────────────────────────────
   butangHantar.addEventListener("click", async () => {
     const kod    = kodVerification.value.trim().toUpperCase();
@@ -3378,6 +3380,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         return;
       }
       await setDoc(reviewRef, dataToSave);
+      feedbackDraft?.clear();
       if (adminOk() && !customerPreviewMode && document.getElementById("adminOfficialReview").checked) {
         try {
           await updateDoc(reviewRef, { adminAuthorUid:currentUser.uid, adminIdentityConfirmed:true });

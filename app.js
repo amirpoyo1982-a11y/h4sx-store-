@@ -8945,6 +8945,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedEmoji = null;
   let profileImage = null;
   let feedbackImage = null;
+  let feedbackDraft = null;
   let suggestionUsed = false;
 
   const message = (text, isError = false) => toast(text, isError);
@@ -8998,14 +8999,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) { message('Gagal proses gambar profil.', true); }
   };
   const applyFeedbackFile = async file => {
-    if (!file || !file.type?.startsWith('image/')) return message('Pilih fail gambar yang sah.', true);
-    if (file.size > 5 * 1024 * 1024) return message('Gambar feedback terlalu besar. Maksimum 5MB.', true);
-    try {
-      feedbackImage = await compressImage(await readFile(file), 900, .72);
-      feedbackStatus.textContent = 'Gambar feedback sudah dipilih.';
-      document.getElementById('h4rf-feedback-clear').hidden = false;
-      message('Gambar feedback dimuatkan.');
-    } catch (error) { message('Gagal proses gambar feedback.', true); }
+    if(!file)return;feedbackStatus.textContent='Memproses gambar feedback...';submit.disabled=true;document.getElementById('h4rf-feedback-pick').disabled=true;
+    try{feedbackImage=await window.H4ReviewMedia.compressFile(file,900,.72);feedbackStatus.textContent='Gambar feedback sudah dipilih.';document.getElementById('h4rf-feedback-clear').hidden=false;feedbackDraft?.save();message('Gambar feedback dimuatkan.');}
+    catch(error){feedbackStatus.textContent=error.message;message(error.message,true);}
+    finally{submit.disabled=false;document.getElementById('h4rf-feedback-pick').disabled=false;feedbackFile.value='';}
   };
 
   colors.forEach(color => {
@@ -9074,7 +9071,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = [...(event.clipboardData?.items || [])].find(value => value.type.startsWith('image/'));
     if (item) { event.preventDefault(); applyProfileFile(item.getAsFile()); }
   });
-  document.getElementById('h4rf-feedback-pick').addEventListener('click', () => feedbackFile.click());
+  document.getElementById('h4rf-feedback-pick').addEventListener('click', () => window.H4ReviewMedia.pickFile(feedbackFile,feedbackDraft));
   feedbackFile.addEventListener('change', () => applyFeedbackFile(feedbackFile.files[0]));
   document.getElementById('h4rf-feedback-clear').addEventListener('click', () => {
     feedbackImage = null; feedbackFile.value = ''; feedbackStatus.textContent = ''; document.getElementById('h4rf-feedback-clear').hidden = true;
@@ -9126,6 +9123,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm();
   });
 
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-store-review-draft-v1',container:form,fields:['h4rf-code','h4rf-name','h4rf-rating','h4rf-review','h4rf-story-item','h4rf-story-time','h4rf-story-experience'],isOpen:()=>modal.classList.contains('show'),getExtra:()=>({selectedColor,selectedEmoji,profileImage,feedbackImage,suggestionUsed}),restoreExtra:extra=>{selectedColor=colors.includes(extra.selectedColor)?extra.selectedColor:null;selectedEmoji=emojiOptions.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImage=window.H4ReviewMedia.safeImage(extra.profileImage);feedbackImage=window.H4ReviewMedia.safeImage(extra.feedbackImage);suggestionUsed=extra.suggestionUsed===true;updateAvatar();document.getElementById('h4rf-clear-profile').hidden=!profileImage;document.getElementById('h4rf-feedback-clear').hidden=!feedbackImage;feedbackStatus.textContent=feedbackImage?'Gambar feedback sudah dipilih.':'';charCount.textContent=review.value.length+' / 500';},onRestore:data=>{if(data.resume){openH4ReviewForm();message('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.');}}});
+  feedbackDraft.restore();
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const reviewCode = code.value.trim().toUpperCase();
@@ -9152,6 +9151,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const existingReview = await reviewRef.get();
       if (existingReview.exists) throw new Error('review-code-invalid');
       await reviewRef.set(payload);
+      feedbackDraft?.clear();
       try {
         await codeRef.delete();
       } catch (codeDeleteError) {
