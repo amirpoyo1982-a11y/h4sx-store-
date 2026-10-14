@@ -1,11 +1,11 @@
-const CACHE_NAME = 'h4sx-pwa-20261015-reply-custom-profile-v121';
+const CACHE_NAME = 'h4sx-pwa-20261015-reply-logo-upload-v122';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
   './app.js?v=reply-custom-position-20261015',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
-  './review-media.js?v=reply-custom-position-20261015',
+  './review-media.js?v=reply-logo-upload-20261015',
   './review-submit-client.js?v=moderation-20261014',
   './manifest.webmanifest'
 ];

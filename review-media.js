@@ -1,7 +1,7 @@
 /* Shared camera upload and tab-local draft recovery for review forms. */
 (function(root){
   'use strict';
-  async function compressFile(file,maxSide=900,quality=.72){
+  async function compressFile(file,maxSide=900,quality=.72,format='image/jpeg'){
     if(!file||!file.type?.startsWith('image/'))throw Error('Pilih fail gambar yang sah.');
     if(file.size>20*1024*1024)throw Error('Gambar terlalu besar. Maksimum 20MB.');
     let source,objectUrl;
@@ -13,7 +13,7 @@
       const width=source.width||source.naturalWidth,height=source.height||source.naturalHeight;
       if(!width||!height)throw Error('Gambar tidak sah.');
       const scale=Math.min(1,maxSide/Math.max(width,height));const canvas=root.document.createElement('canvas');canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale));
-      try{canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);return canvas.toDataURL('image/jpeg',quality);}finally{canvas.width=canvas.height=0;}
+      try{canvas.getContext('2d').drawImage(source,0,0,canvas.width,canvas.height);return canvas.toDataURL(format==='image/png'?'image/png':'image/jpeg',quality);}finally{canvas.width=canvas.height=0;}
     }finally{source?.close?.();if(objectUrl)root.URL.revokeObjectURL(objectUrl);}
   }
   function createDraft(options){

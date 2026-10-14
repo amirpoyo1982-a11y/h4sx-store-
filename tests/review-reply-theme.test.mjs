@@ -37,3 +37,13 @@ test('pasted live wallpaper is detected even when an old saved type is image or 
  assert.equal(replyBackgroundType('auto','https://example.com/a.gif'),'image');
  assert.equal(normalizeReplyAppearance({backgroundType:'none',backgroundUrl:''}).backgroundType,'none');
 });
+
+import {readReplyImageFile} from '../review/reply-theme.js';
+test('folder upload preserves small GIF animation and resizes large transparent logos',async()=>{
+ let compressed=0;const original='data:image/gif;base64,AAAA';
+ assert.equal(await readReplyImageFile({type:'image/gif',size:1000},{read:async()=>original,compress:async()=>{compressed++;}}),original);assert.equal(compressed,0);
+ const result=await readReplyImageFile({type:'image/png',size:2000000},{read:async()=>{throw Error('Must resize large file');},compress:async(file,side,quality,format)=>{assert.equal(side,256);assert.equal(format,'image/png');return 'data:image/png;base64,AAAA';}});
+ assert.equal(result,'data:image/png;base64,AAAA');
+ await assert.rejects(readReplyImageFile({type:'image/gif',size:500000},{read(){},compress(){}}),/GIF terlalu besar/);
+ await assert.rejects(readReplyImageFile({type:'image/svg+xml',size:100},{read(){},compress(){}}),/Pilih gambar/);
+});

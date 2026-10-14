@@ -25,3 +25,12 @@ export function replyBackgroundType(type,url){
  try{if(/\.(mp4|webm)$/i.test(new URL(url).pathname))return 'video';}catch{}
  return type==='video'?'video':'image';
 }
+
+export async function readReplyImageFile(file,{read,compress}){
+ if(!file||!/^image\/(gif|png|jpeg|webp)$/.test(file.type))throw Error('Pilih gambar PNG, JPG, WebP atau GIF.');
+ if(file.size>20*1024*1024)throw Error('Gambar terlalu besar. Maksimum 20MB.');
+ if(file.type==='image/gif'&&file.size>400000)throw Error('GIF terlalu besar. Maksimum 400KB; guna link untuk GIF lebih besar.');
+ const value=file.size<=400000?await read(file):await compress(file,256,.8,file.type==='image/jpeg'?'image/jpeg':'image/png');
+ if(!replyMediaUrl(value))throw Error('Gambar tidak dapat diproses. Cuba gambar lain.');
+ return value;
+}
