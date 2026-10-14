@@ -13,15 +13,15 @@
       let settled=false;
       const finish=(error,token)=>{if(settled)return;settled=true;clearTimeout(timer);error?reject(error):resolve(token);};
       const timer=setTimeout(()=>finish(Error('Pengesahan belum selesai. Jika kotak Cloudflare muncul, lengkapkan pengesahan dan cuba lagi.')),60000);
-      try{widget=root.turnstile.render(box,{sitekey:'0x4AAAAAAECCSulruVRqWTEI',size:'normal',appearance:'always',execution:'render',action,retry:'never',callback:token=>finish(null,token),'error-callback':code=>{finish(Error('Pengesahan Cloudflare gagal ('+String(code||'unknown')+'). Cuba lagi atau semak sambungan internet.'));return true;},'expired-callback':()=>finish(Error('Pengesahan tamat. Cuba lagi.')),'timeout-callback':()=>finish(Error('Masa pengesahan Cloudflare tamat. Cuba lagi.'))});}
+      try{widget=root.turnstile.render(box,{sitekey:'0x4AAAAAAECCSulruVRqWTEI',size:root.innerWidth<380?'compact':'normal',appearance:'always',execution:'render',action,retry:'never',callback:token=>finish(null,token),'error-callback':code=>{finish(Error('Pengesahan Cloudflare gagal ('+String(code||'unknown')+'). Cuba lagi atau semak sambungan internet.'));return true;},'expired-callback':()=>finish(Error('Pengesahan tamat. Cuba lagi.')),'timeout-callback':()=>finish(Error('Masa pengesahan Cloudflare tamat. Cuba lagi.'))});}
       catch(error){finish(error);}
     });
   }
-  async function send(payload,{token,adminToken,anchor}={},report=false){
+  async function send(payload,{token,adminToken,anchor}={},report=false,edit=false){
     if(active)throw Error('Ulasan sedang dihantar. Tunggu sebentar.');active=true;
-    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const captchaToken=token||await requestReviewToken(report?'report_review':'review_submit',anchor);const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let response;try{response=await fetch(report?'/api/review-report':'/api/review-submit',{method:'POST',headers,signal:controller.signal,body:JSON.stringify(report?{...payload,token:captchaToken}:{submission:payload,token:captchaToken})});}finally{clearTimeout(timer);}const result=await response.json();if(!response.ok){const error=Error(result.error||'Gagal menghantar. Cuba lagi.');if(response.status===409&&!report)error.code='review-code-invalid';error.retryAfter=result.retryAfter;throw error;}return result;}
+    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const captchaToken=token||await requestReviewToken(edit?'review_edit':report?'report_review':'review_submit',anchor);const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let response;try{response=await fetch(edit?'/api/review-edit':report?'/api/review-report':'/api/review-submit',{method:'POST',headers,signal:controller.signal,body:JSON.stringify(report||edit?{...payload,token:captchaToken}:{submission:payload,token:captchaToken})});}finally{clearTimeout(timer);}const result=await response.json();if(!response.ok){const error=Error(result.error||'Gagal menghantar. Cuba lagi.');if(response.status===409&&!report&&!edit)error.code='review-code-invalid';error.retryAfter=result.retryAfter;throw error;}return result;}
     catch(error){if(error.name==='AbortError')throw Error('Pelayan mengambil masa terlalu lama. Semak status ulasan sebelum cuba semula.');throw error;}
     finally{active=false;if(widget!==null){try{root.turnstile?.remove(widget);}catch(_){}widget=null;}}
   }
-  root.H4ReviewSubmit={submit:(payload,options)=>send(payload,options),report:(payload,options)=>send(payload,options,true)};
+  root.H4ReviewSubmit={submit:(payload,options)=>send(payload,options),report:(payload,options)=>send(payload,options,true),edit:(payload,options)=>send(payload,options,false,true)};
 })(window);

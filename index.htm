@@ -64,8 +64,9 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=report-moderation-20261014">
+  <link rel="stylesheet" href="styles.css?v=customer-edit-20261014">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
+  <link rel="stylesheet" href="/review-edit.css?v=customer-edit-20261014">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -438,7 +439,7 @@
             </details>
             <div class="h4rf-feedback"><span><i class="fa-solid fa-image"></i> Gambar feedback <em>(pilihan)</em></span><input id="h4rf-feedback-file" type="file" accept="image/*" hidden><input id="h4rf-feedback-camera-file" type="file" accept="image/*" capture="environment" hidden><button type="button" id="h4rf-feedback-camera"><i class="fa-solid fa-camera"></i> Ambil gambar</button><button type="button" id="h4rf-feedback-pick"><i class="fa-solid fa-images"></i> Pilih galeri</button><button type="button" id="h4rf-feedback-clear" hidden><i class="fa-solid fa-trash"></i> Buang</button><small id="h4rf-feedback-status"></small></div>
           </section>
-          <div class="h4rf-submit-wrap"><span><i class="fa-solid fa-shield-heart"></i> Ulasan anda akan disemak sebelum dipaparkan.</span><button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button></div>
+          <div class="h4rf-submit-wrap"><span><i class="fa-solid fa-shield-heart"></i> Ulasan anda akan disemak sebelum dipaparkan.</span><button type="button" data-customer-review-edit>Edit ulasan saya · 10 minit</button><button class="h4rf-submit" id="h4rf-submit" type="submit"><i class="fa-solid fa-paper-plane"></i> Hantar Ulasan</button></div>
         </form>
       </section>
       <div class="h4rf-success-overlay" id="h4rf-success" hidden>
@@ -450,7 +451,7 @@
           <p id="h4rf-success-copy">Ulasan anda sudah disimpan. Tekan “Lihat ulasan” jika mahu membukanya di H4SX Review.</p>
           <div class="h4rf-success-actions">
             <a id="h4rf-success-view" href="https://www.h4sxmy.xyz/review">Lihat ulasan <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
-            <button id="h4rf-success-dismiss" type="button">Tutup</button>
+            <button type="button" data-customer-review-edit>Edit ulasan saya</button><button id="h4rf-success-dismiss" type="button">Tutup</button>
           </div>
         </section>
       </div>
@@ -1082,9 +1083,10 @@
 <div id="toasts"></div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
 <script defer src="review-media.js?v=camera-feedback-20261014"></script>
-<script defer src="review-submit-client.js?v=report-moderation-20261014"></script>
-<script defer src="app.js?v=report-moderation-20261014"></script>
+<script defer src="review-submit-client.js?v=customer-edit-20261014"></script>
+<script defer src="app.js?v=customer-edit-20261014"></script>
 
+<script defer src="/review-edit-client.js?v=customer-edit-20261014"></script>
 </body>
 </html>
 

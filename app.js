@@ -8900,7 +8900,7 @@ function showH4ReviewSuccess(reviewId,pending=false) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
   document.getElementById('h4rf-success-title').textContent=pending?'Ulasan diterima!':'Ulasan berjaya dihantar!';
-  document.getElementById('h4rf-success-copy').textContent=pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.';
+  document.getElementById('h4rf-success-copy').textContent=pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit. Anda boleh edit menggunakan kod asal dalam browser ini selama 10 minit selepas penghantaran.':'Ulasan anda sudah dipaparkan di H4SX Review.';
   document.getElementById('h4rf-success-view').href = pending?'https://www.h4sxmy.xyz/review':'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
