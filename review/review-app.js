@@ -25,79 +25,11 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const realtimeDb = getDatabase(app, "https://h4sx-6712c-default-rtdb.asia-southeast1.firebasedatabase.app");
   const auth = getAuth(app);
   const TURNSTILE_SITE_KEY = '0x4AAAAAAECCSulruVRqWTEI';
-  let reportTurnstileWidgetId = null;
-  let reportTurnstileResolver = null;
-  let reportTurnstileRejecter = null;
-  let reportTurnstileTimeout = null;
 
   async function verifyReviewTurnstile(submission) {
     return window.H4ReviewSubmit.submit(submission,{adminToken:adminOk()&&!customerPreviewMode?await currentUser.getIdToken():null});
   }
 
-  function resetReportTurnstile() {
-    if (reportTurnstileTimeout) { clearTimeout(reportTurnstileTimeout); reportTurnstileTimeout = null; }
-    reportTurnstileResolver = null;
-    reportTurnstileRejecter = null;
-    if (reportTurnstileWidgetId !== null && window.turnstile?.reset) {
-      try { window.turnstile.reset(reportTurnstileWidgetId); } catch (_) {}
-    }
-  }
-  function ensureReportTurnstile() {
-    let container = document.getElementById('report-turnstile');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'report-turnstile';
-      container.setAttribute('aria-hidden', 'true');
-      container.style.cssText = 'position:fixed;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;';
-      document.body.appendChild(container);
-    }
-    if (!window.turnstile) throw new Error('report-turnstile-not-ready');
-    if (reportTurnstileWidgetId !== null) return reportTurnstileWidgetId;
-    reportTurnstileWidgetId = window.turnstile.render(container, {
-      sitekey: TURNSTILE_SITE_KEY,
-      size: 'invisible',
-      execution: 'execute',
-      action: 'report_review',
-      callback(token) {
-        if (reportTurnstileTimeout) clearTimeout(reportTurnstileTimeout);
-        reportTurnstileTimeout = null;
-        const resolve = reportTurnstileResolver;
-        reportTurnstileResolver = null;
-        reportTurnstileRejecter = null;
-        resolve?.(token);
-      },
-      'expired-callback'() { reportTurnstileRejecter?.(new Error('report-turnstile-expired')); },
-      'error-callback'() { reportTurnstileRejecter?.(new Error('report-turnstile-error')); }
-    });
-    return reportTurnstileWidgetId;
-  }
-  async function verifyReportTurnstile(reviewId) {
-    const widgetId = ensureReportTurnstile();
-    resetReportTurnstile();
-    try {
-      const token = await new Promise((resolve, reject) => {
-        reportTurnstileResolver = resolve;
-        reportTurnstileRejecter = reject;
-        reportTurnstileTimeout = setTimeout(() => reject(new Error('report-turnstile-timeout')), 18000);
-        try { window.turnstile.execute(widgetId); }
-        catch (_) { reject(new Error('report-turnstile-execute')); }
-      });
-      const response = await fetch('/api/review-verify-turnstile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, action: 'report_review', reviewId })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (response.status === 429) {
-        const error = new Error('report-rate-limit');
-        error.retryAfter = Number(result.retryAfter || response.headers.get('Retry-After') || 0);
-        throw error;
-      }
-      if (!response.ok) throw new Error('report-turnstile-rejected');
-    } finally {
-      resetReportTurnstile();
-    }
-  }
 
   // -- Light Dark mode ---------------------------------
   const btnThemeToggle = document.getElementById("btnThemeToggle");
@@ -3760,7 +3692,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
             </div>
           </div>
           ${adaFeedbackImg?`<button class="btn-see-feedback" type="button">See image</button>`:""}
-          <button class="review-report-btn" type="button" data-nosnippet><i class="fa-regular fa-flag"></i> Lapor</button>
+          ${data.reportDisabled===true&&!adminOk()?'':'<button class="review-report-btn" type="button" data-nosnippet><i class="fa-regular fa-flag"></i> '+(data.reportDisabled===true?'Ujian lapor (admin)':'Lapor')+'</button>'}
           ${adaBalasan?`
           <button class="admin-reply-view-toggle" type="button" aria-expanded="false">Balasan admin ↓</button>
           <div class="admin-reply-box">
@@ -4253,7 +4185,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
   function openWaitingReviews(){
     if(!mintaAdmin())return;
-    document.getElementById('adminReviewSearch').value='';document.getElementById('adminReviewRatingFilter').value='all';document.getElementById('adminReviewStatusFilter').value='pending';document.getElementById('adminReviewSort').value='newest';selectedAdminReviews.clear();
+    document.getElementById('adminReviewSearch').value='';document.getElementById('adminReviewRatingFilter').value='all';document.getElementById('adminReviewStatusFilter').value='needsReview';document.getElementById('adminReviewSort').value='newest';selectedAdminReviews.clear();
     openAdminReviewCenter('moderation');loadQueuedReviews();
   }
   let queuedReviews=[],queueLoading=false;
@@ -4261,7 +4193,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   async function moderationRequest(payload){const response=await fetch('/api/review-moderation',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await currentUser.getIdToken()},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw Error(data.error||'Moderasi gagal.');return data;}
   async function loadQueuedReviews(){
     if(!adminOk()||queueLoading)return;queueLoading=true;
-    try{const data=await moderationRequest({action:'list'});if(!adminOk()){queuedReviews=[];return;}queuedReviews=data.records||[];document.getElementById('adminPendingShortcutCount').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length;document.getElementById('adminModerationEnabled').checked=data.enabled;document.getElementById('adminModerationBackendStatus').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length+' ulasan menunggu · '+(data.cronConfigured?'Secret cron sudah tersedia. Pastikan jadual cron-job.org diaktifkan.':'Auto-lulus belum dijadualkan: tambah REVIEW_CRON_SECRET dan aktifkan cron-job.org.');renderAdminModeration();renderAdminDashboard();}
+    try{const data=await moderationRequest({action:'list'});if(!adminOk()){queuedReviews=[];return;}queuedReviews=data.records||[];document.getElementById('adminPendingShortcutCount').textContent=adminReviewRecords().filter(r=>r.moderationStatus==='pending'||(r.moderationStatus==='hidden'&&r.autoHiddenByReports===true)).length;document.getElementById('adminModerationEnabled').checked=data.enabled;document.getElementById('adminModerationBackendStatus').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length+' ulasan menunggu · '+(data.cronConfigured?'Secret cron sudah tersedia. Pastikan jadual cron-job.org diaktifkan.':'Auto-lulus belum dijadualkan: tambah REVIEW_CRON_SECRET dan aktifkan cron-job.org.');renderAdminModeration();renderAdminDashboard();}
     catch(error){document.getElementById('adminModerationBackendStatus').textContent=error.message;}finally{queueLoading=false;}
   }
   document.getElementById('adminModerationEnabled').addEventListener('change',async event=>{const control=event.target;control.disabled=true;try{await moderationRequest({action:'configure',enabled:control.checked});showToast('Tetapan moderasi disimpan.','success');}catch(error){control.checked=!control.checked;showToast(error.message,'error');}finally{control.disabled=false;}});
@@ -4313,7 +4245,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const rated = allDocs.filter(r => r.hideRating !== true);
     const total=allDocs.length, average=rated.length?(rated.reduce((s,r)=>s+clampBintang(r.bintang),0)/rated.length).toFixed(1):"0.0", start=new Date();start.setHours(0,0,0,0);
     const today=allDocs.filter(r=>reviewRecordTime(r.diciptaPada)>=start.getTime()).length,low=allDocs.filter(r=>r.hideRating!==true && clampBintang(r.bintang)<=2).length,unreplied=allDocs.filter(r=>!r.balasanAdmin?.trim()).length,hidden=allDocs.filter(r=>adminReviewStatus(r)!=="published").length;
-    Object.entries({adminDashTotal:total,adminDashAverage:average,adminDashToday:today,adminDashLow:low,adminDashUnreplied:unreplied,adminDashHidden:hidden,adminModerationCount:queuedReviews.filter(r=>r.moderationStatus==='pending').length}).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v;});
+    Object.entries({adminDashTotal:total,adminDashAverage:average,adminDashToday:today,adminDashLow:low,adminDashUnreplied:unreplied,adminDashHidden:hidden,adminModerationCount:adminReviewRecords().filter(r=>r.moderationStatus==='pending'||(r.moderationStatus==='hidden'&&r.autoHiddenByReports===true)).length}).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=v;});
     const starLabel=document.getElementById("adminDashStars");if(starLabel)starLabel.textContent=rated.length?`${average} daripada 5 bintang`:"Belum ada rating";
     const distribution=document.getElementById("adminRatingDistribution");if(distribution)distribution.innerHTML=[5,4,3,2,1].map(star=>{const count=rated.filter(r=>clampBintang(r.bintang)===star).length,pct=rated.length?Math.round(count/rated.length*100):0;return `<div class="admin-rating-row"><span>${star} bintang</span><i><b style="width:${pct}%"></b></i><strong>${count}</strong></div>`;}).join("");
     const lows=allDocs.filter(r=>clampBintang(r.bintang)<=2).slice(0,5),lowList=document.getElementById("adminLowReviewList");if(lowList)lowList.innerHTML=lows.length?lows.map(r=>`<div class="admin-mini-item"><div><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span>${escapeHtml(String(r.ulasan||"Rating sahaja").slice(0,70))}</span></div><b>${clampBintang(r.bintang)} bintang</b></div>`).join(""):adminEmpty("Tiada rating rendah.","fa-circle-check");
@@ -4323,18 +4255,19 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const search=(document.getElementById("adminReviewSearch")?.value||"").trim().toLowerCase(),rating=document.getElementById("adminReviewRatingFilter")?.value||"all",status=document.getElementById("adminReviewStatusFilter")?.value||"all",sort=document.getElementById("adminReviewSort")?.value||"newest";
     let list=adminReviewRecords().filter(r=>!search||[r.id,r.nama,r.ulasan,r.badgeText,r.balasanAdmin].some(v=>String(v||"").toLowerCase().includes(search)));
     if(rating!=="all")list=list.filter(r=>rating==="12"?clampBintang(r.bintang)<=2:clampBintang(r.bintang)===Number(rating));
-    if(status!=="all")list=list.filter(r=>status==="featured"?r.featured===true:status==="unreplied"?!r.balasanAdmin?.trim():status==="image"?!!r.feedbackImg:adminReviewStatus(r)===status);
+    if(status!=="all")list=list.filter(r=>status==="needsReview"?(adminReviewStatus(r)==="pending"||(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true)):status==="reported"?(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true):status==="featured"?r.featured===true:status==="unreplied"?!r.balasanAdmin?.trim():status==="image"?!!r.feedbackImg:adminReviewStatus(r)===status);
     list.sort((a,b)=>sort==="oldest"?reviewRecordTime(a.diciptaPada)-reviewRecordTime(b.diciptaPada):sort==="highest"?clampBintang(b.bintang)-clampBintang(a.bintang):sort==="lowest"?clampBintang(a.bintang)-clampBintang(b.bintang):reviewRecordTime(b.diciptaPada)-reviewRecordTime(a.diciptaPada));return list;
   }
   function moderationActionsMarkup(r){
     if(adminReviewStatus(r)==="trash")return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="restore"><i class="fa-solid fa-rotate-left"></i> Pulihkan</button><button type="button" class="danger" data-admin-row-action="delete">Padam kekal + backup</button></div>';
 
-    if(!r.pendingSource)return "<div class=\"admin-moderation-actions\"><button data-admin-row-action=\"publish\" title=\"Luluskan / Terbit\"><i class=\"fa-solid fa-eye\"></i></button><button data-admin-row-action=\"hide\" title=\"Sorok\"><i class=\"fa-solid fa-eye-slash\"></i></button><button data-admin-row-action=\"feature\" title=\"Pilihan\"><i class=\"fa-solid fa-star\"></i></button><button data-admin-row-action=\"reply\" title=\"Balas\"><i class=\"fa-solid fa-reply\"></i></button><button data-admin-row-action=\"open\" title=\"Buka\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></button><button class=\"danger\" data-admin-row-action=\"trash\" title=\"Tong sampah — tanpa download\" data-trash-control=\"true\"><i class=\"fa-solid fa-trash-can\"></i> Tong sampah</button><button class=\"danger\" data-admin-row-action=\"delete\" title=\"Padam kekal + backup\"><i class=\"fa-solid fa-trash\"></i></button></div>";
+    const reportControls='<details class="admin-report-controls"><summary>Laporan'+(r.reportDisabled?' · ditutup':'')+'</summary><button type="button" data-admin-row-action="restoreReported">Munculkan semula</button><button type="button" data-admin-row-action="'+(r.reportDisabled?'reportsEnable':'reportsDisable')+'">'+(r.reportDisabled?'Aktifkan Lapor':'Tutup Lapor')+'</button></details>';
+    if(!r.pendingSource)return "<div class=\"admin-moderation-actions\"><button data-admin-row-action=\"publish\" title=\"Luluskan / Terbit\"><i class=\"fa-solid fa-eye\"></i></button><button data-admin-row-action=\"hide\" title=\"Sorok\"><i class=\"fa-solid fa-eye-slash\"></i></button><button data-admin-row-action=\"feature\" title=\"Pilihan\"><i class=\"fa-solid fa-star\"></i></button><button data-admin-row-action=\"reply\" title=\"Balas\"><i class=\"fa-solid fa-reply\"></i></button><button data-admin-row-action=\"open\" title=\"Buka\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></button><button class=\"danger\" data-admin-row-action=\"trash\" title=\"Tong sampah — tanpa download\" data-trash-control=\"true\"><i class=\"fa-solid fa-trash-can\"></i> Tong sampah</button><button class=\"danger\" data-admin-row-action=\"delete\" title=\"Padam kekal + backup\"><i class=\"fa-solid fa-trash\"></i></button>"+reportControls+"</div>";
     return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="publish" class="approval-accept"><i class="fa-solid fa-check" aria-hidden="true"></i> Luluskan</button><button type="button" data-admin-row-action="reject" class="approval-reject"><i class="fa-solid fa-ban" aria-hidden="true"></i> Tolak</button>'+(r.hasFeedbackImage?'<button type="button" data-admin-row-action="detail"><i class="fa-solid fa-image" aria-hidden="true"></i> Gambar</button>':'')+'<button type="button" data-admin-row-action="trash"><i class="fa-solid fa-trash-can"></i> Tong sampah</button><button type="button" data-admin-row-action="delete" class="danger" title="Backup dan padam rekod"><i class="fa-solid fa-trash" aria-hidden="true"></i> Padam</button></div>';
   }
   function renderAdminModeration(){
     const box=document.getElementById("adminModerationList");if(!box)return;const list=getAdminModerationList();document.getElementById("adminModerationResult").textContent=`${list.length} rekod`;
-    box.innerHTML=list.length?list.map(r=>{const status=adminReviewStatus(r),score=clampBintang(r.bintang),hasImg=!!r.profileImg,avatar=hasImg?`<img src="${escapeHtml(r.profileImg)}" alt="">`:escapeHtml(r.emojiProfil||String(r.nama||"P")[0]);return `<article class="admin-moderation-item${score<=2?" is-low":""}${status!=="published"?" is-hidden":""}${status==="pending"?" is-pending":""}" data-admin-review-id="${r.id}"><input class="admin-review-checkbox" type="checkbox" ${selectedAdminReviews.has(r.id)?"checked":""}><div class="admin-moderation-avatar${hasImg?" has-profile-image":""}" style="background:${r.warnaProfil||warnaAuto(r.nama||"P")}">${avatar}</div><div class="admin-moderation-copy"><header><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span class="admin-status-chip ${status}">${status==="pending"?"Menunggu semakan":status==="rejected"?"Ditolak":status==="trash"?"Tong sampah":status}</span>${r.featured?'<span class="admin-status-chip featured">pilihan</span>':''}</header><p>${escapeHtml(r.ulasan||"Rating sahaja")}</p><small>${score} bintang · ${reviewDateText(r)}${r.autoApproveAt?" · auto-lulus "+new Date(r.autoApproveAt).toLocaleTimeString("ms-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"}):""}${r.balasanAdmin?.trim()?" · sudah dibalas":" · belum dibalas"}</small></div>${moderationActionsMarkup(r)}</article>`;}).join(""):adminEmpty("Tiada ulasan sepadan dengan penapis.");updateAdminSelectionCount();
+    box.innerHTML=list.length?list.map(r=>{const status=adminReviewStatus(r),score=clampBintang(r.bintang),hasImg=!!r.profileImg,avatar=hasImg?`<img src="${escapeHtml(r.profileImg)}" alt="">`:escapeHtml(r.emojiProfil||String(r.nama||"P")[0]);return `<article class="admin-moderation-item${score<=2?" is-low":""}${status!=="published"?" is-hidden":""}${status==="pending"?" is-pending":""}" data-admin-review-id="${r.id}"><input class="admin-review-checkbox" type="checkbox" ${selectedAdminReviews.has(r.id)?"checked":""}><div class="admin-moderation-avatar${hasImg?" has-profile-image":""}" style="background:${r.warnaProfil||warnaAuto(r.nama||"P")}">${avatar}</div><div class="admin-moderation-copy"><header><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span class="admin-status-chip ${status}">${status==="pending"?"Menunggu semakan":status==="rejected"?"Ditolak":status==="trash"?"Tong sampah":status}</span>${r.autoHiddenByReports?'<span class="admin-status-chip reported">Auto-sorok · '+Number(r.reportCount||0)+' pelapor</span>':''}${r.reportDisabled?'<span class="admin-status-chip">Lapor ditutup</span>':''}${r.featured?'<span class="admin-status-chip featured">pilihan</span>':''}</header><p>${escapeHtml(r.ulasan||"Rating sahaja")}</p><small>${score} bintang · ${reviewDateText(r)}${r.autoApproveAt?" · auto-lulus "+new Date(r.autoApproveAt).toLocaleTimeString("ms-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"}):""}${r.balasanAdmin?.trim()?" · sudah dibalas":" · belum dibalas"}</small></div>${moderationActionsMarkup(r)}</article>`;}).join(""):adminEmpty("Tiada ulasan sepadan dengan penapis.");updateAdminSelectionCount();
   }
   function updateAdminSelectionCount(){const el=document.getElementById("adminSelectedReviewsCount");if(el)el.textContent=`${selectedAdminReviews.size} dipilih`;}
   ["adminReviewSearch","adminReviewRatingFilter","adminReviewStatusFilter","adminReviewSort"].forEach(id=>document.getElementById(id)?.addEventListener(id==="adminReviewSearch"?"input":"change",renderAdminModeration));
@@ -4347,6 +4280,9 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if(records.some(r=>adminReviewStatus(r)==="trash")&&!['restore','delete','detail'].includes(action)){showToast('Pulihkan ulasan daripada tong sampah dahulu.','info');return;}
     if(['trash','restore'].includes(action)){
       try{await Promise.all(records.map(r=>moderationRequest({action,id:r.id})));await logAdminAction(action,ids.join(','),`${ids.length} ulasan`);selectedAdminReviews.clear();await reloadAdminReviews();showToast(action==='trash'?'Ulasan dipindahkan ke tong sampah. Tiada backup dimuat turun.':'Ulasan dipulihkan. Ulasan menunggu diberi 30 minit semakan semula.','success');}catch(error){showToast(error.message,'error');}return;
+    }
+    if(['restoreReported','reportsEnable','reportsDisable'].includes(action)){
+      try{await Promise.all(records.map(r=>moderationRequest({action,id:r.id})));await logAdminAction(action,ids.join(','),'Kawalan laporan');await reloadAdminReviews();showToast(action==='restoreReported'?'Ulasan dipaparkan semula. Report baharu dikira dari semakan ini.':action==='reportsDisable'?'Butang Lapor ditutup untuk ulasan ini.':'Butang Lapor diaktifkan semula.','success');}catch(error){showToast(error.message,'error');}return;
     }
     if(action==='detail'){try{const data=await moderationRequest({action:'detail',id:ids[0]});if(data.feedbackImg)openFeedbackImage(data.feedbackImg);else showToast('Tiada gambar feedback.','info');}catch(error){showToast(error.message,'error');}return;}
     if(records.some(r=>r.pendingSource)&&['open','feature','reply'].includes(action)){showToast('Luluskan ulasan dahulu untuk guna fungsi ini.','info');return;}
@@ -4363,7 +4299,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     }
     if(action==="delete"){if(!confirm(`Backup dan padam ${ids.length} ulasan secara kekal?`))return;const backup=await Promise.all(records.map(async record=>record.pendingSource?{...record,...(await moderationRequest({action:"detail",id:record.id})).review}:record));downloadAdminData(backup,`h4sx-review-backup-${Date.now()}.json`);}
     let reply="";if(action==="reply"){reply=prompt("Balasan untuk ulasan dipilih:",getAdminReplyTemplate(records[0]?.bintang,records[0]?.nama));if(!reply?.trim())return;}
-    try{await Promise.all(records.map(r=>r.pendingSource?moderationRequest({action:action==="publish"?"approve":action==="hide"||action==="reject"?"reject":action,id:r.id}):action==="delete"?moderationRequest({action:"delete",id:r.id}):action==="publish"?updateDoc(doc(db,"ratings",r.id),{moderationStatus:"published",moderatedAt:serverTimestamp()}):(action==="hide"||action==="reject")?updateDoc(doc(db,"ratings",r.id),{moderationStatus:action==="reject"?"rejected":"hidden",moderatedAt:serverTimestamp()}):action==="feature"?updateDoc(doc(db,"ratings",r.id),{featured:!r.featured,featuredAt:serverTimestamp()}):updateDoc(doc(db,"ratings",r.id),{balasanAdmin:reply.trim(),balasanPada:serverTimestamp(),balasanDibuang:false})));await logAdminAction(action,ids.join(","),`${ids.length} ulasan`);selectedAdminReviews.clear();await loadQueuedReviews();showToast("Tindakan admin berjaya disimpan.","success");}catch(err){console.error(err);showToast("Tindakan gagal. Semak Firestore Rules admin.","error");}
+    try{await Promise.all(records.map(r=>r.pendingSource?moderationRequest({action:action==="publish"?"approve":action==="hide"||action==="reject"?"reject":action,id:r.id}):action==="delete"?moderationRequest({action:"delete",id:r.id}):action==="publish"?(r.autoHiddenByReports?moderationRequest({action:"restoreReported",id:r.id}):updateDoc(doc(db,"ratings",r.id),{moderationStatus:"published",moderatedAt:serverTimestamp()})):(action==="hide"||action==="reject")?updateDoc(doc(db,"ratings",r.id),{moderationStatus:action==="reject"?"rejected":"hidden",moderatedAt:serverTimestamp()}):action==="feature"?updateDoc(doc(db,"ratings",r.id),{featured:!r.featured,featuredAt:serverTimestamp()}):updateDoc(doc(db,"ratings",r.id),{balasanAdmin:reply.trim(),balasanPada:serverTimestamp(),balasanDibuang:false})));await logAdminAction(action,ids.join(","),`${ids.length} ulasan`);selectedAdminReviews.clear();await loadQueuedReviews();showToast("Tindakan admin berjaya disimpan.","success");}catch(err){console.error(err);showToast("Tindakan gagal. Semak Firestore Rules admin.","error");}
   }
 
   const REPORT_HISTORY_KEY="h4sx_review_report_history_v2";
@@ -4376,12 +4312,11 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   function saveReportHistory(list){try{localStorage.setItem(REPORT_HISTORY_KEY,JSON.stringify(list.slice(-20)));}catch(_){}}
   function reportWaitMessage(reviewId){const now=Date.now(),history=readReportHistory(),latest=history.at(-1),same=history.find(item=>item.reviewId===reviewId),recent=history.filter(item=>now-item.time<REPORT_BURST_WINDOW_MS);if(same&&now-same.time<REPORT_SAME_REVIEW_COOLDOWN_MS)return"Ulasan ini sudah anda laporkan. Admin akan menyemaknya.";if(latest&&now-latest.time<REPORT_GLOBAL_COOLDOWN_MS)return`Tunggu ${Math.ceil((REPORT_GLOBAL_COOLDOWN_MS-(now-latest.time))/1000)} saat sebelum membuat laporan lain.`;if(recent.length>=REPORT_BURST_LIMIT)return"Had 3 laporan sejam telah dicapai. Cuba semula kemudian.";return"";}
   function cleanReportReason(value){return String(value||"").normalize("NFKC").replace(/[\u0000-\u001F\u007F]/g," ").replace(/\s+/g," ").trim().slice(0,300);}
-  async function reportDocumentId(reviewId){const source=getVisitorId()+"|"+reviewId;try{const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(source));return"r-"+[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,"0")).join("").slice(0,48);}catch(_){const hex=[...source].map(char=>char.charCodeAt(0).toString(16).padStart(2,"0")).join("");return"r-"+(hex+"0".repeat(48)).slice(0,48);}}
   async function openReviewReport(reviewId,reviewName,button){
     reviewId=String(reviewId||"").trim().slice(0,160);
     if(reportSubmitBusy)return showToast("Laporan sedang diproses. Tunggu sebentar.","error");
     if(!reviewId||!allDocs.some(item=>item.id===reviewId))return showToast("Ulasan ini tidak sah atau sudah tiada.","error");
-    const waitMessage=reportWaitMessage(reviewId);if(waitMessage)return showToast(waitMessage,"error");
+    const waitMessage=adminOk()?"":reportWaitMessage(reviewId);if(waitMessage)return showToast(waitMessage,"error");
     const input=prompt(`Kenapa anda mahu laporkan ulasan ${reviewName}?\n\nTerangkan dengan ringkas (8–300 aksara). Jangan masukkan nombor telefon, link atau maklumat peribadi.`);
     if(input===null)return;
     const reason=cleanReportReason(input);
@@ -4391,17 +4326,15 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if(/(.)\1{7,}/i.test(reason))return showToast("Sebab laporan kelihatan seperti spam.","error");
     reportSubmitBusy=true;if(button){button.disabled=true;button.innerHTML='<i class="fa-solid fa-shield-halved"></i> Semak...';}
     try{
-      await verifyReportTurnstile(reviewId);
-      const deviceId=getVisitorId().slice(0,100),documentId=await reportDocumentId(reviewId);
-      await setDoc(doc(db,"review_reports",documentId),{reviewId,reviewName:String(reviewName||"Ulasan").trim().slice(0,80),reason,status:"open",deviceId,createdAt:serverTimestamp()});
-      const history=readReportHistory();history.push({reviewId,time:Date.now()});saveReportHistory(history);
-      showToast("Laporan berjaya dihantar sekali kepada admin.","success");
+      const result=await window.H4ReviewSubmit.report({reviewId,reason,deviceId:getVisitorId()},{anchor:button,adminToken:currentUser?await currentUser.getIdToken():null});
+      if(!result.adminTest){const history=readReportHistory();history.push({reviewId,time:Date.now()});saveReportHistory(history);}
+      showToast(result.adminTest?"Laporan ujian admin dihantar. Tiada had; tidak dikira untuk auto-sorok.":"Laporan diterima untuk semakan admin.","success");
     }catch(err){
       console.error("Review report gagal:",err);
       if(err?.message==="report-rate-limit"){const mins=Math.max(1,Math.ceil(Number(err.retryAfter||60)/60));showToast(`Terlalu banyak cubaan. Cuba lagi dalam ${mins} minit.`,"error");}
       else if(String(err?.message||"").startsWith("report-turnstile-"))showToast("Pengesahan keselamatan gagal. Cuba semula sebentar lagi.","error");
       else if(err?.code==="permission-denied")showToast("Laporan ini sudah dihantar atau ditolak oleh sistem keselamatan.","error");
-      else showToast("Laporan gagal dihantar. Semak sambungan dan cuba semula.","error");
+      else showToast(err.message||"Laporan gagal dihantar. Cuba semula.","error");
     }finally{reportSubmitBusy=false;if(button){button.disabled=false;button.innerHTML='<i class="fa-regular fa-flag"></i> Lapor';}}
   }
   function startAdminCenterStreams(){
@@ -4418,7 +4351,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   function renderAdminReports(){const box=document.getElementById("adminReportList");if(!box)return;const status=document.getElementById("adminReportStatusFilter")?.value||"open",list=adminReports.filter(r=>status==="all"||r.status===status);document.getElementById("adminReportCount").textContent=adminReports.filter(r=>r.status!=="resolved").length;box.innerHTML=list.length?list.map(r=>`<article class="admin-report-item" data-report-id="${r.id}"><div><h4>${escapeHtml(r.reviewName||"Ulasan")}</h4><p>${escapeHtml(r.reason||"Tiada sebab")}</p><small>${reviewDateAndAge(r.createdAt)} · ${escapeHtml(r.status||"open")}</small></div><div class="admin-report-actions"><button data-report-action="open" data-review-id="${escapeHtml(r.reviewId||"")}">Buka</button><button data-report-action="resolve">Selesai</button><button data-report-action="delete">Padam</button></div></article>`).join(""):adminEmpty("Tiada laporan untuk status ini.","fa-flag");}
   document.getElementById("adminReportStatusFilter")?.addEventListener("change",renderAdminReports);
-  document.getElementById("adminReportList")?.addEventListener("click",async e=>{const btn=e.target.closest("[data-report-action]"),row=e.target.closest("[data-report-id]");if(!btn||!row)return;try{if(btn.dataset.reportAction==="open"){switchAdminCenterTab("moderation");document.getElementById("adminReviewSearch").value=btn.dataset.reviewId;renderAdminModeration();return;}if(btn.dataset.reportAction==="resolve")await updateDoc(doc(db,"review_reports",row.dataset.reportId),{status:"resolved",resolvedAt:serverTimestamp()});if(btn.dataset.reportAction==="delete")await deleteDoc(doc(db,"review_reports",row.dataset.reportId));await logAdminAction(`report_${btn.dataset.reportAction}`,row.dataset.reportId,"Laporan pengunjung");}catch(err){console.error(err);showToast("Gagal kemaskini laporan.","error");}});
+  document.getElementById("adminReportList")?.addEventListener("click",async e=>{const btn=e.target.closest("[data-report-action]"),row=e.target.closest("[data-report-id]");if(!btn||!row)return;try{if(btn.dataset.reportAction==="open"){switchAdminCenterTab("moderation");document.getElementById("adminReviewStatusFilter").value="all";document.getElementById("adminReviewRatingFilter").value="all";document.getElementById("adminReviewSearch").value=btn.dataset.reviewId;renderAdminModeration();return;}if(btn.dataset.reportAction==="resolve")await updateDoc(doc(db,"review_reports",row.dataset.reportId),{status:"resolved",resolvedAt:serverTimestamp()});if(btn.dataset.reportAction==="delete")await deleteDoc(doc(db,"review_reports",row.dataset.reportId));await logAdminAction(`report_${btn.dataset.reportAction}`,row.dataset.reportId,"Laporan pengunjung");}catch(err){console.error(err);showToast("Gagal kemaskini laporan.","error");}});
 
   function getAdminCodes(){return availableReviewCodeDocs().map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.id.localeCompare(b.id));}
   function renderAdminCodes(){const box=document.getElementById("adminCenterCodeList");if(!box)return;const codes=getAdminCodes(),usedCount=usedReviewCodeIds.size,search=(document.getElementById("adminCenterCodeSearch")?.value||"").toLowerCase(),filtered=codes.filter(c=>c.id.toLowerCase().includes(search));document.getElementById("adminCenterAvailableCodes").textContent=codes.length;document.getElementById("adminCenterUsedCodes").textContent=usedCount;document.getElementById("adminCenterTotalCodes").textContent=codes.length+usedCount;box.innerHTML=filtered.length?filtered.map(c=>`<div class="admin-center-code-item"><div><strong>${escapeHtml(c.id)}</strong><small>${c.expiresAt?`Luput ${reviewDateAndAge(c.expiresAt,false)}`:"Tiada luput"}</small></div><button data-admin-copy-code="${escapeHtml(c.id)}"><i class="fa-solid fa-copy"></i></button></div>`).join(""):adminEmpty("Tiada kod tersedia.");}

@@ -520,6 +520,11 @@
     .review-turnstile { min-height: 1px; }
     #h4rf-turnstile { display:flex; justify-content:center; margin:10px 0; }
     .admin-status-chip.trash { background:#fff0e9; color:#a13e18; }
+    .admin-status-chip.reported { background:#fff0e9; color:#a13e18; }
+    .admin-report-controls { position:relative; font-size:11px; color:#087fae; }
+    .admin-report-controls summary { cursor:pointer; padding:8px 10px; border:1px solid #bce8ff; border-radius:8px; list-style:none; }
+    .admin-report-controls[open] { padding:8px; border:1px solid #bce8ff; border-radius:10px; background:#fff; }
+    .admin-report-controls button { display:block; width:auto!important; margin-top:6px; }
     .admin-moderation-actions button[data-admin-row-action="trash"] { width:auto; padding:8px 10px; }
     .review-turnstile-note { display: block; margin: 5px 0 7px; color: var(--text-dim); font-size: 10px; font-weight: 600; text-align: center; }
     .review-turnstile-note a { color: var(--accent); font-weight: 800; }

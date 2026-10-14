@@ -85,19 +85,13 @@ export default async function handler(req, res) {
       return res.status(403).json({ success: false, error: 'Pengesahan keselamatan gagal.' });
     }
     const fingerprint = clientFingerprint(req);
+    // Report limits are committed with the report in Firestore by /api/review-report.
     const generalLimit = action === 'report_review'
-      ? consumeRateLimit('report:' + fingerprint, 3, 60 * 60 * 1000)
+      ? {allowed:true}
       : consumeRateLimit('review:' + fingerprint, 5, 30 * 60 * 1000);
     if (!generalLimit.allowed) {
       res.setHeader('Retry-After', String(generalLimit.retryAfter));
       return res.status(429).json({ success: false, error: 'Terlalu banyak cubaan.', retryAfter: generalLimit.retryAfter });
-    }
-    if (action === 'report_review') {
-      const sameReview = consumeRateLimit('report-review:' + fingerprint + ':' + reviewId, 1, 10 * 60 * 1000);
-      if (!sameReview.allowed) {
-        res.setHeader('Retry-After', String(sameReview.retryAfter));
-        return res.status(429).json({ success: false, error: 'Ulasan ini baru sahaja dilaporkan.', retryAfter: sameReview.retryAfter });
-      }
     }
     return res.status(200).json({ success: true });
   } catch (error) {

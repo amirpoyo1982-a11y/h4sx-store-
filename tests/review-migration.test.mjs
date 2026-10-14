@@ -21,7 +21,7 @@ test('rating, VIP badge, GIF check, suggestions and admin controls are retained'
   for(const id of ['pilihBintang','badgeTextInput','badgeEmojiInput','customCheckEnabledToggle','customCheckGifInput','nameColorEnabledToggle','adminReviewStatusFilter','btnBuildOwnReview','btnReviewAdminSessions','reviewPromoShell'])assert(html.includes('id="'+id+'"'),id);
   for(const feature of ['function badgeStyle','function customCheckMarkup','function nameStyle','function simpanBadgePayload','function simpanCustomerPayload','function renderReviews'])assert(app.includes(feature),feature);
   assert(app.includes('projectId:"h4sx-6712c"'));
-  assert(app.includes("fetch('/api/review-verify-turnstile'"));
+  assert(app.includes("window.H4ReviewSubmit.report"));
   assert(app.includes("fetch('/review/index.htm'"));
   assert(app.includes('const publicRecords ='));
   assert(!app.includes('reg.unregister()'));

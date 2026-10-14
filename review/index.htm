@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=trash-captcha-20261014-r2">
+  <link rel="stylesheet" href="/review/review-style.css?v=report-moderation-20261014">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -219,7 +219,7 @@
         <div class="admin-moderation-policy" style="padding:12px;border:1px solid #bce8ff;border-radius:12px;margin-bottom:12px;font-size:13px;line-height:1.6"><label><input id="adminModerationEnabled" type="checkbox" checked> Semak ulasan baharu sebelum dipaparkan</label><p>Ulasan yang belum diluluskan atau ditolak akan auto-lulus selepas 30 minit. Ulasan lama kekal dipaparkan.</p><small id="adminModerationBackendStatus" role="status"></small></div><div class="admin-moderation-toolbar">
           <label class="admin-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="adminReviewSearch" type="search" placeholder="Cari nama, teks atau role..."></label>
           <select id="adminReviewRatingFilter"><option value="all">Semua rating</option><option value="5">5 bintang</option><option value="4">4 bintang</option><option value="3">3 bintang</option><option value="12">1-2 bintang</option></select>
-          <select id="adminReviewStatusFilter"><option value="all">Semua status</option><option value="pending">Menunggu semakan</option><option value="published">Diterbitkan</option><option value="hidden">Disorok</option><option value="trash">Tong sampah</option><option value="rejected">Ditolak</option><option value="featured">Pilihan</option><option value="unreplied">Belum dibalas</option><option value="image">Ada gambar</option></select>
+          <select id="adminReviewStatusFilter"><option value="all">Semua status</option><option value="needsReview">Perlu semakan</option><option value="pending">Menunggu semakan</option><option value="reported">Auto-sorok laporan</option><option value="published">Diterbitkan</option><option value="hidden">Disorok</option><option value="trash">Tong sampah</option><option value="rejected">Ditolak</option><option value="featured">Pilihan</option><option value="unreplied">Belum dibalas</option><option value="image">Ada gambar</option></select>
           <select id="adminReviewSort"><option value="newest">Terbaru</option><option value="oldest">Terlama</option><option value="highest">Rating tinggi</option><option value="lowest">Rating rendah</option></select>
         </div>
         <div class="admin-bulk-toolbar">
@@ -985,8 +985,8 @@
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
 <script src="/review-media.js?v=camera-feedback-20261014"></script>
-<script src="/review-submit-client.js?v=trash-captcha-20261014-r2"></script>
-<script type="module" src="/review/review-app.js?v=trash-captcha-20261014-r2"></script>
+<script src="/review-submit-client.js?v=report-moderation-20261014"></script>
+<script type="module" src="/review/review-app.js?v=report-moderation-20261014"></script>
 </body>
 </html>
 
