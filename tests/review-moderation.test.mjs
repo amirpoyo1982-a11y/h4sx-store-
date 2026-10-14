@@ -42,6 +42,19 @@ test('public submission fails closed if captcha fails',async()=>{
 });
 
 test('Store loads its captcha SDK before posting the review to the protected backend',async()=>{
-  const vm=await import('node:vm');const {readFileSync}=await import('node:fs');let callbacks,requested,loaded=false;const root={document:{getElementById:()=>({before(){}}),createElement:()=>({}),querySelector:()=>null},loadPromoTurnstile:async()=>{loaded=true;root.turnstile={render:(box,options)=>{callbacks=options;return 0;},reset(){},execute(){callbacks.callback('CAPTCHA_TOKEN');}}}};
-  const ctx={window:root,document:root.document,Date,setTimeout,clearTimeout,fetch:async(url,options)=>{requested={url,options};return {ok:true,json:async()=>({success:true,status:'pending'})};}};vm.runInNewContext(readFileSync(new URL('../review-submit-client.js',import.meta.url),'utf8'),ctx);const result=await root.H4ReviewSubmit.submit(input);assert(loaded);assert.equal(result.status,'pending');assert.equal(requested.url,'/api/review-submit');assert.equal(JSON.parse(requested.options.body).token,'CAPTCHA_TOKEN');
+  const vm=await import('node:vm');const {readFileSync}=await import('node:fs');let callbacks,requested,loaded=false;const root={document:{getElementById:()=>({before(){},removeAttribute(){}}),createElement:()=>({removeAttribute(){}}),querySelector:()=>null},loadPromoTurnstile:async()=>{loaded=true;root.turnstile={render:(box,options)=>{callbacks=options;queueMicrotask(()=>options.callback('CAPTCHA_TOKEN'));return 0;},reset(){},execute(){callbacks.callback('CAPTCHA_TOKEN');}}}};
+  const ctx={window:root,document:root.document,Date,setTimeout,clearTimeout,queueMicrotask,AbortController,fetch:async(url,options)=>{requested={url,options};return {ok:true,json:async()=>({success:true,status:'pending'})};}};vm.runInNewContext(readFileSync(new URL('../review-submit-client.js',import.meta.url),'utf8'),ctx);const result=await root.H4ReviewSubmit.submit(input);assert(loaded);assert.equal(result.status,'pending');assert.equal(requested.url,'/api/review-submit');assert.equal(JSON.parse(requested.options.body).token,'CAPTCHA_TOKEN');
+});
+
+test('trash stops scheduled and stale approvals; restoring pending starts a new 30 minutes',async()=>{
+ const d=database({'review_codes/H4SX-TEST1':{}});await stageSubmission(d.firestore,input,false,1000);await decideSubmission(d.firestore,'review_H4SX-TEST1','trash',2000);
+ assert.equal(await decideSubmission(d.firestore,'review_H4SX-TEST1','approve',WAIT_MS+1000,true),'skip');assert.equal((await approveDue(d.firestore,WAIT_MS+1000)).approved,0);assert(!d.values.has('ratings/review_H4SX-TEST1'));
+ await assert.rejects(decideSubmission(d.firestore,'review_H4SX-TEST1','approve',3000),/Pulihkan/);
+ await decideSubmission(d.firestore,'review_H4SX-TEST1','restore',WAIT_MS+2000);assert.equal(d.values.get('review_pending/review_H4SX-TEST1').autoApproveAt,2*WAIT_MS+2000);assert.equal((await approveDue(d.firestore,2*WAIT_MS+1999)).approved,0);assert.equal((await approveDue(d.firestore,2*WAIT_MS+2000)).approved,1);
+});
+test('trash after a cron race hides public record, restores it, and permanent deletion removes both copies',async()=>{
+ const d=database({'review_codes/H4SX-TEST1':{}});await stageSubmission(d.firestore,input,false,1000);await approveDue(d.firestore,WAIT_MS+1000);await decideSubmission(d.firestore,'review_H4SX-TEST1','trash',WAIT_MS+2000);assert.equal(d.values.get('ratings/review_H4SX-TEST1').moderationStatus,'trash');await decideSubmission(d.firestore,'review_H4SX-TEST1','restore',WAIT_MS+3000);assert.equal(d.values.get('ratings/review_H4SX-TEST1').moderationStatus,'published');await decideSubmission(d.firestore,'review_H4SX-TEST1','delete');assert(!d.values.has('ratings/review_H4SX-TEST1'));assert(!d.values.has('review_pending/review_H4SX-TEST1'));
+});
+test('legacy hidden review restores to hidden without losing its content',async()=>{
+ const d=database({'ratings/legacy':{nama:'Lama',moderationStatus:'hidden',ulasan:'Original'}});await decideSubmission(d.firestore,'legacy','trash');await decideSubmission(d.firestore,'legacy','trash');await decideSubmission(d.firestore,'legacy','restore');assert.equal(d.values.get('ratings/legacy').moderationStatus,'hidden');assert.equal(d.values.get('ratings/legacy').ulasan,'Original');
 });

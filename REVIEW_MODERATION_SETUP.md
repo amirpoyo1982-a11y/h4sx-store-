@@ -32,3 +32,6 @@ Ini adalah perubahan pada blok sedia ada, bukan blok tambahan kedua: syarat allo
 review_pending mesti tidak mempunyai public read/write. Semakan REST tanpa login semasa pembangunan mengesahkan ratings HTTP 200 dan review_pending HTTP 403. Jika Rules anda berubah kemudian, kekalkan koleksi ini private. Pending/rejected dibaca oleh admin melalui API yang mengesahkan UID admin, bukan browser Firestore.
 
 Tiada jadual berbayar Vercel atau Firebase Cloud Scheduler ditambah. Permintaan cron dan Firebase menggunakan kuota hosting/database sedia ada. Jangan aktifkan satu lagi jadual Vercel untuk URL sama.
+# Tong sampah
+
+Dalam Moderasi, gunakan **Tong sampah** untuk menyembunyikan ulasan tanpa memuat turun backup. Pilih penapis **Tong sampah** dan tekan **Pulihkan** untuk mengembalikannya. Ulasan menunggu yang dipulihkan diberi 30 minit semakan baharu. Cron tidak meluluskan ulasan dalam tong sampah. **Padam kekal + backup** kekal sebagai tindakan berasingan.

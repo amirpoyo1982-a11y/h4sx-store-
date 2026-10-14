@@ -5397,7 +5397,7 @@ function reviewRecordTime(value) {
   return Number.isFinite(time) ? time : 0;
 }
 function publicReviewRecords(list = []) {
-  return list.filter(item => !['hidden', 'rejected', 'pending'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
+  return list.filter(item => !['hidden', 'rejected', 'pending', 'trash'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
 }
 function orderedReviewShowcaseRecords(list = []) {
   return publicReviewRecords(list).slice().sort((a, b) => {

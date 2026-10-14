@@ -1,16 +1,25 @@
 (function(root){
-  let widget=null,resolveToken,rejectToken,timer;
+  let widget=null,active=false;
   async function requestReviewToken(){
     if(!root.turnstile&&typeof root.loadPromoTurnstile==='function')await root.loadPromoTurnstile();
     if(!root.turnstile&&!document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')){const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;document.head.appendChild(script);}
     const started=Date.now();while(!root.turnstile){if(Date.now()-started>8000)throw Error('Cloudflare belum bersedia. Cuba lagi.');await new Promise(r=>setTimeout(r,100));}
-    if(widget===null){const box=document.createElement('div');box.id='h4rf-turnstile';document.getElementById('h4rf-submit').before(box);widget=root.turnstile.render(box,{sitekey:'0x4AAAAAAECCSulruVRqWTEI',size:'invisible',execution:'execute',action:'review_submit',callback:token=>{clearTimeout(timer);const done=resolveToken;resolveToken=rejectToken=null;done?.(token);},'error-callback':()=>rejectToken?.(Error('Pengesahan keselamatan gagal.')),'expired-callback':()=>rejectToken?.(Error('Pengesahan tamat. Cuba lagi.'))});}
-    root.turnstile.reset(widget);
-    return new Promise((resolve,reject)=>{resolveToken=resolve;rejectToken=reject;timer=setTimeout(()=>reject(Error('Pengesahan mengambil masa terlalu lama. Cuba lagi.')),18000);try{root.turnstile.execute(widget);}catch(error){reject(error);}});
+    let box=document.getElementById('h4rf-turnstile');
+    if(!box){box=document.createElement('div');box.id='h4rf-turnstile';(document.getElementById('butangHantar')||document.getElementById('h4rf-submit')).before(box);}
+    box.removeAttribute('aria-hidden');
+    return new Promise((resolve,reject)=>{
+      let settled=false;
+      const finish=(error,token)=>{if(settled)return;settled=true;clearTimeout(timer);error?reject(error):resolve(token);};
+      const timer=setTimeout(()=>finish(Error('Pengesahan belum selesai. Jika kotak Cloudflare muncul, lengkapkan pengesahan dan cuba lagi.')),60000);
+      try{widget=root.turnstile.render(box,{sitekey:'0x4AAAAAAECCSulruVRqWTEI',size:'normal',appearance:'always',execution:'render',action:'review_submit',retry:'never',callback:token=>finish(null,token),'error-callback':code=>{finish(Error('Pengesahan Cloudflare gagal ('+String(code||'unknown')+'). Cuba lagi atau semak sambungan internet.'));return true;},'expired-callback':()=>finish(Error('Pengesahan tamat. Cuba lagi.')),'timeout-callback':()=>finish(Error('Masa pengesahan Cloudflare tamat. Cuba lagi.'))});}
+      catch(error){finish(error);}
+    });
   }
   async function submit(submission,{token,adminToken}={}){
-    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const response=await fetch('/api/review-submit',{method:'POST',headers,body:JSON.stringify({submission,token:token||await requestReviewToken()})});const result=await response.json();if(!response.ok){const error=Error(result.error||'Gagal hantar ulasan. Cuba lagi.');if(response.status===409)error.code='review-code-invalid';throw error;}return result;}
-    finally{clearTimeout(timer);resolveToken=rejectToken=null;if(widget!==null){try{root.turnstile?.reset(widget);}catch(_){}}}
+    if(active)throw Error('Ulasan sedang dihantar. Tunggu sebentar.');active=true;
+    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const captchaToken=token||await requestReviewToken();const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);let response;try{response=await fetch('/api/review-submit',{method:'POST',headers,signal:controller.signal,body:JSON.stringify({submission,token:captchaToken})});}finally{clearTimeout(timer);}const result=await response.json();if(!response.ok){const error=Error(result.error||'Gagal hantar ulasan. Cuba lagi.');if(response.status===409)error.code='review-code-invalid';throw error;}return result;}
+    catch(error){if(error.name==='AbortError')throw Error('Pelayan mengambil masa terlalu lama. Semak status ulasan sebelum cuba semula.');throw error;}
+    finally{active=false;if(widget!==null){try{root.turnstile?.remove(widget);}catch(_){}widget=null;}}
   }
   root.H4ReviewSubmit={submit};
 })(window);
