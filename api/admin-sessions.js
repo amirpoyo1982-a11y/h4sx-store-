@@ -5,7 +5,7 @@ const PROJECT_ID = 'h4sx-6712c';
 const ORIGINS = new Set(['https://www.h4sxmy.xyz', 'https://h4sxmy.xyz', 'https://review.h4sxmy.xyz']);
 let services;
 
-async function firebaseServices() {
+export async function firebaseServices() {
   if (services) return services;
   let account;
   try {

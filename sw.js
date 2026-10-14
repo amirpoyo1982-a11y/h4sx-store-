@@ -1,11 +1,12 @@
-const CACHE_NAME = 'h4sx-pwa-20261014-privacy-v108';
+const CACHE_NAME = 'h4sx-pwa-20261014-moderation-v109';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
-  './app.js?v=profile-privacy-20261014',
+  './app.js?v=moderation-20261014',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './review-media.js?v=camera-feedback-20261014',
+  './review-submit-client.js?v=moderation-20261014',
   './manifest.webmanifest'
 ];
 

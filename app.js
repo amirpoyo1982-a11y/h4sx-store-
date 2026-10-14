@@ -5397,7 +5397,7 @@ function reviewRecordTime(value) {
   return Number.isFinite(time) ? time : 0;
 }
 function publicReviewRecords(list = []) {
-  return list.filter(item => !['hidden', 'rejected'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
+  return list.filter(item => !['hidden', 'rejected', 'pending'].includes(String(item.moderationStatus || 'published').trim().toLowerCase()));
 }
 function orderedReviewShowcaseRecords(list = []) {
   return publicReviewRecords(list).slice().sort((a, b) => {
@@ -8896,10 +8896,12 @@ window.openH4ReviewForm = openH4ReviewForm;
 window.closeH4ReviewForm = closeH4ReviewForm;
 window.returnToH4sxHome = returnToH4sxHome;
 
-function showH4ReviewSuccess(reviewId) {
+function showH4ReviewSuccess(reviewId,pending=false) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
-  document.getElementById('h4rf-success-view').href = 'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
+  document.getElementById('h4rf-success-title').textContent=pending?'Ulasan diterima!':'Ulasan berjaya dihantar!';
+  document.getElementById('h4rf-success-copy').textContent=pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.';
+  document.getElementById('h4rf-success-view').href = pending?'https://www.h4sxmy.xyz/review':'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
   document.getElementById('h4rf-success-dismiss').focus();
@@ -9142,41 +9144,18 @@ document.addEventListener('DOMContentLoaded', () => {
     submit.disabled = true;
     submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar...';
     try {
-      const codeRef = db.collection('review_codes').doc(reviewCode);
-      const codeSnapshot = await codeRef.get();
-      if (!codeSnapshot.exists) throw new Error('review-code-invalid');
-      const payload = { nama: customerName, bintang: Number(rating.value), ulasan: reviewText || 'Tiada ulasan ditinggalkan.', diciptaPada: firebase.firestore.FieldValue.serverTimestamp() };
-      if (selectedColor) payload.warnaProfil = selectedColor;
-      if (selectedEmoji) payload.emojiProfil = selectedEmoji;
-      if (profileImage) payload.profileImg = profileImage;
-      if (feedbackImage) payload.feedbackImg = feedbackImage;
-      const reviewRef = db.collection('ratings').doc('review_' + reviewCode);
-      const existingReview = await reviewRef.get();
-      if (existingReview.exists) throw new Error('review-code-invalid');
-      await reviewRef.set(payload);
+      const payload={nama:customerName,bintang:Number(rating.value),ulasan:reviewText||'Tiada ulasan ditinggalkan.',cadanganDigunakan:suggestionUsed};
+      if(selectedColor)payload.warnaProfil=selectedColor;if(selectedEmoji)payload.emojiProfil=selectedEmoji;if(profileImage)payload.profileImg=profileImage;if(feedbackImage)payload.feedbackImg=feedbackImage;
+      const submissionResult=await window.H4ReviewSubmit.submit({code:reviewCode,review:payload});
       feedbackDraft?.clear();
-      try {
-        await codeRef.delete();
-      } catch (codeDeleteError) {
-        // Firestore rules keep review-code deletion for admins only. The stable review ID
-        // still prevents this code from producing a second rating.
-        console.warn('Kod review perlu dibersihkan oleh admin:', codeDeleteError);
-      }
-      try {
-        const [replySettings, latestReview] = await Promise.all([db.collection('config').doc('review_admin').get(), reviewRef.get()]);
-        const replyData = latestReview.data() || {};
-        if ((!replySettings.exists || replySettings.data().autoReply !== false) && replyData.autoReplyDisabled !== true && replyData.balasanDibuang !== true && !String(replyData.balasanAdmin || '').trim()) {
-        await reviewRef.update({ balasanAdmin: `Terima kasih, ${customerName}! Kami hargai ulasan anda kepada H4SX STORE. Sokongan anda membantu kami terus memperbaiki servis.`, balasanPada: firebase.firestore.FieldValue.serverTimestamp(), ...(suggestionUsed ? { cdg: true, cadanganDigunakan: true } : {}) });
-        }
-      } catch (replyError) { console.warn('Auto reply review tidak dapat disimpan.', replyError); }
       form.reset();
       selectedColor = null; selectedEmoji = null; profileImage = null; feedbackImage = null; suggestionUsed = false;
       avatar.classList.remove('has-image'); avatarImg.src = ''; feedbackStatus.textContent = ''; charCount.textContent = '0 / 500';
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
-      message('Ulasan berjaya dihantar. Terima kasih!');
-      showH4ReviewSuccess(reviewRef.id);
+      message(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin.':'Ulasan berjaya diterbitkan. Terima kasih!');
+      showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending');
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
       if (error.message === 'review-code-invalid') {
