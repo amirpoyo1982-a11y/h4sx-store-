@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20261014-report-auto-hide-test-v119';
+const CACHE_NAME = 'h4sx-pwa-20261014-moderation-controls-v120';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
