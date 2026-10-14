@@ -42,3 +42,5 @@
 .reply-direct-editor :is(p,small){font-size:12px;line-height:1.5}
 .reply-direct-editor input[type=checkbox]{width:18px;height:18px;flex:0 0 18px}
 .reply-direct-editor input:not([type=checkbox]){width:100%;box-sizing:border-box;min-width:0;padding:9px;border:1px solid #badce8;border-radius:8px;background:white;color:#173d56;font:inherit}
+
+.toast .toast-message{flex:1;min-width:0}.toast .toast-count{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:24px;padding:2px 5px;border-radius:7px;background:rgba(0,0,0,.06);font-size:11px;font-weight:800;line-height:1.4}

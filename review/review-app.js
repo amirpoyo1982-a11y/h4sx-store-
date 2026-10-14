@@ -2693,14 +2693,20 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   // ── Toast ─────────────────────────────────────────────────────
   const toastStack = document.getElementById("toastStack");
   function showToast(msg, type="info") {
-    const icons = {success:"✅",error:"❌",info:"ℹ️"};
-    const t = document.createElement("div");
-    t.className = `toast ${type}`;
-    t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${escapeHtml(msg)}</span>`;
-    toastStack.appendChild(t);
-    const rm = () => { t.classList.add("out"); t.addEventListener("animationend",()=>t.remove(),{once:true}); };
-    const tid = setTimeout(rm, 3800);
-    t.addEventListener("click", ()=>{ clearTimeout(tid); rm(); });
+    const entries=showToast.entries ||= new Map(),key=JSON.stringify([type,String(msg)]);
+    let entry=entries.get(key);
+    if(entry&&!entry.element.isConnected){clearTimeout(entry.timer);clearTimeout(entry.exitTimer);entries.delete(key);entry=null;}
+    if(!entry){
+      const icons={success:"✅",error:"❌",info:"ℹ️"},element=document.createElement("div");
+      element.className=`toast ${type}`;
+      element.innerHTML=`<span class="toast-icon">${icons[type]||icons.info}</span><span class="toast-message">${escapeHtml(msg)}</span><span class="toast-count" aria-label="Bilangan notis">1x</span>`;
+      entry={element,count:0,timer:null,exitTimer:null};entries.set(key,entry);toastStack.appendChild(element);
+      const remove=()=>{clearTimeout(entry.timer);entry.element.classList.add('out');clearTimeout(entry.exitTimer);entry.exitTimer=setTimeout(()=>{entry.element.remove();if(entries.get(key)===entry)entries.delete(key);},220);};
+      entry.remove=remove;element.addEventListener('click',remove);
+    }
+    clearTimeout(entry.timer);clearTimeout(entry.exitTimer);entry.element.classList.remove('out');
+    entry.count++;entry.element.querySelector('.toast-count').textContent=entry.count+'x';
+    entry.timer=setTimeout(entry.remove,3800);
   }
 
   window.shareH4sxReview = async function shareH4sxReview() {
