@@ -8899,8 +8899,8 @@ window.returnToH4sxHome = returnToH4sxHome;
 function showH4ReviewSuccess(reviewId,pending=false) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
-  document.getElementById('h4rf-success-title').textContent='Ulasan berjaya dihantar!';
-  document.getElementById('h4rf-success-copy').textContent='Terima kasih kerana berkongsi pengalaman anda dengan H4SX STORE.';
+  document.getElementById('h4rf-success-title').textContent=pending?'Ulasan diterima!':'Ulasan berjaya dihantar!';
+  document.getElementById('h4rf-success-copy').textContent=pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.';
   document.getElementById('h4rf-success-view').href = pending?'https://www.h4sxmy.xyz/review':'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
@@ -9154,7 +9154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
-      message('Ulasan berjaya dihantar. Terima kasih!');
+      message(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin.':'Ulasan berjaya diterbitkan. Terima kasih!');
       showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending');
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
