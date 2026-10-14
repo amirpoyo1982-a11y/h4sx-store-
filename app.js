@@ -9158,12 +9158,12 @@ document.addEventListener('DOMContentLoaded', () => {
       showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending');
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
-      if (error.message === 'review-code-invalid') {
+      if (error.message === 'review-code-invalid'||error.code==='review-code-invalid') {
         message('Kod pengesahan tidak sah atau telah digunakan.', true);
       } else if (String(error?.code || '').includes('permission-denied')) {
         message('Firebase Rules menolak ulasan. Semak rules ratings dan cuba lagi.', true);
       } else {
-        message(`Gagal hantar ulasan${error?.code ? ` (${error.code})` : ''}. Cuba lagi.`, true);
+        message(error.message||'Gagal hantar ulasan. Cuba lagi.',true);
       }
     } finally {
       submit.disabled = false;

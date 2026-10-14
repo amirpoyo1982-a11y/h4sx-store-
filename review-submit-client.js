@@ -9,7 +9,7 @@
     return new Promise((resolve,reject)=>{resolveToken=resolve;rejectToken=reject;timer=setTimeout(()=>reject(Error('Pengesahan mengambil masa terlalu lama. Cuba lagi.')),18000);try{root.turnstile.execute(widget);}catch(error){reject(error);}});
   }
   async function submit(submission,{token,adminToken}={}){
-    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const response=await fetch('/api/review-submit',{method:'POST',headers,body:JSON.stringify({submission,token:token||await requestReviewToken()})});const result=await response.json();if(!response.ok)throw Error(result.error||'Gagal hantar ulasan. Cuba lagi.');return result;}
+    try{const headers={'Content-Type':'application/json'};if(adminToken)headers.Authorization='Bearer '+adminToken;const response=await fetch('/api/review-submit',{method:'POST',headers,body:JSON.stringify({submission,token:token||await requestReviewToken()})});const result=await response.json();if(!response.ok){const error=Error(result.error||'Gagal hantar ulasan. Cuba lagi.');if(response.status===409)error.code='review-code-invalid';throw error;}return result;}
     finally{clearTimeout(timer);resolveToken=rejectToken=null;if(widget!==null){try{root.turnstile?.reset(widget);}catch(_){}}}
   }
   root.H4ReviewSubmit={submit};
