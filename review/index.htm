@@ -900,8 +900,8 @@
         <div class="form-group feedback-image-picker">
           <label for="feedbackImageInput">🖼️ Gambar Feedback <span style="font-weight:400;text-transform:none;letter-spacing:0">(pilihan)</span></label>
           <div class="feedback-image-control">
-            <input type="file" id="feedbackImageInput" accept="image/*">
-            <button class="feedback-image-btn" id="btnPickFeedbackImage" type="button">Pilih Gambar</button>
+            <input type="file" id="feedbackImageInput" accept="image/*"><input type="file" id="feedbackCameraInput" accept="image/*" capture="environment"><button class="feedback-image-btn" id="btnCameraFeedbackImage" type="button"><i class="fa-solid fa-camera" aria-hidden="true"></i> Ambil gambar</button>
+            <button class="feedback-image-btn" id="btnPickFeedbackImage" type="button">Pilih galeri</button>
             <button class="feedback-image-clear" id="btnClearFeedbackImage" type="button">Buang</button>
           </div>
           <div class="feedback-image-preview" id="feedbackImagePreview"></div>
@@ -983,7 +983,7 @@
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
 <script src="/review-media.js?v=camera-feedback-20261014"></script>
-<script type="module" src="/review/review-app.js?v=camera-feedback-20261014"></script>
+<script type="module" src="/review/review-app.js?v=feedback-camera-button-20261014"></script>
 </body>
 </html>
 

@@ -2889,6 +2889,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   const reviewStoryExperience = document.getElementById("reviewStoryExperience");
   const btnBuildOwnReview = document.getElementById("btnBuildOwnReview");
   const feedbackImageInput   = document.getElementById("feedbackImageInput");
+  const feedbackCameraInput = document.getElementById("feedbackCameraInput");
+  const btnCameraFeedbackImage = document.getElementById("btnCameraFeedbackImage");
   const btnPickFeedbackImage = document.getElementById("btnPickFeedbackImage");
   const btnClearFeedbackImage = document.getElementById("btnClearFeedbackImage");
   const feedbackImagePreview = document.getElementById("feedbackImagePreview");
@@ -3150,7 +3152,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   function clearFeedbackImage(showMsg=true) {
     feedbackImgB64 = null;
-    feedbackImageInput.value = "";
+    feedbackImageInput.value = "";feedbackCameraInput.value="";
     btnClearFeedbackImage.classList.remove("show");
     feedbackImagePreview.textContent = "";
     if (showMsg) showToast("Gambar feedback dibuang.", "info");
@@ -3166,13 +3168,16 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   btnPickFeedbackImage.addEventListener("click", () => window.H4ReviewMedia.pickFile(feedbackImageInput,feedbackDraft));
   btnClearFeedbackImage.addEventListener("click", () => clearFeedbackImage(true));
-  feedbackImageInput.addEventListener('change',async()=>{
-    const file=feedbackImageInput.files[0];if(!file)return;
-    feedbackImagePreview.textContent='Memproses gambar feedback...';butangHantar.disabled=true;btnPickFeedbackImage.disabled=true;
+  btnCameraFeedbackImage.addEventListener('click',()=>window.H4ReviewMedia.pickFile(feedbackCameraInput,feedbackDraft));
+  const processFeedbackInput=async input=>{
+    const file=input.files[0];if(!file)return;
+    feedbackImagePreview.textContent='Memproses gambar feedback...';butangHantar.disabled=true;btnPickFeedbackImage.disabled=true;btnCameraFeedbackImage.disabled=true;
     try{setFeedbackImage(await window.H4ReviewMedia.compressFile(file,900,.72));}
     catch(error){feedbackImagePreview.textContent=error.message;showToast(error.message,'error');}
-    finally{butangHantar.disabled=suggestionTyping;btnPickFeedbackImage.disabled=false;feedbackImageInput.value='';}
-  });
+    finally{butangHantar.disabled=suggestionTyping;btnPickFeedbackImage.disabled=false;btnCameraFeedbackImage.disabled=false;input.value='';}
+  };
+  feedbackImageInput.addEventListener('change',()=>processFeedbackInput(feedbackImageInput));
+  feedbackCameraInput.addEventListener('change',()=>processFeedbackInput(feedbackCameraInput));
   btnCloseFeedbackImage.addEventListener("click", closeFeedbackImage);
   feedbackImageModal.addEventListener("click", e => {
     if (e.target === feedbackImageModal) closeFeedbackImage();

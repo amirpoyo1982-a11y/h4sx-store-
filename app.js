@@ -8928,6 +8928,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileFile = document.getElementById('h4rf-profile-file');
   const profileUrl = document.getElementById('h4rf-profile-url');
   const feedbackFile = document.getElementById('h4rf-feedback-file');
+  const feedbackCameraFile = document.getElementById('h4rf-feedback-camera-file');
   const feedbackStatus = document.getElementById('h4rf-feedback-status');
   const charCount = document.getElementById('h4rf-count');
   const colors = ['#2fa8e0', '#7c5cbf', '#22c47a', '#f0a500', '#e05252', '#1a4470', '#48a89e', '#d96fb0'];
@@ -8999,10 +9000,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) { message('Gagal proses gambar profil.', true); }
   };
   const applyFeedbackFile = async file => {
-    if(!file)return;feedbackStatus.textContent='Memproses gambar feedback...';submit.disabled=true;document.getElementById('h4rf-feedback-pick').disabled=true;
+    if(!file)return;feedbackStatus.textContent='Memproses gambar feedback...';submit.disabled=true;document.getElementById('h4rf-feedback-pick').disabled=true;document.getElementById('h4rf-feedback-camera').disabled=true;
     try{feedbackImage=await window.H4ReviewMedia.compressFile(file,900,.72);feedbackStatus.textContent='Gambar feedback sudah dipilih.';document.getElementById('h4rf-feedback-clear').hidden=false;feedbackDraft?.save();message('Gambar feedback dimuatkan.');}
     catch(error){feedbackStatus.textContent=error.message;message(error.message,true);}
-    finally{submit.disabled=false;document.getElementById('h4rf-feedback-pick').disabled=false;feedbackFile.value='';}
+    finally{submit.disabled=false;document.getElementById('h4rf-feedback-pick').disabled=false;document.getElementById('h4rf-feedback-camera').disabled=false;feedbackFile.value='';feedbackCameraFile.value='';}
   };
 
   colors.forEach(color => {
@@ -9073,8 +9074,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.getElementById('h4rf-feedback-pick').addEventListener('click', () => window.H4ReviewMedia.pickFile(feedbackFile,feedbackDraft));
   feedbackFile.addEventListener('change', () => applyFeedbackFile(feedbackFile.files[0]));
+  document.getElementById('h4rf-feedback-camera').addEventListener('click',()=>window.H4ReviewMedia.pickFile(feedbackCameraFile,feedbackDraft));
+  feedbackCameraFile.addEventListener('change',()=>applyFeedbackFile(feedbackCameraFile.files[0]));
   document.getElementById('h4rf-feedback-clear').addEventListener('click', () => {
-    feedbackImage = null; feedbackFile.value = ''; feedbackStatus.textContent = ''; document.getElementById('h4rf-feedback-clear').hidden = true;
+    feedbackImage = null; feedbackFile.value = ''; feedbackCameraFile.value=''; feedbackStatus.textContent = ''; document.getElementById('h4rf-feedback-clear').hidden = true;
   });
   review.addEventListener('input', () => {
     charCount.textContent = `${review.value.length} / 500`;

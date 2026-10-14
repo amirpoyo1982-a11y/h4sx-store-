@@ -28,3 +28,9 @@ test('storage quota fallback preserves text even if images cannot fit',()=>{
 test('camera picker checkpoints draft and pauses videos before launching camera; cancel does not reload',()=>{
   const ctx=setup();const calls=[],listeners={};ctx.root.document.querySelectorAll=()=>[{paused:false,pause:()=>calls.push('pause'),isConnected:true,getBoundingClientRect:()=>({width:100,height:100,bottom:200,top:100}),play:()=>{calls.push('resume');return Promise.resolve();}}];const input={addEventListener:(name,fn)=>listeners[name]=fn,removeEventListener:name=>delete listeners[name],click:()=>calls.push('camera')};ctx.api.pickFile(input,{save:()=>calls.push('save')});assert.deepEqual(calls,['save','pause','camera']);listeners.cancel();[...ctx.timers.values()].forEach(fn=>fn());assert.deepEqual(calls,['save','pause','camera','resume']);
 });
+
+test('Store and Review offer separate camera and gallery controls without submitting forms',()=>{
+  for(const [path,camera,gallery,button] of [['index.htm','h4rf-feedback-camera-file','h4rf-feedback-file','h4rf-feedback-camera'],['review/index.htm','feedbackCameraInput','feedbackImageInput','btnCameraFeedbackImage']]){
+    const html=readFileSync(new URL('../'+path,import.meta.url),'utf8');const inputs=[...html.matchAll(/<input\b[^>]*>/g)].map(match=>match[0]);const cameraInput=inputs.find(input=>input.includes('id="'+camera+'"'));const galleryInput=inputs.find(input=>input.includes('id="'+gallery+'"'));assert(cameraInput.includes('capture="environment"'));assert(cameraInput.includes('accept="image/*"'));assert(!galleryInput.includes('capture='));const btn=[...html.matchAll(/<button\b[^>]*>/g)].find(match=>match[0].includes('id="'+button+'"'))?.[0];assert(btn?.includes('type="button"'));
+  }
+});
