@@ -1478,6 +1478,7 @@ function reviewAnnouncementAction(config) {
   customerPanelModal.addEventListener('scroll', rememberCustomerProfileScroll, { passive:true });
   let removeCustomerImage = false;
   const customerImageUrl = document.getElementById('customerImageUrl');
+  const customerZoom = window.H4ReviewMedia.createProfileZoom(customerImageUrl, () => customerZoom.apply(customerAvatarPreview.querySelector('img')));
   const btnPreviewCustomerImage = document.getElementById('btnPreviewCustomerImage');
   let originalCustomerImage = null;
   let customerImageChanged = false;
@@ -1510,6 +1511,7 @@ function reviewAnnouncementAction(config) {
       customerAvatarText.style.display = '';
       showToast('Gambar tidak dapat dimuatkan. Semak link terus ke gambar.', 'error');
     };
+    customerZoom.apply(img);
     customerAvatarPreview.appendChild(img);
     img.src = src;
   }
@@ -1714,6 +1716,7 @@ function reviewAnnouncementAction(config) {
     }
     nameEmojiInput.value = data.nameEmoji || '';
     medalEmojiInput.value = data.medalEmoji || '';
+    customerZoom.set(data.profileZoom ?? 100);
     originalCustomerImage = data.profileImg || null;
     customerImageChanged = false;
     customerImageUrl.value = /^https:\/\//i.test(originalCustomerImage || '') ? originalCustomerImage : '';
@@ -1893,6 +1896,7 @@ function reviewAnnouncementAction(config) {
       reviewExpandLabel: reviewExpandLabelInput.value.trim() || 'Lihat lagi ↓',
       reviewCollapseLabel: reviewCollapseLabelInput.value.trim() || 'Tutup ↑'
     };
+    payload.profileZoom = customerZoom.get();
     if (removeCustomerImage) payload.profileImg = null;
     else if (customerImageChanged) {
       try { payload.profileImg = customerImageLink(); }
@@ -2821,6 +2825,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const n = (nama||"").trim();
     return n ? WARNA[n.length % WARNA.length] : WARNA[0];
   }
+  const formProfileZoom = window.H4ReviewMedia.createProfileZoom(avatarPreview.closest('.profile-picker-top') || avatarPreview, updatePreview);
   function updatePreview() {
     const nama  = namaPelanggan.value.trim();
     const warna = pilihanWarna || warnaAuto(nama);
@@ -2834,6 +2839,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if (previewSrc) {
       const img = document.createElement("img");
       img.className = "av-img"; img.src = previewSrc;
+      formProfileZoom.apply(img);
       avatarPreview.insertBefore(img, avatarPreview.querySelector(".av-edit-hint"));
       letter.textContent = "";
     } else {
@@ -2898,6 +2904,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     img.src = src;
   }
   function applyProfileImg(b64) {
+    formProfileZoom.set(100);
     profileImgB64 = b64; pilihanEmoji = null;
     document.querySelectorAll(".emoji-opt").forEach(o=>o.classList.remove("active"));
     btnClearImg.classList.add("show"); updatePreview();
@@ -2938,6 +2945,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     }
   }
   function clearProfileImg(showMsg=true) {
+    formProfileZoom.set(100);
     profileImgB64 = null; btnClearImg.classList.remove("show");
     fileInput.value = ""; urlGambar.value = ""; updatePreview();
     if (showMsg) showToast("Gambar profil dibuang.", "info");
@@ -3201,7 +3209,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if (!ulasanPelanggan.value.trim()) reviewSuggestionUsed = false;
   });
 
-  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-review-draft-v1',container:document.querySelector('.form-col'),fields:['kodVerification','namaPelanggan','pilihBintang','ulasanPelanggan','reviewStoryItem','reviewStoryTime','reviewStoryExperience'],isOpen:()=>true,getExtra:()=>({selectedColor:pilihanWarna,selectedEmoji:pilihanEmoji,profileImage:profileImgB64,feedbackImage:feedbackImgB64,suggestionUsed:reviewSuggestionUsed}),restoreExtra:extra=>{pilihanWarna=WARNA.includes(extra.selectedColor)?extra.selectedColor:null;pilihanEmoji=EMOJI.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImgB64=window.H4ReviewMedia.safeImage(extra.profileImage);feedbackImgB64=window.H4ReviewMedia.safeImage(extra.feedbackImage);reviewSuggestionUsed=extra.suggestionUsed===true;updatePreview();btnClearImg.classList.toggle('show',!!profileImgB64);btnClearFeedbackImage.classList.toggle('show',!!feedbackImgB64);feedbackImagePreview.textContent=feedbackImgB64?'Gambar feedback sudah dipilih.':'';charCounter.textContent=ulasanPelanggan.value.length+' / 500';},onRestore:()=>showToast('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.','info')});
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-review-draft-v1',container:document.querySelector('.form-col'),fields:['kodVerification','namaPelanggan','pilihBintang','ulasanPelanggan','reviewStoryItem','reviewStoryTime','reviewStoryExperience'],isOpen:()=>true,getExtra:()=>({selectedColor:pilihanWarna,selectedEmoji:pilihanEmoji,profileImage:profileImgB64,profileZoom:formProfileZoom.get(),feedbackImage:feedbackImgB64,suggestionUsed:reviewSuggestionUsed}),restoreExtra:extra=>{pilihanWarna=WARNA.includes(extra.selectedColor)?extra.selectedColor:null;pilihanEmoji=EMOJI.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImgB64=window.H4ReviewMedia.safeImage(extra.profileImage);formProfileZoom.set(extra.profileZoom ?? 100);feedbackImgB64=window.H4ReviewMedia.safeImage(extra.feedbackImage);reviewSuggestionUsed=extra.suggestionUsed===true;updatePreview();btnClearImg.classList.toggle('show',!!profileImgB64);btnClearFeedbackImage.classList.toggle('show',!!feedbackImgB64);feedbackImagePreview.textContent=feedbackImgB64?'Gambar feedback sudah dipilih.':'';charCounter.textContent=ulasanPelanggan.value.length+' / 500';},onRestore:()=>showToast('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.','info')});
   feedbackDraft.restore();
   // ── Submit ────────────────────────────────────────────────────
   butangHantar.addEventListener("click", async () => {
@@ -3234,7 +3242,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     document.getElementById('reviewSubmissionStatus').textContent='';
     try {
       const dataToSave={nama,bintang,ulasan:ulasan||'Tiada ulasan ditinggalkan.',cadanganDigunakan:gunaCadangan};
-      if(pilihanWarna)dataToSave.warnaProfil=pilihanWarna;if(pilihanEmoji)dataToSave.emojiProfil=pilihanEmoji;if(profileImgB64)dataToSave.profileImg=profileImgB64;if(feedbackImgB64)dataToSave.feedbackImg=feedbackImgB64;
+      if(pilihanWarna)dataToSave.warnaProfil=pilihanWarna;if(pilihanEmoji)dataToSave.emojiProfil=pilihanEmoji;if(profileImgB64){dataToSave.profileImg=profileImgB64;dataToSave.profileZoom=formProfileZoom.get();}if(feedbackImgB64)dataToSave.feedbackImg=feedbackImgB64;
       const submissionResult=await verifyReviewTurnstile({code:kod,review:dataToSave,official:adminOk()&&!customerPreviewMode&&document.getElementById('adminOfficialReview').checked});
       feedbackDraft?.clear();
       // Reset
@@ -3624,8 +3632,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const starHtml=Array.from({length:5},(_,si)=>`<span style="color:${si<score?"#f0a500":"#cde"}">${si<score?"★":"☆"}</span>`).join("");
       const avatarLoading = i < 2 ? "eager" : "lazy";
       const avatarInner=officialAdminReview
-        ? `<img src="${H4SX_LOGO_URL}" alt="H4SX Admin" loading="${avatarLoading}" decoding="async"><span class="admin-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>`
-        : hasImg ? `<img src="${escapeHtml(data.profileImg)}" alt="" loading="${avatarLoading}" decoding="async">` : escapeHtml(avatarIsi);
+        ? `<img src="${H4SX_LOGO_URL}" style="${window.H4ReviewMedia.profileZoomStyle(data.profileZoom ?? 100)}" alt="H4SX Admin" loading="${avatarLoading}" decoding="async"><span class="admin-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>`
+        : hasImg ? `<img src="${escapeHtml(data.profileImg)}" style="${window.H4ReviewMedia.profileZoomStyle(data.profileZoom ?? 100)}" alt="" loading="${avatarLoading}" decoding="async">` : escapeHtml(avatarIsi);
       
       const customBadgeStyle = badgeStyle(data);
       const customBadgeClass = "verified-badge custom-badge" + (data.badgeAnimated === false && data.badgeRainbow !== true ? "" : " is-animated") + (data.badgeRainbow === true ? " is-rainbow" : "");
@@ -3907,8 +3915,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const warna = data.warnaProfil || warnaAuto(rawNama);
     const avatarIsi = data.emojiProfil || rawNama.charAt(0).toUpperCase();
     const officialAdminReview = isOfficialAdminReview(data);
-    const avatar = officialAdminReview ? `<img src="${H4SX_LOGO_URL}" alt="H4SX Admin">`
-      : data.profileImg ? `<img src="${escapeHtml(data.profileImg)}" alt="">` : escapeHtml(avatarIsi);
+    const avatar = officialAdminReview ? `<img src="${H4SX_LOGO_URL}" style="${window.H4ReviewMedia.profileZoomStyle(data.profileZoom ?? 100)}" alt="H4SX Admin">`
+      : data.profileImg ? `<img src="${escapeHtml(data.profileImg)}" style="${window.H4ReviewMedia.profileZoomStyle(data.profileZoom ?? 100)}" alt="">` : escapeHtml(avatarIsi);
     const stars = "★".repeat(score) + "☆".repeat(5-score);
     const text = data.ulasan && data.ulasan !== "Tiada ulasan ditinggalkan."
       ? data.ulasan
@@ -4276,7 +4284,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   function renderAdminModeration(){
     const box=document.getElementById("adminModerationList");if(!box)return;const list=getAdminModerationList();document.getElementById("adminModerationResult").textContent=`${list.length} rekod`;
-    box.innerHTML=list.length?list.map(r=>{const status=adminReviewStatus(r),score=clampBintang(r.bintang),hasImg=!!r.profileImg,avatar=hasImg?`<img src="${escapeHtml(r.profileImg)}" alt="">`:escapeHtml(r.emojiProfil||String(r.nama||"P")[0]);return `<article class="admin-moderation-item${score<=2?" is-low":""}${status!=="published"?" is-hidden":""}${status==="pending"?" is-pending":""}" data-admin-review-id="${r.id}"><input class="admin-review-checkbox" type="checkbox" ${selectedAdminReviews.has(r.id)?"checked":""}><div class="admin-moderation-avatar${hasImg?" has-profile-image":""}" style="background:${r.warnaProfil||warnaAuto(r.nama||"P")}">${avatar}</div><div class="admin-moderation-copy"><header><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span class="admin-status-chip ${status}">${status==="pending"?"Menunggu semakan":status==="rejected"?"Ditolak":status==="trash"?"Tong sampah":status}</span>${r.autoHiddenByReports?'<span class="admin-status-chip reported">'+(r.reportAutoHideTest?'Ujian auto-sorok · '+Number(r.reportTestCount||0)+'/3':'Auto-sorok · '+Number(r.reportCount||0)+' pelapor')+'</span>':''}${r.reportDisabled?'<span class="admin-status-chip">Lapor ditutup</span>':''}${r.featured?'<span class="admin-status-chip featured">pilihan</span>':''}</header><p>${escapeHtml(r.ulasan||"Rating sahaja")}</p><small>${score} bintang · ${reviewDateText(r)}${r.autoApproveAt?" · auto-lulus "+new Date(r.autoApproveAt).toLocaleTimeString("ms-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"}):""}${r.balasanAdmin?.trim()?" · sudah dibalas":" · belum dibalas"}</small></div>${moderationActionsMarkup(r)}</article>`;}).join(""):adminEmpty("Tiada ulasan sepadan dengan penapis.");updateAdminSelectionCount();
+    box.innerHTML=list.length?list.map(r=>{const status=adminReviewStatus(r),score=clampBintang(r.bintang),hasImg=!!r.profileImg,avatar=hasImg?`<img src="${escapeHtml(r.profileImg)}" style="${window.H4ReviewMedia.profileZoomStyle(r.profileZoom ?? 100)}" alt="">`:escapeHtml(r.emojiProfil||String(r.nama||"P")[0]);return `<article class="admin-moderation-item${score<=2?" is-low":""}${status!=="published"?" is-hidden":""}${status==="pending"?" is-pending":""}" data-admin-review-id="${r.id}"><input class="admin-review-checkbox" type="checkbox" ${selectedAdminReviews.has(r.id)?"checked":""}><div class="admin-moderation-avatar${hasImg?" has-profile-image":""}" style="background:${r.warnaProfil||warnaAuto(r.nama||"P")}">${avatar}</div><div class="admin-moderation-copy"><header><strong>${escapeHtml(r.nama||"Pelanggan")}</strong><span class="admin-status-chip ${status}">${status==="pending"?"Menunggu semakan":status==="rejected"?"Ditolak":status==="trash"?"Tong sampah":status}</span>${r.autoHiddenByReports?'<span class="admin-status-chip reported">'+(r.reportAutoHideTest?'Ujian auto-sorok · '+Number(r.reportTestCount||0)+'/3':'Auto-sorok · '+Number(r.reportCount||0)+' pelapor')+'</span>':''}${r.reportDisabled?'<span class="admin-status-chip">Lapor ditutup</span>':''}${r.featured?'<span class="admin-status-chip featured">pilihan</span>':''}</header><p>${escapeHtml(r.ulasan||"Rating sahaja")}</p><small>${score} bintang · ${reviewDateText(r)}${r.autoApproveAt?" · auto-lulus "+new Date(r.autoApproveAt).toLocaleTimeString("ms-MY",{timeZone:"Asia/Kuala_Lumpur",hour:"2-digit",minute:"2-digit"}):""}${r.balasanAdmin?.trim()?" · sudah dibalas":" · belum dibalas"}</small></div>${moderationActionsMarkup(r)}</article>`;}).join(""):adminEmpty("Tiada ulasan sepadan dengan penapis.");updateAdminSelectionCount();
   }
   function updateAdminSelectionCount(){const el=document.getElementById("adminSelectedReviewsCount");if(el)el.textContent=`${selectedAdminReviews.size} dipilih`;}
   ["adminReviewSearch","adminReviewRatingFilter","adminReviewStatusFilter","adminReviewSort"].forEach(id=>document.getElementById(id)?.addEventListener(id==="adminReviewSearch"?"input":"change",renderAdminModeration));

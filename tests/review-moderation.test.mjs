@@ -58,3 +58,13 @@ test('trash after a cron race hides public record, restores it, and permanent de
 test('legacy hidden review restores to hidden without losing its content',async()=>{
  const d=database({'ratings/legacy':{nama:'Lama',moderationStatus:'hidden',ulasan:'Original'}});await decideSubmission(d.firestore,'legacy','trash');await decideSubmission(d.firestore,'legacy','trash');await decideSubmission(d.firestore,'legacy','restore');assert.equal(d.values.get('ratings/legacy').moderationStatus,'hidden');assert.equal(d.values.get('ratings/legacy').ulasan,'Original');
 });
+
+test('profile zoom survives private moderation and public approval; invalid scales are rejected',async()=>{
+  const submission={code:'H4SX-ZOOM1',review:{nama:'Ali',bintang:5,ulasan:'Baik',profileImg:'data:image/png;base64,AAAA',profileZoom:175}};
+  const d=database({'review_codes/H4SX-ZOOM1':{}});
+  await stageSubmission(d.firestore,submission,false,1000);
+  assert.equal(d.values.get('review_pending/review_H4SX-ZOOM1').review.profileZoom,175);
+  await decideSubmission(d.firestore,'review_H4SX-ZOOM1','approve',2000);
+  assert.equal(d.values.get('ratings/review_H4SX-ZOOM1').profileZoom,175);
+  for(const zoom of [49,301,'NaN','scale(99)'])assert.throws(()=>validateSubmission({...submission,review:{...submission.review,profileZoom:zoom}}),/Zoom/);
+});
