@@ -34,3 +34,10 @@ export async function readReplyImageFile(file,{read,compress}){
  if(!replyMediaUrl(value))throw Error('Gambar tidak dapat diproses. Cuba gambar lain.');
  return value;
 }
+
+export function normalizeReplyDirectLink(raw={}){
+ raw=raw&&typeof raw==='object'?raw:{};let url='';
+ if(typeof raw.url==='string'&&raw.url.length<=2048){try{const parsed=new URL(raw.url.trim());if(parsed.protocol==='https:'&&!parsed.username&&!parsed.password)url=parsed.href;}catch{}}
+ return {enabled:raw.enabled===true,text:String(raw.text||'Lihat lanjut').trim().slice(0,60)||'Lihat lanjut',url};
+}
+export function resolveReplyDirectLink(global,review={}){return normalizeReplyDirectLink(review.replyDirectLinkSolo===true?review.replyDirectLink:global);}

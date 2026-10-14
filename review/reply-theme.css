@@ -32,3 +32,13 @@
 /* All official reply logos fill their frame without a white mat. */
 .admin-reply-box .admin-reply-avatar{display:block;padding:0!important;border:0!important;background:transparent!important;object-fit:cover!important;box-sizing:border-box}
 .admin-reply-box.has-custom-reply>.review-chat-media{display:block;margin:0!important;padding:0!important;border:0!important;max-width:none;max-height:none;object-fit:cover!important}
+
+.reply-direct-wrap{position:relative;z-index:2;padding:0 14px 12px}
+.reply-direct-button{display:inline-flex;align-items:center;gap:8px;max-width:100%;padding:8px 12px;border:1px solid #9edcea;border-radius:8px;background:#eafaff;color:#096c8a;font-family:inherit;font-size:12px;font-weight:700;line-height:1.4;text-decoration:none;overflow-wrap:anywhere}
+.reply-direct-button:hover{background:#d4f4fc}
+.reply-direct-editor{min-width:0;margin:14px 0;padding:12px;border:1px solid #c3dfec;border-radius:12px}
+.reply-direct-editor legend{font-size:13px;font-weight:800;padding:0 5px}
+.reply-direct-editor label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:12px;font-weight:650}
+.reply-direct-editor :is(p,small){font-size:12px;line-height:1.5}
+.reply-direct-editor input[type=checkbox]{width:18px;height:18px;flex:0 0 18px}
+.reply-direct-editor input:not([type=checkbox]){width:100%;box-sizing:border-box;min-width:0;padding:9px;border:1px solid #badce8;border-radius:8px;background:white;color:#173d56;font:inherit}

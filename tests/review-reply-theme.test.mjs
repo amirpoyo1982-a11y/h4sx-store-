@@ -47,3 +47,21 @@ test('folder upload preserves small GIF animation and resizes large transparent 
  await assert.rejects(readReplyImageFile({type:'image/gif',size:500000},{read(){},compress(){}}),/GIF terlalu besar/);
  await assert.rejects(readReplyImageFile({type:'image/svg+xml',size:100},{read(){},compress(){}}),/Pilih gambar/);
 });
+
+import {normalizeReplyDirectLink,resolveReplyDirectLink} from '../review/reply-theme.js';
+test('all reply links are inherited unless solo overrides or hides that one link',()=>{
+ const all={enabled:true,text:'Hubungi admin',url:'https://wa.me/60123456789'};
+ assert.deepEqual(resolveReplyDirectLink(all,{}),all);
+ const solo={replyDirectLinkSolo:true,replyDirectLink:{enabled:true,text:'Baca lanjut',url:'https://example.com/detail'}};
+ assert.equal(resolveReplyDirectLink(all,solo).url,solo.replyDirectLink.url);
+ assert.equal(resolveReplyDirectLink(all,{...solo,replyDirectLinkSolo:false}).url,all.url);
+ assert.equal(resolveReplyDirectLink(all,{replyDirectLinkSolo:true,replyDirectLink:{enabled:false}}).enabled,false);
+ assert.equal(resolveReplyDirectLink(all,{replyAppearanceSolo:true,replyAppearance:{enabled:false}}).enabled,true);
+ assert.equal(resolveReplyAppearance({enabled:true},solo).enabled,true);
+});
+test('reply direct links allow only HTTPS destinations and bound the button label',()=>{
+ for(const url of ['javascript:alert(1)','data:text/html,bad','http://example.com','https://name:secret@example.com'])assert.equal(normalizeReplyDirectLink({enabled:true,url}).url,'');
+ assert.equal(normalizeReplyDirectLink({url:'https://example.com/path?a=1&b=2'}).url,'https://example.com/path?a=1&b=2');
+ assert.equal(normalizeReplyDirectLink({text:'a'.repeat(100)}).text.length,60);
+ assert.equal(normalizeReplyDirectLink({text:'  '}).text,'Lihat lanjut');
+});

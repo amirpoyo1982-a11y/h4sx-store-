@@ -1,4 +1,4 @@
-import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile} from '/review/reply-theme.js?v=upload-fix-20261015';
+import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=direct-link-20261015';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -3616,6 +3616,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const avatarIsi=data.emojiProfil||rawNama.charAt(0).toUpperCase();
       const adaBalasan=!!(data.balasanAdmin?.trim());
       const replyTheme=resolveReplyAppearance(reviewAdminSettings.replyAppearance,data);
+      const replyLink=resolveReplyDirectLink(reviewAdminSettings.replyDirectLink,data);
       const adaUlasan = !!(data.ulasan?.trim()) && data.ulasan !== "Tiada ulasan ditinggalkan.";
       const gunaCadangan = data.cdg === true || data.cadanganDigunakan === true || /^cdg\s*[-:]/i.test(String(data.ulasan || "").trim());
       const adaFeedbackImg = !!(data.feedbackImg);
@@ -3723,6 +3724,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               </div>
             </div>
             <p class="admin-reply-text">${formatMessageText(data.balasanAdmin)}</p>
+            ${replyDirectLinkMarkup(replyLink)}
             <div class="admin-reply-footer">
               ${data.hideReviewTime===true ? "" : `<p class="admin-reply-time"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${masaBalasan || "Balasan H4SX"}</p>`}
               <button class="admin-reply-copy" type="button" aria-label="Salin balasan H4SX"><i class="fa-regular fa-copy" aria-hidden="true"></i> Salin</button>
@@ -4119,9 +4121,16 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
   // ── Block Inspect Element & DevTools ──────────────────────────
   // Admin Review Center
+  function replyDirectLinkMarkup(config){
+    const link=normalizeReplyDirectLink(config);if(!link.enabled||!link.url)return '';
+    return '<div class="reply-direct-wrap"><a class="reply-direct-button" href="'+escapeHtml(link.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(link.text)+' <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>';
+  }
+  function replyDirectLinkEditorMarkup(solo){
+    return '<fieldset class="reply-direct-editor"><legend>Butang link direct</legend>'+(solo?'<label><input type="checkbox" data-reply-link-solo> Guna tetapan link solo untuk balasan ini</label><small>Untick untuk ikut link keseluruhan. Link solo boleh berbeza tanpa mengubah gaya logo atau background.</small>':'')+'<label><input type="checkbox" data-reply-link="enabled"> Aktifkan butang link direct</label><p>Boleh aktifkan berasingan daripada custom gaya. Pelanggan tekan butang untuk terus buka pautan yang ditetapkan.</p><label>Teks butang<input data-reply-link="text" maxlength="60" placeholder="Lihat lanjut"></label><label>Link butang (HTTPS)<input type="url" data-reply-link="url" maxlength="2048" placeholder="https://wa.me/..."></label></fieldset>';
+  }
   function replyThemeEditorMarkup(solo=false){
     const field=(key,label,type='url')=>'<label>'+label+'<input data-reply-theme="'+key+'" type="'+type+'"'+(type==='url'?' placeholder="https://..."':'')+'></label>';
-    return '<details class="reply-theme-editor"><summary>'+(solo?'Custom solo — balasan ini sahaja':'Custom keseluruhan balasan admin')+'</summary><p class="reply-theme-help">'+(solo?'Matikan custom solo untuk ikut gaya keseluruhan.':'Semua balasan lama dan baharu, termasuk auto balas, ikut gaya ini kecuali kad dengan custom solo.')+'</p><div class="reply-theme-fields"><label class="reply-theme-wide"><span>'+(solo?'Gunakan custom solo':'Aktifkan custom keseluruhan')+'</span><input data-reply-theme-scope type="checkbox"></label>'+field('logoUrl','Gambar / logo admin')+field('badgeUrl','Badge custom / GIF')+'<label>Upload logo / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="logoUrl"></label><label>Upload badge / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="badgeUrl"></label><label>Background<select data-reply-theme="backgroundType"><option value="none">Tiada media</option><option value="image">Gambar / GIF</option><option value="video">Live wallpaper MP4 / WebM</option></select></label>'+field('backgroundUrl','Link background')+field('backgroundColor','Warna background','color')+field('textColor','Warna tulisan','color')+field('borderColor','Warna border','color')+'<label>Lapisan warna background <output data-reply-overlay-output></output><input type="range" min="0" max="95" data-reply-theme="overlay"></label><label>Saiz badge (px)<input type="number" min="12" max="64" data-reply-theme="badgeSize"></label></div><p class="reply-theme-help">Gunakan link terus gambar, GIF, MP4 atau WebM. Gambar maksimum 20MB dikecilkan automatik. GIF maksimum 400KB, atau gunakan link. Link halaman emoji.gg juga disokong. Padam link badge untuk kembali ke centang asal.</p><div class="reply-theme-preview"></div><p class="reply-theme-status" role="status"></p><button type="button" class="reply-theme-save">Simpan gaya '+(solo?'solo':'keseluruhan')+'</button></details>';
+    return '<details class="reply-theme-editor"><summary>'+(solo?'Custom solo — balasan ini sahaja':'Custom keseluruhan balasan admin')+'</summary><p class="reply-theme-help">'+(solo?'Matikan custom solo untuk ikut gaya keseluruhan.':'Semua balasan lama dan baharu, termasuk auto balas, ikut gaya ini kecuali kad dengan custom solo.')+'</p><div class="reply-theme-fields"><label class="reply-theme-wide"><span>'+(solo?'Gunakan custom solo':'Aktifkan custom keseluruhan')+'</span><input data-reply-theme-scope type="checkbox"></label>'+field('logoUrl','Gambar / logo admin')+field('badgeUrl','Badge custom / GIF')+'<label>Upload logo / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="logoUrl"></label><label>Upload badge / GIF<input type="file" accept="image/gif,image/png,image/jpeg,image/webp" data-reply-theme-upload="badgeUrl"></label><label>Background<select data-reply-theme="backgroundType"><option value="none">Tiada media</option><option value="image">Gambar / GIF</option><option value="video">Live wallpaper MP4 / WebM</option></select></label>'+field('backgroundUrl','Link background')+field('backgroundColor','Warna background','color')+field('textColor','Warna tulisan','color')+field('borderColor','Warna border','color')+'<label>Lapisan warna background <output data-reply-overlay-output></output><input type="range" min="0" max="95" data-reply-theme="overlay"></label><label>Saiz badge (px)<input type="number" min="12" max="64" data-reply-theme="badgeSize"></label></div><p class="reply-theme-help">Gunakan link terus gambar, GIF, MP4 atau WebM. Gambar maksimum 20MB dikecilkan automatik. GIF maksimum 400KB, atau gunakan link. Link halaman emoji.gg juga disokong. Padam link badge untuk kembali ke centang asal.</p>'+replyDirectLinkEditorMarkup(solo)+'<div class="reply-theme-preview"></div><p class="reply-theme-status" role="status"></p><button type="button" class="reply-theme-save">Simpan gaya '+(solo?'solo':'keseluruhan')+'</button></details>';
   }
   function replyThemeImage(value,kind){
     const urls=replyImageCandidates(value);if(!urls.length)return '';
@@ -4153,11 +4162,17 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     scope.checked=solo?review.replyAppearanceSolo===true:starting.enabled;
     fields.forEach(input=>{const value=starting[input.dataset.replyTheme];input.value=input.type==='url'&&String(value).startsWith('data:')?'':value;input.dataset.uploadValue=input.type==='url'&&String(value).startsWith('data:')?value:'';});
     const status=editor.querySelector('.reply-theme-status'),preview=editor.querySelector('.reply-theme-preview'),save=editor.querySelector('.reply-theme-save');
+    const linkFields=[...editor.querySelectorAll('[data-reply-link]')],linkSolo=editor.querySelector('[data-reply-link-solo]');
+    const initialLink=normalizeReplyDirectLink(solo?(review.replyDirectLink||reviewAdminSettings.replyDirectLink):reviewAdminSettings.replyDirectLink);
+    linkFields.forEach(input=>{if(input.type==='checkbox')input.checked=initialLink.enabled;else input.value=initialLink[input.dataset.replyLink];});
+    if(linkSolo)linkSolo.checked=review.replyDirectLinkSolo===true;
+    const readLink=()=>{const raw={};linkFields.forEach(input=>raw[input.dataset.replyLink]=input.type==='checkbox'?input.checked:input.value);return normalizeReplyDirectLink(raw);};
     let uploads=0;
     const read=()=>{const raw={enabled:solo?true:scope.checked};fields.forEach(input=>{raw[input.dataset.replyTheme]=input.dataset.uploadValue||input.value;});return normalizeReplyAppearance(raw);};
-    const paint=()=>{const draft=read(),theme=solo&&!scope.checked?resolveReplyAppearance(reviewAdminSettings.replyAppearance):draft;
+    const paint=()=>{const draft=read(),theme=solo&&!scope.checked?resolveReplyAppearance(reviewAdminSettings.replyAppearance):draft;const link=solo&&!linkSolo.checked?resolveReplyDirectLink(reviewAdminSettings.replyDirectLink):readLink();
       editor.querySelector('[data-reply-overlay-output]').textContent=draft.overlay+'%';
-      preview.innerHTML='<div class="admin-reply-box'+(theme.enabled?' has-custom-reply':'')+'" style="'+replyAppearanceCss(theme)+'">'+replyThemeLayers(theme)+'<div class="admin-reply-header">'+replyThemeImage(replyThemeLogo(theme),'logo')+'<p class="admin-reply-label'+(replyThemeBadge(theme)?' has-custom-reply-badge':'')+'">H4SX STORE'+replyThemeBadge(theme)+'</p></div><p class="admin-reply-text">Terima kasih atas ulasan anda! Ini pratonton balasan admin.</p></div>';bindReviewChatVideos();};
+      preview.innerHTML='<div class="admin-reply-box'+(theme.enabled?' has-custom-reply':'')+'" style="'+replyAppearanceCss(theme)+'">'+replyThemeLayers(theme)+'<div class="admin-reply-header">'+replyThemeImage(replyThemeLogo(theme),'logo')+'<p class="admin-reply-label'+(replyThemeBadge(theme)?' has-custom-reply-badge':'')+'">H4SX STORE'+replyThemeBadge(theme)+'</p></div><p class="admin-reply-text">Terima kasih atas ulasan anda! Ini pratonton balasan admin.</p>'+replyDirectLinkMarkup(link)+'</div>';bindReviewChatVideos();};
+    linkFields.forEach(input=>input.addEventListener('input',()=>{if(linkSolo)linkSolo.checked=true;paint();}));linkSolo?.addEventListener('change',paint);
     fields.forEach(input=>input.addEventListener('input',()=>{input.dataset.uploadValue='';if(input.dataset.replyTheme==='backgroundUrl'){fields.find(el=>el.dataset.replyTheme==='backgroundType').value=replyBackgroundType('auto',input.value);}if(input.dataset.replyTheme==='backgroundType'&&input.value==='none'){fields.find(el=>el.dataset.replyTheme==='backgroundUrl').value='';}paint();}));scope.addEventListener('change',paint);
     editor.querySelectorAll('[data-reply-theme-upload]').forEach(input=>input.addEventListener('change',async()=>{
       const file=input.files?.[0];if(!file)return;uploads++;save.disabled=true;
@@ -4169,9 +4184,10 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     save.addEventListener('click',async()=>{
       if(!mintaAdmin()||uploads)return;
       try{for(const input of fields.filter(el=>el.type==='url')){const value=input.dataset.uploadValue||input.value.trim();if(value&&!replyMediaUrl(value,input.dataset.replyTheme==='backgroundUrl'&&read().backgroundType==='video'))throw Error('Link media mesti HTTPS yang sah; video gunakan MP4 / WebM.');}
+        const directLink=readLink();if((!solo||linkSolo.checked)&&directLink.enabled&&!directLink.url)throw Error('Masukkan link butang HTTPS yang sah.');
         const theme=read();if(new TextEncoder().encode(JSON.stringify(theme)).length>800000)throw Error('Jumlah gambar terlalu besar. Guna link untuk salah satu GIF.');save.disabled=true;
-        if(solo)await updateDoc(doc(db,'ratings',review.id),{replyAppearanceSolo:scope.checked,replyAppearance:theme});
-        else await setDoc(doc(db,'config','review_admin'),{replyAppearance:theme},{merge:true});
+        if(solo)await updateDoc(doc(db,'ratings',review.id),{replyAppearanceSolo:scope.checked,replyAppearance:theme,replyDirectLinkSolo:linkSolo.checked,replyDirectLink:directLink});
+        else await setDoc(doc(db,'config','review_admin'),{replyAppearance:theme,replyDirectLink:directLink},{merge:true});
         showToast('Gaya balasan '+(solo?'solo':'keseluruhan')+' disimpan.','success');status.textContent='Disimpan.';
       }catch(err){console.error(err);status.textContent=err.message||'Gagal simpan gaya balasan.';showToast('Gaya belum disimpan.','error');}finally{save.disabled=false;}
     });
