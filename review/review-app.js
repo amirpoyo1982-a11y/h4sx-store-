@@ -1,3 +1,4 @@
+import {officialReviewIdentity,reviewNameIssue} from '/review/review-identity.js?v=20261015';
 import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=direct-link-20261015';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import {
@@ -28,7 +29,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const TURNSTILE_SITE_KEY = '0x4AAAAAAECCSulruVRqWTEI';
 
   async function verifyReviewTurnstile(submission) {
-    return window.H4ReviewSubmit.submit(submission,{adminToken:adminOk()&&!customerPreviewMode?await currentUser.getIdToken():null});
+    return window.H4ReviewSubmit.submit(submission,{anchor:document.getElementById('butangHantar'),adminToken:adminOk()&&!customerPreviewMode?await currentUser.getIdToken():null});
   }
 
 
@@ -224,12 +225,8 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   // ── Admin gate ────────────────────────────────────────────────
   const ADMIN_UIDS = ["LWRN6IDv4OV1PZd7Vldgp6F9pdH3"];
   const H4SX_LOGO_URL = "https://i.imgur.com/cLPulXQ.png";
-  function isOfficialAdminReview(data = {}) {
-    const name = String(data.nama || "").trim();
-    const legacyOfficialName = /^h4sx(?:$|[\s_-])/i.test(name);
-    return ADMIN_UIDS.includes(String(data.adminAuthorUid || ""))
-      && (data.adminIdentityConfirmed === true || legacyOfficialName);
-  }
+  function isOfficialAdminReview(data = {}) {return officialReviewIdentity(data);}
+
   let currentUser = null;
   let latestCodeSnapshot = null;
   let usedReviewCodeIds = new Set();
@@ -3061,13 +3058,15 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   btnPickFeedbackImage.addEventListener("click", () => window.H4ReviewMedia.pickFile(feedbackImageInput,feedbackDraft));
   btnClearFeedbackImage.addEventListener("click", () => clearFeedbackImage(true));
   btnCameraFeedbackImage.addEventListener('click',()=>window.H4ReviewMedia.pickFile(feedbackCameraInput,feedbackDraft));
-  const processFeedbackInput=async input=>{
-    const file=input.files[0];if(!file)return;
+  const processFeedbackFile=async file=>{
+    if(!file)return;
     feedbackImagePreview.textContent='Memproses gambar feedback...';butangHantar.disabled=true;btnPickFeedbackImage.disabled=true;btnCameraFeedbackImage.disabled=true;
     try{setFeedbackImage(await window.H4ReviewMedia.compressFile(file,900,.72));}
     catch(error){feedbackImagePreview.textContent=error.message;showToast(error.message,'error');}
-    finally{butangHantar.disabled=suggestionTyping;btnPickFeedbackImage.disabled=false;btnCameraFeedbackImage.disabled=false;input.value='';}
+    finally{butangHantar.disabled=suggestionTyping;btnPickFeedbackImage.disabled=false;btnCameraFeedbackImage.disabled=false;}
   };
+  const processFeedbackInput=async input=>{await processFeedbackFile(input.files?.[0]);input.value='';};
+  window.H4ReviewMedia.installFeedbackExtras({container:document.querySelector('.form-col'),anchor:feedbackImagePreview,onImage:processFeedbackFile,onError:error=>showToast(error.message,'error')});
   feedbackImageInput.addEventListener('change',()=>processFeedbackInput(feedbackImageInput));
   feedbackCameraInput.addEventListener('change',()=>processFeedbackInput(feedbackCameraInput));
   btnCloseFeedbackImage.addEventListener("click", closeFeedbackImage);
@@ -3240,9 +3239,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     
     // Block nama yang mengandungi "h4sx" jika bukan admin
     const namaLower = nama.toLowerCase();
-    if (namaLower.includes("h4sx") && !adminOk()) {
-      return showToast("Nama ini dikhaskan untuk admin H4SX STORE sahaja.", "error");
-    }
+    const nameIssue=reviewNameIssue(nama,kod,adminOk()&&!customerPreviewMode);if(nameIssue)return showToast(nameIssue,"error");
 
     butangHantar.disabled = true;
     butangHantar.textContent = "Menghantar...";
@@ -3608,7 +3605,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       
       // Semak adakah ini admin yang post ulasan
       const officialAdminReview = isOfficialAdminReview(data);
-      const isReviewAdmin = officialAdminReview || rawNama.toLowerCase().includes("h4sx");
+      const isReviewAdmin = officialAdminReview;
       
       if (rawNama!=="Pelanggan Misteri" && !isReviewAdmin) {
         // Jangan sensor kalau tak perlu, tapi sebab tadi awak cakap "jngn bgi sensor untuk nama tu",
@@ -3717,7 +3714,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               <button type="button" class="btn-close-pin-controls">Tutup</button>
             </div>
           </div>
-          ${adaFeedbackImg?`<button class="btn-see-feedback" type="button">See image</button>`:""}
+          ${adaFeedbackImg?`<button class="btn-see-feedback" type="button">See image</button>`:""}${data.feedbackVideo?`<button class="btn-see-feedback-video btn-see-feedback" type="button">Lihat video</button>`:""}
           ${data.reportDisabled===true&&!adminOk()?'':'<button class="review-report-btn" type="button" data-nosnippet><i class="fa-regular fa-flag"></i> '+(data.reportDisabled===true?'Ujian lapor (admin)':'Lapor')+'</button>'}
           ${adaBalasan?`
           <button class="admin-reply-view-toggle" type="button" aria-expanded="false">Balasan admin ↓</button>
@@ -3806,7 +3803,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       });
       const btnProfile=card.querySelector(".btn-profile-ulasan");
       const btnBadge=card.querySelector(".btn-badge-ulasan");
-      const btnSeeFeedback=card.querySelector(".btn-see-feedback");
+      const btnSeeFeedback=card.querySelector('.btn-see-feedback:not(.btn-see-feedback-video)');
+      card.querySelector('.btn-see-feedback-video')?.addEventListener('click',async()=>window.H4ReviewMedia.showFeedbackVideo(id,{adminToken:adminOk()?await currentUser.getIdToken():null}));
       const btnReplyView=card.querySelector(".admin-reply-view-toggle");
       const btnCopyReply=card.querySelector(".admin-reply-copy");
       const btnTextToggle=card.querySelector(".review-text-toggle");
@@ -4358,15 +4356,16 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const search=(document.getElementById("adminReviewSearch")?.value||"").trim().toLowerCase(),rating=document.getElementById("adminReviewRatingFilter")?.value||"all",status=document.getElementById("adminReviewStatusFilter")?.value||"all",sort=document.getElementById("adminReviewSort")?.value||"newest";
     let list=adminReviewRecords().filter(r=>!search||[r.id,r.nama,r.ulasan,r.badgeText,r.balasanAdmin].some(v=>String(v||"").toLowerCase().includes(search)));
     if(rating!=="all")list=list.filter(r=>rating==="12"?clampBintang(r.bintang)<=2:clampBintang(r.bintang)===Number(rating));
-    if(status!=="all")list=list.filter(r=>status==="needsReview"?(adminReviewStatus(r)==="pending"||(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true)):status==="reported"?(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true):status==="featured"?r.featured===true:status==="unreplied"?!r.balasanAdmin?.trim():status==="image"?!!r.feedbackImg:adminReviewStatus(r)===status);
+    if(status!=="all")list=list.filter(r=>status==="needsReview"?(adminReviewStatus(r)==="pending"||(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true)):status==="reported"?(adminReviewStatus(r)==="hidden"&&r.autoHiddenByReports===true):status==="featured"?r.featured===true:status==="unreplied"?!r.balasanAdmin?.trim():status==="image"?!!(r.feedbackImg||r.feedbackVideo||r.hasFeedbackImage||r.hasFeedbackVideo):adminReviewStatus(r)===status);
     list.sort((a,b)=>sort==="oldest"?reviewRecordTime(a.diciptaPada)-reviewRecordTime(b.diciptaPada):sort==="highest"?clampBintang(b.bintang)-clampBintang(a.bintang):sort==="lowest"?clampBintang(a.bintang)-clampBintang(b.bintang):reviewRecordTime(b.diciptaPada)-reviewRecordTime(a.diciptaPada));return list;
   }
   function moderationActionsMarkup(r){
     if(adminReviewStatus(r)==="trash")return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="restore"><i class="fa-solid fa-rotate-left"></i> Pulihkan</button><button type="button" class="danger" data-admin-row-action="delete">Padam kekal + backup</button></div>';
 
+    const videoControl=(r.hasFeedbackVideo||r.feedbackVideo)?'<button type="button" data-admin-row-action="video">Video</button>':'';
     const reportControls='<details class="admin-report-controls"><summary>Laporan'+(r.reportDisabled?' · ditutup':'')+'</summary><button type="button" data-admin-row-action="restoreReported">Munculkan semula</button><button type="button" data-admin-row-action="'+(r.reportDisabled?'reportsEnable':'reportsDisable')+'">'+(r.reportDisabled?'Aktifkan Lapor':'Tutup Lapor')+'</button><button type="button" data-admin-row-action="'+(r.reportAutoHideTestEnabled?'reportTestDisable':'reportTestEnable')+'">'+(r.reportAutoHideTestEnabled?'Matikan ujian auto-sorok':'Aktifkan ujian auto-sorok')+'</button>'+(r.reportAutoHideTestEnabled?'<small>Report ulasan ini 3 kali dengan akaun admin · '+Number(r.reportTestCount||0)+'/3</small>':'')+'</details>';
-    if(!r.pendingSource)return "<div class=\"admin-moderation-actions\"><button data-admin-row-action=\"publish\" title=\"Luluskan / Terbit\"><i class=\"fa-solid fa-eye\"></i></button><button data-admin-row-action=\"hide\" title=\"Sorok\"><i class=\"fa-solid fa-eye-slash\"></i></button><button data-admin-row-action=\"feature\" title=\"Pilihan\"><i class=\"fa-solid fa-star\"></i></button><button data-admin-row-action=\"reply\" title=\"Balas\"><i class=\"fa-solid fa-reply\"></i></button><button data-admin-row-action=\"open\" title=\"Buka\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></button><button class=\"danger\" data-admin-row-action=\"trash\" title=\"Tong sampah — tanpa download\" data-trash-control=\"true\"><i class=\"fa-solid fa-trash-can\"></i> Tong sampah</button><button class=\"danger\" data-admin-row-action=\"delete\" title=\"Padam kekal + backup\"><i class=\"fa-solid fa-trash\"></i></button>"+reportControls+"</div>";
-    return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="publish" class="approval-accept"><i class="fa-solid fa-check" aria-hidden="true"></i> Luluskan</button><button type="button" data-admin-row-action="reject" class="approval-reject"><i class="fa-solid fa-ban" aria-hidden="true"></i> Tolak</button>'+(r.hasFeedbackImage?'<button type="button" data-admin-row-action="detail"><i class="fa-solid fa-image" aria-hidden="true"></i> Gambar</button>':'')+'<button type="button" data-admin-row-action="trash"><i class="fa-solid fa-trash-can"></i> Tong sampah</button><button type="button" data-admin-row-action="delete" class="danger" title="Backup dan padam rekod"><i class="fa-solid fa-trash" aria-hidden="true"></i> Padam</button></div>';
+    if(!r.pendingSource)return "<div class=\"admin-moderation-actions\"><button data-admin-row-action=\"publish\" title=\"Luluskan / Terbit\"><i class=\"fa-solid fa-eye\"></i></button><button data-admin-row-action=\"hide\" title=\"Sorok\"><i class=\"fa-solid fa-eye-slash\"></i></button><button data-admin-row-action=\"feature\" title=\"Pilihan\"><i class=\"fa-solid fa-star\"></i></button><button data-admin-row-action=\"reply\" title=\"Balas\"><i class=\"fa-solid fa-reply\"></i></button><button data-admin-row-action=\"open\" title=\"Buka\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></button><button class=\"danger\" data-admin-row-action=\"trash\" title=\"Tong sampah — tanpa download\" data-trash-control=\"true\"><i class=\"fa-solid fa-trash-can\"></i> Tong sampah</button><button class=\"danger\" data-admin-row-action=\"delete\" title=\"Padam kekal + backup\"><i class=\"fa-solid fa-trash\"></i></button>"+videoControl+reportControls+"</div>";
+    return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="publish" class="approval-accept"><i class="fa-solid fa-check" aria-hidden="true"></i> Luluskan</button><button type="button" data-admin-row-action="reject" class="approval-reject"><i class="fa-solid fa-ban" aria-hidden="true"></i> Tolak</button>'+(r.hasFeedbackVideo?'<button type="button" data-admin-row-action="video">Video</button>':'')+(r.hasFeedbackImage?'<button type="button" data-admin-row-action="detail"><i class="fa-solid fa-image" aria-hidden="true"></i> Gambar</button>':'')+'<button type="button" data-admin-row-action="trash"><i class="fa-solid fa-trash-can"></i> Tong sampah</button><button type="button" data-admin-row-action="delete" class="danger" title="Backup dan padam rekod"><i class="fa-solid fa-trash" aria-hidden="true"></i> Padam</button></div>';
   }
   function renderAdminModeration(){
     const box=document.getElementById("adminModerationList");if(!box)return;const list=getAdminModerationList();document.getElementById("adminModerationResult").textContent=`${list.length} rekod`;
@@ -4387,7 +4386,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if(['restoreReported','reportsEnable','reportsDisable','reportTestEnable','reportTestDisable'].includes(action)){
       try{await Promise.all(records.map(r=>moderationRequest({action,id:r.id})));await logAdminAction(action,ids.join(','),'Kawalan laporan');await reloadAdminReviews();showToast(action==='restoreReported'?'Ulasan dipaparkan semula. Report baharu dikira dari semakan ini.':action==='reportTestEnable'?'Ujian aktif. Report ulasan ini 3 kali sebagai admin untuk uji auto-sorok.':action==='reportTestDisable'?'Ujian auto-sorok dimatikan.':action==='reportsDisable'?'Butang Lapor ditutup untuk ulasan ini.':'Butang Lapor diaktifkan semula.','success');}catch(error){showToast(error.message,'error');}return;
     }
-    if(action==='detail'){try{const data=await moderationRequest({action:'detail',id:ids[0]});if(data.feedbackImg)openFeedbackImage(data.feedbackImg);else showToast('Tiada gambar feedback.','info');}catch(error){showToast(error.message,'error');}return;}
+    if(action==='video'){await window.H4ReviewMedia.showFeedbackVideo(ids[0],{adminToken:await currentUser.getIdToken()});return;}
+    if(action==='detail'){try{const data=await moderationRequest({action:'detail',id:ids[0]});if(data.feedbackImg)openFeedbackImage(data.feedbackImg);else if(data.feedbackVideo)await window.H4ReviewMedia.showFeedbackVideo(ids[0],{adminToken:await currentUser.getIdToken()});else showToast('Tiada gambar feedback.','info');}catch(error){showToast(error.message,'error');}return;}
     if(records.some(r=>r.pendingSource)&&['open','feature','reply'].includes(action)){showToast('Luluskan ulasan dahulu untuk guna fungsi ini.','info');return;}
     if(action==="open"){
       closeAdminReviewCenter();

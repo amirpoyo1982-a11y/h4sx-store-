@@ -5684,6 +5684,7 @@ function showReviewShowcasePopup(item, total) {
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleMarkup = reviewIdentityRole(item);
   const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
+  const videoButton=item.feedbackVideo?'<button id="review-popup-video" type="button" title="Lihat video feedback" aria-label="Lihat video feedback"><i class="fa-solid fa-video"></i></button>':'';
   const imageButton = item.feedbackImg ? '<button id="review-popup-image" type="button" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image"></i></button>' : '';
   const pauseIcon = reviewShowcasePaused ? 'fa-play' : 'fa-pause';
   const pauseLabel = reviewShowcasePaused ? 'Sambung automatik' : 'Pause automatik';
@@ -5701,7 +5702,7 @@ function showReviewShowcasePopup(item, total) {
     '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
     reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
-    '<span class="review-popup-controls">' + imageButton +
+    '<span class="review-popup-controls">' + imageButton + videoButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
     '<button type="button" onclick="toggleReviewShowcaseSize()" title="' + sizeLabel + '" aria-label="' + sizeLabel + '"><i class="fa-solid ' + sizeIcon + '"></i></button>' +
@@ -5710,6 +5711,7 @@ function showReviewShowcasePopup(item, total) {
   popup.querySelector('.review-announcement-action')?.addEventListener('click', event => event.stopPropagation());
   void popup.offsetWidth;
   popup.classList.add('is-visible');
+  document.getElementById('review-popup-video')?.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();window.H4ReviewMedia.showFeedbackVideo(item.id);});
   document.getElementById('review-popup-image')?.addEventListener('click', event => {
     event.preventDefault();
     openTestimonialImage(item.feedbackImg);
@@ -9077,6 +9079,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = [...(event.clipboardData?.items || [])].find(value => value.type.startsWith('image/'));
     if (item) { event.preventDefault(); applyProfileFile(item.getAsFile()); }
   });
+  window.H4ReviewMedia.installFeedbackExtras({container:form,anchor:feedbackStatus,onImage:applyFeedbackFile,onError:error=>message(error.message,true)});
   document.getElementById('h4rf-feedback-pick').addEventListener('click', () => window.H4ReviewMedia.pickFile(feedbackFile,feedbackDraft));
   feedbackFile.addEventListener('change', () => applyFeedbackFile(feedbackFile.files[0]));
   document.getElementById('h4rf-feedback-camera').addEventListener('click',()=>window.H4ReviewMedia.pickFile(feedbackCameraFile,feedbackDraft));
@@ -9141,7 +9144,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const blocked = /^(anjing|babi|sial|bodoh|bangang|bangsat|celaka|laknat)$/i.test(customerName) || /(pukimak|kimak|puki|butoh|butuh|kontol|memek|lancau|lanjiao|cibai|jibai|pundek|fuck|shit|bitch|asshole|nigger|nigga|keling)/i.test(customerName);
     if (!reviewCode) return message('Sila masukkan kod pengesahan.', true);
     if (!customerName) return message('Sila isi nama atau username.', true);
-    if (blocked || customerName.toLowerCase().includes('h4sx')) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
+    if(customerName.toUpperCase()===reviewCode)return message('Jangan gunakan kod review sebagai nama. Masukkan nama atau username sendiri.',true);
+    const officialReviewAdmin=orderAuth?.currentUser?.uid==='LWRN6IDv4OV1PZd7Vldgp6F9pdH3';
+    if (blocked || (!officialReviewAdmin&&customerName.toLowerCase().includes('h4sx'))) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
     if (!db || !window.firebase) return message('Sistem review belum sedia. Cuba semula sebentar lagi.', true);
     if (suggestionUsed && reviewText && !/^cdg\s*[-:]/i.test(reviewText)) reviewText = `cdg - ${reviewText}`.slice(0, 500);
     submit.disabled = true;
@@ -9149,7 +9154,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const payload={nama:customerName,bintang:Number(rating.value),ulasan:reviewText||'Tiada ulasan ditinggalkan.',cadanganDigunakan:suggestionUsed};
       if(selectedColor)payload.warnaProfil=selectedColor;if(selectedEmoji)payload.emojiProfil=selectedEmoji;if(profileImage){payload.profileImg=profileImage;payload.profileZoom=storeProfileZoom.get();payload.profileOffsetY=storeProfileZoom.getOffset();}if(feedbackImage)payload.feedbackImg=feedbackImage;
-      const submissionResult=await window.H4ReviewSubmit.submit({code:reviewCode,review:payload});
+      const submissionResult=await window.H4ReviewSubmit.submit({code:reviewCode,review:payload,official:officialReviewAdmin&&customerName.toLowerCase().includes('h4sx')},{anchor:submit,adminToken:officialReviewAdmin?await orderAuth.currentUser.getIdToken():null});
       feedbackDraft?.clear();
       form.reset();
       selectedColor = null; selectedEmoji = null; profileImage = null; storeProfileZoom.set(100);storeProfileZoom.setOffset(0); feedbackImage = null; suggestionUsed = false;
