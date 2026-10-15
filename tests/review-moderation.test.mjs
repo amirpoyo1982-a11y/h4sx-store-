@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateSubmission,stageSubmission,decideSubmission,approveDue,WAIT_MS,ADMIN_UID} from '../lib/review-moderation.js';
+import {validateSubmission,stageSubmission,decideSubmission,approveDue,WAIT_MS,ADMIN_UID,editReviewFeedback} from '../lib/review-moderation.js';
 import {createSubmitHandler} from '../api/review-submit.js';
 import {createAutoApproveHandler} from '../api/review-auto-approve.js';
 import {createModerationHandler} from '../api/review-moderation.js';
@@ -74,4 +74,35 @@ test('vertical profile position is validated and preserved during approval',asyn
  const d=database({'review_codes/H4SX-OFFSET':{}});await stageSubmission(d.firestore,input,false,1000);await decideSubmission(d.firestore,'review_H4SX-OFFSET','approve',2000);
  assert.equal(d.values.get('ratings/review_H4SX-OFFSET').profileOffsetY,-25);
  for(const value of [-51,51,'invalid'])assert.throws(()=>validateSubmission({...input,review:{...input.review,profileOffsetY:value}}),/Posisi/);
+});
+
+
+test('admin feedback edits replace/remove media while preserving customer profile, role, rating and original time',async()=>{
+ const id='legacy_review_123',original={nama:'Ali',bintang:4,ulasan:'Ok',badgeText:'VIP',warnaProfil:'#123456',diciptaPada:new Date(100),moderationStatus:'published',feedbackImg:'data:image/png;base64,AAAA',feedbackVideo:'https://example.com/old.mp4',autoReplyDisabled:true};
+ const d=database({['ratings/'+id]:original});await editReviewFeedback(d.firestore,id,{feedbackImg:'',feedbackVideo:'https://example.com/new.webm'},5000);const updated=d.values.get('ratings/'+id);
+ for(const key of ['nama','bintang','ulasan','badgeText','warnaProfil','diciptaPada','moderationStatus'])assert.deepEqual(updated[key],original[key]);assert(!Object.hasOwn(updated,'feedbackImg'));assert.equal(updated.feedbackVideo,'https://example.com/new.webm');assert(!updated.balasanAdmin);
+ await editReviewFeedback(d.firestore,id,{feedbackImg:'data:image/jpeg;base64,BBBB',feedbackVideo:null},6000);assert.equal(d.values.get('ratings/'+id).feedbackImg,'data:image/jpeg;base64,BBBB');assert(!Object.hasOwn(d.values.get('ratings/'+id),'feedbackVideo'));
+});
+test('admin can edit pending feedback before approval without extending or bypassing moderation',async()=>{
+ const d=database({['review_codes/'+input.code]:{}});await stageSubmission(d.firestore,input,false,1000);const id='review_'+input.code,deadline=d.values.get('review_pending/'+id).autoApproveAt;
+ await editReviewFeedback(d.firestore,id,{ulasan:'',feedbackImg:'data:image/png;base64,AAAA',feedbackVideo:'https://example.com/a.mp4'},2000);
+ const queued=d.values.get('review_pending/'+id);assert.equal(queued.status,'pending');assert.equal(queued.autoApproveAt,deadline);assert.equal(queued.submittedAt,1000);assert(!d.values.has('ratings/'+id));assert.equal(queued.review.ulasan,'Tiada ulasan ditinggalkan.');
+ await decideSubmission(d.firestore,id,'approve',deadline);assert.equal(d.values.get('ratings/'+id).feedbackVideo,'https://example.com/a.mp4');
+});
+test('feedback edit follows a concurrent approval and preserves hidden/rejected status',async()=>{
+ const d=database({['review_codes/'+input.code]:{}});await stageSubmission(d.firestore,input,false,1000);const id='review_'+input.code;await decideSubmission(d.firestore,id,'approve',2000);
+ await editReviewFeedback(d.firestore,id,{feedbackVideo:'https://example.com/a.mp4'},2100);assert.equal(d.values.get('ratings/'+id).feedbackVideo,'https://example.com/a.mp4');assert.equal(d.values.get('review_pending/'+id).review,undefined);
+ d.values.get('ratings/'+id).moderationStatus='hidden';await editReviewFeedback(d.firestore,id,{feedbackVideo:''},2200);assert.equal(d.values.get('ratings/'+id).moderationStatus,'hidden');
+ d.values.get('ratings/'+id).moderationStatus='trash';await assert.rejects(editReviewFeedback(d.firestore,id,{feedbackVideo:''},2300),/Pulihkan/);
+});
+test('feedback edit rejects forged role/profile fields and unsafe media without touching the record',async()=>{
+ const id='review_SAFE',original={nama:'Ali',bintang:5,ulasan:'Baik',moderationStatus:'published'},d=database({['ratings/'+id]:original});
+ for(const patch of [{adminAuthorUid:ADMIN_UID},{bintang:999},{feedbackVideo:'javascript:alert(1)'},{feedbackImg:'data:image/svg+xml;base64,AAAA'},{feedbackImg:false},{ulasan:'a'.repeat(501)}])await assert.rejects(editReviewFeedback(d.firestore,id,patch));assert.deepEqual(d.values.get('ratings/'+id),original);
+ await assert.rejects(editReviewFeedback(d.firestore,'../other',{ulasan:'Baik'}),/ID/);
+});
+test('admin feedback endpoint rejects anonymous/non-admin access and accepts the verified admin only',async()=>{
+ const id='review_SAFE',d=database({['ratings/'+id]:{nama:'Ali',bintang:5,ulasan:'Baik',moderationStatus:'published'}});let reads=0;const getServices=uid=>async()=>{reads++;return {firestore:d.firestore,auth:{verifyIdToken:async(token,revoked)=>{assert.equal(revoked,true);return {uid};}}};};
+ let res=reply();const base={method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{action:'editFeedback',id,patch:{feedbackVideo:'https://example.com/a.mp4'}}};await createModerationHandler(getServices(ADMIN_UID))(base,res);assert.equal(res.code,401);assert.equal(reads,0);
+ res=reply();await createModerationHandler(getServices('other'))({...base,headers:{...base.headers,authorization:'Bearer test'}},res);assert.equal(res.code,403);assert.equal(d.values.get('ratings/'+id).feedbackVideo,undefined);
+ res=reply();await createModerationHandler(getServices(ADMIN_UID))({...base,headers:{...base.headers,authorization:'Bearer test'}},res);assert.equal(res.code,200);assert.equal(d.values.get('ratings/'+id).feedbackVideo,'https://example.com/a.mp4');
 });

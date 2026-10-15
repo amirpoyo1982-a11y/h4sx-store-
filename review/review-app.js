@@ -3289,33 +3289,35 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     } finally { btn.disabled=false; btn.textContent="Hantar Balasan"; }
   }
 
-  async function simpanEditUlasan(id, teks, btn, dataDoc) {
-    const ulasanBaru = teks.trim();
-    if (ulasanBaru.length < 3) {
-      showToast("Ulasan terlalu pendek.", "error");
-      return;
-    }
-    if (ulasanBaru.length > 500) {
-      showToast("Ulasan terlalu panjang. Maksimum 500 aksara.", "error");
-      return;
-    }
-    btn.disabled = true;
-    btn.textContent = "Menyimpan...";
-    try {
-      const payload = { ulasan: ulasanBaru, ulasanDieditPada: serverTimestamp() };
-      if (reviewAdminSettings.autoReply !== false && reviewAllowsAutoReply(dataDoc)) {
-        payload.balasanAdmin = buildAutoReply(dataDoc.nama);
-        payload.balasanPada = serverTimestamp();
-      }
-      await updateDoc(doc(db,"ratings",id), payload);
-      showToast("Ulasan pelanggan berjaya diedit.", "success");
-    } catch(err) {
-      console.error(err);
-      showToast("Gagal edit ulasan. Pastikan rules admin benarkan update.", "error");
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Simpan Ulasan";
-    }
+  const adminFeedbackEditors=new Set();
+  function mountAdminFeedbackFields(host,data,saveButton,{track=true}={}){
+    const frame=document.createElement('fieldset');frame.className='admin-feedback-fields';
+    frame.innerHTML='<legend>Lampiran feedback pelanggan</legend><label>Ganti gambar feedback<input type="file" accept="image/*" class="admin-feedback-file"></label><img class="admin-feedback-preview" alt="Pratonton gambar feedback" hidden><button type="button" class="admin-feedback-remove">Buang gambar</button><p class="admin-feedback-status" role="status"></p>';
+    host.querySelector('textarea').insertAdjacentElement('afterend',frame);
+    const input=frame.querySelector('input'),preview=frame.querySelector('img'),remove=frame.querySelector('button'),status=frame.querySelector('p');let image=data.feedbackImg||'',imageChanged=false,busy=0,sequence=0,saving=false;
+    const update=()=>{const safe=window.H4ReviewMedia.safeImage(image)||(/^https:\/\//i.test(image)?image:'');preview.hidden=!safe;if(safe)preview.src=safe;else preview.removeAttribute('src');remove.disabled=!image;};
+    const processImage=async file=>{const version=++sequence;busy++;saveButton.disabled=true;status.textContent='Memproses gambar feedback...';try{let value=await window.H4ReviewMedia.compressFile(file,900,.72);if(value.length>600000)value=await window.H4ReviewMedia.compressFile(file,700,.64);if(value.length>600000)throw Error('Gambar terlalu besar. Cuba gambar lebih kecil.');if(version===sequence){image=value;imageChanged=true;update();status.textContent='Gambar dipilih. Tekan Simpan untuk kemaskini.';}}finally{busy--;saveButton.disabled=saving||busy>0;}};
+    input.addEventListener('change',()=>{const file=input.files?.[0];input.value='';if(file)processImage(file).catch(error=>{status.textContent=error.message;showToast(error.message,'error');});});
+    remove.addEventListener('click',()=>{sequence++;image='';imageChanged=true;update();status.textContent='Gambar akan dibuang selepas Simpan.';});
+    const extras=window.H4ReviewMedia.installFeedbackExtras({container:host,anchor:status,onImage:processImage,onError:error=>showToast(error.message,'error'),register:false});extras.setExisting(data.feedbackVideo);
+    const editor={async getPatch(){if(busy)throw Error('Tunggu gambar siap diproses.');const patch={};if(imageChanged)patch.feedbackImg=image;const video=await extras.prepare();if(video!==undefined)patch.feedbackVideo=video;return patch;},setSaving(value){saving=value;frame.disabled=value;saveButton.disabled=value||busy>0;},reset(){sequence++;image=data.feedbackImg||'';imageChanged=false;extras.setExisting(data.feedbackVideo);status.textContent='';update();},dispose(){sequence++;extras.reset();adminFeedbackEditors.delete(editor);}};
+    update();if(track)adminFeedbackEditors.add(editor);return editor;
+  }
+  async function simpanEditUlasan(id,teks,btn,editor){
+    if(!mintaAdmin())return;
+    if(teks.trim().length>500){showToast('Ulasan maksimum 500 aksara.','error');return;}
+    try{const patch={ulasan:teks.trim(),...await editor?.getPatch()};btn.disabled=true;btn.textContent='Menyimpan...';editor?.setSaving(true);
+      await moderationRequest({action:'editFeedback',id,patch});showToast('Ulasan dan feedback pelanggan berjaya dikemaskini.','success');
+    }catch(error){showToast(error.message||'Gagal kemaskini feedback.','error');}
+    finally{editor?.setSaving(false);btn.disabled=false;btn.textContent='Simpan Ulasan';}
+  }
+  async function openAdminFeedbackDialog(record){
+    if(!mintaAdmin())return;
+    const dialog=document.createElement('dialog');dialog.className='admin-feedback-dialog';dialog.innerHTML='<header><strong>Edit ulasan & feedback</strong><button type="button" class="admin-feedback-save">Simpan</button><button type="button" class="admin-feedback-close" aria-label="Tutup">×</button></header><p class="admin-feedback-dialog-status" role="status">Memuatkan ulasan...</p><textarea maxlength="500" rows="4" aria-label="Teks ulasan pelanggan"></textarea>';
+    document.body.append(dialog);const save=dialog.querySelector('.admin-feedback-save'),status=dialog.querySelector('p'),text=dialog.querySelector('textarea');let editor;save.disabled=true;dialog.querySelector('.admin-feedback-close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});dialog.addEventListener('close',()=>{editor?.dispose();dialog.remove();},{once:true});dialog.showModal();
+    try{const result=await moderationRequest({action:'detail',id:record.id});let data=result.review;if(!data){const snapshot=await getDoc(doc(db,'ratings',record.id));data=snapshot.data();}if(!data)throw Error('Ulasan tidak ditemui.');if(!dialog.open)return;text.value=data.ulasan||'';editor=mountAdminFeedbackFields(dialog,data,save,{track:false});status.textContent='Gambar dan link video boleh diganti atau dibuang. Status semakan kekal.';save.disabled=false;
+      save.addEventListener('click',async()=>{if(!mintaAdmin())return;try{const patch={ulasan:text.value,...await editor.getPatch()};editor.setSaving(true);await moderationRequest({action:'editFeedback',id:record.id,patch});showToast('Feedback pelanggan disimpan.','success');dialog.close();await loadQueuedReviews();}catch(error){status.textContent=error.message;showToast(error.message,'error');}finally{editor.setSaving(false);}});
+    }catch(error){status.textContent=error.message;}
   }
   function timestampToDatetimeLocal(ts) {
     const date = ts?.toDate ? ts.toDate() : new Date();
@@ -3591,6 +3593,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       }
     }
 
+    adminFeedbackEditors.forEach(editor=>editor.dispose());adminFeedbackEditors.clear();
     kotakPaparan.innerHTML="";
     if (!list.length) {
       kotakPaparan.innerHTML=`<div class="no-reviews"><span class="no-icon">🔍</span><span>${reviewSearchTerm ? "Tiada ulasan sepadan dengan carian anda." : "Tiada ulasan untuk penapis ini."}</span></div>`;
@@ -3848,13 +3851,15 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       btnB.addEventListener("click",()=>form.classList.remove("show"));
       btnH.addEventListener("click",()=>hantarBalasan(id,ta.value,btnH));
       btnPadamBalasan?.addEventListener("click",()=>padamBalasanAdmin(id, rawNama, btnPadamBalasan));
+      let adminFeedbackEditor=null;
       btnEditReview.addEventListener("click",()=>{
         if(!mintaAdmin())return;
+        if(!adminFeedbackEditor)adminFeedbackEditor=mountAdminFeedbackFields(editReviewForm,data,btnSaveEditReview);
         editReviewForm.classList.toggle("show");
         if(editReviewForm.classList.contains("show")) editReviewTa.focus();
       });
-      btnCancelEditReview.addEventListener("click",()=>editReviewForm.classList.remove("show"));
-      btnSaveEditReview.addEventListener("click",()=>simpanEditUlasan(id, editReviewTa.value, btnSaveEditReview, data));
+      btnCancelEditReview.addEventListener("click",()=>{editReviewForm.classList.remove("show");editReviewTa.value=data.ulasan||"";adminFeedbackEditor?.reset();});
+      btnSaveEditReview.addEventListener("click",()=>simpanEditUlasan(id, editReviewTa.value, btnSaveEditReview,adminFeedbackEditor));
       btnEditTime.addEventListener("click",()=>{
         if(!mintaAdmin())return;
         pinControls.classList.remove("show");
@@ -4365,7 +4370,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const videoControl=(r.hasFeedbackVideo||r.feedbackVideo)?'<button type="button" data-admin-row-action="video">Video</button>':'';
     const reportControls='<details class="admin-report-controls"><summary>Laporan'+(r.reportDisabled?' · ditutup':'')+'</summary><button type="button" data-admin-row-action="restoreReported">Munculkan semula</button><button type="button" data-admin-row-action="'+(r.reportDisabled?'reportsEnable':'reportsDisable')+'">'+(r.reportDisabled?'Aktifkan Lapor':'Tutup Lapor')+'</button><button type="button" data-admin-row-action="'+(r.reportAutoHideTestEnabled?'reportTestDisable':'reportTestEnable')+'">'+(r.reportAutoHideTestEnabled?'Matikan ujian auto-sorok':'Aktifkan ujian auto-sorok')+'</button>'+(r.reportAutoHideTestEnabled?'<small>Report ulasan ini 3 kali dengan akaun admin · '+Number(r.reportTestCount||0)+'/3</small>':'')+'</details>';
     if(!r.pendingSource)return "<div class=\"admin-moderation-actions\"><button data-admin-row-action=\"publish\" title=\"Luluskan / Terbit\"><i class=\"fa-solid fa-eye\"></i></button><button data-admin-row-action=\"hide\" title=\"Sorok\"><i class=\"fa-solid fa-eye-slash\"></i></button><button data-admin-row-action=\"feature\" title=\"Pilihan\"><i class=\"fa-solid fa-star\"></i></button><button data-admin-row-action=\"reply\" title=\"Balas\"><i class=\"fa-solid fa-reply\"></i></button><button data-admin-row-action=\"open\" title=\"Buka\"><i class=\"fa-solid fa-arrow-up-right-from-square\"></i></button><button class=\"danger\" data-admin-row-action=\"trash\" title=\"Tong sampah — tanpa download\" data-trash-control=\"true\"><i class=\"fa-solid fa-trash-can\"></i> Tong sampah</button><button class=\"danger\" data-admin-row-action=\"delete\" title=\"Padam kekal + backup\"><i class=\"fa-solid fa-trash\"></i></button>"+videoControl+reportControls+"</div>";
-    return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="publish" class="approval-accept"><i class="fa-solid fa-check" aria-hidden="true"></i> Luluskan</button><button type="button" data-admin-row-action="reject" class="approval-reject"><i class="fa-solid fa-ban" aria-hidden="true"></i> Tolak</button>'+(r.hasFeedbackVideo?'<button type="button" data-admin-row-action="video">Video</button>':'')+(r.hasFeedbackImage?'<button type="button" data-admin-row-action="detail"><i class="fa-solid fa-image" aria-hidden="true"></i> Gambar</button>':'')+'<button type="button" data-admin-row-action="trash"><i class="fa-solid fa-trash-can"></i> Tong sampah</button><button type="button" data-admin-row-action="delete" class="danger" title="Backup dan padam rekod"><i class="fa-solid fa-trash" aria-hidden="true"></i> Padam</button></div>';
+    return '<div class="admin-moderation-actions is-approval-queue"><button type="button" data-admin-row-action="publish" class="approval-accept"><i class="fa-solid fa-check" aria-hidden="true"></i> Luluskan</button><button type="button" data-admin-row-action="reject" class="approval-reject"><i class="fa-solid fa-ban" aria-hidden="true"></i> Tolak</button><button type="button" data-admin-row-action="editFeedback">Edit ulasan & feedback</button>'+(r.hasFeedbackVideo?'<button type="button" data-admin-row-action="video">Video</button>':'')+(r.hasFeedbackImage?'<button type="button" data-admin-row-action="detail"><i class="fa-solid fa-image" aria-hidden="true"></i> Gambar</button>':'')+'<button type="button" data-admin-row-action="trash"><i class="fa-solid fa-trash-can"></i> Tong sampah</button><button type="button" data-admin-row-action="delete" class="danger" title="Backup dan padam rekod"><i class="fa-solid fa-trash" aria-hidden="true"></i> Padam</button></div>';
   }
   function renderAdminModeration(){
     const box=document.getElementById("adminModerationList");if(!box)return;const list=getAdminModerationList();document.getElementById("adminModerationResult").textContent=`${list.length} rekod`;
@@ -4380,6 +4385,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   async function runAdminReviewAction(action,ids){
     if(!mintaAdmin()||!ids.length){showToast("Pilih sekurang-kurangnya satu ulasan.","error");return;}const records=ids.map(id=>adminReviewRecords().find(r=>r.id===id)).filter(Boolean);
     if(records.some(r=>adminReviewStatus(r)==="trash")&&!['restore','delete','detail'].includes(action)){showToast('Pulihkan ulasan daripada tong sampah dahulu.','info');return;}
+    if(action==='editFeedback'){await openAdminFeedbackDialog(records[0]);return;}
     if(['trash','restore'].includes(action)){
       try{await Promise.all(records.map(r=>moderationRequest({action,id:r.id})));await logAdminAction(action,ids.join(','),`${ids.length} ulasan`);selectedAdminReviews.clear();await reloadAdminReviews();showToast(action==='trash'?'Ulasan dipindahkan ke tong sampah. Tiada backup dimuat turun.':'Ulasan dipulihkan. Ulasan menunggu diberi 30 minit semakan semula.','success');}catch(error){showToast(error.message,'error');}return;
     }
