@@ -23,12 +23,5 @@
     catch(error){if(error.name==='AbortError')throw Error('Pelayan mengambil masa terlalu lama. Semak status ulasan sebelum cuba semula.');throw error;}
     finally{active=false;if(widget!==null){try{root.turnstile?.remove(widget);}catch(_){}widget=null;}}
   }
-  async function uploadVideo(file,code,{anchor}={}){
-    const post=async body=>{const response=await root.fetch('/api/review-video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const result=await response.json();if(!response.ok)throw Error(result.error||'Upload video gagal.');return result;};
-    const token=await requestReviewToken('review_upload',anchor),init=await post({action:'init',code,file:{type:file.type,size:file.size},token});
-    const body=new root.FormData();Object.entries(init.fields).forEach(([key,value])=>body.append(key,value));body.append('file',file);
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),120000);try{const response=await root.fetch(init.url,{method:'POST',body,signal:controller.signal});if(!response.ok)throw Error('Upload ke storan gagal. Semak sambungan dan cuba semula.');}finally{clearTimeout(timer);}
-    const result=await post({action:'finish',code,id:init.id});return result.id;
-  }
-  root.H4ReviewSubmit={uploadVideo,submit:(payload,options)=>send(payload,options),report:(payload,options)=>send(payload,options,true),edit:(payload,options)=>send(payload,options,false,true)};
+  root.H4ReviewSubmit={submit:(payload,options)=>send(payload,options),report:(payload,options)=>send(payload,options,true),edit:(payload,options)=>send(payload,options,false,true)};
 })(window);

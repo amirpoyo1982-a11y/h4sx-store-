@@ -1,6 +1,6 @@
 const TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const ALLOWED_HOSTNAMES = new Set(['www.h4sxmy.xyz', 'h4sxmy.xyz']);
-const ALLOWED_ACTIONS = new Set(['review_submit', 'report_review', 'review_edit', 'review_upload']);
+const ALLOWED_ACTIONS = new Set(['review_submit', 'report_review', 'review_edit']);
 import crypto from 'node:crypto';
 
 // Best-effort server throttling. Warm serverless instances retain this map,

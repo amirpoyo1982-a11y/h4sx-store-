@@ -1,12 +1,12 @@
-const CACHE_NAME = 'h4sx-pwa-20261015-video-clipboard-identity-v123';
+const CACHE_NAME = 'h4sx-pwa-20261015-video-links-v124';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
-  './app.js?v=video-clipboard-identity-20261015',
+  './app.js?v=video-links-20261015',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
-  './review-media.js?v=video-clipboard-identity-20261015',
-  './review-submit-client.js?v=video-clipboard-identity-20261015',
+  './review-media.js?v=video-links-20261015',
+  './review-submit-client.js?v=video-links-20261015',
   './manifest.webmanifest'
 ];
 
