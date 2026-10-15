@@ -1,3 +1,4 @@
+import {captureReviewViewport,restoreReviewViewport} from '/review/review-scroll.js?v=20261015';
 import {officialReviewIdentity,reviewNameIssue} from '/review/review-identity.js?v=20261015';
 import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=direct-link-20261015';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -3464,15 +3465,15 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   document.querySelectorAll(".filter-btn").forEach(btn=>{
     btn.addEventListener("click",()=>{
       document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
-      btn.classList.add("active"); filterStar=btn.dataset.filter; mobileReviewLimit=12; renderReviews();
+      btn.classList.add("active"); filterStar=btn.dataset.filter; mobileReviewLimit=12; renderReviews(false);
     });
   });
-  sortSelect.addEventListener("change",()=>{ sortMode=sortSelect.value; mobileReviewLimit=12; renderReviews(); });
+  sortSelect.addEventListener("change",()=>{ sortMode=sortSelect.value; mobileReviewLimit=12; renderReviews(false); });
   reviewSearchInput?.addEventListener("input", () => {
     reviewSearchTerm = reviewSearchInput.value.trim().toLocaleLowerCase("ms");
     if (btnClearReviewSearch) btnClearReviewSearch.hidden = !reviewSearchTerm;
     mobileReviewLimit = 12;
-    renderReviews();
+    renderReviews(false);
   });
   btnClearReviewSearch?.addEventListener("click", () => {
     reviewSearchInput.value = "";
@@ -3480,7 +3481,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     btnClearReviewSearch.hidden = true;
     reviewSearchInput.focus();
     mobileReviewLimit = 12;
-    renderReviews();
+    renderReviews(false);
   });
   btnMoreReviews?.addEventListener("click", () => {
     mobileReviewLimit += 12;
@@ -3567,7 +3568,15 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     return list;
   }
 
-  function renderReviews() {
+  function renderReviews(preserveViewport = true) {
+    const position = preserveViewport ? captureReviewViewport(kotakPaparan) : null;
+    // Browser anchoring must not follow elements that are being replaced.
+    kotakPaparan.style.overflowAnchor = 'none';
+    renderReviewCards();
+    restoreReviewViewport(kotakPaparan, position);
+  }
+
+  function renderReviewCards() {
     document.querySelectorAll('video[data-chat-video-src]').forEach(video => video.pause());
     reviewChatVideoObserver?.disconnect();
     const list = getCurrentReviewList();
@@ -3845,7 +3854,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         form.classList.toggle("show");
         if(form.classList.contains("show")) {
           if (!ta.value.trim()) ta.value = getAdminReplyTemplate(score, rawNama);
-          ta.focus();
+          ta.focus({preventScroll:true});
         }
       });
       btnB.addEventListener("click",()=>form.classList.remove("show"));
@@ -3856,7 +3865,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         if(!mintaAdmin())return;
         if(!adminFeedbackEditor)adminFeedbackEditor=mountAdminFeedbackFields(editReviewForm,data,btnSaveEditReview);
         editReviewForm.classList.toggle("show");
-        if(editReviewForm.classList.contains("show")) editReviewTa.focus();
+        if(editReviewForm.classList.contains("show")) editReviewTa.focus({preventScroll:true});
       });
       btnCancelEditReview.addEventListener("click",()=>{editReviewForm.classList.remove("show");editReviewTa.value=data.ulasan||"";adminFeedbackEditor?.reset();});
       btnSaveEditReview.addEventListener("click",()=>simpanEditUlasan(id, editReviewTa.value, btnSaveEditReview,adminFeedbackEditor));
@@ -3865,7 +3874,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         pinControls.classList.remove("show");
         pinMenuButton.setAttribute("aria-expanded", "false");
         editTimeForm.classList.toggle("show");
-        if(editTimeForm.classList.contains("show")) editTimeInput.focus();
+        if(editTimeForm.classList.contains("show")) editTimeInput.focus({preventScroll:true});
       });
       btnCancelEditTime.addEventListener("click",()=>editTimeForm.classList.remove("show"));
       btnSaveEditTime.addEventListener("click",()=>simpanEditMasa(id, editTimeInput.value, btnSaveEditTime, data));

@@ -1,1 +1,12 @@
 .customer-review-edit{box-sizing:border-box;width:min(520px,calc(100% - 28px));max-height:85dvh;border:1px solid #bce8ff;border-radius:20px;padding:20px;background:#f9fdff;color:#153f55;box-shadow:0 24px 80px #001c4050;overflow:auto;font:14px/1.6 system-ui,sans-serif;z-index:2147483647}.customer-review-edit::backdrop{background:#0320399c}.customer-review-edit header{display:flex;justify-content:space-between;align-items:center;gap:12px}.customer-review-edit h2{margin:0;font-size:22px}.customer-review-edit label{display:block;font-weight:650;margin:12px 0}.customer-review-edit input,.customer-review-edit select,.customer-review-edit textarea{display:block;box-sizing:border-box;width:100%;font:inherit;border:1px solid #c3dfec;border-radius:10px;padding:10px;margin-top:5px;background:#fff;color:#153f55}.customer-review-edit button{font:inherit;cursor:pointer;border:1px solid #bce8ff;border-radius:10px;padding:9px 13px;background:#eaf8ff;color:#087fae;font-weight:700}.customer-review-edit button:disabled{opacity:.55;cursor:wait}.customer-review-edit img{max-width:180px;max-height:150px;object-fit:contain;display:block;margin:8px 0}.customer-review-edit [hidden]{display:none!important}#customerEditStatus{white-space:pre-wrap}#customerEditSave{width:100%;background:#08a8cf;color:#fff}#customerEditTime{font-weight:700;color:#087fae}[data-customer-review-edit]{cursor:pointer;font:inherit;color:#087fae;background:#eaf8ff;border:1px solid #bce8ff;border-radius:10px;padding:9px 13px;margin-top:9px}
+
+/* Explicit centering survives the site's global margin reset. Native modal
+   dialogs stay within the viewport even when the page is already scrolled. */
+dialog.customer-review-edit,dialog.admin-feedback-dialog,dialog#feedback-video-dialog{
+  position:fixed;inset:0;margin:auto;box-sizing:border-box;
+  max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);
+  overflow:auto;overscroll-behavior:contain;
+}
+dialog#feedback-video-dialog{box-shadow:0 24px 80px #001c4050;font:14px/1.6 system-ui,sans-serif}
+dialog#feedback-video-dialog::backdrop{background:#0320399c}
+dialog#feedback-video-dialog video{display:block;min-height:180px;object-fit:contain;background:#061626;border-radius:9px}
