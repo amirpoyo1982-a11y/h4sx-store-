@@ -283,6 +283,14 @@
             <button id="btnSaveAdminDisplay" type="button"><i class="fa-solid fa-check"></i> Simpan Tetapan</button>
           </section>
           <section class="admin-tool-section">
+            <div class="admin-tool-title"><i class="fa-solid fa-circle-check"></i><div><h3>Role Diluluskan</h3><p>Diberi automatik kepada review yang lulus moderasi.</p></div></div>
+            <label class="admin-setting-toggle"><span>Aktifkan role automatik</span><input id="adminApprovedRoleEnabled" type="checkbox" checked></label>
+            <label>Teks role<input id="adminApprovedRoleText" maxlength="24" value="DILULUSKAN"></label>
+            <label>Warna role<input id="adminApprovedRoleColor" type="color" value="#16a34a"></label>
+            <label>Warna tulisan<input id="adminApprovedRoleTextColor" type="color" value="#ffffff"></label>
+            <button id="btnSaveApprovedRole" type="button"><i class="fa-solid fa-floppy-disk"></i> Simpan Role Diluluskan</button>
+          </section>
+          <section class="admin-tool-section">
             <div class="admin-tool-title"><i class="fa-solid fa-box-archive"></i><div><h3>Backup & export</h3><p>Simpan salinan data sebelum perubahan besar.</p></div></div>
             <button id="btnExportReviewsJson" type="button"><i class="fa-solid fa-file-code"></i> Export JSON</button>
             <button id="btnExportReviewsCsv" type="button"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
@@ -380,6 +388,7 @@
     <button class="admin-btn bulk-apply-btn" id="btnApplyBadgeAll">Pilih Apply</button>
     <button class="admin-btn" id="btnRemoveVerifiedBuyer" style="background:#fff7e6;color:#9a5b00;">Buang Verified Buyer</button>
     <button class="admin-btn" id="btnRemoveCustomCheck" style="background:#eaf7ff;color:#0369a1;">Buang Centang</button>
+    <button class="admin-btn" id="btnRemoveApprovedRole" style="background:#fff7e6;color:#9a5b00;">Buang Role Diluluskan</button>
     <button class="admin-btn" id="btnRemoveBadge" style="background:#fef0f0;color:#b83232;">Buang Badge</button>
     <button class="admin-btn admin-btn-close" id="btnCancelBadge">Batal</button>
   </div>
@@ -990,7 +999,7 @@
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
 <script src="/review-media.js?v=admin-feedback-edit-20261015"></script>
 <script src="/review-submit-client.js?v=video-links-20261015"></script>
-<script type="module" src="/review/review-app.js?v=keep-review-scroll-20261015"></script>
+<script type="module" src="/review/review-app.js?v=approved-role-20261016"></script>
 <script defer src="/review-edit-client.js?v=center-dialogs-20261015"></script>
 </body>
 </html>

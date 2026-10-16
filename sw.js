@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20261015-keep-review-scroll-v126';
+const CACHE_NAME = 'h4sx-pwa-20261016-approved-role-v127';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',

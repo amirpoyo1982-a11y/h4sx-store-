@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateSubmission,stageSubmission,decideSubmission,approveDue,WAIT_MS,ADMIN_UID,editReviewFeedback} from '../lib/review-moderation.js';
+import {validateSubmission,stageSubmission,decideSubmission,approveDue,WAIT_MS,ADMIN_UID,editReviewFeedback,publicPayload} from '../lib/review-moderation.js';
+
+test('approved role is granted by moderation and can be disabled globally',()=>{
+ const review={nama:'Pelanggan',bintang:5,ulasan:'Baik'};
+ assert.equal(publicPayload(review,{},1000).approvedRoleGranted,true);
+ assert.equal(publicPayload(review,{approvedRole:{enabled:false}},1000).approvedRoleGranted,undefined);
+});
 import {createSubmitHandler} from '../api/review-submit.js';
 import {createAutoApproveHandler} from '../api/review-auto-approve.js';
 import {createModerationHandler} from '../api/review-moderation.js';

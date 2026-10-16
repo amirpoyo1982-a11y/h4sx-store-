@@ -796,6 +796,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const btnSaveBadge         = document.getElementById('btnSaveBadge');
   const btnApplyBadgeAll     = document.getElementById('btnApplyBadgeAll');
   const btnRemoveCustomCheck = document.getElementById('btnRemoveCustomCheck');
+  const btnRemoveApprovedRole = document.getElementById('btnRemoveApprovedRole');
   const btnRemoveBadge       = document.getElementById('btnRemoveBadge');
   const btnCancelBadge       = document.getElementById('btnCancelBadge');
   let editingBadgeId = null;
@@ -1309,6 +1310,11 @@ function reviewAnnouncementAction(config) {
   btnRemoveCustomCheck?.addEventListener('click', () => {
     const dataDoc = allDocs.find(d=>d.id===editingBadgeId) || {};
     simpanBadgePayload({ customCheckEnabled:false, customCheckSize:null, customCheckType:null, customCheckGif:null, customCheckColor:null }, "Centang custom dibuang.", dataDoc);
+  });
+  btnRemoveApprovedRole?.addEventListener('click', () => {
+    const dataDoc = allDocs.find(d=>d.id===editingBadgeId) || {};
+    if (dataDoc.approvedRoleGranted !== true) { showToast('Review ini tiada role Diluluskan.', 'info'); return; }
+    simpanBadgePayload({ approvedRoleRemoved:true }, 'Role Diluluskan dibuang untuk review ini.', dataDoc);
   });
   btnRemoveBadge.addEventListener('click', () => {
     const dataDoc = allDocs.find(d=>d.id===editingBadgeId) || {};
@@ -3691,6 +3697,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${medalMarkup(data)}
               ${data.hideRating!==true && (rawBintang<0||rawBintang>5)?`<span style="background:linear-gradient(90deg,#f0a500,#e05252);color:#fff;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:10px;letter-spacing:.3px;">${rawBintang} Bintang</span>`:""}
               ${verifiedTag}
+              ${approvedRoleMarkup(data)}
               ${customCheckMarkup(data)}
               ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
               ${data.identityBackplateEnabled===true ? "</span>" : ""}
@@ -4214,6 +4221,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
 
   const DEFAULT_REVIEW_ADMIN_SETTINGS = {
     showImages:true, showBadges:true, showReplies:true, autoReply:true, showRelativeTime:true, lowRatingAlert:true,
+    approvedRole:{enabled:true,text:'DILULUSKAN',color:'#16a34a',textColor:'#ffffff'},
     replyTemplates:{
       5:"Terima kasih {nama}! Kami sangat hargai sokongan dan ulasan anda.",
       4:"Terima kasih {nama}! Kami gembira urusan berjalan lancar dan akan terus tingkatkan servis.",
@@ -4236,14 +4244,23 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     Object.entries(map).forEach(([suffix,key])=>{const el=document.getElementById(`adminSetting${suffix}`);if(el)el.checked=reviewAdminSettings[key]!==false;});
     const rating=document.getElementById("adminTemplateRating")?.value||"5", template=document.getElementById("adminTemplateText");
     if(template)template.value=reviewAdminSettings.replyTemplates?.[rating]||"";
+    const role={...DEFAULT_REVIEW_ADMIN_SETTINGS.approvedRole,...(reviewAdminSettings.approvedRole||{})};
+    const roleFields={adminApprovedRoleEnabled:role.enabled!==false,adminApprovedRoleText:role.text,adminApprovedRoleColor:role.color,adminApprovedRoleTextColor:role.textColor};
+    Object.entries(roleFields).forEach(([id,value])=>{const el=document.getElementById(id);if(el){if(el.type==='checkbox')el.checked=value;else el.value=value;}});
   }
   onSnapshot(doc(db,"config","review_admin"),snap=>{
     const remote=snap.exists()?snap.data():{};
-    reviewAdminSettings={...DEFAULT_REVIEW_ADMIN_SETTINGS,...remote,replyTemplates:{...DEFAULT_REVIEW_ADMIN_SETTINGS.replyTemplates,...(remote.replyTemplates||{})}};
+    reviewAdminSettings={...DEFAULT_REVIEW_ADMIN_SETTINGS,...remote,approvedRole:{...DEFAULT_REVIEW_ADMIN_SETTINGS.approvedRole,...(remote.approvedRole||{})},replyTemplates:{...DEFAULT_REVIEW_ADMIN_SETTINGS.replyTemplates,...(remote.replyTemplates||{})}};
     applyReviewAdminSettings(); renderGlobalReplyThemeEditor(); renderReviews(); renderAdminAutoReplies();
   },applyReviewAdminSettings);
   function renderGlobalReplyThemeEditor(){const host=document.getElementById('adminReplyThemeEditor');if(!host)return;host.innerHTML=adminOk()?replyThemeEditorMarkup():'';if(adminOk())bindReplyThemeEditor(host);}
   function getAdminReplyTemplate(score,nama="pelanggan"){return String(reviewAdminSettings.replyTemplates?.[clampBintang(score)]||DEFAULT_REVIEW_ADMIN_SETTINGS.replyTemplates[clampBintang(score)]||"Terima kasih atas ulasan anda.").replaceAll("{nama}",nama);}
+  function approvedRoleMarkup(data={}) {
+    const role={...DEFAULT_REVIEW_ADMIN_SETTINGS.approvedRole,...(reviewAdminSettings.approvedRole||{})};
+    if(role.enabled===false||data.approvedRoleGranted!==true||data.approvedRoleRemoved===true)return '';
+    const text=String(role.text||'DILULUSKAN').trim().slice(0,24)||'DILULUSKAN';
+    return `<span class="verified-badge system-approved-role" style="background:${warnaHexSah(role.color,'#16a34a')};color:${warnaHexSah(role.textColor,'#ffffff')};border:none;">${escapeHtml(text)}</span>`;
+  }
 
   function switchAdminCenterTab(name){
     if(name==='moderation')loadQueuedReviews();
@@ -4500,6 +4517,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   document.getElementById("adminTemplateRating")?.addEventListener("change",e=>{document.getElementById("adminTemplateText").value=reviewAdminSettings.replyTemplates?.[e.target.value]||"";});
   document.getElementById("btnSaveAdminTemplate")?.addEventListener("click",async()=>{if(!mintaAdmin())return;const rating=document.getElementById("adminTemplateRating").value,text=document.getElementById("adminTemplateText").value.trim();if(!text){showToast("Template tidak boleh kosong.","error");return;}reviewAdminSettings.replyTemplates[rating]=text;try{await setDoc(doc(db,"config","review_admin"),{replyTemplates:reviewAdminSettings.replyTemplates},{merge:true});await logAdminAction("save_template",rating,`${rating} bintang`);showToast("Template balasan disimpan.","success");}catch(err){console.error(err);showToast("Gagal simpan template.","error");}});
   document.getElementById("btnSaveAdminDisplay")?.addEventListener("click",async()=>{if(!mintaAdmin())return;const next={showImages:document.getElementById("adminSettingImages").checked,showBadges:document.getElementById("adminSettingBadges").checked,showReplies:document.getElementById("adminSettingReplies").checked,autoReply:document.getElementById("adminSettingAutoReply").checked,showRelativeTime:document.getElementById("adminSettingRelativeTime").checked,lowRatingAlert:document.getElementById("adminSettingLowAlert").checked};try{await setDoc(doc(db,"config","review_admin"),next,{merge:true});showToast("Tetapan review disimpan.","success");}catch(err){console.error(err);showToast("Gagal simpan tetapan.","error");}});
+  document.getElementById('btnSaveApprovedRole')?.addEventListener('click',async()=>{if(!mintaAdmin())return;const text=document.getElementById('adminApprovedRoleText').value.trim().slice(0,24);if(!text){showToast('Teks role tidak boleh kosong.','error');return;}const next={enabled:document.getElementById('adminApprovedRoleEnabled').checked,text,color:document.getElementById('adminApprovedRoleColor').value,textColor:document.getElementById('adminApprovedRoleTextColor').value};try{await setDoc(doc(db,'config','review_admin'),{approvedRole:next},{merge:true});await logAdminAction('approved_role','review_admin',next.enabled?'aktif':'dimatikan');showToast('Role Diluluskan disimpan.','success');}catch(err){console.error(err);showToast('Gagal simpan role Diluluskan.','error');}});
 
   function serialiseReview(r){const out={...r};["diciptaPada","balasanPada","pinnedAt","featuredAt","moderatedAt"].forEach(k=>{if(out[k])out[k]=new Date(reviewRecordTime(out[k])).toISOString();});return out;}
   function downloadAdminData(data,name,type="application/json"){const text=type.includes("json")?JSON.stringify(Array.isArray(data)?data.map(serialiseReview):data,null,2):data,url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
