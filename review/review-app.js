@@ -2375,6 +2375,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   onAuthStateChanged(auth, user => {
     if(!user)queuedReviews=[];
     currentUser = user;
+    clearAdminReviewHistory();
     if (user && !adminOk()) {
       showToast("Akaun ini bukan admin H4SX.", "error");
       signOut(auth);
@@ -4263,6 +4264,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
 
   function switchAdminCenterTab(name){
+    if(name==='history')loadAdminReviewHistory();
     if(name==='moderation')loadQueuedReviews();
     document.querySelectorAll("[data-admin-center-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.adminCenterTab===name));
     document.querySelectorAll("[data-admin-center-panel]").forEach(panel=>panel.classList.toggle("active",panel.dataset.adminCenterPanel===name));
@@ -4322,7 +4324,49 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   let queuedReviews=[],queueLoading=false;
   function adminReviewRecords(){const ids=new Set(allDocs.map(r=>r.id));return [...allDocs,...queuedReviews.filter(r=>!ids.has(r.id))];}
-  async function moderationRequest(payload){const response=await fetch('/api/review-moderation',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await currentUser.getIdToken()},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw Error(data.error||'Moderasi gagal.');return data;}
+  async function moderationRequest(payload,signal){const response=await fetch('/api/review-moderation',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await currentUser.getIdToken()},body:JSON.stringify(payload),signal});const data=await response.json();if(!response.ok)throw Error(data.error||'Moderasi gagal.');return data;}
+  let adminHistoryRecords=[],adminHistoryCursor=null,adminHistoryLoading=false,adminHistoryVersion=0,adminHistoryController=null;
+  function clearAdminReviewHistory(){
+    adminHistoryVersion++;adminHistoryController?.abort();adminHistoryController=null;
+    adminHistoryRecords=[];adminHistoryCursor=null;adminHistoryLoading=false;
+    document.getElementById('adminHistorySearch').value='';
+    document.getElementById('adminHistoryStatus').textContent='';
+    renderAdminReviewHistory();
+  }
+  function renderAdminReviewHistory(){
+    const allowed=adminOk(),box=document.getElementById('adminHistoryList');
+    document.querySelector('[data-admin-center-tab="history"]').hidden=!allowed;
+    document.querySelector('[data-admin-center-panel="history"]').hidden=!allowed;
+    document.getElementById('btnAdminRefreshHistory').disabled=adminHistoryLoading;
+    const more=document.getElementById('btnAdminMoreHistory');more.hidden=!allowed||!adminHistoryCursor;more.disabled=adminHistoryLoading;
+    if(!allowed){box.replaceChildren();return;}
+    const search=document.getElementById('adminHistorySearch').value.trim().toLowerCase();
+    const records=adminHistoryRecords.filter(r=>(r.nama||'').toLowerCase().includes(search)||r.code.toLowerCase().includes(search));
+    const labels={pending:'Menunggu semakan',published:'Diterbitkan',hidden:'Disorok',rejected:'Ditolak',trash:'Tong sampah'};
+    box.innerHTML=records.length?records.map(r=>{
+      const time=r.redeemedAt==null?'Masa tidak direkodkan':new Date(r.redeemedAt).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur',dateStyle:'medium',timeStyle:'short'});
+      return `<article class="admin-history-item"><div><strong>${escapeHtml(r.nama||'Nama tidak tersedia')}</strong><code>${escapeHtml(r.code)}</code></div><div><span class="admin-status-chip ${escapeHtml(r.status)}">${escapeHtml(labels[r.status]||r.status)}</span><small>${escapeHtml(time)}</small></div></article>`;
+    }).join(''):adminEmpty(adminHistoryLoading?'Memuatkan sejarah...':search?'Tiada rekod dimuatkan yang sepadan.':'Belum ada sejarah redeem.','fa-clock-rotate-left');
+  }
+  async function loadAdminReviewHistory(reset=true){
+    if(!adminOk()){clearAdminReviewHistory();return;}
+    if(adminHistoryLoading)return;
+    const version=adminHistoryVersion,user=currentUser,controller=new AbortController();
+    adminHistoryController=controller;adminHistoryLoading=true;
+    if(reset){adminHistoryRecords=[];adminHistoryCursor=null;}
+    const status=document.getElementById('adminHistoryStatus');status.textContent='Memuatkan sejarah...';renderAdminReviewHistory();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try{
+      const data=await moderationRequest({action:'history',cursor:adminHistoryCursor},controller.signal);
+      if(version!==adminHistoryVersion||!adminOk()||currentUser!==user)return;
+      adminHistoryRecords=[...new Map([...adminHistoryRecords,...data.records].map(r=>[r.id,r])).values()];adminHistoryCursor=data.nextCursor;
+      status.textContent=`${adminHistoryRecords.length} rekod dimuatkan (susunan kod A–Z). Carian meliputi rekod dimuatkan sahaja.`;
+    }catch(error){if(version===adminHistoryVersion&&adminOk())status.textContent=error.name==='AbortError'?'Sambungan lambat. Tekan Refresh untuk cuba lagi.':error.message||'Sejarah gagal dimuatkan.';}
+    finally{clearTimeout(timer);if(version===adminHistoryVersion){adminHistoryLoading=false;adminHistoryController=null;renderAdminReviewHistory();}}
+  }
+  document.getElementById('btnAdminRefreshHistory').addEventListener('click',()=>loadAdminReviewHistory());
+  document.getElementById('btnAdminMoreHistory').addEventListener('click',()=>loadAdminReviewHistory(false));
+  document.getElementById('adminHistorySearch').addEventListener('input',renderAdminReviewHistory);
   async function loadQueuedReviews(){
     if(!adminOk()||queueLoading)return;queueLoading=true;
     try{const data=await moderationRequest({action:'list'});if(!adminOk()){queuedReviews=[];return;}queuedReviews=data.records||[];document.getElementById('adminPendingShortcutCount').textContent=adminReviewRecords().filter(r=>r.moderationStatus==='pending'||(r.moderationStatus==='hidden'&&r.autoHiddenByReports===true)).length;document.getElementById('adminModerationEnabled').checked=data.enabled;document.getElementById('adminModerationBackendStatus').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length+' ulasan menunggu · '+(data.cronConfigured?'Secret cron sudah tersedia. Pastikan jadual cron-job.org diaktifkan.':'Auto-lulus belum dijadualkan: tambah REVIEW_CRON_SECRET dan aktifkan cron-job.org.');renderAdminModeration();renderAdminDashboard();}
