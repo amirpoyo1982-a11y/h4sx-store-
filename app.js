@@ -8903,11 +8903,12 @@ window.openH4ReviewForm = openH4ReviewForm;
 window.closeH4ReviewForm = closeH4ReviewForm;
 window.returnToH4sxHome = returnToH4sxHome;
 
-function showH4ReviewSuccess(reviewId,pending=false) {
+function showH4ReviewSuccess(reviewId,pending=false,editMinutes=null) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
   document.getElementById('h4rf-success-title').textContent=pending?'Ulasan diterima!':'Ulasan berjaya dihantar!';
-  document.getElementById('h4rf-success-copy').textContent=pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit. Anda boleh edit menggunakan kod asal dalam browser ini selama 10 minit selepas penghantaran.':'Ulasan anda sudah dipaparkan di H4SX Review.';
+  const editNotice=editMinutes?` Anda boleh edit menggunakan kod asal dalam browser ini selama ${editMinutes} minit dari penghantaran pertama, sehingga diluluskan admin.`:'';
+  document.getElementById('h4rf-success-copy').textContent=(pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.')+editNotice;
   document.getElementById('h4rf-success-view').href = pending?'https://www.h4sxmy.xyz/review':'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
@@ -9168,7 +9169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
       message(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin.':'Ulasan berjaya diterbitkan. Terima kasih!');
-      showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending');
+      showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending',submissionResult.editMinutes);
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
       if (error.message === 'review-code-invalid'||error.code==='review-code-invalid') {

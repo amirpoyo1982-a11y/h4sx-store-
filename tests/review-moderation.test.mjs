@@ -49,6 +49,35 @@ test('cron requires the configured secret before touching Firebase',async()=>{
 test('admin-only queue cannot be listed by anonymous or other Firebase users',async()=>{
   const handler=createModerationHandler(async()=>({auth:{verifyIdToken:async()=>({uid:'someone-else'})}}));let res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{action:'list'}},res);assert.equal(res.code,401);res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer TOKEN'},body:{action:'list'}},res);assert.equal(res.code,403);
 });
+
+test('admin can save 90-minute edit policy independently of the moderation switch and list it',async()=>{
+ const d=database({'config/review_moderation':{enabled:true,editMinutes:10}}),ref=d.firestore.doc;
+ d.firestore.doc=path=>({...ref(path),set:async(value,options)=>d.values.set(path,options?.merge?{...d.values.get(path),...value}:value)});
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+ const send=async body=>{const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer TOKEN'},body},res);return res;};
+ assert.equal((await send({action:'configure',editMinutes:90})).code,200);
+ assert.deepEqual(d.values.get('config/review_moderation'),{enabled:true,editMinutes:90});
+ assert.equal((await send({action:'list'})).data.editMinutes,90);
+ await send({action:'configure',enabled:false});assert.equal(d.values.get('config/review_moderation').editMinutes,90);
+ assert.equal((await send({action:'list'})).data.enabled,false);
+});
+
+test('invalid edit policy is rejected atomically; missing config returns the ten-minute default',async()=>{
+ let writes=0;const d=database(),ref=d.firestore.doc;d.firestore.doc=path=>({...ref(path),set:async()=>writes++});
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+ const send=async body=>{const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer TOKEN'},body},res);return res;};
+ for(const editMinutes of [0,-1,1.5,10081,'90','',null,true,{},[]])assert.equal((await send({action:'configure',enabled:false,editMinutes})).code,400);
+ assert.equal((await send({action:'configure',enabled:'true'})).code,400);assert.equal((await send({action:'configure'})).code,400);assert.equal(writes,0);
+ assert.equal((await send({action:'list'})).data.editMinutes,10);
+});
+
+test('editing policy and approval remain protected by origin and Firebase admin identity',async()=>{
+ for(const action of ['configure','approve'])for(const mode of ['anonymous','customer','bad-origin','revoked-token']){
+  const handler=createModerationHandler(async()=>({auth:{verifyIdToken:async()=>{if(mode==='revoked-token')throw Error('Revoked');return {uid:mode==='customer'?'not-admin':ADMIN_UID};}},firestore:{doc:()=>assert.fail('must not access documents')}}));
+  const res=reply();await handler({method:'POST',headers:{origin:mode==='bad-origin'?'https://evil.example':'https://www.h4sxmy.xyz',...(mode==='anonymous'?{}:{authorization:'Bearer TOKEN'})},body:{action,id:'review_H4SX-TEST1',editMinutes:90}},res);
+  assert([400,401,403].includes(res.code));
+ }
+});
 test('public submission fails closed if captcha fails',async()=>{
   const handler=createSubmitHandler(()=>assert.fail('must not touch Firebase'),async(req,res)=>res.status(403).json({success:false,error:'captcha failed'}));const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{submission:input,token:'bad'}},res);assert.equal(res.code,403);
 });

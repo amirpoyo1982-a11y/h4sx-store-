@@ -5634,6 +5634,12 @@ body.review-rewrite-v3 .review-card.has-custom-chat-background p.buyer-feedback 
 .admin-moderation-actions .admin-report-controls button{display:block;width:100%!important;max-width:100%;height:auto;min-height:36px;margin-top:6px;text-align:left;white-space:normal;overflow-wrap:break-word}
 .admin-report-controls small{display:block;margin:8px 2px 0;line-height:1.5;white-space:normal;overflow-wrap:break-word}
 .admin-bulk-toolbar{flex-wrap:wrap;overflow-x:visible;gap:7px}
+.admin-edit-duration{margin:12px 0;display:grid;gap:6px}
+.admin-edit-duration>label{font-weight:700}
+.admin-edit-duration>div{display:flex;flex-wrap:wrap;gap:8px}
+.admin-edit-duration input{width:110px;max-width:100%;padding:8px;border:1px solid #8fb6cb;border-radius:8px;font:inherit;color:inherit;background:transparent}
+.admin-edit-duration button{padding:8px 12px;border:1px solid #8fb6cb;border-radius:8px;font:inherit;cursor:pointer}
+.admin-edit-duration small{display:block}
 :root[data-theme="dark"] .admin-moderation-actions{border-color:#23465b}
 :root[data-theme="dark"] .admin-moderation-actions button,:root[data-theme="dark"] .admin-report-controls[open],:root[data-theme="dark"] .admin-report-controls[open] summary{background:#102b3a;color:#d7e8f2;border-color:#28516a}
 :root[data-theme="dark"] .admin-moderation-actions button.danger{background:#3b2028;color:#ffafb5;border-color:#69404b}

@@ -1,8 +1,8 @@
-const CACHE_NAME = 'h4sx-pwa-20261016-profile-clipboard-v130';
+const CACHE_NAME = 'h4sx-pwa-20261016-edit-policy-v131';
 const APP_SHELL = [
   './index.htm',
   './styles.css?v=identity-backplate-20261011',
-  './app.js?v=review-clean-20261016',
+  './app.js?v=edit-policy-20261016',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './review-media.js?v=admin-feedback-edit-20261015',

@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=profile-clipboard-20261016">
+  <link rel="stylesheet" href="/review/review-style.css?v=edit-policy-20261016">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -220,7 +220,9 @@
 
       <div class="admin-center-panel" data-admin-center-panel="moderation">
         <div class="admin-center-section-head"><div><small>KAWALAN ULASAN</small><h3>Moderasi & carian</h3></div><span id="adminModerationResult">0 rekod</span></div>
-        <div class="admin-moderation-policy" style="padding:12px;border:1px solid #bce8ff;border-radius:12px;margin-bottom:12px;font-size:13px;line-height:1.6"><label><input id="adminModerationEnabled" type="checkbox" checked> Semak ulasan baharu sebelum dipaparkan</label><p>Ulasan yang belum diluluskan atau ditolak akan auto-lulus selepas 30 minit. Ulasan lama kekal dipaparkan.</p><small id="adminModerationBackendStatus" role="status"></small></div><div class="admin-moderation-toolbar">
+        <div class="admin-moderation-policy" style="padding:12px;border:1px solid #bce8ff;border-radius:12px;margin-bottom:12px;font-size:13px;line-height:1.6"><label><input id="adminModerationEnabled" type="checkbox" checked> Semak ulasan baharu sebelum dipaparkan</label><p>Ulasan yang belum diluluskan atau ditolak akan auto-lulus selepas 30 minit. Ulasan lama kekal dipaparkan.</p>
+          <div class="admin-edit-duration"><label for="adminEditMinutes">Tempoh kod edit pelanggan (minit)</label><div><input id="adminEditMinutes" type="number" min="1" max="10080" step="1" value="10" inputmode="numeric" aria-describedby="adminEditMinutesHelp"><button id="btnSaveAdminEditMinutes" type="button">Simpan tempoh edit</button></div><small id="adminEditMinutesHelp">Contoh: 90 = 90 minit. Julat 1–10080 minit (7 hari). Bermula dari penghantaran pertama untuk review baharu sahaja; baki kod sedia ada kekal. Tekan Luluskan membatalkan kod edit serta-merta. Auto-lulus tidak memendekkan tempoh edit.</small><small id="adminEditMinutesStatus" role="status"></small></div>
+          <small id="adminModerationBackendStatus" role="status"></small></div><div class="admin-moderation-toolbar">
           <label class="admin-search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="adminReviewSearch" type="search" placeholder="Cari nama, teks atau role..."></label>
           <select id="adminReviewRatingFilter"><option value="all">Semua rating</option><option value="5">5 bintang</option><option value="4">4 bintang</option><option value="3">3 bintang</option><option value="12">1-2 bintang</option></select>
           <select id="adminReviewStatusFilter"><option value="all">Semua status</option><option value="needsReview">Perlu semakan</option><option value="pending">Menunggu semakan</option><option value="reported">Auto-sorok laporan</option><option value="published">Diterbitkan</option><option value="hidden">Disorok</option><option value="trash">Tong sampah</option><option value="rejected">Ditolak</option><option value="featured">Pilihan</option><option value="unreplied">Belum dibalas</option><option value="image">Ada gambar</option></select>
@@ -937,7 +939,7 @@
           <div class="feedback-image-preview" id="feedbackImagePreview"></div>
         </div>
 
-        <button type="button" data-customer-review-edit>Edit ulasan saya · 10 minit</button><p id="reviewSubmissionStatus" role="status" style="font-size:13px;line-height:1.6"></p><button id="butangHantar">Hantar Ulasan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        <button type="button" data-customer-review-edit>Edit ulasan saya</button><p id="reviewSubmissionStatus" role="status" style="font-size:13px;line-height:1.6"></p><button id="butangHantar">Hantar Ulasan <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
       </div>
 
       <!-- ════ REVIEWS COLUMN ════ -->
@@ -1013,8 +1015,8 @@
 
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
 <script src="/review-media.js?v=admin-feedback-edit-20261015"></script>
-<script src="/review-submit-client.js?v=video-links-20261015"></script>
-<script type="module" src="/review/review-app.js?v=profile-clipboard-20261016"></script>
-<script defer src="/review-edit-client.js?v=center-dialogs-20261015"></script>
+<script src="/review-submit-client.js?v=edit-policy-20261016"></script>
+<script type="module" src="/review/review-app.js?v=edit-policy-20261016"></script>
+<script defer src="/review-edit-client.js?v=edit-policy-20261016"></script>
 </body>
 </html>

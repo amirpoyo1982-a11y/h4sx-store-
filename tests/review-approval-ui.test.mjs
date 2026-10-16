@@ -7,6 +7,42 @@ test('approval shortcut is visible at the top of the admin menu, without duplica
 test('shortcut clears old filters and opens the waiting list directly',()=>{const fields=Object.fromEntries(['adminReviewSearch','adminReviewRatingFilter','adminReviewStatusFilter','adminReviewSort'].map(id=>[id,{value:'old'}]));let tab,loaded=0;const selected=new Set(['old']);const context={document:{getElementById:id=>fields[id]},mintaAdmin:()=>true,selectedAdminReviews:selected,openAdminReviewCenter:name=>tab=name,loadQueuedReviews:()=>loaded++};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function openWaitingReviews(){'),app.indexOf('  let queuedReviews=')),context);context.openWaitingReviews();assert.equal(tab,'moderation');assert.equal(fields.adminReviewStatusFilter.value,'needsReview');assert.equal(fields.adminReviewSearch.value,'');assert.equal(fields.adminReviewRatingFilter.value,'all');assert.equal(selected.size,0);assert.equal(loaded,1);});
 test('waiting review shows labelled approve/reject buttons rather than ambiguous icons',()=>{const context={adminReviewStatus:r=>r.moderationStatus||"published"};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);const html=context.moderationActionsMarkup({pendingSource:true,hasFeedbackImage:true});assert(html.includes('> Luluskan</button>'));assert(html.includes('> Tolak</button>'));assert(html.includes('data-admin-row-action="detail"'));assert(!html.includes('data-admin-row-action="reply"'));assert(context.moderationActionsMarkup({pendingSource:false}).includes('data-admin-row-action="reply"'));});
 
+test('pending, published and report-hidden approval buttons all use the server lock transaction',async()=>{
+ for(const record of [{id:'review_TEST',pendingSource:true},{id:'review_TEST'},{id:'review_TEST',moderationStatus:'hidden',autoHiddenByReports:true}]){
+  const calls=[],context={mintaAdmin:()=>true,adminReviewRecords:()=>[record],adminReviewStatus:r=>r.moderationStatus||'published',moderationRequest:async payload=>calls.push(payload),updateDoc:()=>assert.fail('approval must not bypass server'),logAdminAction:async()=>{},selectedAdminReviews:new Set(),loadQueuedReviews:async()=>{},showToast(){},console};
+  vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  async function runAdminReviewAction('),app.indexOf('  const REPORT_HISTORY_KEY=')),context);
+  await context.runAdminReviewAction('publish',[record.id]);assert.equal(calls.length,1);assert.equal(calls[0].action,'approve');assert.equal(calls[0].id,record.id);
+ }
+});
+
+function durationControls(){
+ const nodes=new Map(),calls=[];let allowed=true;
+ const el=id=>{if(!nodes.has(id))nodes.set(id,{value:'10',events:{},addEventListener(name,fn){this.events[name]=fn;},reportValidity(){this.invalid=true;}});return nodes.get(id);};
+ const context={document:{getElementById:el},mintaAdmin:()=>allowed,moderationRequest:async payload=>calls.push(payload),showToast(){},editDurationDirty:false,editDurationSaving:false};vm.createContext(context);
+ vm.runInContext(app.slice(app.indexOf("  document.getElementById('adminEditMinutes').addEventListener"),app.indexOf('  setInterval(()=>{if(adminOk()')),context);
+ return {context,el,calls,deny(){allowed=false;},save:()=>el('btnSaveAdminEditMinutes').events.click({currentTarget:el('btnSaveAdminEditMinutes')})};
+}
+
+test('admin duration control validates custom minutes, saves independently and guards admin access',async()=>{
+ const t=durationControls();t.el('adminEditMinutes').value='90';t.el('adminEditMinutes').events.input();assert.equal(t.context.editDurationDirty,true);
+ await t.save();assert.equal(t.calls.length,1);assert.equal(t.calls[0].editMinutes,90);assert.equal(t.calls[0].enabled,undefined);assert.equal(t.context.editDurationDirty,false);assert.match(t.el('adminEditMinutesStatus').textContent,/Disimpan: 90/);
+ for(const value of ['',0,1.5,10081]){t.el('adminEditMinutes').value=String(value);await t.save();}assert.equal(t.calls.length,1);
+ t.el('adminEditMinutes').value='60';t.deny();await t.save();assert.equal(t.calls.length,1);
+});
+
+test('duration save protects a draft while saving and preserves it on backend failure',async()=>{
+ const t=durationControls();let reject,started;const ready=new Promise(resolve=>started=resolve);
+ t.context.moderationRequest=()=>{started();return new Promise((resolve,fail)=>reject=fail);};t.el('adminEditMinutes').value='90';t.el('adminEditMinutes').events.input();
+ const saving=t.save();await ready;assert.equal(t.el('adminEditMinutes').disabled,true);assert.equal(t.el('btnSaveAdminEditMinutes').disabled,true);
+ await t.save();reject(Error('Backend gagal'));await saving;assert.equal(t.context.editDurationDirty,true);assert.equal(t.el('adminEditMinutes').disabled,false);assert.equal(t.el('adminEditMinutesStatus').textContent,'Backend gagal');
+});
+
+test('periodic moderation reload loads saved duration without overwriting unsaved drafts',async()=>{
+ const t=durationControls();Object.assign(t.context,{queueLoading:false,queuedReviews:[],adminOk:()=>true,moderationRequest:async()=>({records:[],enabled:true,editMinutes:90}),adminReviewRecords:()=>[],renderAdminModeration(){},renderAdminDashboard(){}});
+ vm.runInContext(app.slice(app.indexOf('  async function loadQueuedReviews(){'),app.indexOf("  document.getElementById('adminModerationEnabled').addEventListener")),t.context);
+ await t.context.loadQueuedReviews();assert.equal(t.el('adminEditMinutes').value,'90');t.el('adminEditMinutes').value='60';t.el('adminEditMinutes').events.input();await t.context.loadQueuedReviews();assert.equal(t.el('adminEditMinutes').value,'60');
+});
+
 test('trash uses a separate no-download path and exposes restore controls',()=>{const context={adminReviewStatus:r=>r.moderationStatus||'published'};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);const html=context.moderationActionsMarkup({moderationStatus:'trash'});assert(html.includes('data-admin-row-action="restore"'));assert(!html.includes('data-admin-row-action="publish"'));const branch=app.slice(app.indexOf("    if(['trash','restore'].includes(action))"),app.indexOf("    if(action==='detail')",app.indexOf('async function runAdminReviewAction')));assert(!branch.includes('downloadAdminData'));assert(read('app.js').includes("'pending', 'trash'"));});
 
 test('badge action grid has labelled icons above text and a full-width cancel button',()=>{

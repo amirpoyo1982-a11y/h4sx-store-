@@ -3345,7 +3345,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       document.querySelectorAll(".swatch,.emoji-opt").forEach(el=>el.classList.remove("active"));
       clearProfileImg(false); clearFeedbackImage(false); charCounter.textContent = "0 / 500"; updatePreview();
 
-      const submissionMessage=submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit. Edit tersedia selama 10 minit dalam browser ini menggunakan kod asal.':'Ulasan berjaya diterbitkan. Terima kasih!';
+      const editNotice=submissionResult.editMinutes?` Edit tersedia selama ${submissionResult.editMinutes} minit dalam browser ini menggunakan kod asal, sehingga diluluskan admin.`:'';
+      const submissionMessage=(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan berjaya diterbitkan. Terima kasih!')+editNotice;
       document.getElementById('reviewSubmissionStatus').textContent=submissionMessage;showToast(submissionMessage,'success');
       if(submissionResult.status==='published')setMobileReviewTab('reviews',true);
     } catch(err) {
@@ -4399,7 +4400,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     document.getElementById('adminReviewSearch').value='';document.getElementById('adminReviewRatingFilter').value='all';document.getElementById('adminReviewStatusFilter').value='needsReview';document.getElementById('adminReviewSort').value='newest';selectedAdminReviews.clear();
     openAdminReviewCenter('moderation');loadQueuedReviews();
   }
-  let queuedReviews=[],queueLoading=false;
+  let queuedReviews=[],queueLoading=false,editDurationDirty=false,editDurationSaving=false;
   function adminReviewRecords(){const ids=new Set(allDocs.map(r=>r.id));return [...allDocs,...queuedReviews.filter(r=>!ids.has(r.id))];}
   async function moderationRequest(payload,signal){const response=await fetch('/api/review-moderation',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await currentUser.getIdToken()},body:JSON.stringify(payload),signal});const data=await response.json();if(!response.ok)throw Error(data.error||'Moderasi gagal.');return data;}
   let adminHistoryRecords=[],adminHistoryCursor=null,adminHistoryLoading=false,adminHistoryVersion=0,adminHistoryController=null;
@@ -4446,10 +4447,20 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   document.getElementById('adminHistorySearch').addEventListener('input',renderAdminReviewHistory);
   async function loadQueuedReviews(){
     if(!adminOk()||queueLoading)return;queueLoading=true;
-    try{const data=await moderationRequest({action:'list'});if(!adminOk()){queuedReviews=[];return;}queuedReviews=data.records||[];document.getElementById('adminPendingShortcutCount').textContent=adminReviewRecords().filter(r=>r.moderationStatus==='pending'||(r.moderationStatus==='hidden'&&r.autoHiddenByReports===true)).length;document.getElementById('adminModerationEnabled').checked=data.enabled;document.getElementById('adminModerationBackendStatus').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length+' ulasan menunggu · '+(data.cronConfigured?'Secret cron sudah tersedia. Pastikan jadual cron-job.org diaktifkan.':'Auto-lulus belum dijadualkan: tambah REVIEW_CRON_SECRET dan aktifkan cron-job.org.');renderAdminModeration();renderAdminDashboard();}
+    try{const data=await moderationRequest({action:'list'});if(!adminOk()){queuedReviews=[];return;}queuedReviews=data.records||[];if(!editDurationDirty&&!editDurationSaving)document.getElementById('adminEditMinutes').value=String(data.editMinutes??10);document.getElementById('adminPendingShortcutCount').textContent=adminReviewRecords().filter(r=>r.moderationStatus==='pending'||(r.moderationStatus==='hidden'&&r.autoHiddenByReports===true)).length;document.getElementById('adminModerationEnabled').checked=data.enabled;document.getElementById('adminModerationBackendStatus').textContent=queuedReviews.filter(r=>r.moderationStatus==='pending').length+' ulasan menunggu · '+(data.cronConfigured?'Secret cron sudah tersedia. Pastikan jadual cron-job.org diaktifkan.':'Auto-lulus belum dijadualkan: tambah REVIEW_CRON_SECRET dan aktifkan cron-job.org.');renderAdminModeration();renderAdminDashboard();}
     catch(error){document.getElementById('adminModerationBackendStatus').textContent=error.message;}finally{queueLoading=false;}
   }
   document.getElementById('adminModerationEnabled').addEventListener('change',async event=>{const control=event.target;control.disabled=true;try{await moderationRequest({action:'configure',enabled:control.checked});showToast('Tetapan moderasi disimpan.','success');}catch(error){control.checked=!control.checked;showToast(error.message,'error');}finally{control.disabled=false;}});
+  document.getElementById('adminEditMinutes').addEventListener('input',()=>{editDurationDirty=true;document.getElementById('adminEditMinutesStatus').textContent='Belum disimpan.';});
+  document.getElementById('btnSaveAdminEditMinutes').addEventListener('click',async event=>{
+    if(!mintaAdmin()||editDurationSaving)return;
+    const input=document.getElementById('adminEditMinutes'),minutes=Number(input.value),status=document.getElementById('adminEditMinutesStatus'),button=event.currentTarget;
+    if(!input.value.trim()||!Number.isInteger(minutes)||minutes<1||minutes>10080){input.reportValidity();status.textContent='Masukkan 1–10080 minit.';return;}
+    editDurationSaving=true;input.disabled=true;button.disabled=true;status.textContent='Menyimpan...';
+    try{await moderationRequest({action:'configure',editMinutes:minutes});editDurationDirty=false;status.textContent=`Disimpan: ${minutes} minit untuk review baharu. Kod sedia ada tidak berubah.`;showToast('Tempoh kod edit disimpan.','success');}
+    catch(error){status.textContent=error.message;showToast(error.message,'error');}
+    finally{editDurationSaving=false;input.disabled=false;button.disabled=false;}
+  });
   setInterval(()=>{if(adminOk()&&!document.hidden&&adminCenterOverlay?.classList.contains('show'))loadQueuedReviews();},15000);
   function adminReviewStatus(data){return ["published","hidden","rejected","pending","trash"].includes(data.moderationStatus)?data.moderationStatus:"published";}
   function adminEmpty(text,icon="fa-inbox"){return `<div class="admin-empty-state"><i class="fa-solid ${icon}"></i><p>${escapeHtml(text)}</p></div>`;}
@@ -4556,7 +4567,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     }
     if(action==="delete"){if(!confirm(`Backup dan padam ${ids.length} ulasan secara kekal?`))return;const backup=await Promise.all(records.map(async record=>record.pendingSource?{...record,...(await moderationRequest({action:"detail",id:record.id})).review}:record));downloadAdminData(backup,`h4sx-review-backup-${Date.now()}.json`);}
     let reply="";if(action==="reply"){reply=prompt("Balasan untuk ulasan dipilih:",getAdminReplyTemplate(records[0]?.bintang,records[0]?.nama));if(!reply?.trim())return;}
-    try{await Promise.all(records.map(r=>r.pendingSource?moderationRequest({action:action==="publish"?"approve":action==="hide"||action==="reject"?"reject":action,id:r.id}):action==="delete"?moderationRequest({action:"delete",id:r.id}):action==="publish"?(r.autoHiddenByReports?moderationRequest({action:"restoreReported",id:r.id}):updateDoc(doc(db,"ratings",r.id),{moderationStatus:"published",moderatedAt:serverTimestamp()})):(action==="hide"||action==="reject")?updateDoc(doc(db,"ratings",r.id),{moderationStatus:action==="reject"?"rejected":"hidden",moderatedAt:serverTimestamp()}):action==="feature"?updateDoc(doc(db,"ratings",r.id),{featured:!r.featured,featuredAt:serverTimestamp()}):updateDoc(doc(db,"ratings",r.id),{balasanAdmin:reply.trim(),balasanPada:serverTimestamp(),balasanDibuang:false})));await logAdminAction(action,ids.join(","),`${ids.length} ulasan`);selectedAdminReviews.clear();await loadQueuedReviews();showToast("Tindakan admin berjaya disimpan.","success");}catch(err){console.error(err);showToast("Tindakan gagal. Semak Firestore Rules admin.","error");}
+    try{await Promise.all(records.map(r=>r.pendingSource?moderationRequest({action:action==="publish"?"approve":action==="hide"||action==="reject"?"reject":action,id:r.id}):action==="delete"?moderationRequest({action:"delete",id:r.id}):action==="publish"?(moderationRequest({action:"approve",id:r.id})):(action==="hide"||action==="reject")?updateDoc(doc(db,"ratings",r.id),{moderationStatus:action==="reject"?"rejected":"hidden",moderatedAt:serverTimestamp()}):action==="feature"?updateDoc(doc(db,"ratings",r.id),{featured:!r.featured,featuredAt:serverTimestamp()}):updateDoc(doc(db,"ratings",r.id),{balasanAdmin:reply.trim(),balasanPada:serverTimestamp(),balasanDibuang:false})));await logAdminAction(action,ids.join(","),`${ids.length} ulasan`);selectedAdminReviews.clear();await loadQueuedReviews();showToast("Tindakan admin berjaya disimpan.","success");}catch(err){console.error(err);showToast("Tindakan gagal. Semak Firestore Rules admin.","error");}
   }
 
   const REPORT_HISTORY_KEY="h4sx_review_report_history_v2";
