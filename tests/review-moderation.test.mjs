@@ -7,6 +7,12 @@ test('approved role is granted by moderation and can be disabled globally',()=>{
  assert.equal(publicPayload(review,{},1000).approvedRoleGranted,true);
  assert.equal(publicPayload(review,{approvedRole:{enabled:false}},1000).approvedRoleGranted,undefined);
 });
+test('legacy CDG prefix is removed from submitted text without losing suggestion metadata',()=>{
+ const result=validateSubmission({...input,review:{...input.review,ulasan:'cdg - Urusan smooth dari mula sampai siap.'}});
+ assert.equal(result.review.ulasan,'Urusan smooth dari mula sampai siap.');
+ assert.equal(result.review.cadanganDigunakan,true);
+ assert.equal(validateSubmission({...input,review:{...input.review,ulasan:'Servis baik',cadanganDigunakan:true}}).review.ulasan,'Servis baik');
+});
 import {createSubmitHandler} from '../api/review-submit.js';
 import {createAutoApproveHandler} from '../api/review-auto-approve.js';
 import {createModerationHandler} from '../api/review-moderation.js';

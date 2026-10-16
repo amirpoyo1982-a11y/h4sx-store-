@@ -5681,7 +5681,7 @@ function showReviewShowcasePopup(item, total) {
   popup.style.setProperty('--announcement-label-text', announcementConfig.labelTextColor);
   const rating = clampRating(item.bintang ?? item.rating);
   const name = item.nama || item.name || 'Pelanggan';
-  const text = item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.';
+  const text = (item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.').replace(/^cdg\s*[-:]\s*/i, '');
   const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
   const avatar = item.profileImg
     ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="Profil ' + escapeHtml(name) + '">'
@@ -9097,7 +9097,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!review.value.trim()) suggestionUsed = false;
   });
   document.getElementById('h4rf-suggest').addEventListener('click', () => {
-    review.value = 'cdg - ' + suggestions[Math.floor(Math.random() * suggestions.length)];
+    review.value = suggestions[Math.floor(Math.random() * suggestions.length)];
     suggestionUsed = true;
     charCount.textContent = `${review.value.length} / 500`;
   });
@@ -9153,7 +9153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const officialReviewAdmin=orderAuth?.currentUser?.uid==='LWRN6IDv4OV1PZd7Vldgp6F9pdH3';
     if (blocked || (!officialReviewAdmin&&customerName.toLowerCase().includes('h4sx'))) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
     if (!db || !window.firebase) return message('Sistem review belum sedia. Cuba semula sebentar lagi.', true);
-    if (suggestionUsed && reviewText && !/^cdg\s*[-:]/i.test(reviewText)) reviewText = `cdg - ${reviewText}`.slice(0, 500);
+    reviewText = reviewText.replace(/^cdg\s*[-:]\s*/i, '').trim();
     submit.disabled = true;
     submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar...';
     try {

@@ -2503,27 +2503,6 @@ body::before {
   background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(232,247,255,.94)) !important;
 }
 
-.suggestion-badge {
-  display: inline-flex;
-  align-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(14, 165, 233, .24);
-  background: rgba(14, 165, 233, .08);
-  color: #0369a1;
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-
-:root[data-theme="dark"] .suggestion-badge {
-  color: #bae6fd;
-  border-color: rgba(125, 211, 252, .22);
-  background: rgba(14, 165, 233, .15);
-}
-
 /* Review hard refresh button */
 .hard-refresh-review {
   height: 38px;
