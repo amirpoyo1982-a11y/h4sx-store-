@@ -744,6 +744,9 @@
     .customer-tool-row { display: flex; flex-wrap: wrap; gap: 8px; }
     .customer-tool-btn { padding: 9px 12px; font-size: 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent2); }
     .customer-tool-btn.danger { background: #fef0f0; color: #b83232; }
+    .customer-profile-clipboard { display:grid; gap:8px; padding:12px; margin:12px 0; border:1px dashed var(--accent2); border-radius:12px; min-width:0; }
+    .customer-profile-clipboard:focus-visible { outline:2px solid var(--accent2); outline-offset:3px; }
+    .customer-profile-clipboard .customer-tool-btn { width:fit-content; max-width:100%; white-space:normal; }
     .bulk-apply-btn {
       background: linear-gradient(120deg, #0f2a45, #2fa8e0);
       color: #fff;
