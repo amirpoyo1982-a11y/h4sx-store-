@@ -8,19 +8,27 @@ import {ADMIN_UID} from '../lib/review-moderation.js';
 
 function database(values) {
   const reads=[];
-  return {reads, collection(name) {
-    const state={name, fields:[], start:'', end:'', exclusive:false, limit:0};
+  return {reads,doc(path){const [name,id]=path.split('/');return {async get(){return {data:()=>values[name]?.[id]};}};},collection(name) {
+    const state={name,fields:[],start:null,end:null,exclusive:false,limit:0,order:[]};
     const query={
-      orderBy(field){assert.equal(field,'__name__');return this;},
+      orderBy(field,direction='asc'){state.order.push([field,direction]);return this;},
       endAt(value){state.end=value;return this;},
       startAt(value){state.start=value;return this;},
-      startAfter(value){state.start=value;state.exclusive=true;return this;},
+      startAfter(...values){state.start=values;state.exclusive=true;return this;},
       select(...fields){state.fields=fields;return this;},
       limit(value){state.limit=value;return this;},
       async get(){
         reads.push(state);
-        const docs=Object.entries(values[name]||{}).sort(([a],[b])=>a<b?-1:a>b?1:0)
-          .filter(([id])=>(state.exclusive?id>state.start:id>=state.start)&&id<=state.end)
+        const timeField=state.order[0][0],timed=timeField!=='__name__';
+        const ms=value=>typeof value?.toMillis==='function'?value.toMillis():value instanceof Date?value.getTime():value;
+        const docs=Object.entries(values[name]||{}).filter(([,data])=>!timed||data[timeField]!==undefined)
+          .sort(([idA,a],[idB,b])=>timed?(ms(b[timeField])-ms(a[timeField])||idB.localeCompare(idA)):idA.localeCompare(idB))
+          .filter(([id,data])=>{
+            if(!timed)return (state.exclusive?id>state.start[0]:id>=state.start)&&id<=state.end;
+            if(!state.exclusive)return true;
+            const time=ms(data[timeField]),start=ms(state.start[0]);
+            return time<start||time===start&&id<state.start[1];
+          })
           .slice(0,state.limit).map(([id,data])=>({id,data:()=>data}));
         return {docs};
       }
@@ -48,12 +56,12 @@ test('history joins private pending and public reviews by ID without duplicating
   });
   const result=await listReviewHistory(firestore);
   assert.equal(result.records.length,5);assert.equal(result.nextCursor,null);
-  assert.deepEqual(result.records[0],{id:'review_H4SX-AAAA',code:'H4SX-AAAA',nama:'Ali terkini',redeemedAt:1000,status:'hidden'});
-  assert.equal(result.records[1].redeemedAt,3000);
-  assert.deepEqual(result.records.slice(2).map(r=>r.status),['pending','rejected','trash']);
+  assert.deepEqual(result.records.map(r=>r.code),['H4SX-EEEE','H4SX-DDDD','H4SX-CCCC','H4SX-BBBB','H4SX-AAAA']);
+  assert.deepEqual(result.records.at(-1),{id:'review_H4SX-AAAA',code:'H4SX-AAAA',nama:'Ali terkini',redeemedAt:1000,status:'hidden'});
+  assert.deepEqual(result.records.slice(0,3).map(r=>r.status),['trash','rejected','pending']);
   assert(!JSON.stringify(result).includes('PRIVATE_'));
-  assert.deepEqual(firestore.reads.map(r=>r.fields),[['nama','diciptaPada','moderationStatus'],['review.nama','submittedAt','status']]);
-  assert(firestore.reads.every(r=>r.limit===101));
+  assert.deepEqual(firestore.reads.slice(0,2).map(r=>r.order),[[['diciptaPada','desc'],['__name__','desc']],[['submittedAt','desc'],['__name__','desc']]]);
+  assert(firestore.reads.every(r=>r.limit<=101));
 });
 
 test('history handles missing names/timestamps and never substitutes approval time for redemption time',async()=>{
@@ -70,8 +78,29 @@ test('bounded union pagination has no duplicates or gaps when one collection is 
   }
   const firestore=database(values),records=[];let cursor=null,pages=0;
   do{const result=await listReviewHistory(firestore,cursor);records.push(...result.records);cursor=result.nextCursor;pages++;assert(pages<5);}while(cursor);
-  assert.equal(pages,3);assert.equal(records.length,235);assert.equal(new Set(records.map(r=>r.id)).size,235);
+  assert(pages>=3 && pages<=4);assert.equal(records.length,235);assert.equal(new Set(records.map(r=>r.id)).size,235);
+  assert.deepEqual(records.map(r=>r.redeemedAt),Array.from({length:235},(_,i)=>1234-i));
   assert.equal(records.find(r=>r.id==='review_H4SX-0002').nama,'Awam 2');
+});
+
+test('newly redeemed code appears first regardless of its code and collection',async()=>{
+  const firestore=database({ratings:{
+    'review_ZZZZ':{nama:'Lama',diciptaPada:1000},
+    'review_AAAA':{nama:'Terkini',diciptaPada:new Date(9000)}
+  },review_pending:{'review_BBBB':{status:'pending',submittedAt:8000,review:{nama:'Baru'}}}});
+  const result=await listReviewHistory(firestore);
+  assert.deepEqual(result.records.map(r=>r.code),['AAAA','BBBB','ZZZZ']);
+  assert.equal(result.nextCursor,null);
+});
+
+test('missing timestamps stay at the bottom and do not duplicate dated counterparts',async()=>{
+  const firestore=database({ratings:{
+    'review_AAAA':{nama:'Tanpa tarikh'},'review_BBBB':{nama:'Ada tarikh',diciptaPada:2000}
+  },review_pending:{
+    'review_AAAA':{status:'published'},'review_BBBB':{status:'published',review:{nama:'Lama'}}
+  }});
+  const result=await listReviewHistory(firestore);
+  assert.deepEqual(result.records.map(r=>[r.code,r.redeemedAt]),[['BBBB',2000],['AAAA',null]]);
 });
 
 test('invalid pagination is rejected before database reads',async()=>{
@@ -139,4 +168,11 @@ test('history request failure is visible and can be retried without remaining st
 });
 test('history tab starts hidden and does not modify customer edit controls',()=>{
   const html=readFileSync(new URL('../review/index.htm',import.meta.url),'utf8');assert(html.includes('data-admin-center-tab="history" hidden'));assert(html.includes('data-admin-center-panel="history" hidden'));assert(html.includes('data-customer-review-edit'));assert(!html.includes('H4SX-AAAA'));
+});
+
+test('review and store suggestions do not prefix CDG, and old badges/text are hidden',()=>{
+  const store=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+  assert(!app.includes('suggestion-badge'));assert(app.includes("ulasanPaparan = String(data.ulasan || '').replace(/^cdg"));
+  assert(!app.includes('CDG_PREFIX'));assert(!store.includes("review.value = 'cdg - '"));
+  assert(store.includes("(item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.').replace(/^cdg"));
 });

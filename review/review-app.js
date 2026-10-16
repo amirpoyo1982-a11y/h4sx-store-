@@ -3084,7 +3084,6 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   });
 
   // ── Dadu ──────────────────────────────────────────────────────
-  const CDG_PREFIX = "cdg - ";
   let reviewSuggestionUsed = false;
   const CONTOH_RATING = {
     5: "Perfect product, fast response, proses sangat pantas dan seller trusted. Memang recommended!",
@@ -3140,7 +3139,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   function useRatingSuggestion() {
     if (suggestionTyping) return;
     const rating = Math.max(1, Math.min(5, parseInt(pilihBintang.value) || 5));
-    const text = CDG_PREFIX + CONTOH_RATING[rating];
+    const text = CONTOH_RATING[rating];
     ulasanPelanggan.value = text;
     charCounter.textContent = `${text.length} / 500`;
     reviewSuggestionUsed = true;
@@ -3182,7 +3181,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     let idx;
     do { idx = Math.floor(Math.random()*pool.length); } while (idx===lastDaduIdx && pool.length>1);
     lastDaduIdx = idx;
-    const teks = CDG_PREFIX + pool[idx];
+    const teks = pool[idx];
     reviewSuggestionUsed = true;
     ulasanPelanggan.value = ""; charCounter.textContent = "0 / 500";
     suggestionTyping = true;
@@ -3242,9 +3241,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       return showToast("Ulasan mesti sekurang-kurangnya 10 aksara, atau kosongkan untuk rating sahaja.", "error");
     }
     const gunaCadangan = reviewSuggestionUsed || /^cdg\s*[-:]/i.test(ulasan);
-    if (gunaCadangan && ulasan && !/^cdg\s*[-:]/i.test(ulasan)) {
-      ulasan = (CDG_PREFIX + ulasan).slice(0, 500);
-    }
+    ulasan = ulasan.replace(/^cdg\s*[-:]\s*/i, '').trim();
     
     // Block nama yang mengandungi "h4sx" jika bukan admin
     const namaLower = nama.toLowerCase();
@@ -3641,7 +3638,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const replyTheme=resolveReplyAppearance(reviewAdminSettings.replyAppearance,data);
       const replyLink=resolveReplyDirectLink(reviewAdminSettings.replyDirectLink,data);
       const adaUlasan = !!(data.ulasan?.trim()) && data.ulasan !== "Tiada ulasan ditinggalkan.";
-      const gunaCadangan = data.cdg === true || data.cadanganDigunakan === true || /^cdg\s*[-:]/i.test(String(data.ulasan || "").trim());
+      const ulasanPaparan = String(data.ulasan || '').replace(/^cdg\s*[-:]\s*/i, '');
       const adaFeedbackImg = !!(data.feedbackImg);
       const gunaTextToggle = adaUlasan && data.reviewTextCollapsed === true;
       const textMulaBuka = data.reviewTextDefaultOpen === true;
@@ -3701,14 +3698,13 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
               ${verifiedTag}
               ${approvedRoleMarkup(data)}
               ${customCheckMarkup(data)}
-              ${gunaCadangan?`<span class="suggestion-badge">cdg</span>`:""}
               ${data.identityBackplateEnabled===true ? "</span>" : ""}
             </div>
             <div class="review-header-extras">${data.hideRating===true ? "" : `<div class="star-display">${starHtml}</div>`}${data.announcementGifEnabled!==false && data.announcementGif ? `<span class="review-announcement-gif" style="--announcement-gif-size:${announcementGifSize(data.announcementGifSize) * 0.48}px" aria-label="GIF pengumuman">${announcementGifMarkup(data.announcementGif)}</span>` : ""}</div>
           </div>
           ${data.hideReviewTime===true ? "" : `<div class="buyer-time" data-review-time="${reviewTime}">${masa}</div>`}
           ${adaUlasan
-            ?`${reviewChatBackgroundMarkup(data, `<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(data.ulasan)}</p>`)}
+            ?`${reviewChatBackgroundMarkup(data, `<p class="buyer-feedback${gunaTextToggle && !textMulaBuka ? " is-collapsed" : ""}" style="--review-lines:${textLines};">${formatMessageText(ulasanPaparan)}</p>`)}
               ${gunaTextToggle ? `<button class="review-text-toggle" type="button" style="--toggle-color:${toggleColor};" data-open="${textMulaBuka ? "1" : "0"}" data-expand="${escapeHtml(expandLabel)}" data-collapse="${escapeHtml(collapseLabel)}">${escapeHtml(textMulaBuka ? collapseLabel : expandLabel)}</button>` : ""}`
             :`<p class="buyer-no-text">— Tiada ulasan teks —</p>`}
           ${reviewAnnouncementAction(announcementConfig)}
@@ -3952,7 +3948,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       : data.profileImg ? `<img src="${escapeHtml(data.profileImg)}" style="${window.H4ReviewMedia.profileZoomStyle(data.profileZoom ?? 100,data.profileOffsetY ?? 0)}" alt="">` : escapeHtml(avatarIsi);
     const stars = "★".repeat(score) + "☆".repeat(5-score);
     const text = data.ulasan && data.ulasan !== "Tiada ulasan ditinggalkan."
-      ? data.ulasan
+      ? data.ulasan.replace(/^cdg\s*[-:]\s*/i, '')
       : "Rating sahaja, tiada ulasan teks.";
     const badge = data.badgeText?.trim() ? data.badgeText : "Verified";
     const replied = !!(data.balasanAdmin?.trim());
@@ -4361,7 +4357,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       const data=await moderationRequest({action:'history',cursor:adminHistoryCursor},controller.signal);
       if(version!==adminHistoryVersion||!adminOk()||currentUser!==user)return;
       adminHistoryRecords=[...new Map([...adminHistoryRecords,...data.records].map(r=>[r.id,r])).values()];adminHistoryCursor=data.nextCursor;
-      status.textContent=`${adminHistoryRecords.length} rekod dimuatkan (susunan kod A–Z). Carian meliputi rekod dimuatkan sahaja.`;
+      status.textContent=`${adminHistoryRecords.length} rekod dimuatkan (terbaru di atas). Carian meliputi rekod dimuatkan sahaja.`;
     }catch(error){if(version===adminHistoryVersion&&adminOk())status.textContent=error.name==='AbortError'?'Sambungan lambat. Tekan Refresh untuk cuba lagi.':error.message||'Sejarah gagal dimuatkan.';}
     finally{clearTimeout(timer);if(version===adminHistoryVersion){adminHistoryLoading=false;adminHistoryController=null;renderAdminReviewHistory();}}
   }
