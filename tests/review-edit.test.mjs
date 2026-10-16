@@ -18,6 +18,14 @@ test('API denies missing browser proof and failed captcha before editing',async(
 test('customer editor contains no admin control fields and both websites expose the entry',()=>{const source=readFileSync(new URL('../review-edit-client.js',import.meta.url),'utf8');for(const field of ['badgeText','customCheckEnabled','reportDisabled','moderationStatus','autoReplyDisabled','featured'])assert(!source.includes(field));for(const filename of ['index.htm','review/index.htm'])assert(readFileSync(new URL('../'+filename,import.meta.url),'utf8').includes('data-customer-review-edit'));});
 test('submission sets private browser proof only after a successful commit',async()=>{const d=database({['review_codes/'+code]:{}});const headers={};const handler=createSubmitHandler(async()=>({firestore:d.firestore}),async(req,res)=>res.status(200).json({success:true}));const response={setHeader(k,v){headers[k]=v},status(v){this.code=v;return this},json(v){this.data=v;return this}};await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{submission:{code,review},token:'test'}},response);assert.equal(response.code,200);assert.match(headers['Set-Cookie'],/HttpOnly; Secure; SameSite=Strict; Path=\/api; Max-Age=600/);const browserToken=headers['Set-Cookie'].split(';')[0].split('=')[1];assert(d.values.has('review_edit_grants/'+editGrantId(browserToken,code)));assert(!JSON.stringify(response.data).includes(browserToken));});
 
+test('customer edits cannot set admin role text and preserve it through later moderation',async()=>{
+ const d=await staged();d.values.get('review_pending/'+id).review.approvedRoleText='Disemak admin';
+ const loaded=await customerEdit(d.firestore,token,{action:'load',code},1200);assert(!Object.hasOwn(loaded.review,'approvedRoleText'));
+ await assert.rejects(customerEdit(d.firestore,token,{action:'save',code,review:{...review,approvedRoleText:'OWNER'}},1300),/medan/);
+ await customerEdit(d.firestore,token,{action:'save',code,review:{...review,ulasan:'Edit pelanggan'}},1400);
+ await decideSubmission(d.firestore,id,'approve',1500);assert.equal(d.values.get('ratings/'+id).approvedRoleText,'Disemak admin');
+});
+
 test('customer zoom edits keep the original expiry and preserve admin decoration',async()=>{
   const d=await staged();const entry=d.values.get('review_pending/'+id);entry.review.profileZoom=150;entry.review.badgeText='VIP';
   const loaded=await customerEdit(d.firestore,token,{action:'load',code},1100);assert.equal(loaded.review.profileZoom,150);assert(!Object.hasOwn(loaded.review,'badgeText'));

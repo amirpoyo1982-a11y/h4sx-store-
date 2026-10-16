@@ -1211,6 +1211,17 @@
     .admin-btn-save { background: var(--accent); color: #fff; }
     .admin-btn-close { background: #e4edf5; color: var(--text-dim); }
 
+    #badgePanelModal .badge-action-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:16px; }
+    #badgePanelModal .badge-action-grid .admin-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-width:0; min-height:88px; padding:12px 8px; }
+    #badgePanelModal .badge-action-grid .admin-btn i { font-size:19px; }
+    #badgePanelModal .badge-action-grid .admin-btn span { max-width:100%; font-size:12px; line-height:1.4; white-space:normal; overflow-wrap:anywhere; text-align:center; }
+    #badgePanelModal .badge-action-grid .admin-btn-close { grid-column:1 / -1; min-height:60px; }
+    #badgePanelModal .badge-action-warning { background:#fff7e6; color:#9a5b00; }
+    #badgePanelModal .badge-action-info { background:#eaf7ff; color:#0369a1; }
+    #badgePanelModal .badge-action-danger { background:#fef0f0; color:#b83232; }
+    #badgePanelModal .badge-action-grid .admin-btn:focus-visible { outline:3px solid var(--accent2); outline-offset:2px; }
+    @media (max-width:360px) { #badgePanelModal .badge-action-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
 /* Final polish */
 .topbar {
   border-bottom: 1px solid rgba(100,160,220,.18);

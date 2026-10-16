@@ -5059,7 +5059,12 @@ async function adminOrderLogin(event) {
     syncOrderAdminUI(); toast('Admin berjaya log masuk.');
   } catch (error) { toast('Login gagal. Semak email atau password Firebase.', true); }
 }
-async function adminOrderLogout() { await window.H4SXAdminSessions?.endCurrentSession(); if (orderAuth) await orderAuth.signOut(); syncOrderAdminUI(); }
+async function adminOrderLogout() {
+  if (!window.confirm('Log keluar admin H4SX Store? Tekan Batal untuk kekal log masuk.')) return;
+  await window.H4SXAdminSessions?.endCurrentSession();
+  if (orderAuth) await orderAuth.signOut();
+  syncOrderAdminUI();
+}
 function handleOrderImageFile(file) {
   if (!file || !file.type?.startsWith('image/')) return toast('Sila pilih fail gambar.', true);
   pendingOrderImageFile = file;
