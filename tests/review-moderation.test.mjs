@@ -112,3 +112,46 @@ test('admin feedback endpoint rejects anonymous/non-admin access and accepts the
  res=reply();await createModerationHandler(getServices('other'))({...base,headers:{...base.headers,authorization:'Bearer test'}},res);assert.equal(res.code,403);assert.equal(d.values.get('ratings/'+id).feedbackVideo,undefined);
  res=reply();await createModerationHandler(getServices(ADMIN_UID))({...base,headers:{...base.headers,authorization:'Bearer test'}},res);assert.equal(res.code,200);assert.equal(d.values.get('ratings/'+id).feedbackVideo,'https://example.com/a.mp4');
 });
+
+test('admin custom role stays private with the pending review and survives manual or automatic approval',async()=>{
+ for(const automatic of [false,true]){
+  const d=database({['review_codes/'+input.code]:{}});await stageSubmission(d.firestore,input,false,1000);
+  const id='review_'+input.code,deadline=1000+WAIT_MS;
+  await editReviewFeedback(d.firestore,id,{ulasan:'Servis baik, dikemaskini',approvedRoleText:'  Diluluskan & diedit  '},2000);
+  const pending=d.values.get('review_pending/'+id);
+  assert.equal(pending.status,'pending');assert.equal(pending.autoApproveAt,deadline);assert.equal(pending.submittedAt,1000);
+  assert.equal(pending.review.approvedRoleText,'Diluluskan & diedit');assert(!d.values.has('ratings/'+id));
+  await decideSubmission(d.firestore,id,'approve',deadline,automatic);
+  const published=d.values.get('ratings/'+id);
+  assert.equal(published.approvedRoleText,'Diluluskan & diedit');assert.equal(published.approvedRoleGranted,true);
+  assert.equal(published.ulasan,'Servis baik, dikemaskini');assert.equal(published.diciptaPada.getTime(),1000);
+ }
+});
+test('role-only edits preserve hidden status, global settings, timestamps, replies and other review roles',async()=>{
+ const id='review_ROLE',original={nama:'Ali',bintang:5,ulasan:'Baik',diciptaPada:new Date(100),moderationStatus:'hidden',approvedRoleGranted:true,approvedRoleRemoved:true,badgeText:'VIP',balasanAdmin:'Terima kasih'};
+ const config={approvedRole:{enabled:false,text:'GLOBAL'}},d=database({['ratings/'+id]:original,'config/review_admin':config});
+ await editReviewFeedback(d.firestore,id,{approvedRoleText:'Disemak admin'},2000);
+ assert.deepEqual(d.values.get('ratings/'+id),{...original,approvedRoleText:'Disemak admin'});
+ assert.deepEqual(d.values.get('config/review_admin'),config);
+ await editReviewFeedback(d.firestore,id,{approvedRoleText:'  '},3000);assert.equal(d.values.get('ratings/'+id).approvedRoleText,'');
+});
+test('role edits validate type and length without allowing grants, moderation or identity forgery',async()=>{
+ const id='review_ROLE',original={nama:'Ali',ulasan:'Baik',moderationStatus:'published'},d=database({['ratings/'+id]:original});
+ for(const patch of [{approvedRoleText:25},{approvedRoleText:null},{approvedRoleText:{}},{approvedRoleText:'x'.repeat(25)},{approvedRoleText:'Ok',approvedRoleGranted:true},{approvedRoleRemoved:false},{moderationStatus:'published'},{adminIdentityConfirmed:true}])await assert.rejects(editReviewFeedback(d.firestore,id,patch));
+ assert.deepEqual(d.values.get('ratings/'+id),original);
+ await editReviewFeedback(d.firestore,id,{approvedRoleText:'x'.repeat(24)},2000);assert.equal(d.values.get('ratings/'+id).approvedRoleText.length,24);
+ const submitted=validateSubmission({...input,review:{...input.review,approvedRoleText:'OWNER',approvedRoleGranted:true}}).review;
+ assert.equal(submitted.approvedRoleText,undefined);assert.equal(submitted.approvedRoleGranted,undefined);
+});
+test('role update endpoint rejects anonymous, customer, revoked tokens and untrusted origins',async()=>{
+ const id='review_ROLE';
+ for(const scenario of ['anonymous','customer','revoked','origin','admin']){
+  const d=database({['review_pending/'+id]:{status:'pending',submittedAt:1000,autoApproveAt:2000,review:{nama:'Ali',ulasan:'Baik'}}});let reads=0;
+  const services=async()=>{reads++;return {firestore:d.firestore,auth:{verifyIdToken:async(token,revoked)=>{assert.equal(revoked,true);if(scenario==='revoked')throw Object.assign(Error('revoked'),{code:'auth/id-token-revoked'});return {uid:scenario==='customer'?'other':ADMIN_UID};}}};};
+  const res=reply(),headers={origin:scenario==='origin'?'https://evil.example':'https://www.h4sxmy.xyz'};if(scenario!=='anonymous')headers.authorization='Bearer test';
+  await createModerationHandler(services)({method:'POST',headers,body:{action:'editFeedback',id,patch:{approvedRoleText:'Diluluskan & diedit'}}},res);
+  assert.equal(res.code,scenario==='admin'?200:scenario==='anonymous'?401:scenario==='revoked'?400:403);
+  assert.equal(d.values.get('review_pending/'+id).review.approvedRoleText,scenario==='admin'?'Diluluskan & diedit':undefined);
+  if(['anonymous','origin'].includes(scenario))assert.equal(reads,0);
+ }
+});

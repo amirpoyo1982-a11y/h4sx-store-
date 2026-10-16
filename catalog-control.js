@@ -290,7 +290,10 @@ byId('login-form').addEventListener('submit', async event => {
     byId('login-error').textContent = error.code === 'auth/invalid-credential' ? 'Email atau password tak betul.' : error.message;
   } finally { setBusy(button, false); }
 });
-byId('logout-btn').addEventListener('click', () => auth.signOut());
+byId('logout-btn').addEventListener('click', () => {
+  if (!window.confirm('Log keluar admin Kawalan Katalog? Tekan Batal untuk kekal log masuk.')) return;
+  return auth.signOut();
+});
 
 try { byId('imgbb-api-key').value = localStorage.getItem(IMGBB_KEY_STORAGE) || ''; } catch (error) {}
 byId('save-imgbb-key').addEventListener('click', () => {

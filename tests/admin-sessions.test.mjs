@@ -138,3 +138,20 @@ test('combined website preserves existing store session identity', async () => {
   assert.equal(result.data.sessionId,createHash('sha256').update('store:'+DEVICE+':100').digest('hex'));
   assert.equal(Object.values(f.devices)[0].site,'combined');
 });
+
+test('manual logout on Review and Store asks before ending the session or signing out',async()=>{
+ for(const site of ['review','store'])for(const approved of [false,true]){
+  const calls=[],context={window:{confirm:message=>{assert.match(message,/Log keluar admin/);assert.match(message,/Batal/);calls.push('confirm');return approved;},H4SXAdminSessions:{endCurrentSession:async()=>calls.push('end')}},auth:{},signOut:async()=>calls.push('signOut'),showToast:()=>calls.push('toast'),orderAuth:{signOut:async()=>calls.push('signOut')},syncOrderAdminUI:()=>calls.push('sync')};
+  const source=readFileSync(new URL(site==='review'?'../review/review-app.js':'../app.js',import.meta.url),'utf8');
+  const start=source.indexOf(site==='review'?'  async function logoutAdmin()':'async function adminOrderLogout()'),end=source.indexOf(site==='review'?'  window.logoutAdmin':'function handleOrderImageFile',start);
+  vm.createContext(context);vm.runInContext(source.slice(start,end),context);await context[site==='review'?'logoutAdmin':'adminOrderLogout']();
+  assert.deepEqual(calls,approved?['confirm','end','signOut',site==='review'?'toast':'sync']:['confirm']);
+ }
+});
+test('catalog logout also requires confirmation and cancel preserves authentication',async()=>{
+ const source=readFileSync(new URL('../catalog-control.js',import.meta.url),'utf8'),start=source.indexOf("byId('logout-btn').addEventListener('click'"),end=source.indexOf("try { byId('imgbb-api-key')",start);
+ for(const approved of [false,true]){
+  let callback,signOut=0,prompts=0;const context={window:{confirm:()=>{prompts++;return approved;}},auth:{signOut:async()=>signOut++},byId:()=>({addEventListener:(name,fn)=>callback=fn})};
+  vm.createContext(context);vm.runInContext(source.slice(start,end),context);await callback();assert.equal(prompts,1);assert.equal(signOut,approved?1:0);
+ }
+});

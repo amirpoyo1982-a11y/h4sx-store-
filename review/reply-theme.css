@@ -56,3 +56,6 @@
 .admin-feedback-dialog::backdrop{background:#0320399c}
 .admin-feedback-dialog header{position:sticky;top:-16px;z-index:3;display:flex;gap:8px;align-items:center;padding:12px 0;background:#f9fdff;border-bottom:1px solid #c3dfec}
 .admin-feedback-dialog header strong{flex:1}.admin-feedback-dialog textarea{box-sizing:border-box;width:100%;padding:10px;border:1px solid #badce8;border-radius:8px;font:inherit;color:#173d56;background:white}
+.admin-feedback-role,.admin-feedback-text{display:grid;gap:6px;margin:14px 0;font-weight:700}
+.admin-feedback-role input{box-sizing:border-box;min-width:0;width:100%;padding:10px;border:1px solid #badce8;border-radius:8px;font:inherit;color:#173d56;background:white}
+.admin-feedback-role small{font-size:12px;font-weight:400;color:#426078}
