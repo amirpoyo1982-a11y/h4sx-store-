@@ -1,5 +1,5 @@
 import {firebaseServices} from './admin-sessions.js';
-import {ADMIN_UID,ORIGINS,decideSubmission,queuePreview,editReviewFeedback} from '../lib/review-moderation.js';
+import {ADMIN_UID,ORIGINS,decideSubmission,queuePreview,editReviewFeedback,editMinutes,MAX_EDIT_MINUTES} from '../lib/review-moderation.js';
 import {setReportControl} from '../lib/review-reports.js';
 import {listReviewHistory} from '../lib/review-history.js';
 export function createModerationHandler(getServices=firebaseServices){return async function(req,res){
@@ -11,8 +11,14 @@ export function createModerationHandler(getServices=firebaseServices){return asy
     if(action==='history')return res.status(200).json(await listReviewHistory(firestore,req.body.cursor));
     if(action==='editFeedback')return res.status(200).json(await editReviewFeedback(firestore,String(id||''),req.body.patch));
     if(['restoreReported','reportsEnable','reportsDisable','reportTestEnable','reportTestDisable'].includes(action))return res.status(200).json(await setReportControl(firestore,String(id||''),action));
-    if(action==='list'){const snapshots=await Promise.all(['pending','rejected','trash'].map(status=>firestore.collection('review_pending').where('status','==',status).limit(100).get()));const config=await firestore.doc('config/review_moderation').get();return res.status(200).json({success:true,records:snapshots.flatMap(snapshot=>snapshot.docs.map(queuePreview)),enabled:config.data()?.enabled!==false,cronConfigured:(process.env.REVIEW_CRON_SECRET||'').length>=32});}
-    if(action==='configure'){await firestore.doc('config/review_moderation').set({enabled:req.body.enabled===true,waitMinutes:30},{merge:true});return res.status(200).json({success:true});}
+    if(action==='list'){const snapshots=await Promise.all(['pending','rejected','trash'].map(status=>firestore.collection('review_pending').where('status','==',status).limit(100).get()));const config=await firestore.doc('config/review_moderation').get();return res.status(200).json({success:true,records:snapshots.flatMap(snapshot=>snapshot.docs.map(queuePreview)),enabled:config.data()?.enabled!==false,editMinutes:editMinutes(config.data()?.editMinutes),cronConfigured:(process.env.REVIEW_CRON_SECRET||'').length>=32});}
+    if(action==='configure'){
+      const patch={};
+      if(Object.hasOwn(req.body,'enabled')){if(typeof req.body.enabled!=='boolean')throw Error('Tetapan moderasi tidak sah.');patch.enabled=req.body.enabled;patch.waitMinutes=30;}
+      if(Object.hasOwn(req.body,'editMinutes')){if(!Number.isInteger(req.body.editMinutes)||req.body.editMinutes<1||req.body.editMinutes>MAX_EDIT_MINUTES)throw Error('Tempoh edit mesti 1–10080 minit (maksimum 7 hari).');patch.editMinutes=req.body.editMinutes;}
+      if(!Object.keys(patch).length)throw Error('Tetapan tidak sah.');
+      await firestore.doc('config/review_moderation').set(patch,{merge:true});return res.status(200).json({success:true});
+    }
     if(action==='detail'){if(!/^review_[A-Z0-9-]{4,40}$/.test(String(id)))return res.status(400).json({error:'ID tidak sah.'});const snap=await firestore.doc('review_pending/'+id).get();return res.status(200).json({success:true,review:snap.data()?.review||null,feedbackImg:snap.data()?.review?.feedbackImg||null,feedbackVideo:snap.data()?.review?.feedbackVideo||null});}
     return res.status(200).json({success:true,result:await decideSubmission(firestore,String(id||''),action)});
   }catch(error){console.error('Review moderation failed',error.code||error.message);return res.status(400).json({error:error.code?'Gagal memuatkan moderasi. Semak backend.':error.message});}
