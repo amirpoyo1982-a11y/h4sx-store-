@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=moderation-controls-20261014">
+  <link rel="stylesheet" href="/review/review-style.css?v=redeem-history-20261016">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=mobile-90-20261011">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -194,6 +194,7 @@
       <button class="active" type="button" data-admin-center-tab="dashboard"><i class="fa-solid fa-chart-pie"></i><span>Dashboard</span></button>
       <button type="button" data-admin-center-tab="moderation"><i class="fa-solid fa-list-check"></i><span>Moderasi</span><b id="adminModerationCount">0</b></button>
       <button type="button" data-admin-center-tab="codes"><i class="fa-solid fa-ticket"></i><span>Kod</span></button>
+      <button type="button" data-admin-center-tab="history" hidden><i class="fa-solid fa-clock-rotate-left"></i><span>Sejarah redeem</span></button>
       <button type="button" data-admin-center-tab="reports"><i class="fa-solid fa-flag"></i><span>Laporan</span><b id="adminReportCount">0</b></button>
       <button type="button" data-admin-center-tab="replies"><i class="fa-solid fa-reply"></i><span>Auto balas</span><b id="adminAutoReplyCount">0</b></button>
       <button type="button" data-admin-center-tab="tools"><i class="fa-solid fa-sliders"></i><span>Tools</span></button>
@@ -249,6 +250,15 @@
         <small class="admin-field-help">Tetapkan 0 hari jika kod tidak mempunyai tarikh luput.</small>
         <div class="admin-code-search"><i class="fa-solid fa-magnifying-glass"></i><input id="adminCenterCodeSearch" type="search" placeholder="Cari kod..."></div>
         <div id="adminCenterCodeList" class="admin-center-code-list"></div>
+      </div>
+
+      <div class="admin-center-panel" data-admin-center-panel="history" hidden>
+        <div class="admin-center-section-head"><div><small>ADMIN SAHAJA</small><h3>Sejarah redeem ulasan</h3></div><button id="btnAdminRefreshHistory" type="button"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
+        <p class="admin-field-help">Nama pelanggan, kod yang digunakan dan masa penghantaran asal (waktu Malaysia). Hanya ulasan yang menggunakan kod dan masih disimpan direkodkan di sini; ulasan yang dipadam kekal tidak disenaraikan.</p>
+        <label class="admin-code-search"><i class="fa-solid fa-magnifying-glass"></i><input id="adminHistorySearch" type="search" placeholder="Cari nama atau kod yang dimuatkan..." aria-label="Cari sejarah redeem mengikut nama atau kod"></label>
+        <p id="adminHistoryStatus" class="admin-field-help" role="status"></p>
+        <div id="adminHistoryList" class="admin-history-list"></div>
+        <button id="btnAdminMoreHistory" type="button" hidden>Muat lagi</button>
       </div>
 
       <div class="admin-center-panel" data-admin-center-panel="reports">
@@ -999,11 +1009,10 @@
 <script src="/admin-sessions.js?v=integrated-20261011"></script>
 <script src="/review-media.js?v=admin-feedback-edit-20261015"></script>
 <script src="/review-submit-client.js?v=video-links-20261015"></script>
-<script type="module" src="/review/review-app.js?v=approved-role-20261016"></script>
+<script type="module" src="/review/review-app.js?v=redeem-history-20261016"></script>
 <script defer src="/review-edit-client.js?v=center-dialogs-20261015"></script>
 </body>
 </html>
-
 
 
 

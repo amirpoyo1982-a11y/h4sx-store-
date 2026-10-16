@@ -5109,6 +5109,17 @@ html[data-admin-auth="true"] [data-admin-ctrl-row] .admin-action-btn {
 }
 
 /* Admin Review Center */
+[data-admin-center-tab="history"][hidden], [data-admin-center-panel="history"][hidden], #btnAdminMoreHistory[hidden] { display:none !important; }
+.admin-history-list { display:grid; gap:8px; }
+.admin-history-item { display:flex; justify-content:space-between; gap:12px; padding:14px; border:1px solid #d4e8f3; border-radius:8px; background:#fff; }
+.admin-history-item>div { min-width:0; display:grid; align-content:start; justify-items:start; gap:7px; }
+.admin-history-item strong { font-size:13px; overflow-wrap:anywhere; }
+.admin-history-item code { color:#078ac4; font-size:12px; overflow-wrap:anywhere; }
+.admin-history-item small { color:#718a9b; font-size:10px; }
+#btnAdminMoreHistory { min-height:40px; margin-top:12px; padding:0 18px; border:0; border-radius:7px; background:#0f95cc; color:#fff; font:inherit; cursor:pointer; }
+#btnAdminMoreHistory:disabled { opacity:.6; cursor:wait; }
+:root[data-theme="dark"] .admin-history-item { border-color:#1d3b4f; background:#0d2232; }
+@media(max-width:600px) { .admin-history-item { flex-direction:column; } }
 .admin-center-launch { background:#0f2a45; color:#fff; }
 .admin-review-center-overlay { position:fixed; inset:0; z-index:2147483200; display:none; padding:18px; background:rgba(8,35,55,.48); backdrop-filter:blur(10px); }
 .admin-review-center-overlay.show { display:grid; place-items:center; }
