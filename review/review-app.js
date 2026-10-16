@@ -1488,8 +1488,82 @@ function reviewAnnouncementAction(config) {
   const btnPreviewCustomerImage = document.getElementById('btnPreviewCustomerImage');
   let originalCustomerImage = null;
   let customerImageChanged = false;
+  const customerProfileClipboard = document.getElementById('customerProfileClipboard');
+  const btnPasteCustomerImage = document.getElementById('btnPasteCustomerImage');
+  const customerProfileClipboardStatus = document.getElementById('customerProfileClipboardStatus');
+  let customerClipboardImage = null;
+  let customerImageBusy = false;
+  let customerImageRevision = 0;
+
+  function resetCustomerClipboard() {
+    customerImageRevision++;
+    customerClipboardImage = null;
+    customerImageBusy = false;
+    btnPasteCustomerImage.disabled = false;
+    btnSaveCustomer.disabled = customerSaveInProgress;
+    customerProfileClipboardStatus.textContent = '';
+  }
+
+  async function pasteCustomerProfileImage(readFile) {
+    if (!editingCustomerId || !adminOk() || customerSaveInProgress || customerImageBusy) return;
+    const revision = ++customerImageRevision;
+    customerImageBusy = true;
+    btnSaveCustomer.disabled = true;
+    btnPasteCustomerImage.disabled = true;
+    customerProfileClipboardStatus.textContent = 'Memproses gambar clipboard...';
+    try {
+      const file = await readFile();
+      if (revision !== customerImageRevision) return;
+      const image = await window.H4ReviewMedia.compressFile(file);
+      if (revision !== customerImageRevision) return;
+      if (!window.H4ReviewMedia.safeImage(image) || image.length > 600000) throw Error('Gambar terlalu besar. Cuba gambar lebih kecil.');
+      customerClipboardImage = image;
+      customerImageUrl.value = '';
+      customerImageChanged = true;
+      removeCustomerImage = false;
+      customerZoom.set(100);
+      customerZoom.setOffset(0);
+      btnRemoveCustomerImage.disabled = false;
+      btnRemoveCustomerImage.textContent = 'Buang Gambar Profil';
+      previewCustomerImage(image);
+      customerProfileClipboardStatus.textContent = 'Gambar clipboard sedia. Tekan Simpan untuk kemaskini profil.';
+    } catch (error) {
+      if (revision === customerImageRevision) {
+        customerProfileClipboardStatus.textContent = error.message;
+        showToast(error.message, 'error');
+      }
+    } finally {
+      if (revision === customerImageRevision) {
+        customerImageBusy = false;
+        btnPasteCustomerImage.disabled = false;
+        btnSaveCustomer.disabled = customerSaveInProgress;
+      }
+    }
+  }
+
+  btnPasteCustomerImage.addEventListener('click', () => pasteCustomerProfileImage(async () => {
+    if (!navigator.clipboard?.read) throw Error('Browser ini tidak menyokong butang tampal. Klik ruang clipboard dan guna Ctrl+V / Cmd+V.');
+    let items;
+    try { items = await navigator.clipboard.read(); }
+    catch (_) { throw Error('Clipboard tidak dapat dibaca. Benarkan akses atau klik ruang clipboard dan guna Ctrl+V / Cmd+V.'); }
+    for (const item of items) {
+      const type = item.types.find(type => type.startsWith('image/'));
+      if (type) return new File([await item.getType(type)], 'profile-clipboard.png', { type });
+    }
+    throw Error('Clipboard tiada gambar. Copy gambar dahulu.');
+  }));
+  function handleCustomerProfilePaste(event) {
+    const file = [...(event.clipboardData?.items || [])].find(item => item.type.startsWith('image/'))?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    event.stopPropagation();
+    return pasteCustomerProfileImage(() => file);
+  }
+  customerProfileClipboard.addEventListener('paste', handleCustomerProfilePaste);
+  customerImageUrl.addEventListener('paste', handleCustomerProfilePaste);
 
   function customerImageLink() {
+    if (customerClipboardImage) return customerClipboardImage;
     const value = customerImageUrl.value.trim();
     if (!value) return null;
     try {
@@ -1522,6 +1596,7 @@ function reviewAnnouncementAction(config) {
     img.src = src;
   }
   customerImageUrl.addEventListener('input', () => {
+    resetCustomerClipboard();
     customerImageChanged = true;
     removeCustomerImage = !customerImageUrl.value.trim();
     btnRemoveCustomerImage.disabled = false;
@@ -1724,6 +1799,7 @@ function reviewAnnouncementAction(config) {
     medalEmojiInput.value = data.medalEmoji || '';
     customerZoom.set(data.profileZoom ?? 100);customerZoom.setOffset(data.profileOffsetY ?? 0);
     originalCustomerImage = data.profileImg || null;
+    resetCustomerClipboard();
     customerImageChanged = false;
     customerImageUrl.value = /^https:\/\//i.test(originalCustomerImage || '') ? originalCustomerImage : '';
     previewCustomerImage(originalCustomerImage);
@@ -1764,6 +1840,7 @@ function reviewAnnouncementAction(config) {
   }
 
   function tutupCustomerModal() {
+    resetCustomerClipboard();
     rememberCustomerProfileScroll();
     document.querySelectorAll('#customerChatBackgroundPreview video').forEach(video => { video.pause(); video.removeAttribute('src'); });
     document.getElementById('customerChatBackgroundPreview').dataset.config = '';
@@ -1774,7 +1851,7 @@ function reviewAnnouncementAction(config) {
   }
 
   async function simpanCustomerPayload(payload, mesejBerjaya, dataDoc) {
-    if (!editingCustomerId || customerSaveInProgress) return;
+    if (!editingCustomerId || customerSaveInProgress || customerImageBusy) return;
     customerSaveInProgress = true;
     btnSaveCustomer.disabled = true;
     try {
@@ -1786,7 +1863,7 @@ function reviewAnnouncementAction(config) {
       showToast("Gagal kemaskini pelanggan.", "error");
     } finally {
       customerSaveInProgress = false;
-      btnSaveCustomer.disabled = false;
+      btnSaveCustomer.disabled = customerImageBusy;
     }
   }
 
@@ -1816,6 +1893,7 @@ function reviewAnnouncementAction(config) {
   customerOverlayBg.addEventListener('click', tutupCustomerModal);
   btnCancelCustomer.addEventListener('click', tutupCustomerModal);
   btnSuggestCustomerProfile.addEventListener('click', () => {
+    resetCustomerClipboard();
     const nama = customerNameInput.value.trim() || 'Pelanggan';
     const pilihan = profileSuggestions[Math.floor(Math.random() * profileSuggestions.length)];
     customerColorInput.value = pilihan.warna;
@@ -1829,6 +1907,7 @@ function reviewAnnouncementAction(config) {
     kemaskiniCustomerPreview();
   });
   btnRemoveCustomerImage.addEventListener('click', () => {
+    resetCustomerClipboard();
     removeCustomerImage = true;
     customerImageUrl.value = '';
     customerImageChanged = true;
@@ -1846,6 +1925,7 @@ function reviewAnnouncementAction(config) {
   }
   customerPanelModal.addEventListener('keydown', handleCustomerSaveShortcut);
   btnSaveCustomer.addEventListener('click', () => {
+    if (!editingCustomerId || customerSaveInProgress || customerImageBusy) return;
     const nama = customerNameInput.value.trim();
     if (nama.length < 1 || nama.length > 40) {
       showToast("Nama pelanggan mesti 1 hingga 40 aksara.", "error");
