@@ -611,10 +611,9 @@ function adminGameEmojiChoice(name, choice) {
 function adminGameEmojiImages(value) {
   const url = String(value || '').trim();
   if (!/^https:\/\/[^\s]+$/i.test(url)) return [];
-  const page = url.match(/^https:\/\/(?:www\.)?emoji\.gg\/emoji\/([a-z0-9-]+)\/?(?:[?#].*)?$/i);
-  if (!page) return [url];
-  const base = 'https://cdn3.emoji.gg/emojis/' + page[1];
-  return [base + '.gif', base + '.png', base + '.webp'];
+  const emoji = url.match(/^https:\/\/(?:www\.)?emoji\.gg\/emoji\/([a-z0-9-]+)\/?(?:[?#].*)?$/i)
+    || url.match(/^https:\/\/cdn3\.emoji\.gg\/emojis\/([a-z0-9-]+)\.(?:gif|png|webp)(?:[?#].*)?$/i);
+  return emoji ? ['/api/emoji?name=' + encodeURIComponent(emoji[1])] : [url];
 }
 function loadAdminEmojiPreview(preview, label, urls) {
   const image = preview.querySelector('img');

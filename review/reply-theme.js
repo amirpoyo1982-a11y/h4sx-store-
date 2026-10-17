@@ -16,8 +16,9 @@ export function replyAppearanceCss(theme){const c=normalizeReplyAppearance(theme
 
 export function replyImageCandidates(value){
  const safe=replyMediaUrl(value);if(!safe)return [];
- try{const url=new URL(safe);if(url.hostname.toLowerCase().replace(/^www\./,'')==='emoji.gg'){
- const match=url.pathname.match(/^\/emoji\/([a-z0-9-]+)\/?$/i);if(match){const base='https://cdn3.emoji.gg/emojis/'+match[1];return [base+'.gif',base+'.png',base+'.webp'];}
+ try{const url=new URL(safe),host=url.hostname.toLowerCase().replace(/^www\./,'');
+ const match=host==='emoji.gg'?url.pathname.match(/^\/emoji\/([a-z0-9-]+)\/?$/i):host==='cdn3.emoji.gg'?url.pathname.match(/^\/emojis\/([a-z0-9-]+)\.(?:gif|png|webp)$/i):null;
+ if(match)return ['/api/emoji?name='+encodeURIComponent(match[1])];
  }}catch{}return [safe];
 }
 export function replyBackgroundType(type,url){
