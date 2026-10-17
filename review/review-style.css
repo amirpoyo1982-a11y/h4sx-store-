@@ -1922,12 +1922,10 @@ body::before,
   animation-duration: 60s !important;
 }
 .buyer-name.custom-name.is-animated,
-.verified-badge.custom-badge.is-animated,
 .medal-badge.is-animated,
 .review-notice-icon {
   animation-duration: 7s !important;
 }
-.verified-badge.custom-badge.is-animated::after,
 .medal-badge.is-animated::after {
   animation-duration: 4.8s !important;
 }
@@ -1959,7 +1957,6 @@ body::before,
     transform: none !important;
   }
   .buyer-name.custom-name.is-animated,
-  .verified-badge.custom-badge.is-animated,
   .medal-badge.is-animated {
     animation-duration: 9s !important;
   }
