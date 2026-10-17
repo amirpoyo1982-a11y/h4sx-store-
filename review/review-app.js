@@ -856,11 +856,11 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     let url;
     try { url = new URL(raw); } catch { return []; }
     if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return [];
-    const match = url.hostname.toLowerCase().replace(/^www\./, '') === 'emoji.gg'
-      ? url.pathname.match(/^\/emoji\/([a-z0-9-]+)\/?$/i) : null;
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
+    const match = host === 'emoji.gg' ? url.pathname.match(/^\/emoji\/([a-z0-9-]+)\/?$/i)
+      : host === 'cdn3.emoji.gg' ? url.pathname.match(/^\/emojis\/([a-z0-9-]+)\.(?:gif|png|webp)$/i) : null;
     if (match) {
-      const base = 'https://cdn3.emoji.gg/emojis/' + match[1];
-      return [base + '.gif', base + '.webp', base + '.png'];
+      return ['/api/emoji?name=' + encodeURIComponent(match[1])];
     }
     return [url.href];
   }
