@@ -1,6 +1,6 @@
 import {captureReviewViewport,restoreReviewViewport} from '/review/review-scroll.js?v=20261015';
 import {officialReviewIdentity,reviewNameIssue} from '/review/review-identity.js?v=20261015';
-import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=direct-link-20261015';
+import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=reply-theme-syntax-fix-20261018';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
