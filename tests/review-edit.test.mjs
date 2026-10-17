@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {customerEdit,EDIT_MS,editGrantId,editSession} from '../lib/review-edit.js';
+import {customerEdit,EDIT_MS,editGrantId,editSession,reactivateCustomerEdit} from '../lib/review-edit.js';
 import {stageSubmission,decideSubmission,editMinutes,MAX_EDIT_MINUTES,WAIT_MS} from '../lib/review-moderation.js';
 import {createEditHandler} from '../api/review-edit.js';
 import {createSubmitHandler} from '../api/review-submit.js';
@@ -101,6 +101,49 @@ test('approval also locks immediately published and legacy grants without a pend
  await decideSubmission(d.firestore,id,'approve',1100);
  const rating=d.values.get('ratings/'+id);assert.equal(rating.moderationStatus,'published');assert.equal(rating.reportGeneration,3);assert.equal(rating.reportCount,0);assert.equal(rating.autoHiddenByReports,false);assert.equal(rating.reportAutoHideTestEnabled,false);
  await assert.rejects(customerEdit(d.firestore,token,{action:'load',code},1200),{code:'review/edit-locked'});
+});
+
+test('admin can reactivate an approved review for a per-code duration; code-only access expires and approval locks it again',async()=>{
+ const d=await staged();await decideSubmission(d.firestore,id,'approve',1100);
+ await assert.rejects(customerEdit(d.firestore,token,{action:'load',code},1200),{code:'review/edit-locked'});
+ const originalRating=structuredClone(d.values.get('ratings/'+id));
+ const activation=await reactivateCustomerEdit(d.firestore,id,3,1200),grant=d.values.get('review_edit_grants/'+editGrantId('admin-reactivation',code));
+ assert.equal(activation.expiresAt,1200+3*60000);assert.equal(grant.adminReactivated,true);assert.equal(grant.expiresAt,activation.expiresAt);
+ assert.equal(d.values.get('review_pending/'+id).customerEditLocked,false);
+ assert.deepEqual(d.values.get('ratings/'+id),originalRating);
+ const loaded=await customerEdit(d.firestore,null,{action:'load',code},1300);assert.equal(loaded.review.ulasan,review.ulasan);assert.equal(loaded.expiresAt,activation.expiresAt);
+ const saved=await customerEdit(d.firestore,null,{action:'save',code,review:{...review,ulasan:'Edit selepas diaktifkan'}},1400);
+ assert.equal(saved.expiresAt,activation.expiresAt);assert.equal(d.values.get('review_pending/'+id).submittedAt,1000);
+ assert.equal((await customerEdit(d.firestore,null,{action:'load',code},1450)).expiresAt,activation.expiresAt);
+ await decideSubmission(d.firestore,id,'approve',1500);
+ await assert.rejects(customerEdit(d.firestore,null,{action:'save',code,review},1600),{code:'review/edit-locked'});
+});
+
+test('reactivated grant permits only its code until expiry and cannot reactivate unpublished or admin reviews',async()=>{
+ const d=await staged();await decideSubmission(d.firestore,id,'approve',1100);await reactivateCustomerEdit(d.firestore,id,1,1200);
+ await assert.rejects(customerEdit(d.firestore,null,{action:'load',code:'H4SX-OTHER'},1300),/tidak sah/);
+ await assert.rejects(customerEdit(d.firestore,null,{action:'load',code},1200+60*1000),/tamat/);
+ await assert.rejects(customerEdit(d.firestore,token,{action:'load',code},1200+60*1000),/tamat/);
+ await decideSubmission(d.firestore,id,'reject',1400);
+ await assert.rejects(reactivateCustomerEdit(d.firestore,id,10,1500),/telah diluluskan/);
+ const admin=await staged({});const adminId='review_H4SX-ADMIN';
+ admin.values.set('ratings/'+adminId,{nama:'Admin',bintang:5,ulasan:'Admin',moderationStatus:'published',adminAuthorUid:'admin'});
+ await assert.rejects(reactivateCustomerEdit(admin.firestore,adminId,10,2000),/telah diluluskan/);
+ await assert.rejects(reactivateCustomerEdit(admin.firestore,id,0,2000),/tidak sah/);
+});
+
+test('customer edit API accepts code-only requests only when an admin reactivation grant exists',async()=>{
+ const d=await staged();await decideSubmission(d.firestore,id,'approve',1100);await reactivateCustomerEdit(d.firestore,id,5,1200);
+ const handler=createEditHandler(async()=>({firestore:d.firestore}),async(req,res)=>res.status(200).json({success:true}));
+ const res={setHeader(){},status(value){this.statusCode=value;return this;},json(value){this.body=value;return this;}};
+ await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{action:'load',code}},res);
+ assert.equal(res.statusCode,200);assert.equal(res.body.review.nama,review.nama);
+ const save={setHeader(){},status(value){this.statusCode=value;return this;},json(value){this.body=value;return this;}};
+ await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{action:'save',code,review:{...review,ulasan:'Disimpan tanpa cookie selepas admin aktifkan'},token:'captcha'}},save);
+ assert.equal(save.statusCode,200);assert.equal(d.values.get('review_pending/'+id).review.ulasan,'Disimpan tanpa cookie selepas admin aktifkan');
+ const denied={setHeader(){},status(value){this.statusCode=value;return this;},json(value){this.body=value;return this;}};
+ await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{action:'load',code:'H4SX-OTHER'}},denied);
+ assert.equal(denied.statusCode,403);
 });
 
 function transactionalDatabase(initial={}){

@@ -4423,9 +4423,24 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     const labels={pending:'Menunggu semakan',published:'Diterbitkan',hidden:'Disorok',rejected:'Ditolak',trash:'Tong sampah'};
     box.innerHTML=records.length?records.map(r=>{
       const time=r.redeemedAt==null?'Masa tidak direkodkan':new Date(r.redeemedAt).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur',dateStyle:'medium',timeStyle:'short'});
-      return `<article class="admin-history-item"><div><strong>${escapeHtml(r.nama||'Nama tidak tersedia')}</strong><code>${escapeHtml(r.code)}</code></div><div><span class="admin-status-chip ${escapeHtml(r.status)}">${escapeHtml(labels[r.status]||r.status)}</span><small>${escapeHtml(time)}</small></div></article>`;
+      const editControl=r.status==='published'?`<div class="admin-history-edit"><label>Tempoh edit (minit)<input type="number" min="1" max="10080" step="1" value="10" data-edit-minutes="${escapeHtml(r.id)}"></label><button type="button" data-reactivate-edit="${escapeHtml(r.id)}">Aktifkan edit</button></div>`:'';
+      return `<article class="admin-history-item"><div><strong>${escapeHtml(r.nama||'Nama tidak tersedia')}</strong><code>${escapeHtml(r.code)}</code></div><div><span class="admin-status-chip ${escapeHtml(r.status)}">${escapeHtml(labels[r.status]||r.status)}</span><small>${escapeHtml(time)}</small></div>${editControl}</article>`;
     }).join(''):adminEmpty(adminHistoryLoading?'Memuatkan sejarah...':search?'Tiada rekod dimuatkan yang sepadan.':'Belum ada sejarah redeem.','fa-clock-rotate-left');
   }
+  document.getElementById('adminHistoryList').addEventListener('click',async event=>{
+    const button=event.target.closest('[data-reactivate-edit]');if(!button)return;
+    if(!mintaAdmin())return;
+    const id=button.dataset.reactivateEdit,input=document.querySelector(`[data-edit-minutes="${id}"]`),minutes=Number(input?.value);
+    if(!input?.value.trim()||!Number.isInteger(minutes)||minutes<1||minutes>10080){input?.reportValidity?.();document.getElementById('adminHistoryStatus').textContent='Masukkan tempoh antara 1–10080 minit.';return;}
+    button.disabled=true;button.textContent='Mengaktifkan...';
+    try{
+      const result=await moderationRequest({action:'reactivateEdit',id,minutes});
+      const until=new Date(result.expiresAt).toLocaleString('ms-MY',{timeZone:'Asia/Kuala_Lumpur',dateStyle:'medium',timeStyle:'short'});
+      document.getElementById('adminHistoryStatus').textContent=`Edit ${id.slice(7)} aktif selama ${minutes} minit sehingga ${until}. Pelanggan boleh masukkan kod asal.`;
+      showToast('Akses edit diaktifkan mengikut tempoh yang ditetapkan.','success');
+    }catch(error){document.getElementById('adminHistoryStatus').textContent=error.message||'Akses edit gagal diaktifkan.';}
+    finally{button.disabled=false;button.textContent='Aktifkan edit';}
+  });
   async function loadAdminReviewHistory(reset=true){
     if(!adminOk()){clearAdminReviewHistory();return;}
     if(adminHistoryLoading)return;

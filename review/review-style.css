@@ -5106,6 +5106,11 @@ html[data-admin-auth="true"] [data-admin-ctrl-row] .admin-action-btn {
 .admin-history-item strong { font-size:13px; overflow-wrap:anywhere; }
 .admin-history-item code { color:#078ac4; font-size:12px; overflow-wrap:anywhere; }
 .admin-history-item small { color:#718a9b; font-size:10px; }
+.admin-history-edit { display:flex !important; align-items:end; gap:8px; }
+.admin-history-edit label { display:grid; gap:4px; color:#526c7d; font-size:11px; }
+.admin-history-edit input { width:92px; min-height:36px; padding:6px; border:1px solid #c5dbe8; border-radius:6px; font:inherit; }
+.admin-history-edit button { min-height:36px; padding:0 12px; border:0; border-radius:6px; background:#0f95cc; color:#fff; font:inherit; cursor:pointer; }
+.admin-history-edit button:disabled { opacity:.6; cursor:wait; }
 #btnAdminMoreHistory { min-height:40px; margin-top:12px; padding:0 18px; border:0; border-radius:7px; background:#0f95cc; color:#fff; font:inherit; cursor:pointer; }
 #btnAdminMoreHistory:disabled { opacity:.6; cursor:wait; }
 :root[data-theme="dark"] .admin-history-item { border-color:#1d3b4f; background:#0d2232; }

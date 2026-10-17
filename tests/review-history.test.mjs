@@ -130,7 +130,7 @@ test('history endpoint returns only the verified admin history and rejects untru
 });
 
 const app=readFileSync(new URL('../review/review-app.js',import.meta.url),'utf8');
-function client(){
+function client(records=[{id:'review_H4SX-AAAA',code:'H4SX-AAAA',nama:'<img onerror="evil()">',redeemedAt:1000,status:'published'}]){
   const elements=new Map(),handlers=new Map(),calls=[];
   function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',innerHTML:'',hidden:true,disabled:false,replaceChildren(){this.innerHTML='';},addEventListener(name,fn){handlers.set(id+':'+name,fn);}});return elements.get(id);}
   const context={currentUser:{uid:ADMIN_UID},AbortController,setTimeout,clearTimeout,Date,Map,
@@ -138,7 +138,7 @@ function client(){
     adminOk:()=>context.currentUser?.uid===ADMIN_UID,
     escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
     adminEmpty:text=>text,
-    moderationRequest:async(payload,signal)=>{calls.push({payload,signal});return {records:[{id:'review_H4SX-AAAA',code:'H4SX-AAAA',nama:'<img onerror="evil()">',redeemedAt:1000,status:'published'}],nextCursor:'review_H4SX-AAAA'};}
+    moderationRequest:async(payload,signal)=>{calls.push({payload,signal});return {records,nextCursor:'review_H4SX-AAAA'};}
   };
   vm.createContext(context);
   vm.runInContext(app.slice(app.indexOf('  let adminHistoryRecords='),app.indexOf('  async function loadQueuedReviews(){')),context);
@@ -152,6 +152,20 @@ test('admin history escapes names, searches loaded codes/names and deduplicates 
   c.element('adminHistorySearch').value='h4sx-aaaa';c.context.renderAdminReviewHistory();assert(c.element('adminHistoryList').innerHTML.includes('H4SX-AAAA'));
   c.element('adminHistorySearch').value='no match';c.context.renderAdminReviewHistory();assert.match(c.element('adminHistoryList').innerHTML,/Tiada rekod/);
   c.element('adminHistorySearch').value='';await c.context.loadAdminReviewHistory(false);assert.equal(c.calls[1].payload.cursor,'review_H4SX-AAAA');assert.equal(vm.runInContext('adminHistoryRecords.length',c.context),1);
+});
+test('admin history offers per-code reactivation only for published reviews',async()=>{
+  const c=client([
+    {id:'review_H4SX-AAAA',code:'H4SX-AAAA',nama:'Ali',redeemedAt:1000,status:'published'},
+    {id:'review_H4SX-BBBB',code:'H4SX-BBBB',nama:'Bala',redeemedAt:900,status:'pending'},
+    {id:'review_H4SX-CCCC',code:'H4SX-CCCC',nama:'Chong',redeemedAt:800,status:'rejected'}
+  ]);
+  await c.context.loadAdminReviewHistory();
+  const html=c.element('adminHistoryList').innerHTML;
+  assert.equal((html.match(/data-reactivate-edit=/g)||[]).length,1);
+  assert(html.includes('data-reactivate-edit="review_H4SX-AAAA"'));
+  assert(html.includes('data-edit-minutes="review_H4SX-AAAA"'));
+  assert(!html.includes('data-reactivate-edit="review_H4SX-BBBB"'));
+  assert(!html.includes('data-reactivate-edit="review_H4SX-CCCC"'));
 });
 test('logout clears loaded history and stale in-flight responses cannot restore it',async()=>{
   const c=client();await c.context.loadAdminReviewHistory();let finish;
@@ -167,7 +181,8 @@ test('history request failure is visible and can be retried without remaining st
   c.context.moderationRequest=async()=>({records:[],nextCursor:null});await c.context.loadAdminReviewHistory();assert.match(c.element('adminHistoryStatus').textContent,/0 rekod/);assert.equal(c.element('btnAdminMoreHistory').hidden,true);
 });
 test('history tab starts hidden and does not modify customer edit controls',()=>{
-  const html=readFileSync(new URL('../review/index.htm',import.meta.url),'utf8');assert(html.includes('data-admin-center-tab="history" hidden'));assert(html.includes('data-admin-center-panel="history" hidden'));assert(html.includes('data-customer-review-edit'));assert(!html.includes('H4SX-AAAA'));
+  const html=readFileSync(new URL('../review/index.htm',import.meta.url),'utf8');assert(html.includes('data-admin-center-tab="history" hidden'));assert(html.includes('data-admin-center-panel="history" hidden'));assert(html.includes('data-customer-review-edit'));assert(html.includes('review-edit-reactivation-20261018'));assert(html.includes('review-reactivation-20261018'));assert(!html.includes('H4SX-AAAA'));
+  const store=readFileSync(new URL('../index.htm',import.meta.url),'utf8');assert(store.includes('review-reactivation-20261018'));
 });
 
 test('review and store suggestions do not prefix CDG, and old badges/text are hidden',()=>{

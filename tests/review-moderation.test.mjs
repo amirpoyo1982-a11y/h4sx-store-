@@ -62,6 +62,18 @@ test('admin can save 90-minute edit policy independently of the moderation switc
  assert.equal((await send({action:'list'})).data.enabled,false);
 });
 
+test('only authenticated admin can reactivate a published review using a per-code duration',async()=>{
+ const id='review_H4SX-TEST1',review={nama:'Ali',bintang:5,ulasan:'Lama',moderationStatus:'published'},d=database({
+  ['ratings/'+id]:review,
+  ['review_pending/'+id]:{status:'published',submittedAt:1000,customerEditLocked:true,review}
+ });
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+  const before=Date.now(),res=reply();await handler({...request,body:{action:'reactivateEdit',id,minutes:45}},res);
+  assert.equal(res.code,200);assert(res.data.expiresAt>=before+45*60000&&res.data.expiresAt<=Date.now()+45*60000);
+ assert.equal(res.data.minutes,45);assert.equal(d.values.get('review_pending/'+id).customerEditLocked,false);
+ assert.equal(d.values.get('review_pending/'+id).customerEditReactivationMinutes,45);assert.deepEqual(d.values.get('ratings/'+id),review);
+});
+
 test('invalid edit policy is rejected atomically; missing config returns the ten-minute default',async()=>{
  let writes=0;const d=database(),ref=d.firestore.doc;d.firestore.doc=path=>({...ref(path),set:async()=>writes++});
  const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
@@ -71,8 +83,8 @@ test('invalid edit policy is rejected atomically; missing config returns the ten
  assert.equal((await send({action:'list'})).data.editMinutes,10);
 });
 
-test('editing policy and approval remain protected by origin and Firebase admin identity',async()=>{
- for(const action of ['configure','approve'])for(const mode of ['anonymous','customer','bad-origin','revoked-token']){
+test('editing policy, approval and edit reactivation remain protected by origin and Firebase admin identity',async()=>{
+ for(const action of ['configure','approve','reactivateEdit'])for(const mode of ['anonymous','customer','bad-origin','revoked-token']){
   const handler=createModerationHandler(async()=>({auth:{verifyIdToken:async()=>{if(mode==='revoked-token')throw Error('Revoked');return {uid:mode==='customer'?'not-admin':ADMIN_UID};}},firestore:{doc:()=>assert.fail('must not access documents')}}));
   const res=reply();await handler({method:'POST',headers:{origin:mode==='bad-origin'?'https://evil.example':'https://www.h4sxmy.xyz',...(mode==='anonymous'?{}:{authorization:'Bearer TOKEN'})},body:{action,id:'review_H4SX-TEST1',editMinutes:90}},res);
   assert([400,401,403].includes(res.code));
