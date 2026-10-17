@@ -10989,7 +10989,6 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .h4rf-story-fields>small { color:#6d8799; font-size:.65rem; }
 :root[data-theme="dark"] .h4rf-story-builder { border-color:#28546d; background:#112a3b; }
 :root[data-theme="dark"] .h4rf-story-builder summary { color:#9bdfff; }
-@media(prefers-reduced-motion:reduce){.review-popup-name strong.is-animated,.review-popup-name strong.is-rainbow,.review-popup-roles .is-animated{animation:none}}
 /* Keep the review popup in the store's light H4SX palette. */
 #review-showcase-popup {
   color:#173e58; background:linear-gradient(135deg,#ffffff,#eefbff);
