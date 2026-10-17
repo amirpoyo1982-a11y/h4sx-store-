@@ -2505,6 +2505,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   adminLoginOverlayBg.addEventListener('click', tutupAdminLogin);
   updateAdminUi();
 
+  const DEFAULT_ANNOUNCEMENT_TEXT = 'KEMASKINI SISTEM H4SX STORE\n\nKami telah melancarkan sistem ulasan yang lebih mantap! Sebagai tanda penghargaan kepada pelanggan setia yang telah menyokong kami sejak awal, kini setiap pembeli lama akan diberikan lencana khas: "OLD SUPPORTER".\n\nTerima kasih atas sokongan berterusan anda kepada H4SX STORE. Kepuasan anda adalah keutamaan kami! 💙';
   let adminPanelLoading=false,adminSaveBlockedByLoad=false;
   async function openAdminSettings() {
     if (!mintaAdmin()) return;
@@ -2521,7 +2522,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
         new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Sambungan Firebase lambat. Tutup dan buka Admin semula untuk cuba lagi.')),12000);})
       ]);
       if(!adminOk())return;
-      adminAnnounceText.value=announcement.exists()?announcement.data().text||DEFAULT_ANNOUNCEMENT_TEXT:DEFAULT_ANNOUNCEMENT_TEXT;
+      const storedAnnouncement=announcement.exists()?announcement.data()?.text:'';
+      adminAnnounceText.value=typeof storedAnnouncement==='string'&&storedAnnouncement.trim()?storedAnnouncement:DEFAULT_ANNOUNCEMENT_TEXT;
       isiAutoZixuForm(zixu.exists()?zixu.data():DEFAULT_ZIXU_CONFIG);loaded=true;status.textContent='';
     }catch(error){status.textContent=error.message||'Tetapan gagal dimuatkan. Buka semula Admin untuk cuba lagi.';}
     finally{clearTimeout(timer);adminPanelLoading=false;controls.forEach((el,i)=>el.disabled=disabled[i]);btnSaveAdmin.disabled=loaded?saveWasDisabled:true;adminSaveBlockedByLoad=!loaded;}
