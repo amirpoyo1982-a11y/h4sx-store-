@@ -13,6 +13,15 @@ test('legacy CDG prefix is removed from submitted text without losing suggestion
  assert.equal(result.review.cadanganDigunakan,true);
  assert.equal(validateSubmission({...input,review:{...input.review,ulasan:'Servis baik',cadanganDigunakan:true}}).review.ulasan,'Servis baik');
 });
+test('anonymous reviews use the fixed display name and skip customer-name validation',async()=>{
+ const anonymous=validateSubmission({...input,review:{...input.review,nama:'',anonymous:true}}).review;
+ assert.equal(anonymous.nama,'enggan memberitahu');
+ assert.equal(validateSubmission({...input,review:{...input.review,nama:input.code,anonymous:true}}).review.nama,'enggan memberitahu');
+ assert.throws(()=>validateSubmission({...input,review:{...input.review,nama:''}}),/Nama/);
+ const d=database({'review_codes/'+input.code:{}});
+ await stageSubmission(d.firestore,{...input,review:{...input.review,nama:'',anonymous:true}},false,1000);
+ assert.equal(d.values.get('review_pending/review_'+input.code).review.nama,'enggan memberitahu');
+});
 import {createSubmitHandler} from '../api/review-submit.js';
 import {createAutoApproveHandler} from '../api/review-auto-approve.js';
 import {createModerationHandler} from '../api/review-moderation.js';

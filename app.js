@@ -8926,6 +8926,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const code = document.getElementById('h4rf-code');
   const name = document.getElementById('h4rf-name');
+  const anonymousName = document.getElementById('h4rf-anonymous');
+  const nameRequired = document.getElementById('h4rf-name-required');
+  const generateName = document.getElementById('h4rf-generate');
   const rating = document.getElementById('h4rf-rating');
   const review = document.getElementById('h4rf-review');
   const submit = document.getElementById('h4rf-submit');
@@ -8960,11 +8963,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const message = (text, isError = false) => toast(text, isError);
   const autoColor = value => colors[(String(value || '').trim().length || 0) % colors.length];
+  const syncNamePreference = () => {
+    name.disabled = anonymousName.checked;
+    name.required = !anonymousName.checked;
+    generateName.disabled = anonymousName.checked;
+    nameRequired.hidden = anonymousName.checked;
+  };
   const storeProfileZoom = window.H4ReviewMedia.createProfileZoom(avatar.closest('.h4rf-profile'), () => updateAvatar());
   const updateAvatar = () => {
-    const color = selectedColor || autoColor(name.value);
+    const displayName = anonymousName.checked ? 'enggan memberitahu' : name.value;
+    const color = selectedColor || autoColor(displayName);
     avatar.style.backgroundColor = color;
-    avatarText.textContent = selectedEmoji || (name.value.trim().charAt(0).toUpperCase() || 'H');
+    avatarText.textContent = selectedEmoji || (displayName.trim().charAt(0).toUpperCase() || 'H');
     avatar.classList.toggle('has-image', Boolean(profileImage));
     avatarImg.src = profileImage || '';
     storeProfileZoom.apply(avatarImg);
@@ -9139,29 +9149,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape' && modal.classList.contains('show')) closeH4ReviewForm();
   });
 
-  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-store-review-draft-v1',container:form,fields:['h4rf-code','h4rf-name','h4rf-rating','h4rf-review','h4rf-story-item','h4rf-story-time','h4rf-story-experience'],isOpen:()=>modal.classList.contains('show'),getExtra:()=>({selectedColor,selectedEmoji,profileImage,profileZoom:storeProfileZoom.get(),profileOffsetY:storeProfileZoom.getOffset(),feedbackImage,feedbackVideoLink:window.H4ReviewMedia.getFeedbackLink(form),suggestionUsed}),restoreExtra:extra=>{selectedColor=colors.includes(extra.selectedColor)?extra.selectedColor:null;selectedEmoji=emojiOptions.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImage=window.H4ReviewMedia.safeImage(extra.profileImage);storeProfileZoom.set(extra.profileZoom ?? 100);storeProfileZoom.setOffset(extra.profileOffsetY ?? 0);feedbackImage=window.H4ReviewMedia.safeImage(extra.feedbackImage);window.H4ReviewMedia.restoreFeedbackLink(form,extra.feedbackVideoLink);suggestionUsed=extra.suggestionUsed===true;updateAvatar();document.getElementById('h4rf-clear-profile').hidden=!profileImage;document.getElementById('h4rf-feedback-clear').hidden=!feedbackImage;feedbackStatus.textContent=feedbackImage?'Gambar feedback sudah dipilih.':'';charCount.textContent=review.value.length+' / 500';},onRestore:data=>{if(data.resume){openH4ReviewForm();message('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.');}}});
+  anonymousName.addEventListener('change', () => {
+    if (anonymousName.checked) name.value = '';
+    syncNamePreference();
+    updateAvatar();
+  });
+  syncNamePreference();
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-store-review-draft-v1',container:form,fields:['h4rf-code','h4rf-name','h4rf-rating','h4rf-review','h4rf-story-item','h4rf-story-time','h4rf-story-experience'],isOpen:()=>modal.classList.contains('show'),getExtra:()=>({anonymousName:anonymousName.checked,selectedColor,selectedEmoji,profileImage,profileZoom:storeProfileZoom.get(),profileOffsetY:storeProfileZoom.getOffset(),feedbackImage,feedbackVideoLink:window.H4ReviewMedia.getFeedbackLink(form),suggestionUsed}),restoreExtra:extra=>{anonymousName.checked=extra.anonymousName===true;syncNamePreference();selectedColor=colors.includes(extra.selectedColor)?extra.selectedColor:null;selectedEmoji=emojiOptions.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImage=window.H4ReviewMedia.safeImage(extra.profileImage);storeProfileZoom.set(extra.profileZoom ?? 100);storeProfileZoom.setOffset(extra.profileOffsetY ?? 0);feedbackImage=window.H4ReviewMedia.safeImage(extra.feedbackImage);window.H4ReviewMedia.restoreFeedbackLink(form,extra.feedbackVideoLink);suggestionUsed=extra.suggestionUsed===true;updateAvatar();document.getElementById('h4rf-clear-profile').hidden=!profileImage;document.getElementById('h4rf-feedback-clear').hidden=!feedbackImage;feedbackStatus.textContent=feedbackImage?'Gambar feedback sudah dipilih.':'';charCount.textContent=review.value.length+' / 500';},onRestore:data=>{if(data.resume){openH4ReviewForm();message('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.');}}});
   feedbackDraft.restore();
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const reviewCode = code.value.trim().toUpperCase();
-    const customerName = name.value.trim();
+    const isAnonymous = anonymousName.checked;
+    const customerName = isAnonymous ? 'enggan memberitahu' : name.value.trim();
     let reviewText = review.value.trim();
     const blocked = /^(anjing|babi|sial|bodoh|bangang|bangsat|celaka|laknat)$/i.test(customerName) || /(pukimak|kimak|puki|butoh|butuh|kontol|memek|lancau|lanjiao|cibai|jibai|pundek|fuck|shit|bitch|asshole|nigger|nigga|keling)/i.test(customerName);
     if (!reviewCode) return message('Sila masukkan kod pengesahan.', true);
-    if (!customerName) return message('Sila isi nama atau username.', true);
-    if(customerName.toUpperCase()===reviewCode)return message('Jangan gunakan kod review sebagai nama. Masukkan nama atau username sendiri.',true);
+    if (!isAnonymous && !customerName) return message('Sila isi nama atau username.', true);
+    if(!isAnonymous && customerName.toUpperCase()===reviewCode)return message('Jangan gunakan kod review sebagai nama. Masukkan nama atau username sendiri.',true);
     const officialReviewAdmin=orderAuth?.currentUser?.uid==='LWRN6IDv4OV1PZd7Vldgp6F9pdH3';
-    if (blocked || (!officialReviewAdmin&&customerName.toLowerCase().includes('h4sx'))) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
+    if (!isAnonymous && (blocked || (!officialReviewAdmin&&customerName.toLowerCase().includes('h4sx')))) return message('Sila guna nama yang sopan dan bukan nama admin.', true);
     if (!db || !window.firebase) return message('Sistem review belum sedia. Cuba semula sebentar lagi.', true);
     reviewText = reviewText.replace(/^cdg\s*[-:]\s*/i, '').trim();
     submit.disabled = true;
     submit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghantar...';
     try {
-      const payload={nama:customerName,bintang:Number(rating.value),ulasan:reviewText||'Tiada ulasan ditinggalkan.',cadanganDigunakan:suggestionUsed};
+      const payload={nama:customerName,anonymous:isAnonymous,bintang:Number(rating.value),ulasan:reviewText||'Tiada ulasan ditinggalkan.',cadanganDigunakan:suggestionUsed};
       if(selectedColor)payload.warnaProfil=selectedColor;if(selectedEmoji)payload.emojiProfil=selectedEmoji;if(profileImage){payload.profileImg=profileImage;payload.profileZoom=storeProfileZoom.get();payload.profileOffsetY=storeProfileZoom.getOffset();}if(feedbackImage)payload.feedbackImg=feedbackImage;
       const submissionResult=await window.H4ReviewSubmit.submit({code:reviewCode,review:payload,official:officialReviewAdmin&&customerName.toLowerCase().includes('h4sx')},{anchor:submit,adminToken:officialReviewAdmin?await orderAuth.currentUser.getIdToken():null});
       feedbackDraft?.clear();
       form.reset();
+      syncNamePreference();
       selectedColor = null; selectedEmoji = null; profileImage = null; storeProfileZoom.set(100);storeProfileZoom.setOffset(0); feedbackImage = null; suggestionUsed = false;
       avatar.classList.remove('has-image'); avatarImg.src = ''; feedbackStatus.textContent = ''; charCount.textContent = '0 / 500';
       swatches.querySelectorAll('.h4rf-swatch,.h4rf-emoji').forEach(item => item.classList.remove('active'));

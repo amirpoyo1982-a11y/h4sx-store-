@@ -7324,6 +7324,10 @@ nav,
 .h4rf-field input:focus,.h4rf-field select:focus,.h4rf-field textarea:focus,.h4rf-url-row input:focus { border-color:#0eb8de; box-shadow:0 0 0 3px rgba(14,184,222,.12); }
 .h4rf-name-row,.h4rf-url-row { display:flex; gap:8px; }
 .h4rf-name-row button,.h4rf-url-row button { flex:0 0 auto; border:0; border-radius:11px; padding:0 13px; color:#0879bc; background:#e9f8ff; font:inherit; font-size:.73rem; font-weight:850; cursor:pointer; }
+.h4rf-anonymous-choice { display:flex; align-items:flex-start; gap:8px; margin-top:9px; color:#315b78; font-size:.7rem; font-weight:750; cursor:pointer; }
+.h4rf-field .h4rf-anonymous-choice input { flex:0 0 auto; width:16px; height:16px; margin:1px 0 0; }
+.h4rf-anonymous-choice small { display:block; margin-top:3px; color:#6b879a; font-size:.66rem; font-weight:500; }
+.h4rf-name-row button:disabled { opacity:.55; cursor:not-allowed; }
 .h4rf-profile { display:flex; align-items:center; gap:14px; margin:16px 0 10px; padding:13px; border:1px solid #d0edff; border-radius:17px; background:#effaff; }
 .h4rf-avatar { position:relative; width:58px; height:58px; flex:0 0 58px; overflow:hidden; border:0; border-radius:17px; color:#fff; background:#20a7df; font-size:1.22rem; font-weight:900; cursor:pointer; }
 .h4rf-avatar img { display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }

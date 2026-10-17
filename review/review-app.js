@@ -2830,6 +2830,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   // ── DOM ───────────────────────────────────────────────────────
   const kodVerification = document.getElementById("kodVerification");
   const namaPelanggan   = document.getElementById("namaPelanggan");
+  const anonymousReviewName = document.getElementById("anonymousReviewName");
+  const namaPelangganRequired = document.getElementById("namaPelangganRequired");
   const btnGenerateName = document.getElementById("btnGenerateName");
   const pilihBintang    = document.getElementById("pilihBintang");
   const ulasanPelanggan = document.getElementById("ulasanPelanggan");
@@ -2922,7 +2924,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   const formProfileZoom = window.H4ReviewMedia.createProfileZoom(avatarPreview.closest('.profile-picker-top') || avatarPreview, updatePreview);
   function updatePreview() {
-    const nama  = namaPelanggan.value.trim();
+    const nama  = anonymousReviewName.checked ? "enggan memberitahu" : namaPelanggan.value.trim();
     const warna = pilihanWarna || warnaAuto(nama);
     const officialLogo = adminOk() && !customerPreviewMode && document.getElementById("adminOfficialReview").checked;
     const previewSrc = officialLogo ? H4SX_LOGO_URL : profileImgB64;
@@ -2942,6 +2944,18 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     }
   }
   namaPelanggan.addEventListener("input", updatePreview);
+  function syncAnonymousName() {
+    namaPelanggan.disabled = anonymousReviewName.checked;
+    namaPelanggan.required = !anonymousReviewName.checked;
+    btnGenerateName.disabled = anonymousReviewName.checked;
+    namaPelangganRequired.hidden = anonymousReviewName.checked;
+  }
+  anonymousReviewName.addEventListener("change", () => {
+    if (anonymousReviewName.checked) namaPelanggan.value = "";
+    syncAnonymousName();
+    updatePreview();
+  });
+  syncAnonymousName();
   document.getElementById("adminOfficialReview").addEventListener("change", updatePreview);
   btnGenerateName.addEventListener("click", () => {
     const nama = NAMA_AUTO[Math.floor(Math.random() * NAMA_AUTO.length)];
@@ -3305,18 +3319,19 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     if (!ulasanPelanggan.value.trim()) reviewSuggestionUsed = false;
   });
 
-  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-review-draft-v1',container:document.querySelector('.form-col'),fields:['kodVerification','namaPelanggan','pilihBintang','ulasanPelanggan','reviewStoryItem','reviewStoryTime','reviewStoryExperience'],isOpen:()=>true,getExtra:()=>({selectedColor:pilihanWarna,selectedEmoji:pilihanEmoji,profileImage:profileImgB64,profileZoom:formProfileZoom.get(),profileOffsetY:formProfileZoom.getOffset(),feedbackImage:feedbackImgB64,feedbackVideoLink:window.H4ReviewMedia.getFeedbackLink(document.querySelector('.form-col')),suggestionUsed:reviewSuggestionUsed}),restoreExtra:extra=>{pilihanWarna=WARNA.includes(extra.selectedColor)?extra.selectedColor:null;pilihanEmoji=EMOJI.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImgB64=window.H4ReviewMedia.safeImage(extra.profileImage);formProfileZoom.set(extra.profileZoom ?? 100);formProfileZoom.setOffset(extra.profileOffsetY ?? 0);feedbackImgB64=window.H4ReviewMedia.safeImage(extra.feedbackImage);window.H4ReviewMedia.restoreFeedbackLink(document.querySelector('.form-col'),extra.feedbackVideoLink);reviewSuggestionUsed=extra.suggestionUsed===true;updatePreview();btnClearImg.classList.toggle('show',!!profileImgB64);btnClearFeedbackImage.classList.toggle('show',!!feedbackImgB64);feedbackImagePreview.textContent=feedbackImgB64?'Gambar feedback sudah dipilih.':'';charCounter.textContent=ulasanPelanggan.value.length+' / 500';},onRestore:()=>showToast('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.','info')});
+  feedbackDraft=window.H4ReviewMedia.createDraft({key:'h4sx-review-draft-v1',container:document.querySelector('.form-col'),fields:['kodVerification','namaPelanggan','pilihBintang','ulasanPelanggan','reviewStoryItem','reviewStoryTime','reviewStoryExperience'],isOpen:()=>true,getExtra:()=>({anonymousReviewName:anonymousReviewName.checked,selectedColor:pilihanWarna,selectedEmoji:pilihanEmoji,profileImage:profileImgB64,profileZoom:formProfileZoom.get(),profileOffsetY:formProfileZoom.getOffset(),feedbackImage:feedbackImgB64,feedbackVideoLink:window.H4ReviewMedia.getFeedbackLink(document.querySelector('.form-col')),suggestionUsed:reviewSuggestionUsed}),restoreExtra:extra=>{anonymousReviewName.checked=extra.anonymousReviewName===true;syncAnonymousName();pilihanWarna=WARNA.includes(extra.selectedColor)?extra.selectedColor:null;pilihanEmoji=EMOJI.includes(extra.selectedEmoji)?extra.selectedEmoji:null;profileImgB64=window.H4ReviewMedia.safeImage(extra.profileImage);formProfileZoom.set(extra.profileZoom ?? 100);formProfileZoom.setOffset(extra.profileOffsetY ?? 0);feedbackImgB64=window.H4ReviewMedia.safeImage(extra.feedbackImage);window.H4ReviewMedia.restoreFeedbackLink(document.querySelector('.form-col'),extra.feedbackVideoLink);reviewSuggestionUsed=extra.suggestionUsed===true;updatePreview();btnClearImg.classList.toggle('show',!!profileImgB64);btnClearFeedbackImage.classList.toggle('show',!!feedbackImgB64);feedbackImagePreview.textContent=feedbackImgB64?'Gambar feedback sudah dipilih.':'';charCounter.textContent=ulasanPelanggan.value.length+' / 500';},onRestore:()=>showToast('Draf dipulihkan. Jika gambar kamera belum masuk, pilih gambar semula.','info')});
   feedbackDraft.restore();
   // ── Submit ────────────────────────────────────────────────────
   butangHantar.addEventListener("click", async () => {
     const kod    = kodVerification.value.trim().toUpperCase();
-    const nama   = namaPelanggan.value.trim();
+    const isAnonymous = anonymousReviewName.checked;
+    const nama   = isAnonymous ? "enggan memberitahu" : namaPelanggan.value.trim();
     const bintang = parseInt(pilihBintang.value);
     let ulasan = ulasanPelanggan.value.trim();
 
     if (!kod)  return showToast("Sila masukkan Kod Pengesahan.", "error");
-    if (!nama) return showToast("Sila isi nama atau username.", "error");
-    if (isBlockedReviewName(nama)) {
+    if (!isAnonymous && !nama) return showToast("Sila isi nama atau username.", "error");
+    if (!isAnonymous && isBlockedReviewName(nama)) {
       return showToast("Nama ini tidak dibenarkan. Sila guna nama yang sopan.", "error");
     }
     if (ulasan && ulasan.length < 1) {
@@ -3327,18 +3342,19 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
     
     // Block nama yang mengandungi "h4sx" jika bukan admin
     const namaLower = nama.toLowerCase();
-    const nameIssue=reviewNameIssue(nama,kod,adminOk()&&!customerPreviewMode);if(nameIssue)return showToast(nameIssue,"error");
+    const nameIssue=isAnonymous?'':reviewNameIssue(nama,kod,adminOk()&&!customerPreviewMode);if(nameIssue)return showToast(nameIssue,"error");
 
     butangHantar.disabled = true;
     butangHantar.textContent = "Menghantar...";
     document.getElementById('reviewSubmissionStatus').textContent='';
     try {
-      const dataToSave={nama,bintang,ulasan:ulasan||'Tiada ulasan ditinggalkan.',cadanganDigunakan:gunaCadangan};
+      const dataToSave={nama,anonymous:isAnonymous,bintang,ulasan:ulasan||'Tiada ulasan ditinggalkan.',cadanganDigunakan:gunaCadangan};
       if(pilihanWarna)dataToSave.warnaProfil=pilihanWarna;if(pilihanEmoji)dataToSave.emojiProfil=pilihanEmoji;if(profileImgB64){dataToSave.profileImg=profileImgB64;dataToSave.profileZoom=formProfileZoom.get();dataToSave.profileOffsetY=formProfileZoom.getOffset();}if(feedbackImgB64)dataToSave.feedbackImg=feedbackImgB64;
-      const submissionResult=await verifyReviewTurnstile({code:kod,review:dataToSave,official:adminOk()&&!customerPreviewMode&&document.getElementById('adminOfficialReview').checked});
+      const submissionResult=await verifyReviewTurnstile({code:kod,review:dataToSave,official:!isAnonymous&&adminOk()&&!customerPreviewMode&&document.getElementById('adminOfficialReview').checked});
       feedbackDraft?.clear();
       // Reset
       kodVerification.value = namaPelanggan.value = ulasanPelanggan.value = "";
+      anonymousReviewName.checked = false; syncAnonymousName();
       document.getElementById("adminOfficialReview").checked = false;
       reviewStoryItem.value = reviewStoryTime.value = reviewStoryExperience.value = "";
       pilihBintang.value = "5";

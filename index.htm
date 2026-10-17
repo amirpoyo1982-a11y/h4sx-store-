@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=review-popup-role-motion-fix-20261018">
+  <link rel="stylesheet" href="styles.css?v=anonymous-review-20261018">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -405,7 +405,7 @@
             <div class="h4rf-section-title"><b>1</b><div><strong>Sahkan pembelian</strong><small>Kod ini memastikan ulasan datang daripada pembeli sebenar.</small></div></div>
             <div class="h4rf-grid">
               <label class="h4rf-field h4rf-wide"><span><i class="fa-solid fa-key"></i> Kod Pengesahan Pembelian *</span><input id="h4rf-code" maxlength="30" autocomplete="off" placeholder="Contoh: H4SX-XXXXXX" required></label>
-              <label class="h4rf-field"><span><i class="fa-solid fa-user"></i> Nama / Username *</span><div class="h4rf-name-row"><input id="h4rf-name" maxlength="40" autocomplete="off" placeholder="Contoh: H4SX" required><button type="button" id="h4rf-generate"><i class="fa-solid fa-dice"></i><span>Rawak</span></button></div></label>
+              <div class="h4rf-field"><span><i class="fa-solid fa-user"></i> Nama / Username <span id="h4rf-name-required">*</span></span><div class="h4rf-name-row"><input id="h4rf-name" maxlength="40" autocomplete="off" placeholder="Contoh: H4SX" required><button type="button" id="h4rf-generate"><i class="fa-solid fa-dice"></i><span>Rawak</span></button></div><label class="h4rf-anonymous-choice" for="h4rf-anonymous"><input type="checkbox" id="h4rf-anonymous"><span>Enggan memberitahu nama<small>Nama ulasan akan dipaparkan sebagai “enggan memberitahu”.</small></span></label></div>
               <label class="h4rf-field"><span><i class="fa-solid fa-star"></i> Skor Perkhidmatan</span><select id="h4rf-rating"><option value="5">★★★★★ • Sangat puas hati</option><option value="4">★★★★☆ • Baik</option><option value="3">★★★☆☆ • Sederhana</option><option value="2">★★☆☆☆ • Kurang memuaskan</option><option value="1">★☆☆☆☆ • Lemah</option></select></label>
             </div>
           </section>
@@ -1084,7 +1084,7 @@
 <script src="admin-sessions.js?v=integrated-20261011"></script>
 <script defer src="review-media.js?v=admin-feedback-edit-20261015"></script>
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
-<script defer src="app.js?v=edit-policy-20261016"></script>
+<script defer src="app.js?v=anonymous-review-20261018"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
