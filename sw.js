@@ -1,7 +1,7 @@
-const CACHE_NAME = 'h4sx-pwa-20261018-review-popup-nav-motion-v132';
+const CACHE_NAME = 'h4sx-pwa-20261018-review-popup-role-motion-v133';
 const APP_SHELL = [
   './index.htm',
-  './styles.css?v=review-popup-nav-motion-20261018',
+  './styles.css?v=review-popup-role-motion-fix-20261018',
   './app.js?v=edit-policy-20261016',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',

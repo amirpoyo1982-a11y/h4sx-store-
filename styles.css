@@ -5213,6 +5213,11 @@ nav,
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
+  .review-popup-name strong.is-animated,
+  .review-popup-roles .is-animated {
+    animation-duration: 3.4s !important;
+    animation-iteration-count: infinite !important;
+  }
   .marquee-track {
     animation: none !important;
   }
