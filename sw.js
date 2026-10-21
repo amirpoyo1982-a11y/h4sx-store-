@@ -1,4 +1,4 @@
-const CACHE_NAME = 'h4sx-pwa-20261021-preview-bypass-v134';
+const CACHE_NAME = 'h4sx-pwa-20261021-admin-name-censor-v135';
 const APP_SHELL = [
   './index.htm',
   './preview-bypass.js?v=default-on-20261021',

@@ -5,7 +5,14 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');const app=read('review/review-app.js');
 test('approval shortcut is visible at the top of the admin menu, without duplicating the old button',()=>{const html=read('review/index.htm');assert.equal((html.match(/id="btnOpenReviewCenter"/g)||[]).length,1);assert(html.indexOf('id="btnOpenReviewCenter"')<html.indexOf('id="adminAnnounceText"'));assert(html.includes('Semak ulasan — Lulus / Tolak'));});
 test('shortcut clears old filters and opens the waiting list directly',()=>{const fields=Object.fromEntries(['adminReviewSearch','adminReviewRatingFilter','adminReviewStatusFilter','adminReviewSort'].map(id=>[id,{value:'old'}]));let tab,loaded=0;const selected=new Set(['old']);const context={document:{getElementById:id=>fields[id]},mintaAdmin:()=>true,selectedAdminReviews:selected,openAdminReviewCenter:name=>tab=name,loadQueuedReviews:()=>loaded++};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function openWaitingReviews(){'),app.indexOf('  let queuedReviews=')),context);context.openWaitingReviews();assert.equal(tab,'moderation');assert.equal(fields.adminReviewStatusFilter.value,'needsReview');assert.equal(fields.adminReviewSearch.value,'');assert.equal(fields.adminReviewRatingFilter.value,'all');assert.equal(selected.size,0);assert.equal(loaded,1);});
-test('waiting review shows labelled approve/reject buttons rather than ambiguous icons',()=>{const context={adminReviewStatus:r=>r.moderationStatus||"published"};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);const html=context.moderationActionsMarkup({pendingSource:true,hasFeedbackImage:true});assert(html.includes('> Luluskan</button>'));assert(html.includes('> Tolak</button>'));assert(html.includes('data-admin-row-action="detail"'));assert(!html.includes('data-admin-row-action="reply"'));assert(context.moderationActionsMarkup({pendingSource:false}).includes('data-admin-row-action="reply"'));});
+test('waiting review shows labelled approve/reject and name-censor controls',()=>{const context={adminReviewStatus:r=>r.moderationStatus||"published",reviewNameCensorControl:()=>'<button data-admin-row-action="censorName">Sensor nama</button>'};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);const html=context.moderationActionsMarkup({pendingSource:true,hasFeedbackImage:true});assert(html.includes('> Luluskan</button>'));assert(html.includes('> Tolak</button>'));assert(html.includes('data-admin-row-action="detail"'));assert(html.includes('data-admin-row-action="censorName"'));assert(!html.includes('data-admin-row-action="reply"'));assert(context.moderationActionsMarkup({pendingSource:false}).includes('data-admin-row-action="reply"'));});
+test('admin name controls call the reversible censor endpoint and require admin access',async()=>{
+ const calls=[],context={mintaAdmin:()=>true,adminReviewRecords:()=>[{id:'review_NAME'}],adminReviewStatus:()=> 'published',moderationRequest:async payload=>calls.push(payload),logAdminAction:async()=>{},reloadAdminReviews:async()=>{},showToast(){},selectedAdminReviews:new Set()};
+ vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  async function runAdminReviewAction('),app.indexOf('  const REPORT_HISTORY_KEY=')),context);
+ await context.runAdminReviewAction('censorName',['review_NAME']);await context.runAdminReviewAction('uncensorName',['review_NAME']);
+ assert.equal(JSON.stringify(calls),JSON.stringify([{action:'setNameCensor',id:'review_NAME',enabled:true},{action:'setNameCensor',id:'review_NAME',enabled:false}]));
+ context.mintaAdmin=()=>false;await context.runAdminReviewAction('censorName',['review_NAME']);assert.equal(calls.length,2);
+});
 
 test('pending, published and report-hidden approval buttons all use the server lock transaction',async()=>{
  for(const record of [{id:'review_TEST',pendingSource:true},{id:'review_TEST'},{id:'review_TEST',moderationStatus:'hidden',autoHiddenByReports:true}]){
@@ -38,7 +45,7 @@ test('duration save protects a draft while saving and preserves it on backend fa
 });
 
 test('periodic moderation reload loads saved duration without overwriting unsaved drafts',async()=>{
- const t=durationControls();Object.assign(t.context,{queueLoading:false,queuedReviews:[],adminOk:()=>true,moderationRequest:async()=>({records:[],enabled:true,editMinutes:90}),adminReviewRecords:()=>[],renderAdminModeration(){},renderAdminDashboard(){}});
+ const t=durationControls();Object.assign(t.context,{queueLoading:false,queuedReviews:[],adminOriginalNames:new Map(),adminOk:()=>true,moderationRequest:async()=>({records:[],enabled:true,editMinutes:90}),adminReviewRecords:()=>[],renderAdminModeration(){},renderAdminDashboard(){}});
  vm.runInContext(app.slice(app.indexOf('  async function loadQueuedReviews(){'),app.indexOf("  document.getElementById('adminModerationEnabled').addEventListener")),t.context);
  await t.context.loadQueuedReviews();assert.equal(t.el('adminEditMinutes').value,'90');t.el('adminEditMinutes').value='60';t.el('adminEditMinutes').events.input();await t.context.loadQueuedReviews();assert.equal(t.el('adminEditMinutes').value,'60');
 });
@@ -60,9 +67,9 @@ test('custom approved role uses escaped per-review text and respects global and 
  assert.equal(context.approvedRoleMarkup({approvedRoleText:'OWNER'}),'');assert.equal(context.approvedRoleMarkup({approvedRoleGranted:true,approvedRoleRemoved:true}),'');
  context.reviewAdminSettings={approvedRole:{enabled:false}};assert.equal(context.approvedRoleMarkup({approvedRoleGranted:true,approvedRoleText:'Custom'}),'');
 });
-test('both pending and reported reviews expose the role editor, but trashed reviews do not',()=>{
- const context={adminReviewStatus:r=>r.moderationStatus||'published'};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);
- for(const record of [{pendingSource:true,moderationStatus:'pending'},{moderationStatus:'hidden',autoHiddenByReports:true}])assert(context.moderationActionsMarkup(record).includes('data-admin-row-action="editFeedback"'));
+test('both pending and reported reviews expose the role editor and name censor, but trashed reviews do not',()=>{
+ const context={adminReviewStatus:r=>r.moderationStatus||'published',reviewNameCensorControl:()=>'<button data-admin-row-action="censorName">Sensor nama</button>'};vm.createContext(context);vm.runInContext(app.slice(app.indexOf('  function moderationActionsMarkup('),app.indexOf('  function renderAdminModeration(){')),context);
+ for(const record of [{pendingSource:true,moderationStatus:'pending'},{moderationStatus:'hidden',autoHiddenByReports:true}]){const markup=context.moderationActionsMarkup(record);assert(markup.includes('data-admin-row-action="editFeedback"'));assert(markup.includes('data-admin-row-action="censorName"'));}
  assert(!context.moderationActionsMarkup({moderationStatus:'trash'}).includes('data-admin-row-action="editFeedback"'));
 });
 

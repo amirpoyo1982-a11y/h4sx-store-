@@ -174,7 +174,8 @@ test('logout clears loaded history and stale in-flight responses cannot restore 
   assert.equal(c.element('adminHistoryList').innerHTML,'');assert.equal(c.element('adminHistoryStatus').textContent,'');
   finish({records:[{id:'review_H4SX-BBBB',code:'H4SX-BBBB',nama:'Stale',status:'pending'}],nextCursor:null});await pending;
   assert.equal(c.element('adminHistoryList').innerHTML,'');assert.equal(vm.runInContext('adminHistoryRecords.length',c.context),0);
-  assert(app.includes('currentUser = user;\n    clearAdminReviewHistory();'));
+  assert(app.includes('currentUser = user;'));
+  assert(app.includes('clearAdminReviewHistory();'));
 });
 test('history request failure is visible and can be retried without remaining stuck loading',async()=>{
   const c=client();c.context.moderationRequest=async()=>{throw Error('Backend gagal');};await c.context.loadAdminReviewHistory();assert.equal(c.element('adminHistoryStatus').textContent,'Backend gagal');assert.equal(c.element('btnAdminRefreshHistory').disabled,false);

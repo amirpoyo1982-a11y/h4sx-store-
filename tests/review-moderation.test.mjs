@@ -63,6 +63,8 @@ function database(initial={}){
 }
 const input={code:'H4SX-TEST1',review:{nama:'Ali',bintang:5,ulasan:'Servis baik'}};
 const reply=()=>({setHeader(){},status(code){this.code=code;return this;},json(data){this.data=data;return this;}});
+const emptyNameCensorDatabase={ref:()=>({once:async()=>({val:()=>({})}),remove:async()=>{}})};
+const request={method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer token'},body:{}};
 test('new submissions stay private, consume the code, and use server time',async()=>{
   const d=database({'review_codes/H4SX-TEST1':{}});const result=await stageSubmission(d.firestore,{...input,review:{...input.review,moderationStatus:'published',diciptaPada:0}},false,1000);assert.equal(result.status,'pending');assert.equal(result.autoApproveAt,1000+WAIT_MS);assert(!d.values.has('ratings/review_H4SX-TEST1'));assert(!d.values.has('review_codes/H4SX-TEST1'));assert.equal(d.values.get('review_pending/review_H4SX-TEST1').review.diciptaPada.getTime(),1000);await assert.rejects(stageSubmission(d.firestore,input),/Kod pengesahan/);
 });
@@ -94,7 +96,7 @@ test('admin-only queue cannot be listed by anonymous or other Firebase users',as
 test('admin can save 90-minute edit policy independently of the moderation switch and list it',async()=>{
  const d=database({'config/review_moderation':{enabled:true,editMinutes:10}}),ref=d.firestore.doc;
  d.firestore.doc=path=>({...ref(path),set:async(value,options)=>d.values.set(path,options?.merge?{...d.values.get(path),...value}:value)});
- const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,database:emptyNameCensorDatabase,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
  const send=async body=>{const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer TOKEN'},body},res);return res;};
  assert.equal((await send({action:'configure',editMinutes:90})).code,200);
  assert.deepEqual(d.values.get('config/review_moderation'),{enabled:true,editMinutes:90});
@@ -108,7 +110,7 @@ test('only authenticated admin can reactivate a published review using a per-cod
   ['ratings/'+id]:review,
   ['review_pending/'+id]:{status:'published',submittedAt:1000,customerEditLocked:true,review}
  });
- const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,database:emptyNameCensorDatabase,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
   const before=Date.now(),res=reply();await handler({...request,body:{action:'reactivateEdit',id,minutes:45}},res);
   assert.equal(res.code,200);assert(res.data.expiresAt>=before+45*60000&&res.data.expiresAt<=Date.now()+45*60000);
  assert.equal(res.data.minutes,45);assert.equal(d.values.get('review_pending/'+id).customerEditLocked,false);
@@ -117,7 +119,7 @@ test('only authenticated admin can reactivate a published review using a per-cod
 
 test('invalid edit policy is rejected atomically; missing config returns the ten-minute default',async()=>{
  let writes=0;const d=database(),ref=d.firestore.doc;d.firestore.doc=path=>({...ref(path),set:async()=>writes++});
- const handler=createModerationHandler(async()=>({firestore:d.firestore,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
+ const handler=createModerationHandler(async()=>({firestore:d.firestore,database:emptyNameCensorDatabase,auth:{verifyIdToken:async()=>({uid:ADMIN_UID})}}));
  const send=async body=>{const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz',authorization:'Bearer TOKEN'},body},res);return res;};
  for(const editMinutes of [0,-1,1.5,10081,'90','',null,true,{},[]])assert.equal((await send({action:'configure',enabled:false,editMinutes})).code,400);
  assert.equal((await send({action:'configure',enabled:'true'})).code,400);assert.equal((await send({action:'configure'})).code,400);assert.equal(writes,0);
