@@ -13,21 +13,53 @@ test('legacy CDG prefix is removed from submitted text without losing suggestion
  assert.equal(result.review.cadanganDigunakan,true);
  assert.equal(validateSubmission({...input,review:{...input.review,ulasan:'Servis baik',cadanganDigunakan:true}}).review.ulasan,'Servis baik');
 });
-test('anonymous reviews use the fixed display name and skip customer-name validation',async()=>{
+test('anonymous reviews receive the first unused server-assigned display name',async()=>{
  const anonymous=validateSubmission({...input,review:{...input.review,nama:'',anonymous:true}}).review;
- assert.equal(anonymous.nama,'enggan memberitahu');
- assert.equal(validateSubmission({...input,review:{...input.review,nama:input.code,anonymous:true}}).review.nama,'enggan memberitahu');
+ assert.equal(anonymous.nama,'customer has#1');
+ assert.equal(anonymous.anonymous,true);
+ assert.equal(validateSubmission({...input,review:{...input.review,nama:input.code,anonymous:true}}).review.nama,'customer has#1');
  assert.throws(()=>validateSubmission({...input,review:{...input.review,nama:''}}),/Nama/);
- const d=database({'review_codes/'+input.code:{}});
+ const d=database({
+  ['review_codes/'+input.code]:{},
+  'review_codes/H4SX-TEST2':{},
+  'ratings/old-one':{nama:'customer has#1'},
+  'ratings/old-three':{nama:'customer has#3'},
+  'review_pending/old-four':{review:{nama:'customer has#4'}}
+ });
  await stageSubmission(d.firestore,{...input,review:{...input.review,nama:'',anonymous:true}},false,1000);
- assert.equal(d.values.get('review_pending/review_'+input.code).review.nama,'enggan memberitahu');
+ assert.equal(d.values.get('review_pending/review_'+input.code).review.nama,'customer has#2');
+ assert.equal(d.values.get('review_pending/review_'+input.code).review.anonymous,true);
+ assert.equal((await stageSubmission(d.firestore,{...input,code:'H4SX-TEST2',review:{...input.review,anonymous:true}},false,1100)).anonymousName,'customer has#5');
+ assert.deepEqual(d.values.get('review_anonymous_names/2'),{reviewId:'review_'+input.code,name:'customer has#2'});
+});
+test('anonymous display-name reservations prevent collisions and are released on deletion',async()=>{
+ const d=database({
+  'review_codes/H4SX-TEST1':{},
+  'review_codes/H4SX-TEST2':{},
+  'review_codes/H4SX-TEST3':{},
+  'review_anonymous_names/1':{reviewId:'review_old',name:'customer has#1'},
+  'ratings/legacy-two':{nama:'customer has#2'}
+ });
+ await stageSubmission(d.firestore,{...input,review:{...input.review,anonymous:true}},false,1000);
+ await stageSubmission(d.firestore,{...input,code:'H4SX-TEST2',review:{...input.review,anonymous:true}},false,1100);
+ assert.equal(d.values.get('review_pending/review_H4SX-TEST1').review.nama,'customer has#3');
+ assert.equal(d.values.get('review_pending/review_H4SX-TEST2').review.nama,'customer has#4');
+ await decideSubmission(d.firestore,'review_H4SX-TEST1','delete',1200);
+ assert.equal(d.values.has('review_anonymous_names/3'),false);
+ await stageSubmission(d.firestore,{...input,code:'H4SX-TEST3',review:{...input.review,anonymous:true}},false,1300);
+ assert.equal(d.values.get('review_pending/review_H4SX-TEST3').review.nama,'customer has#3');
 });
 import {createSubmitHandler} from '../api/review-submit.js';
 import {createAutoApproveHandler} from '../api/review-auto-approve.js';
 import {createModerationHandler} from '../api/review-moderation.js';
 function database(initial={}){
-  const values=new Map(Object.entries(initial));const snap=path=>({exists:values.has(path),id:path.split('/').at(-1),data:()=>values.get(path)});const ref=path=>({path,get:async()=>snap(path),set:async value=>values.set(path,value)});
-  const firestore={doc:ref,runTransaction:async fn=>{const writes=[];const result=await fn({get:async r=>{assert.equal(writes.length,0,'all reads before writes');return snap(r.path)},set:(r,v)=>writes.push(()=>values.set(r.path,v)),delete:r=>writes.push(()=>values.delete(r.path)),update:(r,v)=>writes.push(()=>values.set(r.path,{...values.get(r.path),...v}))});writes.forEach(fn=>fn());return result;},collection:prefix=>({where:(field,op,value)=>({limit:limit=>({get:async()=>{const docs=[...values.keys()].filter(path=>path.startsWith(prefix+'/')).filter(path=>{const v=values.get(path)?.[field];return op==='=='?v===value:op==='in'?value.includes(v):typeof v==='number'&&v<=value;}).slice(0,limit).map(snap);return {docs,size:docs.length};}})})})};return {firestore,values};
+  const values=new Map(Object.entries(initial));
+  const snap=path=>({exists:values.has(path),id:path.split('/').at(-1),data:()=>values.get(path)});
+  const field=(value,path)=>path.split('.').reduce((current,key)=>current?.[key],value);
+  const querySnapshot=query=>{const docs=[...values.keys()].filter(path=>path.startsWith(query.prefix+'/')).filter(path=>{const actual=field(values.get(path),query.field);return query.op==='=='?actual===query.value:query.op==='in'?query.value.includes(actual):typeof actual==='number'&&actual<=query.value;}).slice(0,query.max).map(snap);return {docs,size:docs.length};};
+  const ref=path=>({path,get:async()=>snap(path),set:async value=>values.set(path,value)});
+  const makeQuery=(prefix,fieldName,op,value,max=Infinity)=>({prefix,field:fieldName,op,value,max,limit(limit){return makeQuery(prefix,fieldName,op,value,limit);},get:async()=>querySnapshot({prefix,field:fieldName,op,value,max})});
+  const firestore={doc:ref,runTransaction:async fn=>{const writes=[];const result=await fn({get:async r=>{assert.equal(writes.length,0,'all reads before writes');return r.path?snap(r.path):querySnapshot(r)},set:(r,v)=>writes.push(()=>values.set(r.path,v)),delete:r=>writes.push(()=>values.delete(r.path)),update:(r,v)=>writes.push(()=>values.set(r.path,{...values.get(r.path),...v}))});writes.forEach(fn=>fn());return result;},collection:prefix=>({where:(fieldName,op,value)=>makeQuery(prefix,fieldName,op,value)})};return {firestore,values};
 }
 const input={code:'H4SX-TEST1',review:{nama:'Ali',bintang:5,ulasan:'Servis baik'}};
 const reply=()=>({setHeader(){},status(code){this.code=code;return this;},json(data){this.data=data;return this;}});
@@ -101,6 +133,14 @@ test('editing policy, approval and edit reactivation remain protected by origin 
 });
 test('public submission fails closed if captcha fails',async()=>{
   const handler=createSubmitHandler(()=>assert.fail('must not touch Firebase'),async(req,res)=>res.status(403).json({success:false,error:'captcha failed'}));const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{submission:input,token:'bad'}},res);assert.equal(res.code,403);
+});
+test('public anonymous submission returns the server-allocated display name',async()=>{
+ const d=database({'review_codes/H4SX-TEST1':{},'ratings/legacy':{nama:'customer has#1'}});
+ const handler=createSubmitHandler(async()=>({firestore:d.firestore}),async(req,res)=>res.status(200).json({success:true}));
+ const res=reply();await handler({method:'POST',headers:{origin:'https://www.h4sxmy.xyz'},body:{submission:{...input,review:{...input.review,anonymous:true,nama:'forged name'}},token:'test'}},res);
+ assert.equal(res.code,200);
+ assert.equal(res.data.anonymousName,'customer has#2');
+ assert.equal(d.values.get('review_pending/review_H4SX-TEST1').review.nama,'customer has#2');
 });
 
 test('Store loads its captcha SDK before posting the review to the protected backend',async()=>{

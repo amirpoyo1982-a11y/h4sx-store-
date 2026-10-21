@@ -13,6 +13,13 @@ test('storefront and /review forms provide anonymous name opt-out and submit its
  assert.match(storefrontClient,/anonymous:isAnonymous/);
  assert.match(reviewClient,/namaPelanggan\.required = !anonymousReviewName\.checked/);
  assert.match(reviewClient,/anonymous:isAnonymous/);
- assert.match(storefrontClient,/const customerName = isAnonymous \? 'enggan memberitahu'/);
- assert.match(reviewClient,/const nama\s+= isAnonymous \? "enggan memberitahu"/);
+ assert.match(storefront,/Nama ulasan dipaparkan sebagai customer has#N\./);
+ assert.match(reviewPage,/Nama ulasan dipaparkan sebagai customer has#N\./);
+ assert.match(storefrontClient,/const customerName = isAnonymous \? 'customer has#N'/);
+ assert.match(reviewClient,/const nama\s+= isAnonymous \? "customer has#N"/);
+ const backend=read('../lib/review-moderation.js');
+ assert.match(backend,/allocateAnonymousReviewName/);
+ assert.match(backend,/review_anonymous_names/);
+ assert.match(storefrontClient,/submissionResult\.anonymousName/);
+ assert.match(reviewClient,/submissionResult\.anonymousName/);
 });

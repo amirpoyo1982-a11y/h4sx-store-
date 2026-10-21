@@ -1360,22 +1360,9 @@ function flagOff(value) {
   return value === false || String(value).toLowerCase() === 'false' || String(value).toLowerCase() === 'close' || String(value).toLowerCase() === 'off';
 }
 function isPreviewBypass() {
-  const params = new URLSearchParams(window.location.search);
   const legacyKey = 'h4sx_preview_bypass';
-  const sessionKey = 'h4sx_preview_session';
-  const isOff = value => ['0', 'false', 'off', 'no'].includes(String(value || '').trim().toLowerCase());
-  // Preview survives internal navigation in this tab, but never leaks into a new tab.
   try { localStorage.removeItem(legacyKey); } catch (error) {}
-  if (params.has('preview')) {
-    const enabled = !isOff(params.get('preview') || '1');
-    try {
-      if (enabled) sessionStorage.setItem(sessionKey, '1');
-      else sessionStorage.removeItem(sessionKey);
-    } catch (error) {}
-    return enabled;
-  }
-  try { return sessionStorage.getItem(sessionKey) === '1'; }
-  catch (error) { return false; }
+  return window.H4SXPreviewBypass.isEnabled();
 }
 let promoBannerIndex = 0;
 let promoBannerSlides = [];
@@ -8902,12 +8889,12 @@ window.openH4ReviewForm = openH4ReviewForm;
 window.closeH4ReviewForm = closeH4ReviewForm;
 window.returnToH4sxHome = returnToH4sxHome;
 
-function showH4ReviewSuccess(reviewId,pending=false,editMinutes=null) {
+function showH4ReviewSuccess(reviewId,pending=false,editMinutes=null,anonymousName=null) {
   const popup = document.getElementById('h4rf-success');
   if (!popup) return;
   document.getElementById('h4rf-success-title').textContent=pending?'Ulasan diterima!':'Ulasan berjaya dihantar!';
   const editNotice=editMinutes?` Anda boleh edit menggunakan kod asal dalam browser ini selama ${editMinutes} minit dari penghantaran pertama, sehingga diluluskan admin.`:'';
-  document.getElementById('h4rf-success-copy').textContent=(pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.')+editNotice;
+  document.getElementById('h4rf-success-copy').textContent=(anonymousName?'Nama ulasan anda: '+anonymousName+'. ':'')+(pending?'Ulasan sedang menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan anda sudah dipaparkan di H4SX Review.')+editNotice;
   document.getElementById('h4rf-success-view').href = pending?'https://www.h4sxmy.xyz/review':'https://www.h4sxmy.xyz/review?reviewId=' + encodeURIComponent(reviewId);
   document.querySelector('#h4rf-modal .h4rf-dialog').inert = true;
   popup.hidden = false;
@@ -8971,7 +8958,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const storeProfileZoom = window.H4ReviewMedia.createProfileZoom(avatar.closest('.h4rf-profile'), () => updateAvatar());
   const updateAvatar = () => {
-    const displayName = anonymousName.checked ? 'enggan memberitahu' : name.value;
+    const displayName = anonymousName.checked ? 'customer has#N' : name.value;
     const color = selectedColor || autoColor(displayName);
     avatar.style.backgroundColor = color;
     avatarText.textContent = selectedEmoji || (displayName.trim().charAt(0).toUpperCase() || 'H');
@@ -9161,7 +9148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     const reviewCode = code.value.trim().toUpperCase();
     const isAnonymous = anonymousName.checked;
-    const customerName = isAnonymous ? 'enggan memberitahu' : name.value.trim();
+    const customerName = isAnonymous ? 'customer has#N' : name.value.trim();
     let reviewText = review.value.trim();
     const blocked = /^(anjing|babi|sial|bodoh|bangang|bangsat|celaka|laknat)$/i.test(customerName) || /(pukimak|kimak|puki|butoh|butuh|kontol|memek|lancau|lanjiao|cibai|jibai|pundek|fuck|shit|bitch|asshole|nigger|nigga|keling)/i.test(customerName);
     if (!reviewCode) return message('Sila masukkan kod pengesahan.', true);
@@ -9186,7 +9173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('h4rf-clear-profile').hidden = true; document.getElementById('h4rf-feedback-clear').hidden = true;
       updateAvatar();
       message(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin.':'Ulasan berjaya diterbitkan. Terima kasih!');
-      showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending',submissionResult.editMinutes);
+      showH4ReviewSuccess(submissionResult.id,submissionResult.status==='pending',submissionResult.editMinutes,submissionResult.anonymousName);
     } catch (error) {
       console.error('H4SX review submit gagal:', error?.code, error?.message, error);
       if (error.message === 'review-code-invalid'||error.code==='review-code-invalid') {

@@ -1,6 +1,7 @@
 import {captureReviewViewport,restoreReviewViewport} from '/review/review-scroll.js?v=20261015';
 import {officialReviewIdentity,reviewNameIssue} from '/review/review-identity.js?v=20261015';
 import {normalizeReplyAppearance,resolveReplyAppearance,replyAppearanceCss,replyMediaUrl,replyImageCandidates,replyBackgroundType,readReplyImageFile,normalizeReplyDirectLink,resolveReplyDirectLink} from '/review/reply-theme.js?v=reply-theme-syntax-fix-20261018';
+import {parseReviewPublishedAt} from '/review/review-publish-time.js?v=refresh-review-publish-time-20261021';
 import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut
@@ -95,26 +96,51 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   const reviewUpdateTime = document.getElementById('reviewUpdateTime');
   const reviewUpdateNow = document.getElementById('reviewUpdateNow');
   const reviewUpdateDismiss = document.getElementById('reviewUpdateDismiss');
+  let reviewPublishChecking = false;
   async function loadReviewPublishedAt() {
     const stamp = document.getElementById('reviewPublishStamp');
     const time = document.getElementById('reviewPublishTime');
-    if (!stamp || !time || location.protocol === 'file:') return;
+    if (!stamp || !time || location.protocol === 'file:' || reviewPublishChecking) return;
+    reviewPublishChecking = true;
     try {
-      const response = await fetch('/review/index.htm', { method:'HEAD', cache:'no-store' });
-      if (!response.ok) return;
-      const published = new Date(response.headers.get('Last-Modified') || '');
-      if (Number.isNaN(published.getTime()) || published.getTime() > Date.now() + 300000) return;
-      time.dateTime = published.toISOString();
-      time.textContent = new Intl.DateTimeFormat('ms-MY', {
-        day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit',
-        timeZone:'Asia/Kuala_Lumpur'
-      }).format(published);
-      stamp.hidden = false;
+      const currentTimestamp = parseReviewPublishedAt(time.dateTime);
+      const documentTimestamp = parseReviewPublishedAt(document.lastModified);
+      const fallback = currentTimestamp && documentTimestamp
+        ? (currentTimestamp > documentTimestamp ? currentTimestamp : documentTimestamp)
+        : (currentTimestamp || documentTimestamp);
+      if (fallback) renderReviewPublishedAt(fallback);
+
+      const url = new URL('/review/index.htm', location.origin);
+      url.searchParams.set('publish_probe', Date.now().toString());
+      const response = await fetch(url.toString(), { cache:'no-store' });
+      if (!response.ok) throw new Error('Gagal baca masa publish review (' + response.status + ')');
+      const published = parseReviewPublishedAt(response.headers.get('Last-Modified'));
+      if (!published) throw new Error('Masa publish review tiada atau tidak sah.');
+      if (!fallback || published > fallback) renderReviewPublishedAt(published);
     } catch (error) {
       console.debug('Tarikh publish review tidak dapat disemak.', error);
+    } finally {
+      reviewPublishChecking = false;
     }
   }
+  function renderReviewPublishedAt(published) {
+    const stamp = document.getElementById('reviewPublishStamp');
+    const time = document.getElementById('reviewPublishTime');
+    const formatted = new Intl.DateTimeFormat('ms-MY', {
+      day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit',
+      timeZone:'Asia/Kuala_Lumpur'
+    }).format(published);
+    time.dateTime = published.toISOString();
+    time.textContent = formatted;
+    stamp.hidden = false;
+  }
   loadReviewPublishedAt();
+  setInterval(() => {
+    if (document.visibilityState !== 'hidden') loadReviewPublishedAt();
+  }, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden') loadReviewPublishedAt();
+  });
   const loadedReviewModified = Date.parse(document.lastModified) || 0;
   const loadedReviewAsset = document.querySelector('script[src*="review-app.js"]')?.getAttribute('src')?.match(/[?&]v=([^&#]+)/)?.[1] || '';
   let latestReviewUpdateKey = '';
@@ -297,8 +323,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return value === false || String(value).toLowerCase() === "false" || String(value).toLowerCase() === "close" || String(value).toLowerCase() === "off";
   }
   function isPreviewBypass() {
-    const params = new URLSearchParams(window.location.search);
-    return flagOn(params.get("preview")) || params.get("preview") === "1";
+    return window.H4SXPreviewBypass.isEnabled();
   }
 
   // Use the same Malaysian clock and overnight-day rules as H4SX Store.
@@ -2924,7 +2949,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   }
   const formProfileZoom = window.H4ReviewMedia.createProfileZoom(avatarPreview.closest('.profile-picker-top') || avatarPreview, updatePreview);
   function updatePreview() {
-    const nama  = anonymousReviewName.checked ? "enggan memberitahu" : namaPelanggan.value.trim();
+    const nama  = anonymousReviewName.checked ? "customer has#N" : namaPelanggan.value.trim();
     const warna = pilihanWarna || warnaAuto(nama);
     const officialLogo = adminOk() && !customerPreviewMode && document.getElementById("adminOfficialReview").checked;
     const previewSrc = officialLogo ? H4SX_LOGO_URL : profileImgB64;
@@ -3325,7 +3350,7 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
   butangHantar.addEventListener("click", async () => {
     const kod    = kodVerification.value.trim().toUpperCase();
     const isAnonymous = anonymousReviewName.checked;
-    const nama   = isAnonymous ? "enggan memberitahu" : namaPelanggan.value.trim();
+    const nama   = isAnonymous ? "customer has#N" : namaPelanggan.value.trim();
     const bintang = parseInt(pilihBintang.value);
     let ulasan = ulasanPelanggan.value.trim();
 
@@ -3364,7 +3389,8 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       clearProfileImg(false); clearFeedbackImage(false); charCounter.textContent = "0 / 500"; updatePreview();
 
       const editNotice=submissionResult.editMinutes?` Edit tersedia selama ${submissionResult.editMinutes} minit dalam browser ini menggunakan kod asal, sehingga diluluskan admin.`:'';
-      const submissionMessage=(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan berjaya diterbitkan. Terima kasih!')+editNotice;
+      const anonymousNotice=submissionResult.anonymousName?'Nama ulasan anda: '+submissionResult.anonymousName+'. ':'';
+      const submissionMessage=anonymousNotice+(submissionResult.status==='pending'?'Ulasan diterima dan menunggu semakan admin. Jika belum disemak, ia diluluskan selepas 30 minit.':'Ulasan berjaya diterbitkan. Terima kasih!')+editNotice;
       document.getElementById('reviewSubmissionStatus').textContent=submissionMessage;showToast(submissionMessage,'success');
       if(submissionResult.status==='published')setMobileReviewTab('reviews',true);
     } catch(err) {
