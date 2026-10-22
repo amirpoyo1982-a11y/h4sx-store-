@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=compact-mobile-popups-20261023">
+  <link rel="stylesheet" href="styles.css?v=purchase-popup-panel-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -1075,10 +1075,18 @@
   </div>
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
-<aside id="purchase-popup" class="purchase-popup is-hidden position-bottom-left" aria-live="polite">
-  <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
-  <div id="purchase-popup-media" class="purchase-popup-media"><i class="fa-solid fa-bag-shopping"></i></div>
-  <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
+<aside id="purchase-popup" class="purchase-popup is-hidden is-collapsed position-bottom-right" aria-live="polite" aria-label="Pembelian terkini">
+  <div class="purchase-popup-stack" aria-hidden="true"><span></span><span></span></div>
+  <div class="purchase-popup-card">
+    <span class="purchase-popup-progress" id="purchase-popup-progress" aria-hidden="true"></span>
+    <header class="purchase-popup-head">
+      <span class="purchase-popup-title"><i class="fa-solid fa-bolt"></i> Pembelian Terkini</span>
+      <b class="purchase-popup-badge" id="purchase-popup-badge">0</b>
+      <button type="button" class="purchase-popup-fold" id="purchase-popup-fold" onclick="togglePurchasePopupExpand()" aria-expanded="false" aria-controls="purchase-popup-list" aria-label="Buka senarai pembelian"><i class="fa-solid fa-chevron-up"></i></button>
+      <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <ul class="purchase-popup-list" id="purchase-popup-list"></ul>
+  </div>
 </aside>
 <div id="toasts"></div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
@@ -1086,7 +1094,7 @@
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script defer src="app.js?v=preview-bypass-20261021"></script>
+<script defer src="app.js?v=purchase-popup-panel-20261023"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>

@@ -4027,12 +4027,14 @@ if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 // --- LIGHTWEIGHT PURCHASE POPUP ---
 const PURCHASE_POPUP_PATH = REALTIME_STORE_ROOT + '/config/purchasePopup';
 const PURCHASE_POPUP_LIMIT = 100;
-let purchasePopupState = { active:false, position:'bottom-left', intervalSeconds:15, entries:[], updatedAt:0 };
+const PURCHASE_POPUP_VISIBLE_LIMIT = 5;
+let purchasePopupState = { active:false, position:'bottom-right', intervalSeconds:15, entries:[], updatedAt:0 };
 let purchasePopupListening = false;
 let purchasePopupDismissed = false;
 let purchasePopupSignature = '';
 let purchasePopupIndex = 0;
 let purchasePopupTimer = 0;
+let purchasePopupExpanded = false;
 let purchaseHistoryShowAll = false;
 let purchasePopupActiveSaving = false;
 
@@ -4101,6 +4103,21 @@ function purchasePopupRelativeTime(timestamp) {
   return new Date(time).toLocaleDateString('ms-MY', { day:'numeric', month:'short', year:'numeric' });
 }
 
+function purchasePopupShortTime(timestamp) {
+  const time = Number(timestamp || 0);
+  if (!time) return 'Baru sahaja';
+  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (seconds < 60) return 'Baru sahaja';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + ' minit';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + ' jam';
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Semalam';
+  if (days < 7) return days + ' hari';
+  return new Date(time).toLocaleDateString('ms-MY', { day:'numeric', month:'short', year:'numeric' });
+}
+
 function purchasePopupDatetimeValue(timestamp = Date.now()) {
   const date = new Date(timestamp);
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
@@ -4163,7 +4180,7 @@ function normalisePurchasePopup(data = {}) {
   if (!entries.length && data.customerName && data.productName) entries = [normalisePurchasePopupEntry(data, 'legacy')];
   return {
     active:data.active === true,
-    position:positions.includes(data.position) ? data.position : 'bottom-left',
+    position:positions.includes(data.position) ? data.position : 'bottom-right',
     intervalSeconds:[15,30,60].includes(Number(data.intervalSeconds)) ? Number(data.intervalSeconds) : 15,
     entries,
     updatedAt:Number(data.updatedAt || 0)
@@ -4175,14 +4192,46 @@ function stopPurchasePopupTimer() {
   purchasePopupTimer = 0;
 }
 
+function purchasePopupCycleDelay() {
+  return purchasePopupState.entries.length > 1 ? purchasePopupState.intervalSeconds * 1000 : 30000;
+}
+
+function purchasePopupRotatedEntries() {
+  const entries = purchasePopupState.entries || [];
+  if (entries.length < 2) return entries.slice();
+  const start = ((purchasePopupIndex % entries.length) + entries.length) % entries.length;
+  return entries.slice(start).concat(entries.slice(0, start));
+}
+
+function purchasePopupItemMarkup(entry) {
+  const liveProduct = inventory.find(item => String(item.id) === entry.productId);
+  const image = cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
+  const media = image
+    ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy" decoding="async">'
+    : '<i class="fa-solid fa-bag-shopping"></i>';
+  return '<li class="purchase-popup-item">'
+    + '<span class="purchase-popup-avatar">' + media + '<i class="fa-solid fa-circle-check purchase-popup-tick" aria-hidden="true"></i></span>'
+    + '<span class="purchase-popup-info"><strong>' + escapeHtml(entry.productName) + '</strong><span><b>' + escapeHtml(maskPurchaseCustomerName(entry.customerName)) + '</b> beli 1 item</span></span>'
+    + '<time>' + escapeHtml(purchasePopupShortTime(entry.boughtAt)) + '</time>'
+    + '</li>';
+}
+
+function restartPurchasePopupProgress() {
+  const bar = document.getElementById('purchase-popup-progress');
+  if (!bar) return;
+  bar.style.setProperty('--h4sx-popup-cycle', (purchasePopupCycleDelay() / 1000) + 's');
+  bar.classList.remove('is-running');
+  void bar.offsetWidth;
+  bar.classList.add('is-running');
+}
+
 function schedulePurchasePopup() {
   stopPurchasePopupTimer();
   if (!purchasePopupState.active || purchasePopupDismissed || !purchasePopupState.entries.length || document.hidden) return;
-  const delay = purchasePopupState.entries.length > 1 ? purchasePopupState.intervalSeconds * 1000 : 30000;
   purchasePopupTimer = window.setTimeout(() => {
     if (purchasePopupState.entries.length > 1) purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
     renderPurchasePopup();
-  }, delay);
+  }, purchasePopupCycleDelay());
 }
 
 function renderPurchasePopup() {
@@ -4195,26 +4244,27 @@ function renderPurchasePopup() {
     return;
   }
   if (purchasePopupIndex >= entries.length) purchasePopupIndex = 0;
-  const entry = entries[purchasePopupIndex];
-  popup.className = 'purchase-popup position-' + purchasePopupState.position;
-  const name = document.getElementById('purchase-popup-name');
-  const product = document.getElementById('purchase-popup-product-name');
-  const time = document.getElementById('purchase-popup-time');
-  const media = document.getElementById('purchase-popup-media');
-  const maskedName = maskPurchaseCustomerName(entry.customerName);
-  const relativeTime = purchasePopupRelativeTime(entry.boughtAt);
-  if (name && name.textContent !== maskedName) name.textContent = maskedName;
-  if (product && product.textContent !== entry.productName) product.textContent = entry.productName;
-  if (time && time.textContent !== relativeTime) time.textContent = relativeTime;
-  if (media) {
-    const liveProduct = inventory.find(item => String(item.id) === entry.productId);
-    const image = cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
-    if (media.dataset.image !== image) {
-      media.dataset.image = image;
-      media.innerHTML = image ? '<img src="' + escapeHtml(image) + '" alt="" decoding="async" loading="lazy">' : '<i class="fa-solid fa-bag-shopping"></i>';
-    }
+  popup.className = 'purchase-popup position-' + purchasePopupState.position + (purchasePopupExpanded ? ' is-expanded' : ' is-collapsed');
+  const rotated = purchasePopupRotatedEntries();
+  const visible = purchasePopupExpanded ? rotated.slice(0, PURCHASE_POPUP_VISIBLE_LIMIT) : rotated.slice(0, 1);
+  const list = document.getElementById('purchase-popup-list');
+  if (list) list.innerHTML = visible.map(purchasePopupItemMarkup).join('');
+  const badge = document.getElementById('purchase-popup-badge');
+  if (badge) badge.textContent = String(entries.length);
+  const fold = document.getElementById('purchase-popup-fold');
+  if (fold) {
+    fold.hidden = entries.length < 2;
+    fold.setAttribute('aria-expanded', purchasePopupExpanded ? 'true' : 'false');
+    fold.setAttribute('aria-label', purchasePopupExpanded ? 'Lipat senarai pembelian' : 'Buka senarai pembelian');
+    fold.innerHTML = '<i class="fa-solid ' + (purchasePopupExpanded ? 'fa-chevron-down' : 'fa-chevron-up') + '"></i>';
   }
+  restartPurchasePopupProgress();
   schedulePurchasePopup();
+}
+
+function togglePurchasePopupExpand() {
+  purchasePopupExpanded = !purchasePopupExpanded;
+  renderPurchasePopup();
 }
 
 function renderPurchasePopupAdminList() {
@@ -4280,16 +4330,17 @@ function openPurchasePopupAdmin() {
 function closePurchasePopupAdmin() { document.getElementById('purchase-popup-admin-modal')?.classList.remove('show'); }
 function closePurchasePopup() {
   purchasePopupDismissed = true;
+  purchasePopupExpanded = false;
   stopPurchasePopupTimer();
   document.getElementById('purchase-popup')?.classList.add('is-hidden');
 }
 
 function purchasePopupSettingsPayload() {
-  const position = String(document.getElementById('purchase-popup-position')?.value || 'bottom-left');
+  const position = String(document.getElementById('purchase-popup-position')?.value || 'bottom-right');
   const intervalSeconds = Number(document.getElementById('purchase-popup-interval')?.value || 15);
   return {
     active:document.getElementById('purchase-popup-active')?.checked === true,
-    position:['bottom-left','bottom-right','top-left','top-right'].includes(position) ? position : 'bottom-left',
+    position:['bottom-left','bottom-right','top-left','top-right'].includes(position) ? position : 'bottom-right',
     intervalSeconds:[15,30,60].includes(intervalSeconds) ? intervalSeconds : 15,
     updatedAt:firebase.database.ServerValue.TIMESTAMP,
     updatedBy:orderAuth.currentUser.email || 'admin'
@@ -4412,6 +4463,7 @@ document.addEventListener('visibilitychange', () => {
 window.openPurchasePopupAdmin = openPurchasePopupAdmin;
 window.closePurchasePopupAdmin = closePurchasePopupAdmin;
 window.closePurchasePopup = closePurchasePopup;
+window.togglePurchasePopupExpand = togglePurchasePopupExpand;
 window.savePurchasePopup = savePurchasePopup;
 window.setPurchasePopupActive = setPurchasePopupActive;
 window.savePurchasePopupSettings = savePurchasePopupSettings;
