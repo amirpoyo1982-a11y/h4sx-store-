@@ -410,6 +410,21 @@ function syncProductConsultation() {
   }
 }
 
+function normalizePromoterPhone(value) {
+  const raw = String(value || '').trim();
+  if (!/^\+?[\d\s().-]+$/.test(raw)) return '';
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = '60' + digits.slice(1);
+  return /^\d{8,15}$/.test(digits) ? digits : '';
+}
+
+function syncProductPromoter() {
+  const enabled = byId('p-promoted').checked;
+  byId('p-promoter-fields').hidden = !enabled;
+  byId('p-promoted-by').required = enabled;
+  byId('p-promoter-phone').required = enabled;
+}
+
 function syncGameConsultation() {
   const enabled = byId('g-consultation').checked;
   byId('g-consultation-fields').hidden = !enabled;
@@ -424,6 +439,7 @@ function syncGamePurchaseNotice() {
 }
 
 byId('p-consultation').addEventListener('change', syncProductConsultation);
+byId('p-promoted').addEventListener('change', syncProductPromoter);
 byId('g-consultation').addEventListener('change', syncGameConsultation);
 byId('g-purchase-notice').addEventListener('change', syncGamePurchaseNotice);
 
@@ -1057,13 +1073,18 @@ function collectEditorPayload() {
     const duplicate = products.some((item, index) => index !== editingKey && String(item.id) === String(id));
     if (duplicate) throw new Error('ID produk sudah digunakan.');
     const isConsultation = byId('p-consultation').checked;
+    const isPromoted = byId('p-promoted').checked;
+    const promotedBy = byId('p-promoted-by').value.trim();
+    const promoterPhone = byId('p-promoter-phone').value.trim();
+    if (isPromoted && !promotedBy) throw new Error('Nama promoter diperlukan.');
+    if (isPromoted && !normalizePromoterPhone(promoterPhone)) throw new Error('Nombor WhatsApp promoter tidak sah. Masukkan nombor telefon 8 hingga 15 digit.');
     const nameEmoji = byId('p-name-emoji').value.trim();
     const subcategoryEmoji = byId('p-subcategory-emoji').value.trim();
     const badgeEmojiValues = Object.fromEntries(ADMIN_PRODUCT_BADGE_EMOJIS.map(key => [key, byId(emojiInputId(key)).value.trim()]));
     if (nameEmoji && !adminGameEmojiImages(nameEmoji).length) throw new Error('URL emoji nama produk mesti HTTPS.');
     if (subcategoryEmoji && !adminGameEmojiImages(subcategoryEmoji).length) throw new Error('URL emoji subcategory mesti HTTPS.');
     if (Object.values(badgeEmojiValues).some(url => url && !adminGameEmojiImages(url).length)) throw new Error('URL emoji badge mesti HTTPS.');
-    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), nameEmoji, subcategoryEmoji, ...badgeEmojiValues, game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), active:byId('p-active').checked, pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
+    const item = compact({ ...extra, id, name:byId('p-name').value.trim(), nameEmoji, subcategoryEmoji, ...badgeEmojiValues, game:byId('p-game').value.trim(), platform:byId('p-platform').value.trim(), subcategory:byId('p-subcategory').value.trim(), price:isConsultation ? null : numberOrBlank(byId('p-price').value), originalPrice:isConsultation ? null : numberOrBlank(byId('p-original-price').value), stock:numberOrBlank(byId('p-stock').value), sold:numberOrBlank(byId('p-sold').value), promoLabel:byId('p-badge').value.trim(), img:byId('p-img').value.trim(), desc:byId('p-desc').value.trim(), active:byId('p-active').checked, pinned:byId('p-pinned').checked, displayPosition:byId('p-display-position').value, robloxUsernameLookup:byId('p-roblox-lookup').checked, promoted:isPromoted, promotedBy:promotedBy || null, promoterPhone:promoterPhone || null, consultation:isConsultation, whatsapp:isConsultation ? byId('p-whatsapp').value.trim() : null, consultationButton:isConsultation ? byId('p-consultation-button').value.trim() : null, consultationMessage:isConsultation ? byId('p-consultation-message').value.trim() : null, updatedAt:new Date().toISOString() });
     if (!item.name || !item.game) throw new Error('Nama produk dan game diperlukan.');
     if (!isConsultation && (!Number.isFinite(item.price) || item.price < 0)) throw new Error('Harga produk tidak sah.');
     return { mode:'product', item, index:editingKey, targetKey:editingKey === null ? '' : String(products[editingKey]?.id ?? '') };
@@ -1347,6 +1368,10 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-price').value = item.price ?? ''; byId('p-original-price').value = item.originalPrice ?? '';
   byId('p-stock').value = item.stock ?? ''; byId('p-sold').value = item.sold ?? '';
   byId('p-roblox-lookup').checked = item.robloxUsernameLookup === true || String(item.robloxUsernameLookup).toLowerCase() === 'true';
+  byId('p-promoted').checked = !(item.promoted === false || String(item.promoted).trim().toLowerCase() === 'false') && Boolean(item.promotedBy || item.promoterPhone);
+  byId('p-promoted-by').value = item.promotedBy || '';
+  byId('p-promoter-phone').value = item.promoterPhone || '';
+  syncProductPromoter();
   byId('p-img').value = item.img || item.image || item.video || ''; byId('p-desc').value = item.desc || item.description || '';
   const consultation = readConsultation(item);
   byId('p-consultation').checked = consultation.enabled;
@@ -1358,7 +1383,7 @@ function openProductEditor(item = {}, index = null, draftId = '') {
   byId('p-image-file').value = '';
   setImagePreview('product', null, byId('p-img').value);
   byId('p-upload-status').textContent = 'PNG, JPG, WEBP atau GIF.';
-  const known = ['id','name','nameEmoji','subcategoryEmoji',...ADMIN_PRODUCT_BADGE_EMOJIS,'game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','active','hidden','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','pinned','displayPosition'];
+  const known = ['id','name','nameEmoji','subcategoryEmoji',...ADMIN_PRODUCT_BADGE_EMOJIS,'game','gameGroup','platform','subcategory','promoLabel','badge','price','originalPrice','stock','sold','img','image','video','desc','description','active','hidden','consultation','konsultasi','consult','whatsapp','phone','consultationButton','consultationMessage','robloxUsernameLookup','promoted','promotedBy','promoterPhone','pinned','displayPosition'];
   byId('extra-json').value = JSON.stringify(Object.fromEntries(Object.entries(item).filter(([key]) => !known.includes(key))), null, 2);
   byId('editor-modal').hidden = false;
 }

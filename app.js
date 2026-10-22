@@ -6957,8 +6957,20 @@ function isPromotedEnabled(item) {
   const value = item?.promoted;
   return !(value === false || String(value).trim().toLowerCase() === 'false');
 }
+function promoterWhatsAppTarget(value) {
+  const raw = String(value || '').trim();
+  const linkMatch = raw.match(/^https?:\/\/(?:www\.)?wa\.me\/(\+?[\d\s().-]+)(?:[?#].*)?$/i);
+  const phone = linkMatch ? linkMatch[1].trim() : raw;
+  if (!/^\+?[\d\s().-]+$/.test(phone)) return '';
+  const target = normalizeWhatsAppTarget(phone, '');
+  return /^\d{8,15}$/.test(target) ? target : '';
+}
+function promoterWhatsAppUrl(item) {
+  const target = promoterWhatsAppTarget(item?.promoterPhone);
+  return target ? 'https://wa.me/' + encodeURIComponent(target) : '';
+}
 function isPromotedProduct(item) {
-  return isPromotedEnabled(item) && Boolean(item?.promotedBy && item?.promoterPhone);
+  return isPromotedEnabled(item) && Boolean(String(item?.promotedBy || '').trim() && promoterWhatsAppTarget(item?.promoterPhone));
 }
 function paymentCatalogUrl(config = {}) {
   if (config.showPaymentCatalog === false) return '';
@@ -7115,7 +7127,7 @@ function productCardHTML(item) {
   let itemQRHTML = '';
   const isPromotedItem = isPromotedProduct(item);
   if (isPromotedItem) {
-    itemQRHTML = '<div class="product-promoter-box"><small>Hubungi Promoter</small><a href="https://wa.me/' + escapeHtml(item.promoterPhone) + '" target="_blank"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>';
+    itemQRHTML = '<div class="product-promoter-box"><small>Hubungi Promoter</small><a href="' + escapeHtml(promoterWhatsAppUrl(item)) + '" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>';
   } else if (item.qrDuitNow || item.qrTng) {
     itemQRHTML = '<div class="product-qr-mini">';
     if (item.qrDuitNow && storeConfig.payment.duitNow.enabled) {
@@ -8285,7 +8297,7 @@ function goCO(focusPayment) {
       promoterBtn.style.cssText = 'width:100%;padding:12px;background:#25D366;color:#fff;border:none;border-radius:var(--radius);font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;';
       sendBtn.parentNode.appendChild(promoterBtn);
     }
-    promoterBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Hubungi ' + firstItem.promotedBy;
+    promoterBtn.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Hubungi ' + escapeHtml(firstItem.promotedBy);
     promoterBtn.onclick = () => {
       showConsultationConfirm({
         kicker: 'SEMAK PEMBELIAN',
