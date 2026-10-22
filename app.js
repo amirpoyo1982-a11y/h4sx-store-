@@ -4073,6 +4073,7 @@ function normalisePurchasePopupEntry(data = {}, id = '') {
     productName:String(data.productName || '').trim().slice(0, 120),
     productId:String(data.productId || ''),
     productImage:cleanUrl(data.productImage || ''),
+    customImage:data.customImage === true,
     createdAt:Number(data.createdAt || data.updatedAt || 0),
     boughtAt:Number(data.boughtAt || data.createdAt || data.updatedAt || 0)
   };
@@ -4206,7 +4207,8 @@ function purchasePopupRotatedEntries() {
 
 function purchasePopupItemMarkup(entry) {
   const liveProduct = inventory.find(item => String(item.id) === entry.productId);
-  const image = cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
+  const uploadedImage = entry.customImage === true ? cleanUrl(entry.productImage || '') : '';
+  const image = uploadedImage || cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
   const media = image
     ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy" decoding="async">'
     : '<i class="fa-solid fa-bag-shopping"></i>';
@@ -4325,10 +4327,58 @@ async function togglePurchasePopupActiveFromMenu(event) {
   await setPurchasePopupActive(!purchasePopupState.active);
 }
 
+let purchasePopupImageDraft = '';
+
+function setPurchasePopupImageDraft(value) {
+  purchasePopupImageDraft = typeof value === 'string' ? value : '';
+  const wrap = document.getElementById('purchase-popup-media');
+  const preview = document.getElementById('purchase-popup-image-preview');
+  const clear = document.getElementById('purchase-popup-image-clear');
+  if (preview) {
+    preview.innerHTML = purchasePopupImageDraft
+      ? '<img src="' + escapeHtml(purchasePopupImageDraft) + '" alt="Pratonton gambar barang">'
+      : '<i class="fa-solid fa-cloud-arrow-up"></i>';
+  }
+  if (clear) clear.hidden = !purchasePopupImageDraft;
+  if (wrap) wrap.dataset.hasImage = purchasePopupImageDraft ? 'true' : 'false';
+}
+
+async function handlePurchasePopupImage(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  const message = document.getElementById('purchase-popup-admin-message');
+  try {
+    const compress = window.H4ReviewMedia?.compressFile;
+    if (typeof compress !== 'function') throw Error('Pemampat gambar tidak dimuatkan. Muat semula halaman.');
+    if (message) { message.textContent = 'Memproses gambar...'; message.className = 'vote-admin-status'; }
+    let dataUrl = await compress(file, 256, 0.7);
+    if (dataUrl.length > 90000) dataUrl = await compress(file, 192, 0.58);
+    if (dataUrl.length > 120000) throw Error('Gambar terlalu besar selepas dimampatkan. Cuba gambar lain.');
+    setPurchasePopupImageDraft(dataUrl);
+    if (message) { message.textContent = 'Gambar sedia digunakan untuk rekod ini.'; message.className = 'vote-admin-status success'; }
+  } catch (error) {
+    console.error('Purchase popup image gagal:', error);
+    if (message) { message.textContent = error.message || 'Gagal proses gambar.'; message.className = 'vote-admin-status error'; }
+  } finally {
+    if (input) input.value = '';
+  }
+}
+
+function clearPurchasePopupImage() {
+  setPurchasePopupImageDraft('');
+  const message = document.getElementById('purchase-popup-admin-message');
+  if (message) {
+    message.textContent = 'Gambar dibuang. Rekod akan guna gambar katalog atau ikon beg.';
+    message.className = 'vote-admin-status';
+  }
+}
+
 function openPurchasePopupAdmin() {
   if (!orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
   fillPurchasePopupProducts();
   syncPurchasePopupAdmin();
+  setPurchasePopupImageDraft('');
   const boughtAt = document.getElementById('purchase-popup-bought-at');
   if (boughtAt && !boughtAt.value) boughtAt.value = purchasePopupDatetimeValue();
   document.getElementById('purchase-popup-admin-modal')?.classList.add('show');
@@ -4424,11 +4474,13 @@ async function savePurchasePopup(event) {
     purchasePopupDismissed = false;
     const entryRef = realtimeDb.ref(PURCHASE_POPUP_PATH + '/entries').push();
     const updates = purchasePopupSettingsPayload();
+    const uploadedImage = purchasePopupImageDraft;
     updates['entries/' + entryRef.key] = {
       customerName:customerName.slice(0,40),
       productName:productName.slice(0,120),
       productId:match?.id || '',
-      productImage:match?.image || '',
+      productImage:uploadedImage || match?.image || '',
+      customImage:!!uploadedImage,
       boughtAt,
       createdAt:firebase.database.ServerValue.TIMESTAMP
     };
@@ -4436,6 +4488,7 @@ async function savePurchasePopup(event) {
     document.getElementById('purchase-popup-customer').value = '';
     document.getElementById('purchase-popup-product').value = '';
     document.getElementById('purchase-popup-bought-at').value = purchasePopupDatetimeValue();
+    setPurchasePopupImageDraft('');
     const message = document.getElementById('purchase-popup-admin-message');
     if (message) { message.textContent = 'Pembelian berjaya ditambah.'; message.className = 'vote-admin-status success'; }
     toast('Pembelian berjaya ditambah.');
@@ -4472,6 +4525,8 @@ window.closePurchasePopup = closePurchasePopup;
 window.togglePurchasePopupExpand = togglePurchasePopupExpand;
 window.togglePurchasePopupActiveFromMenu = togglePurchasePopupActiveFromMenu;
 window.savePurchasePopup = savePurchasePopup;
+window.handlePurchasePopupImage = handlePurchasePopupImage;
+window.clearPurchasePopupImage = clearPurchasePopupImage;
 window.setPurchasePopupActive = setPurchasePopupActive;
 window.savePurchasePopupSettings = savePurchasePopupSettings;
 window.deletePurchasePopupEntry = deletePurchasePopupEntry;
