@@ -4027,6 +4027,7 @@ if (db) { loadCustomVote(); loadReviewShowcaseConfig(); }
 // --- LIGHTWEIGHT PURCHASE POPUP ---
 const PURCHASE_POPUP_PATH = REALTIME_STORE_ROOT + '/config/purchasePopup';
 const PURCHASE_POPUP_LIMIT = 100;
+const PURCHASE_POPUP_VISIBLE_LIMIT = 5;
 let purchasePopupState = { active:false, position:'bottom-left', intervalSeconds:15, entries:[], updatedAt:0 };
 let purchasePopupListening = false;
 let purchasePopupDismissed = false;
@@ -4178,9 +4179,10 @@ function stopPurchasePopupTimer() {
 function schedulePurchasePopup() {
   stopPurchasePopupTimer();
   if (!purchasePopupState.active || purchasePopupDismissed || !purchasePopupState.entries.length || document.hidden) return;
-  const delay = purchasePopupState.entries.length > 1 ? purchasePopupState.intervalSeconds * 1000 : 30000;
+  const hasMoreEntries = purchasePopupState.entries.length > PURCHASE_POPUP_VISIBLE_LIMIT;
+  const delay = hasMoreEntries ? purchasePopupState.intervalSeconds * 1000 : 30000;
   purchasePopupTimer = window.setTimeout(() => {
-    if (purchasePopupState.entries.length > 1) purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
+    if (hasMoreEntries) purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
     renderPurchasePopup();
   }, delay);
 }
@@ -4195,25 +4197,24 @@ function renderPurchasePopup() {
     return;
   }
   if (purchasePopupIndex >= entries.length) purchasePopupIndex = 0;
-  const entry = entries[purchasePopupIndex];
+  const visibleEntries = Array.from({ length:Math.min(entries.length, PURCHASE_POPUP_VISIBLE_LIMIT) }, (_, index) => entries[(purchasePopupIndex + index) % entries.length]);
   popup.className = 'purchase-popup position-' + purchasePopupState.position;
-  const name = document.getElementById('purchase-popup-name');
-  const product = document.getElementById('purchase-popup-product-name');
-  const time = document.getElementById('purchase-popup-time');
-  const media = document.getElementById('purchase-popup-media');
-  const maskedName = maskPurchaseCustomerName(entry.customerName);
-  const relativeTime = purchasePopupRelativeTime(entry.boughtAt);
-  if (name && name.textContent !== maskedName) name.textContent = maskedName;
-  if (product && product.textContent !== entry.productName) product.textContent = entry.productName;
-  if (time && time.textContent !== relativeTime) time.textContent = relativeTime;
-  if (media) {
+  const count = document.getElementById('purchase-popup-count');
+  const list = document.getElementById('purchase-popup-list');
+  if (count) {
+    count.textContent = String(visibleEntries.length);
+    count.setAttribute('aria-label', visibleEntries.length + ' pembelian dipaparkan');
+  }
+  if (list) list.innerHTML = visibleEntries.map(entry => {
     const liveProduct = inventory.find(item => String(item.id) === entry.productId);
     const image = cleanUrl(productPosterUrl(liveProduct) || entry.productImage || '');
-    if (media.dataset.image !== image) {
-      media.dataset.image = image;
-      media.innerHTML = image ? '<img src="' + escapeHtml(image) + '" alt="" decoding="async" loading="lazy">' : '<i class="fa-solid fa-bag-shopping"></i>';
-    }
-  }
+    const media = image
+      ? '<span class="purchase-popup-media"><img src="' + escapeHtml(image) + '" alt="" decoding="async" loading="lazy"></span>'
+      : '<span class="purchase-popup-media"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>';
+    return '<li class="purchase-popup-entry">' + media +
+      '<span class="purchase-popup-copy"><strong>' + escapeHtml(entry.productName) + '</strong><span class="purchase-popup-buyer"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>' + escapeHtml(maskPurchaseCustomerName(entry.customerName)) + '</span></span>' +
+      '<time class="purchase-popup-time">' + escapeHtml(purchasePopupRelativeTime(entry.boughtAt)) + '</time></li>';
+  }).join('');
   schedulePurchasePopup();
 }
 
@@ -5594,7 +5595,10 @@ function getReviewShowcasePopup() {
   popup.id = 'review-showcase-popup';
   popup.className = 'review-showcase-popup';
   popup.classList.toggle('is-compact', reviewShowcaseCompact);
+  popup.setAttribute('role', 'region');
+  popup.setAttribute('aria-label', 'Ulasan terkini H4SX');
   popup.setAttribute('aria-live', 'polite');
+  popup.setAttribute('aria-atomic', 'false');
   document.body.appendChild(popup);
   restoreReviewPopupPosition(popup);
   popup.addEventListener('mouseenter', () => {
@@ -5671,27 +5675,67 @@ function hideReviewShowcasePopup() {
   if (popup) popup.classList.remove('is-visible');
 }
 
-function showReviewShowcasePopup(item, total) {
-  if (reviewShowcaseDismissed) return;
-  const popup = getReviewShowcasePopup();
+function reviewShowcaseEntryMarkup(item, index) {
   const announcementConfig = reviewAnnouncementConfig(item);
-  popup.classList.toggle('is-announcement', announcementConfig.enabled);
-  popup.style.setProperty('--announcement-bg', announcementConfig.background);
-  popup.style.setProperty('--announcement-border', announcementConfig.border);
-  popup.style.setProperty('--announcement-label-bg', announcementConfig.labelColor);
-  popup.style.setProperty('--announcement-label-text', announcementConfig.labelTextColor);
   const rating = clampRating(item.bintang ?? item.rating);
   const name = item.nama || item.name || 'Pelanggan';
   const text = (item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.').replace(/^cdg\s*[-:]\s*/i, '');
   const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
   const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="Profil ' + escapeHtml(name) + '">'
+    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="">'
     : escapeHtml(item.emojiProfil || initials);
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleMarkup = reviewIdentityRole(item);
-  const stars = Array(5).fill(0).map((_, index) => '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
-  const videoButton=item.feedbackVideo?'<button id="review-popup-video" type="button" title="Lihat video feedback" aria-label="Lihat video feedback"><i class="fa-solid fa-video"></i></button>':'';
-  const imageButton = item.feedbackImg ? '<button id="review-popup-image" type="button" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image"></i></button>' : '';
+  const identity = '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>';
+  const identityMarkup = item.identityBackplateEnabled === true
+    ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' + identity + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + '</span>'
+    : identity + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '');
+  const stars = Array(5).fill(0).map((_, starIndex) => '<i class="fa-solid fa-star" aria-hidden="true" style="color:' + (starIndex < rating ? '#fbbf24' : 'rgba(148,163,184,.38)') + '"></i>').join('');
+  const ratingMarkup = item.hideRating === true ? '' : '<span class="review-popup-stars" aria-label="' + rating + ' daripada 5 bintang">' + stars + '</span>';
+  const reviewTime = item.hideReviewTime === true ? '' : '<time class="review-popup-entry-time">' + escapeHtml(toReviewTime(item.diciptaPada || item.timestamp || item.date)) + '</time>';
+  const imageButton = item.feedbackImg
+    ? '<button type="button" data-review-popup-image="' + index + '" title="Lihat gambar ulasan" aria-label="Lihat gambar ulasan"><i class="fa-solid fa-image" aria-hidden="true"></i></button>'
+    : '';
+  const videoButton = item.feedbackVideo
+    ? '<button type="button" data-review-popup-video="' + index + '" title="Lihat video feedback" aria-label="Lihat video feedback"><i class="fa-solid fa-video" aria-hidden="true"></i></button>'
+    : '';
+  const gif = item.announcementGifEnabled !== false && item.announcementGif
+    ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>'
+    : '';
+  const announcementStyle = announcementConfig.enabled
+    ? ' style="--review-announcement-bg:' + escapeHtml(announcementConfig.background) + ';--review-announcement-border:' + escapeHtml(announcementConfig.border) + ';--announcement-label-bg:' + escapeHtml(announcementConfig.labelColor) + ';--announcement-label-text:' + escapeHtml(announcementConfig.labelTextColor) + '"'
+    : '';
+  const itemClass = announcementConfig.enabled ? 'review-popup-entry is-announcement' : 'review-popup-entry';
+  const announcementLabel = reviewAnnouncementLabel(announcementConfig);
+  const action = reviewAnnouncementAction(announcementConfig);
+  const actions = announcementLabel || imageButton || videoButton || action
+    ? '<span class="review-popup-entry-actions">' + announcementLabel + imageButton + videoButton + action + '</span>'
+    : '';
+
+  return '<article class="' + itemClass + '"' + announcementStyle + ' role="listitem">' +
+    '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
+    '<span class="review-popup-entry-content"><span class="review-popup-entry-top">' + identityMarkup + '</span>' +
+    '<span class="review-popup-entry-meta">' + ratingMarkup + reviewTime + '</span>' +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + gif + actions + '</span></article>';
+}
+
+function showReviewShowcasePopup(list, total) {
+  if (reviewShowcaseDismissed) return;
+  if (!Array.isArray(list) || !list.length) return;
+  const selectedItem = list[reviewShowcaseIndex] || list[0];
+  const popup = getReviewShowcasePopup();
+  const announcementConfig = reviewAnnouncementConfig(selectedItem);
+  popup.style.setProperty('--announcement-bg', announcementConfig.background);
+  popup.style.setProperty('--announcement-border', announcementConfig.border);
+  popup.style.setProperty('--announcement-label-bg', announcementConfig.labelColor);
+  popup.style.setProperty('--announcement-label-text', announcementConfig.labelTextColor);
+  const visibleLimit = reviewShowcaseCompact ? 3 : 5;
+  const visibleEntries = announcementConfig.enabled
+    ? [{ item:selectedItem, index:reviewShowcaseIndex }]
+    : Array.from({ length:Math.min(list.length, visibleLimit) }, (_, offset) => {
+      const index = (reviewShowcaseIndex + offset) % list.length;
+      return { item:list[index], index };
+    });
   const pauseIcon = reviewShowcasePaused ? 'fa-play' : 'fa-pause';
   const pauseLabel = reviewShowcasePaused ? 'Sambung automatik' : 'Pause automatik';
   const sizeIcon = reviewShowcaseCompact ? 'fa-expand' : 'fa-window-minimize';
@@ -5701,14 +5745,12 @@ function showReviewShowcasePopup(item, total) {
   popup.classList.toggle('is-paused', reviewShowcasePaused);
   popup.classList.toggle('is-compact', reviewShowcaseCompact);
   popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
-  popup.innerHTML = '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
+  popup.innerHTML = '<div class="review-popup-head"><span class="review-popup-heading"><span class="review-popup-kicker"><i></i> ULASAN TERKINI</span><span class="review-popup-count" aria-label="' + visibleEntries.length + ' ulasan dipaparkan">' + visibleEntries.length + '</span></span>' +
+    '<span class="review-popup-header-actions"><button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right" aria-hidden="true"></i></button>' +
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
-    '<div class="review-popup-link">' +
-    '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
-    '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
-    '<span class="review-popup-controls">' + imageButton + videoButton +
+    '</span></div><div class="review-popup-list" role="list" aria-label="Senarai ulasan terkini">' +
+    visibleEntries.map(entry => reviewShowcaseEntryMarkup(entry.item, entry.index)).join('') + '</div>' +
+    '<span class="review-popup-controls">' +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
     '<button type="button" onclick="toggleReviewShowcaseSize()" title="' + sizeLabel + '" aria-label="' + sizeLabel + '"><i class="fa-solid ' + sizeIcon + '"></i></button>' +
@@ -5717,10 +5759,20 @@ function showReviewShowcasePopup(item, total) {
   popup.querySelector('.review-announcement-action')?.addEventListener('click', event => event.stopPropagation());
   void popup.offsetWidth;
   popup.classList.add('is-visible');
-  document.getElementById('review-popup-video')?.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();window.H4ReviewMedia.showFeedbackVideo(item.id);});
-  document.getElementById('review-popup-image')?.addEventListener('click', event => {
+  popup.querySelectorAll('[data-review-popup-video]').forEach(button => button.addEventListener('click', event => {
     event.preventDefault();
-    openTestimonialImage(item.feedbackImg);
+    event.stopPropagation();
+    const item = list[Number(button.dataset.reviewPopupVideo)];
+    if (item) window.H4ReviewMedia.showFeedbackVideo(item.id);
+  }));
+  popup.querySelectorAll('[data-review-popup-image]').forEach(button => button.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    const item = list[Number(button.dataset.reviewPopupImage)];
+    if (item) openTestimonialImage(item.feedbackImg);
+  }));
+  popup.querySelectorAll('.review-announcement-action').forEach(action => {
+    action.addEventListener('click', event => event.stopPropagation());
   });
 }
 
@@ -5811,8 +5863,7 @@ function renderReviews(list = []) {
   }
 
   reviewShowcaseIndex = ((reviewShowcaseIndex % list.length) + list.length) % list.length;
-  const item = list[reviewShowcaseIndex];
-  showReviewShowcasePopup(item, list.length);
+  showReviewShowcasePopup(list, list.length);
   scheduleReviewShowcase(list);
 }
 function openTestimonialImage(src) {
