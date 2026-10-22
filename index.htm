@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=anonymous-review-20261018">
+  <link rel="stylesheet" href="styles.css?v=compact-mobile-popups-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -1075,10 +1075,10 @@
   </div>
 </div>
 <button type="button" id="pwa-install-btn" class="pwa-install-btn" hidden><i class="fa-solid fa-download"></i><span>Install H4SX App</span></button>
-<aside id="purchase-popup" class="purchase-popup is-hidden position-bottom-left" aria-label="Pembelian terkini" aria-live="polite" aria-atomic="true">
-  <div class="purchase-popup-heading"><span><i></i> PEMBELIAN TERKINI</span><span id="purchase-popup-count" class="purchase-popup-count" aria-label="0 pembelian dipaparkan">0</span></div>
-  <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup notis pembelian"><i class="fa-solid fa-xmark"></i></button>
-  <ol id="purchase-popup-list" class="purchase-popup-list" aria-label="Senarai pembelian terkini"></ol>
+<aside id="purchase-popup" class="purchase-popup is-hidden position-bottom-left" aria-live="polite">
+  <button type="button" class="purchase-popup-close" onclick="closePurchasePopup()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+  <div id="purchase-popup-media" class="purchase-popup-media"><i class="fa-solid fa-bag-shopping"></i></div>
+  <div class="purchase-popup-copy"><span><i></i> BARU MEMBELI</span><strong id="purchase-popup-name">Pelanggan H4SX</strong><p>Membeli <b id="purchase-popup-product-name">Produk H4SX</b></p><small id="purchase-popup-time">Baru sahaja</small></div>
 </aside>
 <div id="toasts"></div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
