@@ -4318,9 +4318,14 @@ function startPurchasePopupSync() {
   }, error => console.warn('Purchase popup sync gagal:', error));
 }
 
+async function togglePurchasePopupActiveFromMenu(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  if (purchasePopupActiveSaving) return;
+  await setPurchasePopupActive(!purchasePopupState.active);
+}
+
 function openPurchasePopupAdmin() {
   if (!orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
-  closeAdminProfile();
   fillPurchasePopupProducts();
   syncPurchasePopupAdmin();
   const boughtAt = document.getElementById('purchase-popup-bought-at');
@@ -4464,6 +4469,7 @@ window.openPurchasePopupAdmin = openPurchasePopupAdmin;
 window.closePurchasePopupAdmin = closePurchasePopupAdmin;
 window.closePurchasePopup = closePurchasePopup;
 window.togglePurchasePopupExpand = togglePurchasePopupExpand;
+window.togglePurchasePopupActiveFromMenu = togglePurchasePopupActiveFromMenu;
 window.savePurchasePopup = savePurchasePopup;
 window.setPurchasePopupActive = setPurchasePopupActive;
 window.savePurchasePopupSettings = savePurchasePopupSettings;

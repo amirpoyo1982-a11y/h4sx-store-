@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=purchase-popup-panel-20261023">
+  <link rel="stylesheet" href="styles.css?v=purchase-popup-fix-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -928,7 +928,15 @@
       <div class="admin-profile-menu">
         <button type="button" onclick="H4SXAdminSessions.open()"><span class="review"><i class="fa-solid fa-laptop"></i></span><div><strong>Perangkat & Sesi Admin</strong><small>Senarai login dan logout semua perangkat.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminHistoryFromProfile()"><span class="history"><i class="fa-solid fa-clock-rotate-left"></i></span><div><strong>Add History</strong><small>Tambah dan urus sejarah transaksi manual.</small></div><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()"><span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span><div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian sedang OFF.</small></div><i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i></button>
+        <div class="admin-profile-menu-item-with-toggle">
+          <button type="button" id="admin-purchase-popup-menu" onclick="openPurchasePopupAdmin()">
+            <span class="purchase"><i class="fa-solid fa-bag-shopping"></i></span>
+            <div><strong>Popup Pembelian</strong><small id="admin-purchase-popup-status">Paparan pembelian sedang OFF.</small></div>
+          </button>
+          <button type="button" class="admin-menu-quick-toggle" onclick="togglePurchasePopupActiveFromMenu(event)" aria-label="Toggle Popup Pembelian">
+            <i id="admin-purchase-popup-icon" class="fa-solid fa-toggle-off"></i>
+          </button>
+        </div>
         <button type="button" onclick="openAdminReviewFromProfile()"><span class="review"><i class="fa-solid fa-list-check"></i></span><div><strong>Semakan Pesanan</strong><small>Semak bayaran, status dan order pelanggan.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
@@ -1094,7 +1102,7 @@
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script defer src="app.js?v=purchase-popup-panel-20261023"></script>
+<script defer src="app.js?v=purchase-popup-fix-20261023"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
