@@ -389,6 +389,30 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       + ": " + format(start) + " – " + format(end);
   }
 
+  function reviewSupportUrl(config = {}) {
+    const raw = String(
+      config.whatsapp_link || config.whatsappLink || config.whatsapp_number ||
+      config.whatsappNumber || config.contact?.whatsapp || config.support?.whatsapp || ''
+    ).trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const url = new URL(raw);
+        return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+      } catch {
+        return '';
+      }
+    }
+    let target = raw.replace(/^@/, '');
+    const digits = target.replace(/\D/g, '');
+    if (/^\d{8,15}$/.test(digits)) {
+      target = digits.startsWith('0') ? '60' + digits.slice(1) : digits;
+    } else if (!/^[a-z0-9._-]{3,64}$/i.test(target)) {
+      return '';
+    }
+    return 'https://wa.me/' + encodeURIComponent(target);
+  }
+
   // ── Promo Banner From Kedai Gist ───────────────────────────────
   const reviewPromoShell = document.getElementById("reviewPromoShell");
   const reviewPromoViewport = document.getElementById("reviewPromoViewport");
@@ -622,10 +646,18 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     const iconEl = document.querySelector('.shop-closed-icon');
     if (iconEl) iconEl.textContent = icon;
     document.querySelector('.shop-closed-title').textContent = tajuk;
-    document.getElementById('shopClosedMsg').textContent = mesej;
+    window.H4SXClosureMessage.render(document.getElementById('shopClosedMsg'), mesej);
     const overlayEl = document.getElementById('shopClosedOverlay');
     const type = typeOverride || (/luar waktu/i.test(fallbackTitle) ? 'hours' : (/(penyelenggaraan|selenggara|maintenance|maintain|update)/i.test(fallbackTitle) ? 'maintenance' : 'closed'));
     overlayEl?.setAttribute('data-closed-type', type);
+    const statusEl = document.getElementById('shopClosedStatus');
+    if (statusEl) statusEl.textContent = type === 'maintenance' ? 'PENYELENGGARAAN' : (type === 'hours' ? 'WAKTU OPERASI' : 'SEMENTARA DITUTUP');
+    const contactEl = document.getElementById('shopClosedContact');
+    const supportUrl = reviewSupportUrl(latestReviewStoreConfig || {});
+    if (contactEl) {
+      contactEl.hidden = !supportUrl;
+      if (supportUrl) contactEl.href = supportUrl;
+    }
     const timeEl = document.getElementById('shopClosedTime');
     if (jamTeks) {
       timeEl.textContent = '⏱ ' + jamTeks.replace(/\s*\|\s*$/, '');

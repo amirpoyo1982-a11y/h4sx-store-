@@ -83,13 +83,15 @@
 </div>
 
 <!-- ══ SHOP CLOSED POPUP ══ -->
-<div id="shopClosedOverlay" class="shop-closed-overlay">
+<div id="shopClosedOverlay" class="shop-closed-overlay" role="dialog" aria-modal="true" aria-labelledby="shopClosedTitle" aria-describedby="shopClosedMsg">
   <div class="shop-closed-modal">
-    <div class="shop-closed-icon">🚫</div>
+   <div class="shop-closed-icon" aria-hidden="true">🚫</div>
     <div class="shop-closed-kicker">★ Sistem Ulasan Rasmi</div>
-    <div class="shop-closed-title">Kedai Ditutup Sementara</div>
-    <div id="shopClosedMsg" class="shop-closed-msg">Kami sedang berehat. Sila kembali kemudian.</div>
-    <div id="shopClosedTime" class="shop-closed-time" style="display: none;"></div>
+   <div class="shop-closed-status" id="shopClosedStatus" role="status">SEMENTARA DITUTUP</div>
+   <h1 class="shop-closed-title" id="shopClosedTitle">Kedai Ditutup Sementara</h1>
+   <p id="shopClosedMsg" class="shop-closed-msg" aria-live="polite">Kami sedang berehat. Sila kembali kemudian.</p>
+   <div id="shopClosedTime" class="shop-closed-time" style="display: none;" aria-label="Waktu operasi"></div>
+   <a id="shopClosedContact" class="shop-closed-contact" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Hubungi Admin</a>
   </div>
 </div>
 
@@ -1021,6 +1023,7 @@
 <script src="/review-media.js?v=admin-feedback-edit-20261015"></script>
 <script src="/review-submit-client.js?v=edit-policy-20261016"></script>
 <script src="/preview-bypass.js?v=default-on-20261021"></script>
+<script defer src="/closure-message.js?v=safe-links-20261022"></script>
 <script type="module" src="/review/review-app.js?v=admin-name-censor-20261021"></script>
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>

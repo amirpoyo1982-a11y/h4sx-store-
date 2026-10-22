@@ -120,7 +120,7 @@
   <div class="earth-overlay-glow"></div>
 </div>
 <!-- WEBSITE CLOSURE OVERLAY -->
-<div id="closure-overlay" style="display:none">
+<div id="closure-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="closure-title" aria-describedby="closure-message">
   <div class="closure-container">
     <div class="closure-icon" id="closure-icon">
       <i class="fas fa-lock"></i>
@@ -135,7 +135,7 @@
       <span class="status-dot"></span>
       <span id="closure-status-text">TIADA OPERASI</span>
     </div>
-    <p class="closure-message" id="closure-message">
+    <p class="closure-message" id="closure-message" aria-live="polite">
       Kedai kami sedang ditutup buat sementara waktu.<br>
       Sila datang semula pada waktu yang ditetapkan.
     </p>
@@ -143,7 +143,7 @@
       <i class="fa-solid fa-clock"></i>
       <span id="closure-hours-text"></span>
     </div>
-    <a href="https://wa.me/6285178259060" target="_blank" class="closure-contact">
+    <a href="#" target="_blank" rel="noopener noreferrer" class="closure-contact">
       <i class="fa-brands fa-whatsapp"></i> Hubungi Admin
     </a>
   </div>
@@ -1085,6 +1085,7 @@
 <script defer src="review-media.js?v=admin-feedback-edit-20261015"></script>
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
+<script defer src="/closure-message.js?v=safe-links-20261022"></script>
 <script defer src="app.js?v=preview-bypass-20261021"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>

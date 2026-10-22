@@ -2877,7 +2877,12 @@ function showClosure(title, status, message, type = 'closed') {
   const statusWrapEl = document.querySelector('.closure-status');
   const hoursPillEl = document.getElementById('closure-hours-pill');
   const hoursTextEl = document.getElementById('closure-hours-text');
+  const contactEl = document.querySelector('.closure-contact');
   if (overlay) overlay.setAttribute('data-closure-type', type);
+  if (contactEl) {
+    const target = normalizeWhatsAppTarget(configuredPrimaryWhatsAppTarget(storeConfig), WA_NUMBER);
+    contactEl.href = 'https://wa.me/' + encodeURIComponent(target);
+  }
   
   // Update icon based on type
   if (closureIconEl) {
@@ -2912,7 +2917,7 @@ function showClosure(title, status, message, type = 'closed') {
   
   if (titleEl) titleEl.textContent = title;
   if (statusEl) statusEl.textContent = status;
-  if (messageEl) messageEl.innerHTML = message;
+  if (messageEl) window.H4SXClosureMessage.render(messageEl, message);
   if (hoursPillEl && hoursTextEl) {
     const hoursText = businessHoursLabel(currentStoreConfig);
     hoursTextEl.textContent = hoursText.replace(/\s*\|\s*$/, '');
@@ -5455,7 +5460,16 @@ function showReviewMaintenanceNotice() {
   const message = currentStoreConfig.review_maintenance_message
     || currentStoreConfig.review_maintenance_msg
     || 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.';
-  grid.innerHTML = '<div class="testi-loading review-maintenance-box"><i class="fa-solid fa-screwdriver-wrench" style="margin-right:8px"></i>' + escapeHtml(message) + '</div>';
+  const notice = document.createElement('div');
+  notice.className = 'testi-loading review-maintenance-box';
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-screwdriver-wrench';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.style.marginRight = '8px';
+  const messageEl = document.createElement('span');
+  window.H4SXClosureMessage.render(messageEl, message);
+  notice.append(icon, messageEl);
+  grid.replaceChildren(notice);
 }
 function updateMainReviewStats(list = []) {
   const avgEl = document.getElementById('mainReviewAverage');
