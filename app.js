@@ -4212,8 +4212,8 @@ function purchasePopupItemMarkup(entry) {
     : '<i class="fa-solid fa-bag-shopping"></i>';
   return '<li class="purchase-popup-item">'
     + '<span class="purchase-popup-avatar">' + media + '<i class="fa-solid fa-circle-check purchase-popup-tick" aria-hidden="true"></i></span>'
-    + '<span class="purchase-popup-info"><strong>' + escapeHtml(entry.productName) + '</strong><span><b>' + escapeHtml(maskPurchaseCustomerName(entry.customerName)) + '</b> beli 1 item</span></span>'
-    + '<time>' + escapeHtml(purchasePopupShortTime(entry.boughtAt)) + '</time>'
+    + '<span class="purchase-popup-info"><strong>' + escapeHtml(entry.productName) + '</strong><span><i class="fa-regular fa-clock" aria-hidden="true"></i><b>' + escapeHtml(maskPurchaseCustomerName(entry.customerName)) + '</b> beli 1 item</span></span>'
+    + '<time><i class="fa-regular fa-clock" aria-hidden="true"></i>' + escapeHtml(purchasePopupShortTime(entry.boughtAt)) + '</time>'
     + '</li>';
 }
 
