@@ -1,9 +1,9 @@
-const CACHE_NAME = 'h4sx-pwa-20261023-purchase-popup-panel-v136';
+const CACHE_NAME = 'h4sx-pwa-20261023-review-popup-v2';
 const APP_SHELL = [
   './index.htm',
   './preview-bypass.js?v=default-on-20261021',
-  './styles.css?v=purchase-popup-panel-20261023',
-  './app.js?v=purchase-popup-panel-20261023',
+  './styles.css?v=review-popup-v2-20261023',
+  './app.js?v=review-popup-v2-20261023',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './review-media.js?v=admin-feedback-edit-20261015',

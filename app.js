@@ -3598,6 +3598,7 @@ let reviewShowcasePinOrder = '';
 let reviewShowcaseDismissed = false;
 let reviewShowcasePaused = false;
 let reviewShowcaseCompact = false;
+let reviewShowcaseTextExpanded = false;
 try {
   reviewShowcaseCompact = localStorage.getItem(REVIEW_SHOWCASE_SIZE_KEY) === '1';
 } catch (error) {}
@@ -5663,6 +5664,36 @@ function getReviewShowcasePopup() {
     popup.classList.remove('is-hover-paused');
     renderReviews(latestReviewStatsData);
   });
+  popup.addEventListener('focusin', () => {
+    clearReviewShowcaseTimer();
+    popup.classList.add('is-hover-paused');
+  });
+  popup.addEventListener('focusout', () => {
+    if (!popup.contains(document.activeElement)) {
+      popup.classList.remove('is-hover-paused');
+      renderReviews(latestReviewStatsData);
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.getElementById('review-showcase-popup')?.classList.contains('is-visible')) {
+      reviewShowcaseDismissed = true;
+      clearReviewShowcaseTimer();
+      hideReviewShowcasePopup();
+    }
+  });
+  let swipeStartX = null, swipeStartY = null;
+  popup.addEventListener('touchstart', event => {
+    if (event.touches.length !== 1 || event.target.closest('.review-popup-drag, .review-popup-controls')) return;
+    swipeStartX = event.touches[0].clientX;
+    swipeStartY = event.touches[0].clientY;
+  }, { passive:true });
+  popup.addEventListener('touchend', event => {
+    if (swipeStartX == null) return;
+    const dx = event.changedTouches[0].clientX - swipeStartX;
+    const dy = event.changedTouches[0].clientY - swipeStartY;
+    swipeStartX = swipeStartY = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.4 * Math.abs(dy)) changeReviewShowcase(dx < 0 ? 1 : -1);
+  }, { passive:true });
   popup.addEventListener('click', event => {
     if (event.target.closest('.review-popup-close')) {
       event.preventDefault();
@@ -5754,18 +5785,27 @@ function showReviewShowcasePopup(item, total) {
   const pauseLabel = reviewShowcasePaused ? 'Sambung automatik' : 'Pause automatik';
   const sizeIcon = reviewShowcaseCompact ? 'fa-expand' : 'fa-window-minimize';
   const sizeLabel = reviewShowcaseCompact ? 'Besarkan notis' : 'Kecilkan notis';
+  const itemBought = String(item.itemDibeli || '').replace(/\s+/g, ' ').trim();
+  const longText = Array.from(text).length > 80;
+  reviewShowcaseTextExpanded = false;
+  const readMore = longText ? '<button class="review-popup-more" type="button" aria-expanded="false" onclick="toggleReviewPopupText()">Baca lagi</button>' : '';
 
   popup.classList.remove('is-visible', 'is-leaving');
   popup.classList.toggle('is-paused', reviewShowcasePaused);
   popup.classList.toggle('is-compact', reviewShowcaseCompact);
+  popup.classList.toggle('text-expanded', reviewShowcaseTextExpanded);
   popup.style.setProperty('--review-popup-duration', reviewShowcaseConfig.intervalSeconds + 's');
-  popup.innerHTML = '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
+  popup.innerHTML = '<div class="review-popup-head">' +
+    '<span class="review-popup-kicker"><i></i> ULASAN BARU</span>' +
+    '<b class="review-popup-counter">' + (reviewShowcaseIndex + 1) + '/' + total + '</b>' +
+    '<button class="review-popup-drag" type="button" title="Gerakkan notis" aria-label="Gerakkan notis"><i class="fa-solid fa-up-down-left-right"></i></button>' +
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
+    '</div>' +
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
-    '<span class="review-popup-copy"><span class="review-popup-kicker"><i></i> ULASAN BARU <b>' + (reviewShowcaseIndex + 1) + '/' + total + '</b></span>' +
-    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
-    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
+    '<span class="review-popup-copy">' +
+    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
+    '<span class="review-popup-text">' + escapeHtml(text) + '</span>' + readMore + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton + videoButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
     (total > 1 ? '<button type="button" onclick="toggleReviewShowcasePause()" title="' + pauseLabel + '" aria-label="' + pauseLabel + '"><i class="fa-solid ' + pauseIcon + '"></i></button>' : '') +
@@ -5794,6 +5834,30 @@ function scheduleReviewShowcase(list) {
     }, 280);
   }, reviewShowcaseConfig.intervalSeconds * 1000);
 }
+
+function toggleReviewPopupText() {
+  const popup = document.getElementById('review-showcase-popup');
+  const more = popup?.querySelector('.review-popup-more');
+  if (!popup || !more) return;
+  reviewShowcaseTextExpanded = !reviewShowcaseTextExpanded;
+  popup.classList.toggle('text-expanded', reviewShowcaseTextExpanded);
+  more.textContent = reviewShowcaseTextExpanded ? 'Sembunyi' : 'Baca lagi';
+  more.setAttribute('aria-expanded', reviewShowcaseTextExpanded ? 'true' : 'false');
+  if (reviewShowcaseTextExpanded) {
+    // Jangan tukar ulasan semasa pembaca sedang baca teks panjang.
+    clearReviewShowcaseTimer();
+    popup.classList.add('is-hover-paused');
+  } else {
+    // Render semula supaya progress bar dan label kembali ke keadaan asal.
+    popup.classList.remove('is-hover-paused');
+    renderReviews(latestReviewStatsData);
+    if (popup.matches(':hover')) {
+      clearReviewShowcaseTimer();
+      popup.classList.add('is-hover-paused');
+    }
+  }
+}
+window.toggleReviewPopupText = toggleReviewPopupText;
 
 function toggleReviewShowcasePause() {
   reviewShowcasePaused = !reviewShowcasePaused;
