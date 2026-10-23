@@ -11327,3 +11327,31 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .rv-admin-bar button:disabled { opacity: .6; cursor: wait; }
 .rv-admin-bar small { color: #9a7433; font-size: 9.5px; line-height: 1.5; }
 .rv-empty .rv-more { margin-top: 6px; }
+/* ===== BUTANG AKSI TAB ULASAN ===== */
+.rv-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rv-act { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 1px solid #c7e2ee; border-radius: 11px; color: #0f6c92; background: #fff; font: 800 11px inherit; text-decoration: none; cursor: pointer; transition: background .18s ease, border-color .18s ease; }
+.rv-act:hover { border-color: #8fcde9; background: #eefaff; }
+.rv-act.primary { border-color: #0ea5e9; color: #fff; background: linear-gradient(135deg,#0ea5e9,#0284c7); }
+.rv-act.primary:hover { border-color: #0284c7; background: linear-gradient(135deg,#0284c7,#0369a1); }
+.rv-act i { font-size: 12px; }
+@media (max-width: 520px) {
+  .rv-act { flex: 1 1 auto; justify-content: center; padding: 0 10px; font-size: 10.5px; }
+}
+/* ===== PETUNJUK "ULASAN DAH PINDAH" (sekali sahaja) ===== */
+.rv-coach[hidden] { display: none !important; }
+.rv-coach-bubble { position: fixed; z-index: 2147483600; width: max-content; max-width: min(300px, calc(100vw - 24px)); padding: 12px 36px 12px 14px; border: 1px solid #7dd3fc; border-radius: 14px; background: #fff; color: #0f3550; box-shadow: 0 20px 45px -12px rgba(4,56,86,.45), 0 2px 8px rgba(4,56,86,.08); }
+.rv-coach-bubble strong { display: flex; align-items: center; gap: 7px; color: #0b6a8f; font-size: 12.5px; }
+.rv-coach-bubble strong i { color: #f59e0b; font-size: 12px; }
+.rv-coach-bubble span { display: block; margin-top: 5px; color: #4b6d83; font-size: 11px; line-height: 1.5; }
+.rv-coach-close { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 7px; color: #6b8ba0; background: #f1f9fe; font-size: 15px; line-height: 1; cursor: pointer; }
+.rv-coach-close:hover { color: #fff; background: #ef4444; }
+.rv-coach-bubble::after { content: ""; position: absolute; left: var(--arrow-x, 50%); width: 13px; height: 13px; margin-left: -6px; background: #fff; border-right: 1px solid #7dd3fc; border-bottom: 1px solid #7dd3fc; transform: rotate(45deg); }
+.rv-coach.is-above .rv-coach-bubble::after { bottom: -7px; }
+.rv-coach:not(.is-above) .rv-coach-bubble::after { top: -7px; transform: rotate(225deg); }
+.rv-coach-pulse { animation: rvCoachPulse 1.5s ease-in-out infinite; }
+@keyframes rvCoachPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(14,165,233,.55); } 50% { box-shadow: 0 0 0 9px rgba(14,165,233,0); } }
+@media (max-width: 600px) {
+  .rv-coach-bubble { max-width: calc(100vw - 20px); }
+  .rv-coach-bubble strong { font-size: 12px; }
+  .rv-coach-bubble span { font-size: 10.5px; }
+}

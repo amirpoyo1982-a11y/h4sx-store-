@@ -10,6 +10,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script>window.H4SX_INITIAL_VIEW = new URLSearchParams(location.search).get('view') || '';</script>
   <meta name="apple-mobile-web-app-title" content="H4SX">
   <meta property="og:title" content="H4SX STORE | Malaysia Item Roblox">
   <meta property="og:description" content="Semak katalog produk digital, harga dan stok terkini di H4SX STORE Malaysia.">
@@ -64,7 +65,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=reviews-hide-v7-20261023">
+  <link rel="stylesheet" href="styles.css?v=reviews-coach-v9-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -482,6 +483,12 @@
         </div>
       </div>
     </section>
+    <div class="rv-actions">
+      <button type="button" class="rv-act primary" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Hantar Ulasan</button>
+      <button type="button" class="rv-act" onclick="copyReviewsTabLink()"><i class="fa-solid fa-link" aria-hidden="true"></i> Copy Link</button>
+      <button type="button" class="rv-act" onclick="copyReviewFormLink()"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i> Copy Link Borang</button>
+      <a class="rv-act" href="/review"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> H4SX Review</a>
+    </div>
     <div class="rv-admin-bar" id="rv-admin-bar" hidden>
       <span class="rv-admin-tag"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Mod admin</span>
       <button type="button" id="rv-admin-bar-btn" onclick="toggleReviewsVisibilityFromTab(this)"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Sembunyikan ulasan</button>
@@ -1127,12 +1134,19 @@
   </div>
 </aside>
 <div id="toasts"></div>
+<div id="reviews-coach" class="rv-coach" hidden aria-hidden="true">
+  <div class="rv-coach-bubble" role="dialog" aria-label="Ulasan dah pindah ke tab Ulasan">
+    <button type="button" class="rv-coach-close" onclick="markReviewsCoachSeen()" aria-label="Tutup petunjuk">&times;</button>
+    <strong><i class="fa-solid fa-star" aria-hidden="true"></i> Ulasan dah pindah!</strong>
+    <span>Semua ulasan pembeli sekarang ada di tab <b>Ulasan</b>. Tekan butang tu untuk tengok.</span>
+  </div>
+</div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
 <script defer src="review-media.js?v=admin-feedback-edit-20261015"></script>
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script defer src="app.js?v=reviews-hide-v7-20261023"></script>
+<script defer src="app.js?v=reviews-coach-v9-20261023"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>

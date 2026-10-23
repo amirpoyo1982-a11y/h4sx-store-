@@ -2177,6 +2177,12 @@ function showView(id) {
     if (v === id) { el.classList.remove('hidden','view-enter'); void el.offsetWidth; el.classList.add('view-enter'); el.classList.remove('hidden'); }
     else el.classList.add('hidden');
   });
+  try {
+    const url = new URL(window.location.href);
+    if (id === 'reviews-view') url.searchParams.set('view', 'reviews');
+    else url.searchParams.delete('view');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (e) {}
   window.scrollTo({ top:0, behavior:'smooth' });
 }
 function showHome() {
@@ -6162,12 +6168,121 @@ function loadMoreReviews() {
 }
 
 function openReviewsView() {
+  markReviewsCoachSeen();
   showView('reviews-view');
   if (!latestReviewStatsData.length && !unsubscribeReviews) loadReviews();
   renderReviewsView(true);
 }
 window.openReviewsView = openReviewsView;
 window.loadMoreReviews = loadMoreReviews;
+
+/* Petunjuk sekali sahaja: "Ulasan dah pindah" */
+const REVIEWS_COACH_KEY = 'h4sx_reviews_coach_seen_v1';
+let reviewsCoachTimer = null;
+
+function reviewsCoachSeen() {
+  try { return localStorage.getItem(REVIEWS_COACH_KEY) === '1'; } catch (error) { return true; }
+}
+
+function hideReviewsCoach() {
+  if (reviewsCoachTimer) { clearTimeout(reviewsCoachTimer); reviewsCoachTimer = null; }
+  const coach = document.getElementById('reviews-coach');
+  if (coach) {
+    coach.hidden = true;
+    coach.setAttribute('aria-hidden', 'true');
+  }
+  document.querySelectorAll('.rv-coach-pulse').forEach(el => el.classList.remove('rv-coach-pulse'));
+}
+
+function markReviewsCoachSeen() {
+  try { localStorage.setItem(REVIEWS_COACH_KEY, '1'); } catch (error) {}
+  hideReviewsCoach();
+}
+window.markReviewsCoachSeen = markReviewsCoachSeen;
+
+function reviewsCoachTarget() {
+  const el = document.getElementById('tab-reviews-btn') || document.getElementById('nav-reviews-link');
+  if (!el || el.hidden) return null;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? el : null;
+}
+
+function positionReviewsCoach() {
+  const coach = document.getElementById('reviews-coach');
+  const bubble = coach?.querySelector('.rv-coach-bubble');
+  const target = reviewsCoachTarget();
+  if (!coach || !bubble || !target || coach.hidden) return;
+  const rect = target.getBoundingClientRect();
+  const above = rect.top > window.innerHeight / 2;
+  coach.classList.toggle('is-above', above);
+  const bw = bubble.offsetWidth;
+  const bh = bubble.offsetHeight;
+  const gap = 12;
+  let left = rect.left + rect.width / 2 - bw / 2;
+  left = Math.min(Math.max(8, left), Math.max(8, window.innerWidth - bw - 8));
+  let top = above ? rect.top - bh - gap : rect.bottom + gap;
+  top = Math.min(Math.max(8, top), Math.max(8, window.innerHeight - bh - 8));
+  bubble.style.left = left + 'px';
+  bubble.style.top = top + 'px';
+  const arrowX = Math.min(Math.max(18, rect.left + rect.width / 2 - left), Math.max(18, bw - 18));
+  bubble.style.setProperty('--arrow-x', arrowX + 'px');
+}
+
+function showReviewsCoach() {
+  if (reviewsCoachSeen()) return;
+  if (reviewShowcaseConfig.active === false) return;
+  if (isReviewsViewOpen()) return;
+  const coach = document.getElementById('reviews-coach');
+  const target = reviewsCoachTarget();
+  if (!coach || !target) return;
+  coach.hidden = false;
+  coach.setAttribute('aria-hidden', 'false');
+  target.classList.add('rv-coach-pulse');
+  try { target.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (error) {}
+  positionReviewsCoach();
+  requestAnimationFrame(positionReviewsCoach);
+  setTimeout(() => { if (!coach.hidden) positionReviewsCoach(); }, 350);
+  if (reviewsCoachTimer) clearTimeout(reviewsCoachTimer);
+  reviewsCoachTimer = setTimeout(markReviewsCoachSeen, 12000);
+  const dismissOutside = event => {
+    if (coach.hidden) return;
+    if (coach.contains(event.target) || target.contains(event.target)) return;
+    document.removeEventListener('click', dismissOutside, true);
+    markReviewsCoachSeen();
+  };
+  document.addEventListener('click', dismissOutside, true);
+  target.addEventListener('click', markReviewsCoachSeen, { once: true });
+}
+
+function scheduleReviewsCoach() {
+  const run = () => setTimeout(showReviewsCoach, 1400);
+  if (document.documentElement.classList.contains('h4sx-opening-active')) {
+    const started = Date.now();
+    const timer = setInterval(() => {
+      if (!document.documentElement.classList.contains('h4sx-opening-active') || Date.now() - started > 8000) {
+        clearInterval(timer);
+        run();
+      }
+    }, 300);
+  } else {
+    run();
+  }
+}
+
+window.addEventListener('resize', () => {
+  const coach = document.getElementById('reviews-coach');
+  if (coach && !coach.hidden) positionReviewsCoach();
+});
+if (document.readyState === 'complete') scheduleReviewsCoach();
+else window.addEventListener('load', scheduleReviewsCoach, { once: true });
+
+if (window.H4SX_INITIAL_VIEW === 'reviews') {
+  const startReviewsFromUrl = () => setTimeout(() => {
+    try { openReviewsView(); } catch (error) { console.warn('Reviews deep link gagal:', error); }
+  }, 250);
+  if (document.readyState === 'complete') startReviewsFromUrl();
+  else window.addEventListener('load', startReviewsFromUrl, { once: true });
+}
 
 function renderReviews(list = []) {
   list = orderedReviewShowcaseRecords(list);
@@ -9245,6 +9360,26 @@ async function copyReviewFormLink() {
 }
 
 window.copyReviewFormLink = copyReviewFormLink;
+
+function reviewsTabLink() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('view', 'reviews');
+  url.hash = '';
+  return url.toString();
+}
+
+async function copyReviewsTabLink() {
+  const link = reviewsTabLink();
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('Link tab ulasan berjaya disalin.');
+  } catch (error) {
+    window.prompt('Copy link tab ulasan ini:', link);
+  }
+}
+
+window.copyReviewsTabLink = copyReviewsTabLink;
+window.reviewsTabLink = reviewsTabLink;
 
 function openH4ReviewForm() {
   const modal = document.getElementById('h4rf-modal');
