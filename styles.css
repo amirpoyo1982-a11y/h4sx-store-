@@ -11235,3 +11235,95 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 #review-showcase-popup .review-identity-backplate .review-popup-name { flex-basis:100%; }
 /* Keep interactive review verification visible above the submit button. */
 #h4rf-turnstile { display:flex; justify-content:center; margin:10px 0; }
+
+/* ===== TAB ULASAN: senarai penuh, render sedikit demi sedikit ===== */
+/* Popup melayang dibuang sepenuhnya. */
+#review-showcase-popup { display: none !important; }
+#reviews .testi-grid { display: grid; }
+
+.reviews-view { display: grid; gap: 18px; padding-bottom: 48px; }
+.reviews-view.hidden { display: none !important; }
+
+.rv-hero { position: relative; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 22px; align-items: end; padding: 24px 26px; overflow: hidden; border: 1px solid #cce6f2; border-radius: 22px; background: linear-gradient(135deg,#f8fdff 0%,#ecf9ff 58%,#effcf8 100%); box-shadow: 0 14px 36px rgba(24,96,132,.08); }
+.rv-hero::after { content: ""; position: absolute; right: -60px; top: -80px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle,rgba(14,165,233,.12),transparent 68%); pointer-events: none; }
+.rv-back { grid-column: 1 / -1; width: max-content; min-height: 34px; padding: 0 12px; border: 1px solid #c7e2ee; border-radius: 10px; color: #176783; background: #fff; font: 800 10px inherit; cursor: pointer; }
+.rv-kicker { display: inline-flex; align-items: center; gap: 6px; color: #0795ca; font-size: 9px; font-weight: 900; letter-spacing: 1.4px; }
+.rv-hero-copy h1 { margin: 6px 0; color: #0d3150; font-size: clamp(24px,3.4vw,38px); letter-spacing: -1px; line-height: 1.15; }
+.rv-hero-copy p { max-width: 640px; margin: 0; color: #668095; font-size: 11px; line-height: 1.6; }
+.rv-summary { position: relative; z-index: 1; display: flex; gap: 10px; }
+.rv-summary-card { min-width: 112px; padding: 14px 16px; border: 1px solid #cde8f3; border-radius: 16px; background: rgba(255,255,255,.9); text-align: center; }
+.rv-summary-card small { display: block; color: #6e8c9b; font-size: 8px; font-weight: 900; letter-spacing: 1px; }
+.rv-summary-card strong { display: block; margin: 4px 0 2px; color: #0b3a58; font-size: 26px; line-height: 1; }
+.rv-summary-card > span { display: block; color: #668095; font-size: 9px; }
+.rv-stars { display: flex; justify-content: center; gap: 2px; font-size: 10px; }
+
+.rv-panel { margin: 0; }
+.rv-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 12px; }
+.rv-card { display: flex; flex-direction: column; gap: 9px; min-width: 0; padding: 15px; border: 1px solid #d9eaf2; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(25,91,125,.05); }
+.rv-card-head { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.rv-avatar { width: 46px; height: 46px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border-radius: 14px; color: #fff; background: linear-gradient(145deg,#38bdf8,#0ea5e9 55%,#6366f1); font-size: 15px; font-weight: 800; }
+.rv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rv-card-id { min-width: 0; display: grid; gap: 3px; }
+.rv-card-name { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; min-width: 0; }
+.rv-card-name strong { max-width: 100%; overflow: hidden; color: #12354f; font-size: 14px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.rv-card-roles { display: flex; flex-wrap: wrap; gap: 4px; }
+.rv-card-bought { display: inline-flex; align-items: center; gap: 4px; color: #6d8ba0; font-size: 9.5px; }
+.rv-card-bought i { color: #0ea5e9; font-size: 8px; }
+.rv-card-stars { display: flex; gap: 2px; font-size: 11px; }
+.rv-card-text { display: -webkit-box; margin: 0; overflow: hidden; color: #41637c; font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.rv-card.is-open .rv-card-text { display: block; -webkit-line-clamp: unset; }
+.rv-card-more { align-self: flex-start; padding: 0; border: 0; color: #0b83b8; background: none; font: inherit; font-size: 10.5px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.rv-card-media { display: flex; align-items: center; gap: 8px; }
+.rv-media-thumb { position: relative; width: 72px; height: 72px; flex: 0 0 auto; padding: 0; overflow: hidden; border: 1px solid #d7e9f3; border-radius: 11px; background: #eef8ff; cursor: pointer; }
+.rv-media-thumb img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.rv-media-thumb i { position: absolute; right: 4px; bottom: 4px; padding: 3px; border-radius: 5px; color: #fff; background: rgba(2,20,32,.62); font-size: 8px; }
+.rv-media-video { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #cfe7f3; border-radius: 9px; color: #0b7fb6; background: #f3fbff; font: 800 10px inherit; cursor: pointer; }
+.rv-card-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: auto; }
+.rv-card-foot time { color: #7d97a8; font-size: 9.5px; }
+.rv-announcement-gif .game-name-emoji { width: var(--announcement-gif-size,32px); height: var(--announcement-gif-size,32px); }
+
+.rv-foot { display: grid; justify-items: center; gap: 8px; margin-top: 16px; }
+.rv-more { min-height: 42px; padding: 0 18px; border: 1px solid #bde0ee; border-radius: 11px; color: #087eac; background: #eefaff; font: 850 11px inherit; cursor: pointer; }
+.rv-more:hover { background: #e0f6ff; }
+.rv-more[hidden] { display: none; }
+.rv-status { margin: 0; color: #7b93a4; font-size: 10px; }
+.rv-empty { grid-column: 1 / -1; display: grid; justify-items: center; gap: 5px; padding: 40px 16px; border: 1px dashed #c4e0ec; border-radius: 16px; color: #7890a2; text-align: center; }
+.rv-empty i { color: #16a6d8; font-size: 24px; }
+.rv-empty strong { color: #264a62; font-size: 13px; }
+.rv-empty span { font-size: 10px; }
+
+.rv-all-wrap { grid-column: 1 / -1; display: flex; justify-content: center; padding-top: 4px; }
+.rv-all-btn { display: inline-flex; align-items: center; gap: 7px; min-height: 42px; padding: 0 18px; border: 1px solid #bde0ee; border-radius: 11px; color: #087eac; background: #eefaff; font: 850 11px inherit; cursor: pointer; }
+.rv-all-btn:hover { background: #e0f6ff; }
+.rv-all-btn.inline { min-height: 30px; margin-left: 6px; padding: 0 10px; font-size: 10px; }
+.rv-preview-off { color: #6d8395; }
+
+@media (max-width: 860px) {
+  .rv-list { grid-template-columns: 1fr; }
+  .rv-hero { grid-template-columns: 1fr; align-items: start; padding: 20px; }
+  .rv-summary { justify-content: flex-start; }
+}
+@media (max-width: 520px) {
+  .rv-hero { padding: 16px; border-radius: 18px; }
+  .rv-card { padding: 13px; border-radius: 14px; }
+  .rv-card-text { font-size: 12px; -webkit-line-clamp: 5; }
+}
+:root[data-theme="dark"] .rv-card { border-color: #24455c; background: #0f1d2b; box-shadow: none; }
+:root[data-theme="dark"] .rv-card-name strong { color: #eaf6ff; }
+:root[data-theme="dark"] .rv-card-text { color: #cfe4f2; }
+:root[data-theme="dark"] .rv-hero { border-color: #1d3d52; background: linear-gradient(135deg,#0b1826,#0a1c2b 58%,#081a20); }
+:root[data-theme="dark"] .rv-hero-copy h1 { color: #eaf6ff; }
+:root[data-theme="dark"] .rv-summary-card { border-color: #1d3d52; background: rgba(10,26,38,.9); }
+/* ===== ADMIN HIDE/SHOW ULASAN ===== */
+#nav-reviews-link[hidden],
+#tab-reviews-btn[hidden],
+#menu-reviews-link[hidden],
+#rv-admin-bar[hidden] { display: none !important; }
+
+.rv-admin-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 14px; border: 1px dashed #eec98d; border-radius: 14px; background: #fffaf0; color: #8a5a13; }
+.rv-admin-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: #fde9c8; color: #8a5a13; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.rv-admin-bar button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid #e7b96a; border-radius: 10px; color: #7a4a06; background: #fff; font: 800 10.5px inherit; cursor: pointer; transition: background .18s ease; }
+.rv-admin-bar button:hover { background: #fde9c8; }
+.rv-admin-bar button:disabled { opacity: .6; cursor: wait; }
+.rv-admin-bar small { color: #9a7433; font-size: 9.5px; line-height: 1.5; }
+.rv-empty .rv-more { margin-top: 6px; }

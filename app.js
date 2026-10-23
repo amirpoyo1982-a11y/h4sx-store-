@@ -2170,7 +2170,7 @@ function toggleMenu() {
   m.classList.toggle('show', open);
   h?.classList.toggle('is-open', open);
 }
-const VIEWS = ['home-view','customer-hub-view','product-view','checkout-view'];
+const VIEWS = ['home-view','reviews-view','customer-hub-view','product-view','checkout-view'];
 function showView(id) {
   VIEWS.forEach(v => {
     const el = document.getElementById(v);
@@ -3590,7 +3590,7 @@ let customVoteConfigUnsubscribe = null;
 let customVoteEntriesUnsubscribe = null;
 let customVoteEndTimer = null;
 let customVoteDirectLinkHandled = false;
-let reviewShowcaseConfig = { active:false, intervalSeconds:6, position:'top-left' };
+let reviewShowcaseConfig = { active:true, intervalSeconds:6, position:'top-left' };
 let reviewShowcaseConfigUnsubscribe = null;
 let reviewShowcaseTimer = null;
 let reviewShowcaseIndex = 0;
@@ -3941,6 +3941,23 @@ function syncReviewShowcaseAdmin() {
   syncAdminReviewShowcaseToggle();
 }
 
+function syncReviewNavVisibility() {
+  const hidden = reviewShowcaseConfig.active === false && !orderAuth?.currentUser;
+  ['nav-reviews-link', 'tab-reviews-btn', 'menu-reviews-link'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = hidden;
+  });
+  const bar = document.getElementById('rv-admin-bar');
+  if (bar) bar.hidden = !orderAuth?.currentUser;
+  const barBtn = document.getElementById('rv-admin-bar-btn');
+  if (barBtn) {
+    const visibleNow = reviewShowcaseConfig.active !== false;
+    barBtn.innerHTML = visibleNow
+      ? '<i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Sembunyikan ulasan'
+      : '<i class="fa-solid fa-eye" aria-hidden="true"></i> Tunjuk semula ulasan';
+  }
+}
+
 function syncAdminReviewShowcaseToggle() {
   const button = document.getElementById('admin-review-popup-toggle');
   const status = document.getElementById('admin-review-popup-status');
@@ -3948,13 +3965,14 @@ function syncAdminReviewShowcaseToggle() {
   const active = reviewShowcaseConfig.active === true;
   button?.classList.toggle('is-active', active);
   button?.setAttribute('aria-pressed', active ? 'true' : 'false');
-  if (status) status.textContent = active ? 'Paparan ulasan terapung sedang ON — tekan untuk tutup.' : 'Paparan ulasan terapung sedang OFF — tekan untuk hidupkan.';
+  if (status) status.textContent = active ? 'Paparan ulasan di tab Ulasan sedang ON — tekan untuk tutup.' : 'Paparan ulasan di tab Ulasan sedang OFF — tekan untuk hidupkan.';
   if (icon) icon.className = 'fa-solid ' + (active ? 'fa-toggle-on' : 'fa-toggle-off');
+  syncReviewNavVisibility();
 }
 
-async function toggleReviewShowcaseFromProfile(button) {
+async function setReviewsVisibility(nextActive, button) {
   if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
-  const active = !reviewShowcaseConfig.active;
+  const active = nextActive === true;
   if (button) button.disabled = true;
   try {
     await db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID).set({
@@ -3967,13 +3985,23 @@ async function toggleReviewShowcaseFromProfile(button) {
     reviewShowcaseConfig.active = active;
     syncReviewShowcaseAdmin();
     renderReviews(latestReviewStatsData);
-    toast(active ? 'Popup ulasan dihidupkan.' : 'Popup ulasan dimatikan.');
+    toast(active ? 'Ulasan dipaparkan semula.' : 'Ulasan disembunyikan buat sementara.');
   } catch (error) {
-    console.error('Review popup toggle error:', error);
-    toast('Tak dapat ubah popup ulasan. Semak Firestore Rules.', true);
+    console.error('Review visibility toggle error:', error);
+    toast('Tak dapat ubah paparan ulasan. Semak Firestore Rules.', true);
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+function toggleReviewsVisibilityFromTab(button) {
+  return setReviewsVisibility(!(reviewShowcaseConfig.active === true), button);
+}
+window.toggleReviewsVisibilityFromTab = toggleReviewsVisibilityFromTab;
+
+async function toggleReviewShowcaseFromProfile(button) {
+  if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
+  return setReviewsVisibility(!reviewShowcaseConfig.active, button);
 }
 
 function loadReviewShowcaseConfig(force = false) {
@@ -3985,7 +4013,9 @@ function loadReviewShowcaseConfig(force = false) {
   if (reviewShowcaseConfigUnsubscribe) reviewShowcaseConfigUnsubscribe();
   reviewShowcaseConfigUnsubscribe = db.collection(REVIEW_SHOWCASE_CONFIG_COLLECTION).doc(REVIEW_SHOWCASE_CONFIG_ID)
     .onSnapshot(snapshot => {
-      reviewShowcaseConfig = normaliseReviewShowcaseConfig(snapshot.exists ? snapshot.data() : {});
+      reviewShowcaseConfig = snapshot.exists
+        ? normaliseReviewShowcaseConfig(snapshot.data())
+        : { active:true, intervalSeconds:6, position:'top-left' };
       reviewShowcaseIndex = 0;
       syncReviewShowcaseAdmin();
       applyReviewPopupDefaultPosition();
@@ -5377,6 +5407,7 @@ async function copyInvoiceCode(code, button) {
 if (orderAuth) orderAuth.onAuthStateChanged(() => {
   syncOrderAdminUI();
   syncAdminProfileUI();
+  syncReviewNavVisibility();
   window.H4SXAdminSessions?.bind({
     user:orderAuth.currentUser, signOut:() => orderAuth.signOut(),
     watchRevocations:callback => db.collection('config').doc('admin_session_security').onSnapshot(snapshot => callback(snapshot.data() || {}), () => {})
@@ -5618,26 +5649,28 @@ function refreshReviewMaintenanceUi() {
   if (!applyReviewAreaVisibility()) return;
   if (isReviewMaintenanceActive()) {
     showReviewMaintenanceNotice();
+    if (isReviewsViewOpen()) renderReviewsView(true);
     return;
   }
   const grid = document.getElementById('testi-grid');
-  if (grid?.querySelector('.review-maintenance-box') && latestReviewStatsData.length) {
+  const showingNotice = !!grid?.querySelector('.review-maintenance-box');
+  if (showingNotice && latestReviewStatsData.length) {
     renderReviews(latestReviewStatsData);
-  } else if (grid?.querySelector('.review-maintenance-box') && !unsubscribeReviews) {
+  } else if (showingNotice && !unsubscribeReviews) {
     loadReviews();
   }
 }
 async function loadReviews() {
   const grid = document.getElementById('testi-grid');
-  if (!grid) return;
+  reviewsLoadAttempted = true;
   if (!kedaiConfigLoaded) {
-    grid.innerHTML = '<div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Checking review status...</div>';
+    if (grid) grid.innerHTML = '<div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Checking review status...</div>';
     await checkStore();
   }
   if (!applyReviewAreaVisibility()) return;
   if (!db) {
     updateMainReviewStats([]);
-    grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
+    if (grid) grid.innerHTML = '<div class="testi-loading">Ulasan belum tersedia.</div>';
     return;
   }
   if (unsubscribeReviews) unsubscribeReviews();
@@ -5650,7 +5683,7 @@ async function loadReviews() {
         latestReviewStatsData = data;
         updateMainReviewStats(data);
         if (isReviewMaintenanceActive()) {
-          showReviewMaintenanceNotice();
+          if (isReviewsViewOpen()) renderReviewsView(true, reviewsViewShown);
           return;
         }
         renderReviews(data);
@@ -5658,12 +5691,12 @@ async function loadReviews() {
       }, error => {
         console.error("Firebase review listener error:", error);
         updateMainReviewStats([]);
-        grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
+        if (grid) grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
       });
   } catch(e) {
     console.error("Firebase review setup error:", e);
     updateMainReviewStats([]);
-    grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
+    if (grid) grid.innerHTML = '<div class="testi-loading">Ulasan belum dapat dimuat.</div>';
   }
 }
 function clearReviewShowcaseTimer() {
@@ -5945,52 +5978,206 @@ function changeReviewShowcase(direction) {
 window.changeReviewShowcase = changeReviewShowcase;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearReviewShowcaseTimer();
-  else if (isReviewAreaVisible() && reviewShowcaseConfig.active && latestReviewStatsData.length) renderReviews(latestReviewStatsData);
+  else if (isReviewAreaVisible() && latestReviewStatsData.length) renderReviews(latestReviewStatsData);
 });
+
+const REVIEWS_VIEW_BATCH = 6;
+let reviewsViewShown = 0;
+let reviewsLoadAttempted = false;
+let reviewsCardEventsBound = false;
+
+function reviewCardInitials(name) {
+  return String(name || '').trim().split(/\s+/).map(word => word[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+}
+
+function reviewCardHTML(item) {
+  const name = String(item.nama || item.name || 'Pelanggan');
+  const rating = clampRating(item.bintang ?? item.rating);
+  const text = String(item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.')
+    .replace(/^cdg\s*[-:]\s*/i, '').trim();
+  const zoomStyle = window.H4ReviewMedia?.profileZoomStyle
+    ? window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100, item.profileOffsetY ?? 0)
+    : 'object-fit:cover';
+  const avatar = item.profileImg
+    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + zoomStyle + '" alt="Profil ' + escapeHtml(name) + '" loading="lazy" decoding="async">'
+    : escapeHtml(item.emojiProfil || reviewCardInitials(name));
+  const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
+  const stars = item.hideRating === true
+    ? ''
+    : '<span class="rv-card-stars">' + Array(5).fill(0).map((_, index) =>
+        '<i class="fa-solid fa-star" style="color:' + (index < rating ? '#fbbf24' : 'rgba(148,163,184,.4)') + '"></i>'
+      ).join('') + '</span>';
+  const roleMarkup = reviewIdentityRole(item);
+  const itemBought = String(item.itemDibeli || '').replace(/\s+/g, ' ').trim();
+  const announcement = reviewAnnouncementConfig(item);
+  const longText = Array.from(text).length > 150;
+  const image = item.feedbackImg
+    ? '<button type="button" class="rv-media-thumb" data-rv-action="image" data-src="' + escapeHtml(item.feedbackImg).replace(/"/g, '&quot;') + '" aria-label="Lihat gambar ulasan"><img src="' + escapeHtml(item.feedbackImg).replace(/"/g, '&quot;') + '" alt="Gambar ulasan" loading="lazy" decoding="async"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>'
+    : '';
+  const video = item.feedbackVideo
+    ? '<button type="button" class="rv-media-video" data-rv-action="video" data-id="' + escapeHtml(item.id).replace(/"/g, '&quot;') + '"><i class="fa-solid fa-video" aria-hidden="true"></i> Video feedback</button>'
+    : '';
+  const media = (image || video) ? '<div class="rv-card-media">' + image + video + '</div>' : '';
+  const gif = item.announcementGifEnabled !== false && item.announcementGif
+    ? '<span class="rv-announcement-gif" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.3 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>'
+    : '';
+  const time = item.hideReviewTime === true ? '' : '<time>' + escapeHtml(toReviewTime(item.diciptaPada || item.timestamp || item.date)) + '</time>';
+  const action = reviewAnnouncementAction(announcement);
+  const backplate = item.identityBackplateEnabled === true;
+  const nameBlock = customNameEmojiHTML(item.nameEmoji)
+    + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>'
+    + reviewIdentityCheck(item);
+  return '<article class="rv-card">'
+    + '<div class="rv-card-head">'
+    + '<span class="rv-avatar"' + avatarStyle + '>' + avatar + '</span>'
+    + '<div class="rv-card-id">'
+    + (backplate ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '')
+    + '<span class="rv-card-name">' + nameBlock + '</span>'
+    + (roleMarkup ? '<span class="rv-card-roles">' + roleMarkup + '</span>' : '')
+    + (itemBought ? '<span class="rv-card-bought"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> ' + escapeHtml(itemBought) + '</span>' : '')
+    + (backplate ? '</span>' : '')
+    + '</div></div>'
+    + reviewAnnouncementLabel(announcement)
+    + stars
+    + '<p class="rv-card-text">' + escapeHtml(text) + '</p>'
+    + (longText ? '<button type="button" class="rv-card-more" data-rv-action="more">Baca lagi</button>' : '')
+    + gif
+    + media
+    + ((time || action) ? '<div class="rv-card-foot">' + time + action + '</div>' : '')
+    + '</article>';
+}
+
+function bindReviewCardActions() {
+  if (reviewsCardEventsBound) return;
+  reviewsCardEventsBound = true;
+  document.addEventListener('click', event => {
+    const action = event.target.closest('[data-rv-action]');
+    if (!action) return;
+    const type = action.dataset.rvAction;
+    if (type === 'more') {
+      const card = action.closest('.rv-card');
+      if (!card) return;
+      const open = card.classList.toggle('is-open');
+      action.textContent = open ? 'Sembunyi' : 'Baca lagi';
+      return;
+    }
+    if (type === 'image') {
+      event.preventDefault();
+      openTestimonialImage(action.dataset.src);
+      return;
+    }
+    if (type === 'video') {
+      event.preventDefault();
+      window.H4ReviewMedia?.showFeedbackVideo(action.dataset.id);
+    }
+  });
+}
+
+function reviewsViewItemList(list = latestReviewStatsData) {
+  return uniqueReviewRecords(orderedReviewShowcaseRecords(list));
+}
+
+function isReviewsViewOpen() {
+  const view = document.getElementById('reviews-view');
+  return !!view && !view.classList.contains('hidden');
+}
+
+function updateReviewsViewStats(list = []) {
+  const avgEl = document.getElementById('rvAverage');
+  const countEl = document.getElementById('rvCount');
+  const starsEl = document.getElementById('rvStars');
+  if (!avgEl || !countEl || !starsEl) return;
+  const ratings = list
+    .filter(item => item.hideRating !== true)
+    .map(item => Number.parseInt(item.bintang ?? item.rating, 10))
+    .filter(value => Number.isFinite(value) && value >= 1 && value <= 5);
+  const count = ratings.length;
+  const avg = count ? ratings.reduce((sum, value) => sum + value, 0) / count : 0;
+  avgEl.textContent = count ? avg.toFixed(1) : '—';
+  countEl.textContent = String(list.length);
+  starsEl.innerHTML = Array(5).fill(0).map((_, index) =>
+    '<i class="fa-solid fa-star" style="color:' + (count && index < Math.round(avg) ? '#fbbf24' : 'rgba(148,163,184,.4)') + '"></i>'
+  ).join('');
+}
+
+function renderReviewsView(reset = false, keep = 0) {
+  const list = document.getElementById('reviews-list');
+  if (!list) return;
+  bindReviewCardActions();
+  const items = reviewsViewItemList();
+  updateReviewsViewStats(items);
+  const more = document.getElementById('rv-more');
+  const status = document.getElementById('rv-status');
+
+  if (reset) {
+    const keepCount = Math.min(Math.max(Number(keep) || reviewsViewShown, 0), items.length);
+    list.innerHTML = keepCount ? items.slice(0, keepCount).map(item => reviewCardHTML(item)).join('') : '';
+    reviewsViewShown = keepCount;
+  }
+
+  if (!isReviewAreaVisible() || reviewShowcaseConfig.active === false) {
+    reviewsViewShown = 0;
+    const reshowBtn = orderAuth?.currentUser
+      ? '<button type="button" class="rv-more" onclick="toggleReviewsVisibilityFromTab(this)"><i class="fa-solid fa-eye" aria-hidden="true"></i> Tunjuk semula ulasan</button>'
+      : '';
+    list.innerHTML = reviewShowcaseConfig.active === false
+      ? '<div class="rv-empty"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i><strong>Paparan ulasan dimatikan</strong><span>Admin sedang mematikan paparan ulasan buat sementara.</span>' + reshowBtn + '</div>'
+      : '<div class="rv-empty"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i><strong>Paparan ulasan ditutup</strong><span>Bahagian ulasan sedang disembunyikan oleh admin.</span></div>';
+    if (more) more.hidden = true;
+    if (status) status.textContent = '';
+    return;
+  }
+  if (isReviewMaintenanceActive()) {
+    reviewsViewShown = 0;
+    list.innerHTML = '<div class="rv-empty"><i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i><strong>Ulasan sedang diselenggara</strong><span>Kami sedang kemas kini sistem ulasan. Cuba lagi nanti.</span></div>';
+    if (more) more.hidden = true;
+    if (status) status.textContent = '';
+    return;
+  }
+  if (!items.length) {
+    reviewsViewShown = 0;
+    list.innerHTML = reviewsLoadAttempted
+      ? '<div class="rv-empty"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i><strong>Belum ada ulasan</strong><span>Ulasan pelanggan akan muncul di sini.</span></div>'
+      : '<div class="rv-empty"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i><strong>Memuatkan ulasan</strong><span>Sekejap ya, kami tarik ulasan terkini.</span></div>';
+    if (more) more.hidden = true;
+    if (status) status.textContent = '';
+    return;
+  }
+
+  const slice = items.slice(reviewsViewShown, reviewsViewShown + REVIEWS_VIEW_BATCH);
+  if (slice.length) {
+    list.insertAdjacentHTML('beforeend', slice.map(item => reviewCardHTML(item)).join(''));
+    reviewsViewShown += slice.length;
+  }
+  if (more) more.hidden = reviewsViewShown >= items.length;
+  if (status) {
+    status.textContent = reviewsViewShown >= items.length
+      ? items.length + ' ulasan dipaparkan.'
+      : 'Menunjukkan ' + reviewsViewShown + ' daripada ' + items.length + ' ulasan.';
+  }
+}
+
+function loadMoreReviews() {
+  renderReviewsView(false);
+}
+
+function openReviewsView() {
+  showView('reviews-view');
+  if (!latestReviewStatsData.length && !unsubscribeReviews) loadReviews();
+  renderReviewsView(true);
+}
+window.openReviewsView = openReviewsView;
+window.loadMoreReviews = loadMoreReviews;
 
 function renderReviews(list = []) {
   list = orderedReviewShowcaseRecords(list);
   const pinOrder = JSON.stringify(list.filter(item => item.pinned === true).map(item => item.id));
-  if (pinOrder !== reviewShowcasePinOrder) {
-    reviewShowcasePinOrder = pinOrder;
-    reviewShowcaseIndex = 0;
-  }
-  const grid = document.getElementById('testi-grid');
-  if (!grid) return;
-  if (!isReviewAreaVisible()) {
-    clearReviewShowcaseTimer();
-    hideReviewShowcasePopup();
-    return;
-  }
-  updateMainReviewStats(list);
+  if (pinOrder !== reviewShowcasePinOrder) reviewShowcasePinOrder = pinOrder;
   clearReviewShowcaseTimer();
-
-  if (isReviewMaintenanceActive()) {
-    grid.hidden = false;
-    grid.classList.remove('review-showcase-grid');
-    showReviewMaintenanceNotice();
-    return;
-  }
-  if (!reviewShowcaseConfig.active) {
-    grid.hidden = true;
-    grid.classList.remove('review-showcase-grid');
-    grid.innerHTML = '';
-    hideReviewShowcasePopup();
-    return;
-  }
-
-  grid.hidden = true;
-  grid.classList.remove('review-showcase-grid');
-  grid.innerHTML = '';
-  if (!list.length) {
-    hideReviewShowcasePopup();
-    return;
-  }
-
-  reviewShowcaseIndex = ((reviewShowcaseIndex % list.length) + list.length) % list.length;
-  const item = list[reviewShowcaseIndex];
-  showReviewShowcasePopup(item, list.length);
-  scheduleReviewShowcase(list);
+  hideReviewShowcasePopup();
+  bindReviewCardActions();
+  // Ulasan hanya dipaparkan dalam tab khas, bukan bercampur di halaman utama.
+  if (isReviewsViewOpen()) renderReviewsView(true, reviewsViewShown);
 }
 function openTestimonialImage(src) {
   if (!src) return;
@@ -6212,7 +6399,8 @@ function startRealtimeConfigSync() {
     if (!snapshot.exists()) { checkStore(null); return; }
     applyWebsiteTheme(snapshot.val());
     checkStore(snapshot.val()).then(() => {
-      if (isReviewAreaVisible() && db && !unsubscribeReviews) loadReviews();
+      // Ulasan dimuatkan hanya apabila tab Ulasan dibuka (jimat data & CPU).
+      if (isReviewsViewOpen() && isReviewAreaVisible() && db && !unsubscribeReviews) loadReviews();
     }).catch(error => console.warn('Realtime store config refresh failed:', error));
   }, error => {
     console.warn('Realtime config listener failed:', error);

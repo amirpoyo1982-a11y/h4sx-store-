@@ -64,7 +64,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=purchase-popup-v4-20261023">
+  <link rel="stylesheet" href="styles.css?v=reviews-hide-v7-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -207,7 +207,7 @@
       <a data-customer-hub-link onclick="showCustomerHub()">Pelanggan</a>
       <a onclick="goSection('guide')">Guide</a>
       <a onclick="goSection('faq')">FAQ</a>
-      <a onclick="goSection('reviews')">Reviews</a>
+      <a id="nav-reviews-link" onclick="openReviewsView()">Reviews</a>
       <a onclick="openH4ReviewForm()">Hantar Ulasan</a>
       <a onclick="openOrderHistory()">Histori</a>
     </div>
@@ -234,7 +234,7 @@
   <button type="button" data-customer-hub-link onclick="showCustomerHub()"><span class="tab-emoji"><picture><img src="assets/animated-nav/customers.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-trophy" hidden></i></span><span>Pelanggan</span></button>
   <button type="button" onclick="openOrderHistory()"><span class="tab-emoji"><picture><img src="assets/animated-nav/orders.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span><span>Semak Pesanan</span></button>
   <button type="button" onclick="openH4ReviewForm()"><span class="tab-emoji"><picture><img src="assets/animated-nav/write-review.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-pen-to-square" hidden></i></span><span>Hantar Ulasan</span></button>
-  <button type="button" onclick="goSection('reviews')"><span class="tab-emoji"><picture><img src="assets/animated-nav/reviews.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-star" hidden></i></span><span>Ulasan</span></button>
+  <button type="button" id="tab-reviews-btn" onclick="openReviewsView()"><span class="tab-emoji"><picture><img src="assets/animated-nav/reviews.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-star" hidden></i></span><span>Ulasan</span></button>
   <button type="button" onclick="goSection('guide')"><span class="tab-emoji"><picture><img src="assets/animated-nav/guide.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-book-open" hidden></i></span><span>Panduan</span></button>
   <button type="button" onclick="goSection('faq')"><span class="tab-emoji"><picture><img src="assets/animated-nav/faq.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-circle-question" hidden></i></span><span>FAQ</span></button>
 </div>
@@ -243,7 +243,7 @@
   <a data-customer-hub-link onclick="showCustomerHub();toggleMenu()"><i class="fa-solid fa-trophy"></i> Leaderboard & Pembelian</a>
   <a onclick="goSection('guide');toggleMenu()"><i class="fa-solid fa-book"></i> Guide</a>
   <a onclick="goSection('faq');toggleMenu()"><i class="fa-solid fa-circle-question"></i> FAQ</a>
-  <a onclick="goSection('reviews');toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
+  <a id="menu-reviews-link" onclick="openReviewsView();toggleMenu()"><i class="fa-solid fa-star"></i> Reviews</a>
   <a onclick="openH4ReviewForm();toggleMenu()"><i class="fa-solid fa-pen-to-square"></i> Hantar Ulasan</a>
   <a onclick="openOrderHistory();toggleMenu()"><i class="fa-solid fa-receipt"></i> Histori Transaksi</a>
   <a onclick="openAiHelper();toggleMenu()"><i class="fa-brands fa-whatsapp"></i> H4SX Helper</a>
@@ -378,23 +378,7 @@
       <button type="button" class="price-drop-close" onclick="dismissPriceDropAlert()" aria-label="Tutup notis harga turun"><i class="fa-solid fa-xmark"></i></button>
     </section>
     <div class="div"></div>
-    <section id="reviews" class="section-panel" style="margin-bottom:32px">
-      <div class="sh reveal"><div><div class="sh-tag">Testimonials</div><div class="sh-title">Apa kata pembeli</div></div><div class="review-link-wrap"><button type="button" class="review-submit-main-btn" onclick="openH4ReviewForm()"><i class="fa-solid fa-pen-to-square"></i><span><strong>Hantar Ulasan</strong><small>Guna kod pembelian</small></span></button><button type="button" class="review-share-btn" onclick="copyReviewFormLink()" title="Copy link hantar ulasan"><i class="fa-solid fa-link"></i><span>Copy Link</span></button><a href="/review" class="review-all-btn"><i class="fa-solid fa-comments"></i><span><strong>Lihat Semua Review</strong><small>Ulasan dalam website H4SX</small></span><i class="fa-solid fa-arrow-up-right-from-square"></i></a></div></div>
-      <div class="review-summary-grid" id="review-summary-grid" aria-label="Ringkasan ulasan pelanggan">
-        <div class="review-summary-card">
-          <span class="review-summary-label">Purata Rating</span>
-          <strong id="mainReviewAverage" aria-live="polite">Memuatkan</strong>
-          <span class="review-summary-stars review-summary-pending" id="mainReviewStars">Semak ulasan terkini...</span>
-        </div>
-        <div class="review-summary-card">
-          <span class="review-summary-label">Jumlah Ulasan</span>
-          <strong id="mainReviewCount" aria-live="polite">Memuatkan</strong>
-          <span class="review-summary-sub">Ulasan pembeli sah</span>
-        </div>
-      </div>
-      <div class="testi-grid" id="testi-grid"><div class="testi-loading"><i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Memuatkan ulasan pelanggan...</div></div>
-    </section>
-    <div class="h4rf-modal" id="h4rf-modal" aria-hidden="true">
+        <div class="h4rf-modal" id="h4rf-modal" aria-hidden="true">
       <section class="h4rf-dialog" role="dialog" aria-modal="true" aria-labelledby="h4rf-title">
         <header class="h4rf-head">
           <div class="h4rf-head-main"><div class="h4rf-head-icon"><i class="fa-solid fa-star"></i></div><div><span>H4SX STORE • CUSTOMER REVIEW</span><h2 id="h4rf-title">Kongsi pengalaman anda</h2><p>Masukkan kod pembelian dan ceritakan pengalaman anda bersama kami.</p></div></div>
@@ -475,6 +459,41 @@
         <a href="https://www.roblox.com/id/users/3264062884/profile" target="_blank"><i class="fa-solid fa-gamepad"></i></a>
       </div>
     </footer>
+  </div>
+  <!-- REVIEWS VIEW: senarai ulasan penuh, dimuatkan sedikit demi sedikit -->
+  <div id="reviews-view" class="hidden reviews-view" style="padding-top:16px">
+    <section class="rv-hero">
+      <button type="button" class="rv-back" onclick="showHome()"><i class="fa-solid fa-arrow-left"></i> Kembali ke kedai</button>
+      <div class="rv-hero-copy">
+        <span class="rv-kicker"><i class="fa-solid fa-star"></i> ULASAN PELANGGAN</span>
+        <h1>Semua ulasan pembeli</h1>
+        <p>Ulasan sah daripada pembeli H4SX STORE. Dimuatkan sedikit demi sedikit supaya paparan kekal ringan walaupun guna phone biasa.</p>
+      </div>
+      <div class="rv-summary">
+        <div class="rv-summary-card">
+          <small>PURATA RATING</small>
+          <strong id="rvAverage">—</strong>
+          <span class="rv-stars" id="rvStars"></span>
+        </div>
+        <div class="rv-summary-card">
+          <small>JUMLAH ULASAN</small>
+          <strong id="rvCount">0</strong>
+          <span>ulasan sah</span>
+        </div>
+      </div>
+    </section>
+    <div class="rv-admin-bar" id="rv-admin-bar" hidden>
+      <span class="rv-admin-tag"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Mod admin</span>
+      <button type="button" id="rv-admin-bar-btn" onclick="toggleReviewsVisibilityFromTab(this)"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Sembunyikan ulasan</button>
+      <small>Ulasan akan hilang dari menu dan tab untuk pelanggan. Boleh tunjuk semula bila dah siap.</small>
+    </div>
+    <section class="section-panel rv-panel">
+      <div id="reviews-list" class="rv-list" aria-live="polite"></div>
+      <div class="rv-foot">
+        <button type="button" id="rv-more" class="rv-more" onclick="loadMoreReviews()" hidden><i class="fa-solid fa-chevron-down"></i> Muat lagi ulasan</button>
+        <p id="rv-status" class="rv-status">Memuatkan ulasan...</p>
+      </div>
+    </section>
   </div>
   <!-- CUSTOMER HUB: LEADERBOARD & PURCHASE HISTORY -->
   <div id="customer-hub-view" class="hidden customer-hub-view" style="padding-top:16px">
@@ -941,7 +960,7 @@
         <button type="button" onclick="openAdminCatalogFromProfile()"><span class="catalog"><i class="fa-solid fa-sliders"></i></span><div><strong>Catalog Setting</strong><small>Urus tetapan kedai dan konfigurasi katalog.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" onclick="openAdminLeaderboardFromProfile()"><span class="leaderboard"><i class="fa-solid fa-ranking-star"></i></span><div><strong>Leaderboard</strong><small>Urus nama pelanggan dan jumlah belanja.</small></div><i class="fa-solid fa-chevron-right"></i></button>
         <button type="button" id="admin-customer-hub-toggle" onclick="toggleCustomerHubFromProfile(this)" aria-pressed="true"><span class="customers"><i class="fa-solid fa-users"></i></span><div><strong>Halaman Pelanggan</strong><small id="admin-customer-hub-status">Menu pelanggan sedang dipaparkan.</small></div><i id="admin-customer-hub-icon" class="fa-solid fa-toggle-on"></i></button>
-        <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Popup Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan terapung sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
+        <button type="button" id="admin-review-popup-toggle" onclick="toggleReviewShowcaseFromProfile(this)" aria-pressed="false"><span class="showcase"><i class="fa-solid fa-message"></i></span><div><strong>Paparan Ulasan</strong><small id="admin-review-popup-status">Paparan ulasan di tab Ulasan sedang OFF.</small></div><i id="admin-review-popup-icon" class="fa-solid fa-toggle-off"></i></button>
         <button type="button" id="admin-website-intro-toggle" onclick="toggleWebsiteIntroFromProfile(this)" aria-pressed="true"><span class="intro"><i class="fa-solid fa-wand-magic-sparkles"></i></span><div><strong>Intro Website</strong><small id="admin-website-intro-status">Animasi pembukaan sedang ON.</small></div><i id="admin-website-intro-icon" class="fa-solid fa-toggle-on"></i></button>
         <button type="button" id="admin-flash-drop-menu" onclick="openFlashDropAdmin()"><span class="flash"><i class="fa-solid fa-bolt"></i></span><div><strong>Flash Drop</strong><small id="admin-flash-drop-status">Tawaran sedang OFF.</small></div><i id="admin-flash-drop-icon" class="fa-solid fa-toggle-off"></i></button>
       </div>
@@ -1032,15 +1051,15 @@
       </div>
       <section class="review-showcase-admin" aria-labelledby="review-showcase-admin-title">
         <div class="vote-admin-head">
-          <div><span>ULASAN PILIHAN</span><h3 id="review-showcase-admin-title">Notis Ulasan Automatik</h3><p>Tunjukkan notis kecil satu demi satu, bermula daripada ulasan terbaru.</p></div>
+          <div><span>PAPARAN ULASAN</span><h3 id="review-showcase-admin-title">Paparan Tab Ulasan</h3><p>Hidupkan atau matikan paparan ulasan di tab Ulasan. Semua ulasan sah dipaparkan di sana.</p></div>
           <button type="button" onclick="loadReviewShowcaseConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
         </div>
         <form class="review-showcase-admin-form" onsubmit="saveReviewShowcaseSettings(event)">
           <label class="vote-admin-toggle"><input id="review-showcase-admin-active" type="checkbox"><span></span><b>Paparkan ulasan di website</b></label>
-          <label>Ulasan bertukar setiap
+          <label hidden>Ulasan bertukar setiap
             <div class="review-showcase-interval"><input id="review-showcase-admin-interval" type="number" min="3" max="30" step="1" value="6"><span>saat</span></div>
           </label>
-          <label>Posisi asal notis
+          <label hidden>Posisi asal notis
             <select id="review-showcase-admin-position">
               <option value="top-left">Kiri atas</option>
               <option value="top-right">Kanan atas</option>
@@ -1113,7 +1132,7 @@
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script defer src="app.js?v=mojibake-fix-v5-20261023"></script>
+<script defer src="app.js?v=reviews-hide-v7-20261023"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
