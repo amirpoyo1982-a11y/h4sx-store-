@@ -4583,7 +4583,7 @@ async function removePhoneLookup(phone, code) {
 }
 function maskOrderPhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
-  if (digits.length < 6) return 'â€¢â€¢â€¢â€¢â€¢â€¢';
+  if (digits.length < 6) return '••••••';
   return digits.slice(0, 3) + '*'.repeat(Math.max(4, digits.length - 5)) + digits.slice(-2);
 }
 function formatOrderTimestamp(value) {
@@ -5247,7 +5247,7 @@ async function loadAdminOrders() {
     if (snap.empty) { box.textContent = 'Belum ada transaksi.'; return; }
     box.innerHTML = snap.docs.map(doc => {
       const item = doc.data(); const picture = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="">' : '<img alt="">';
-      return '<div class="order-admin-row">' + picture + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>' + escapeHtml(doc.id) + ' Â· ' + escapeHtml(item.status || '') + '</small><small>RM' + Number(item.price || 0).toFixed(2) + '</small></div><div class="order-admin-row-actions"><button onclick="editManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-pen"></i></button><button onclick="deleteManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-trash"></i></button></div></div>';
+      return '<div class="order-admin-row">' + picture + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong><small>' + escapeHtml(doc.id) + ' · ' + escapeHtml(item.status || '') + '</small><small>RM' + Number(item.price || 0).toFixed(2) + '</small></div><div class="order-admin-row-actions"><button onclick="editManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-pen"></i></button><button onclick="deleteManualOrder(\'' + escapeHtml(doc.id) + '\')"><i class="fa-solid fa-trash"></i></button></div></div>';
     }).join('');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat load. Pastikan Firestore Rules benarkan admin list orders.'; }
 }
@@ -5314,8 +5314,8 @@ async function loadVisitorDashboard() {
     history.innerHTML = visitors.slice(0, 40).map((item, index) => {
       const isLive = new Date(item.lastSeen || 0).getTime() >= cutoff;
       const date = new Date(item.lastSeen || item.firstSeen || 0);
-      const time = Number.isNaN(date.getTime()) ? 'â€”' : date.toLocaleString('ms-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-      return '<div class="visitor-row"><div><strong>Pelawat #' + escapeHtml(item.id.slice(-6).toUpperCase()) + '</strong><small>Lawatan terakhir: ' + escapeHtml(time) + '</small></div><span class="' + (isLive ? 'visitor-live' : 'visitor-offline') + '">' + (isLive ? 'â— AKTIF' : 'OFFLINE') + '</span></div>';
+      const time = Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ms-MY', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      return '<div class="visitor-row"><div><strong>Pelawat #' + escapeHtml(item.id.slice(-6).toUpperCase()) + '</strong><small>Lawatan terakhir: ' + escapeHtml(time) + '</small></div><span class="' + (isLive ? 'visitor-live' : 'visitor-offline') + '">' + (isLive ? '● AKTIF' : 'OFFLINE') + '</span></div>';
     }).join('');
   } catch (error) { console.error(error); history.textContent = 'Tak dapat load. Pastikan Firestore Rules untuk store_visits telah ditambah.'; }
 }
@@ -5608,7 +5608,7 @@ function updateMainReviewStats(list = []) {
   }
   starsEl.classList.remove('review-summary-pending');
 
-  avgEl.textContent = count ? avg.toFixed(1) : 'â€”';
+  avgEl.textContent = count ? avg.toFixed(1) : '—';
   countEl.textContent = String(list.length);
   starsEl.innerHTML = Array(5).fill(0).map((_, i) =>
     '<i class="fa-solid fa-star" style="color:' + (i < roundedStars ? '#fbbf24' : 'rgba(148,163,184,.42)') + '"></i>'
@@ -5999,7 +5999,7 @@ function openTestimonialImage(src) {
     modal = document.createElement('div');
     modal.id = 'testimonial-image-modal';
     modal.className = 'testimonial-image-modal';
-    modal.innerHTML = '<div class="testimonial-image-box"><div class="testimonial-image-head"><span>Gambar Feedback</span><button type="button" class="testimonial-image-close">Ã—</button></div><img class="testimonial-image-img" alt="Gambar feedback"></div>';
+    modal.innerHTML = '<div class="testimonial-image-box"><div class="testimonial-image-head"><span>Gambar Feedback</span><button type="button" class="testimonial-image-close">×</button></div><img class="testimonial-image-img" alt="Gambar feedback"></div>';
     document.body.appendChild(modal);
     modal.addEventListener('click', e => {
       if (e.target === modal || e.target.classList.contains('testimonial-image-close')) {
@@ -6013,7 +6013,7 @@ function openTestimonialImage(src) {
 }
 async function startCountdown() {
   const strip = document.getElementById('cd-strip'), labelEl = document.getElementById('cd-label'), subEl = document.getElementById('cd-sub');
-  let aktif = true, label = 'Flash Sale Aktif', sub = 'Tawaran terhad ? habis bila habis!', durationMs = 8 * 3600000;
+  let aktif = true, label = 'Flash Sale Aktif', sub = 'Tawaran terhad — habis bila habis!', durationMs = 8 * 3600000;
   const d = await fetchKedaiJson();
   if (d && d.flash_sale) { const fs = d.flash_sale; if (fs.aktif === false) aktif = false; if (fs.label) label = fs.label; if (fs.sub) sub = fs.sub; if (typeof fs.duration_hours === 'number') { if (fs.duration_hours <= 0) aktif = false; else durationMs = fs.duration_hours * 3600000; } }
   if (!aktif) { if (strip) strip.style.display = 'none'; return; }
@@ -7977,7 +7977,7 @@ async function takeScreenshot() {
         <img src="https://i.imgur.com/cLPulXQ.png" alt="H4SX">
         <div>
           <div class="product-ss-brand">H4SX STORE</div>
-          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}${currentProductFilter !== 'all' ? ' â€” ' + escapeForHtml(activeFilter.label) : ''}</div>
+          <div class="product-ss-title">${escapeForHtml(currentGame || 'Produk')}${currentProductFilter !== 'all' ? ' — ' + escapeForHtml(activeFilter.label) : ''}</div>
         </div>
         <div class="product-ss-count">${items.length} item</div>
       </div>
