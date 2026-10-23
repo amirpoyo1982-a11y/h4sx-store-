@@ -6057,6 +6057,8 @@ function bindReviewCardActions() {
   if (reviewsCardEventsBound) return;
   reviewsCardEventsBound = true;
   document.addEventListener('click', event => {
+    const sortBtn = event.target.closest('[data-rv-sort]');
+    if (sortBtn) { event.preventDefault(); setReviewsSort(sortBtn.dataset.rvSort); return; }
     const action = event.target.closest('[data-rv-action]');
     if (!action) return;
     const type = action.dataset.rvAction;
@@ -6079,9 +6081,51 @@ function bindReviewCardActions() {
   });
 }
 
-function reviewsViewItemList(list = latestReviewStatsData) {
-  return uniqueReviewRecords(orderedReviewShowcaseRecords(list));
+let reviewsViewSort = 'newest';
+try {
+  const savedSort = localStorage.getItem('h4sx_reviews_sort');
+  if (savedSort === 'oldest' || savedSort === 'newest') reviewsViewSort = savedSort;
+} catch (error) {}
+
+function reviewSortTime(item) {
+  return reviewRecordTime(item.diciptaPada || item.timestamp || item.date);
 }
+
+function reviewsViewItemList(list = latestReviewStatsData) {
+  const items = uniqueReviewRecords(orderedReviewShowcaseRecords(list));
+  const dir = reviewsViewSort === 'oldest' ? 1 : -1;
+  return items.sort((a, b) => {
+    const diff = reviewSortTime(a) - reviewSortTime(b);
+    if (diff) return diff * dir;
+    return String(a.id || '').localeCompare(String(b.id || '')) * dir;
+  });
+}
+
+function setReviewsSortButtons() {
+  document.querySelectorAll('[data-rv-sort]').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.rvSort === reviewsViewSort);
+  });
+}
+
+function setReviewsSort(mode) {
+  reviewsViewSort = mode === 'oldest' ? 'oldest' : 'newest';
+  try { localStorage.setItem('h4sx_reviews_sort', reviewsViewSort); } catch (error) {}
+  setReviewsSortButtons();
+  renderReviewsView(true);
+}
+
+function scrollToReviewsTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateReviewsTopButton() {
+  const btn = document.getElementById('rv-top');
+  if (!btn) return;
+  btn.hidden = !(isReviewsViewOpen() && window.scrollY > 380);
+}
+window.setReviewsSort = setReviewsSort;
+window.scrollToReviewsTop = scrollToReviewsTop;
+window.addEventListener('scroll', updateReviewsTopButton, { passive: true });
 
 function isReviewsViewOpen() {
   const view = document.getElementById('reviews-view');
@@ -6107,6 +6151,7 @@ function updateReviewsViewStats(list = []) {
 }
 
 function renderReviewsView(reset = false, keep = 0) {
+  setReviewsSortButtons();
   const list = document.getElementById('reviews-list');
   if (!list) return;
   bindReviewCardActions();
@@ -6168,49 +6213,87 @@ function loadMoreReviews() {
 }
 
 function openReviewsView() {
-  markReviewsCoachSeen();
+  markCoachSeen();
   showView('reviews-view');
+  setReviewsSortButtons();
+  updateReviewsTopButton();
   if (!latestReviewStatsData.length && !unsubscribeReviews) loadReviews();
   renderReviewsView(true);
 }
 window.openReviewsView = openReviewsView;
 window.loadMoreReviews = loadMoreReviews;
 
-/* Petunjuk sekali sahaja: "Ulasan dah pindah" */
-const REVIEWS_COACH_KEY = 'h4sx_reviews_coach_seen_v1';
-let reviewsCoachTimer = null;
+/* ===== Notis petunjuk custom (boleh admin edit) ===== */
+const COACH_CONFIG_COLLECTION = 'config';
+const COACH_CONFIG_ID = 'coach_mark';
+const COACH_TARGETS = ['tab-reviews-btn','tab-submit-review-btn','tab-home-btn','nav-search-btn','nav-cart-btn','nav-support-btn'];
+const DEFAULT_COACH = {
+  active: true,
+  title: 'Ulasan dah pindah!',
+  message: 'Semua ulasan pembeli sekarang ada di tab Ulasan. Tekan butang tu untuk tengok.',
+  target: 'tab-reviews-btn',
+  frequency: 'once',
+  updatedAt: 0
+};
+let coachConfig = null;
+let coachConfigLoaded = false;
+let coachConfigUnsubscribe = null;
+let coachTimer = null;
 
-function reviewsCoachSeen() {
-  try { return localStorage.getItem(REVIEWS_COACH_KEY) === '1'; } catch (error) { return true; }
+function normaliseCoachConfig(data = {}) {
+  const target = String(data.target || '').trim();
+  return {
+    active: data.active === true,
+    title: String(data.title || '').trim().slice(0, 60),
+    message: String(data.message || '').trim().slice(0, 160),
+    target: COACH_TARGETS.includes(target) ? target : 'tab-reviews-btn',
+    frequency: data.frequency === 'always' ? 'always' : 'once',
+    updatedAt: Number(data.updatedAt?.toMillis ? data.updatedAt.toMillis() : data.updatedAt || 0)
+  };
 }
 
-function hideReviewsCoach() {
-  if (reviewsCoachTimer) { clearTimeout(reviewsCoachTimer); reviewsCoachTimer = null; }
+function coachMarkConfig() {
+  if (!coachConfigLoaded) return null;
+  return coachConfig || DEFAULT_COACH;
+}
+
+function coachSeenKey() {
+  const cfg = coachMarkConfig();
+  return 'h4sx_coach_seen_' + ((cfg && cfg.updatedAt) || 'default');
+}
+
+function coachSeen() {
+  try { return localStorage.getItem(coachSeenKey()) === '1'; } catch (error) { return true; }
+}
+
+function hideCoachMark() {
+  if (coachTimer) { clearTimeout(coachTimer); coachTimer = null; }
   const coach = document.getElementById('reviews-coach');
   if (coach) {
     coach.hidden = true;
     coach.setAttribute('aria-hidden', 'true');
+    coach._target = null;
   }
   document.querySelectorAll('.rv-coach-pulse').forEach(el => el.classList.remove('rv-coach-pulse'));
 }
 
-function markReviewsCoachSeen() {
-  try { localStorage.setItem(REVIEWS_COACH_KEY, '1'); } catch (error) {}
-  hideReviewsCoach();
+function markCoachSeen() {
+  try { localStorage.setItem(coachSeenKey(), '1'); } catch (error) {}
+  hideCoachMark();
 }
-window.markReviewsCoachSeen = markReviewsCoachSeen;
+window.markCoachSeen = markCoachSeen;
 
-function reviewsCoachTarget() {
-  const el = document.getElementById('tab-reviews-btn') || document.getElementById('nav-reviews-link');
+function coachTargetEl(cfg) {
+  const el = document.getElementById(cfg.target);
   if (!el || el.hidden) return null;
   const rect = el.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? el : null;
 }
 
-function positionReviewsCoach() {
+function positionCoachMark() {
   const coach = document.getElementById('reviews-coach');
   const bubble = coach?.querySelector('.rv-coach-bubble');
-  const target = reviewsCoachTarget();
+  const target = coach?._target;
   if (!coach || !bubble || !target || coach.hidden) return;
   const rect = target.getBoundingClientRect();
   const above = rect.top > window.innerHeight / 2;
@@ -6228,34 +6311,40 @@ function positionReviewsCoach() {
   bubble.style.setProperty('--arrow-x', arrowX + 'px');
 }
 
-function showReviewsCoach() {
-  if (reviewsCoachSeen()) return;
-  if (reviewShowcaseConfig.active === false) return;
-  if (isReviewsViewOpen()) return;
+function showCoachMark() {
+  const cfg = coachMarkConfig();
+  if (!cfg || cfg.active !== true) return;
+  if (cfg.frequency !== 'always' && coachSeen()) return;
+  if (cfg.target === 'tab-reviews-btn' && isReviewsViewOpen()) return;
+  const target = coachTargetEl(cfg);
   const coach = document.getElementById('reviews-coach');
-  const target = reviewsCoachTarget();
   if (!coach || !target) return;
+  const titleEl = document.getElementById('coach-title-text');
+  const msgEl = document.getElementById('coach-message-text');
+  if (titleEl) titleEl.textContent = cfg.title || DEFAULT_COACH.title;
+  if (msgEl) msgEl.textContent = cfg.message || DEFAULT_COACH.message;
   coach.hidden = false;
   coach.setAttribute('aria-hidden', 'false');
+  coach._target = target;
   target.classList.add('rv-coach-pulse');
   try { target.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (error) {}
-  positionReviewsCoach();
-  requestAnimationFrame(positionReviewsCoach);
-  setTimeout(() => { if (!coach.hidden) positionReviewsCoach(); }, 350);
-  if (reviewsCoachTimer) clearTimeout(reviewsCoachTimer);
-  reviewsCoachTimer = setTimeout(markReviewsCoachSeen, 12000);
+  positionCoachMark();
+  requestAnimationFrame(positionCoachMark);
+  setTimeout(() => { if (!coach.hidden) positionCoachMark(); }, 350);
+  if (coachTimer) clearTimeout(coachTimer);
+  coachTimer = setTimeout(markCoachSeen, 12000);
   const dismissOutside = event => {
     if (coach.hidden) return;
     if (coach.contains(event.target) || target.contains(event.target)) return;
     document.removeEventListener('click', dismissOutside, true);
-    markReviewsCoachSeen();
+    markCoachSeen();
   };
   document.addEventListener('click', dismissOutside, true);
-  target.addEventListener('click', markReviewsCoachSeen, { once: true });
+  target.addEventListener('click', markCoachSeen, { once: true });
 }
 
-function scheduleReviewsCoach() {
-  const run = () => setTimeout(showReviewsCoach, 1400);
+function scheduleCoachMark() {
+  const run = () => setTimeout(showCoachMark, 1400);
   if (document.documentElement.classList.contains('h4sx-opening-active')) {
     const started = Date.now();
     const timer = setInterval(() => {
@@ -6269,12 +6358,94 @@ function scheduleReviewsCoach() {
   }
 }
 
+function syncCoachAdmin() {
+  const active = document.getElementById('coach-admin-active');
+  const title = document.getElementById('coach-admin-title');
+  const message = document.getElementById('coach-admin-message');
+  const target = document.getElementById('coach-admin-target');
+  const frequency = document.getElementById('coach-admin-frequency');
+  if (active) active.checked = coachConfig ? coachConfig.active === true : true;
+  if (title) title.value = coachConfig ? coachConfig.title : DEFAULT_COACH.title;
+  if (message) message.value = coachConfig ? coachConfig.message : DEFAULT_COACH.message;
+  if (target) target.value = coachConfig ? coachConfig.target : DEFAULT_COACH.target;
+  if (frequency) frequency.value = coachConfig ? coachConfig.frequency : 'once';
+  const status = document.getElementById('coach-admin-status');
+  if (!status) return;
+  if (!orderAuth?.currentUser) {
+    status.textContent = 'Log masuk sebagai admin untuk urus notis.';
+    status.className = 'vote-admin-status';
+    return;
+  }
+  status.textContent = coachConfig
+    ? (coachConfig.active ? 'Notis sedang aktif di website.' : 'Notis disimpan tetapi dimatikan.')
+    : 'Belum ada notis custom. Notis lalai digunakan.';
+  status.className = 'vote-admin-status' + (coachConfig && coachConfig.active ? ' success' : '');
+}
+
+function loadCoachConfig(force = false) {
+  if (!db) { coachConfigLoaded = true; scheduleCoachMark(); return; }
+  if (coachConfigUnsubscribe && !force) { syncCoachAdmin(); return; }
+  if (coachConfigUnsubscribe) coachConfigUnsubscribe();
+  // Fallback: kalau Firestore lambat/offline, guna notis lalai selepas 4 saat.
+  setTimeout(() => {
+    if (coachConfigLoaded) return;
+    coachConfigLoaded = true;
+    coachConfig = null;
+    syncCoachAdmin();
+    scheduleCoachMark();
+  }, 4000);
+  coachConfigUnsubscribe = db.collection(COACH_CONFIG_COLLECTION).doc(COACH_CONFIG_ID)
+    .onSnapshot(snapshot => {
+      coachConfigLoaded = true;
+      coachConfig = snapshot.exists ? normaliseCoachConfig(snapshot.data()) : null;
+      syncCoachAdmin();
+      hideCoachMark();
+      scheduleCoachMark();
+    }, error => {
+      console.warn('Coach config gagal dimuatkan:', error);
+      coachConfigLoaded = true;
+      coachConfig = null;
+      syncCoachAdmin();
+      scheduleCoachMark();
+    });
+}
+
+async function saveCoachConfig(event) {
+  event?.preventDefault();
+  if (!db || !orderAuth?.currentUser) return toast('Log masuk sebagai admin dahulu.', true);
+  const active = document.getElementById('coach-admin-active')?.checked === true;
+  const title = String(document.getElementById('coach-admin-title')?.value || '').trim().slice(0, 60);
+  const message = String(document.getElementById('coach-admin-message')?.value || '').trim().slice(0, 160);
+  const targetInput = String(document.getElementById('coach-admin-target')?.value || 'tab-reviews-btn');
+  const target = COACH_TARGETS.includes(targetInput) ? targetInput : 'tab-reviews-btn';
+  const frequency = document.getElementById('coach-admin-frequency')?.value === 'always' ? 'always' : 'once';
+  if (active && !title) return toast('Isi tajuk notis dahulu.', true);
+  if (active && !message) return toast('Isi mesej notis dahulu.', true);
+  try {
+    await db.collection(COACH_CONFIG_COLLECTION).doc(COACH_CONFIG_ID).set({
+      active,
+      title,
+      message,
+      target,
+      frequency,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: orderAuth.currentUser.email || 'admin'
+    }, { merge: true });
+    toast(active ? 'Notis petunjuk dihidupkan.' : 'Notis petunjuk dimatikan.');
+  } catch (error) {
+    console.error('Coach config save error:', error);
+    toast('Tak dapat simpan notis. Semak Firestore Rules.', true);
+  }
+}
+
+window.loadCoachConfig = loadCoachConfig;
+window.saveCoachConfig = saveCoachConfig;
+
+loadCoachConfig();
 window.addEventListener('resize', () => {
   const coach = document.getElementById('reviews-coach');
-  if (coach && !coach.hidden) positionReviewsCoach();
+  if (coach && !coach.hidden) positionCoachMark();
 });
-if (document.readyState === 'complete') scheduleReviewsCoach();
-else window.addEventListener('load', scheduleReviewsCoach, { once: true });
 
 if (window.H4SX_INITIAL_VIEW === 'reviews') {
   const startReviewsFromUrl = () => setTimeout(() => {

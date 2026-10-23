@@ -65,7 +65,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=reviews-coach-v9-20261023">
+  <link rel="stylesheet" href="styles.css?v=reviews-sort-v11-20261023">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -217,12 +217,12 @@
       <button class="search-btn changelog-btn" onclick="openChangelog(true)" title="Changelog"><i class="fa-solid fa-clock-rotate-left"></i><span class="cl-txt">Changelog</span></button>
       <button class="search-btn hard-refresh-btn" onclick="hardRefreshSite()" title="Hard refresh update"><i class="fa-solid fa-rotate"></i><span>Hard Refresh</span></button>
       <button class="search-btn admin-profile-btn" onclick="openAdminProfile()" title="Admin Profile"><i class="fa-solid fa-user-shield"></i></button>
-      <button class="search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
-      <button class="cart-btn" onclick="toggleCart()">
+      <button class="search-btn" id="nav-search-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+      <button class="cart-btn" id="nav-cart-btn" onclick="toggleCart()">
         <i class="fa-solid fa-bag-shopping"></i>
         <span id="cart-badge" class="cart-badge">0</span>
       </button>
-      <a href="https://wa.me/60137426830" target="_blank" class="btn-wa">
+      <a href="https://wa.me/60137426830" target="_blank" class="btn-wa" id="nav-support-btn">
         <i class="fa-brands fa-whatsapp"></i><span class="btn-txt"> Support</span>
       </a>
       <button class="nav-ham" onclick="toggleMenu()"><span></span><span></span><span></span></button>
@@ -230,11 +230,11 @@
   </div>
 </nav>
 <div class="storefront-tabs" aria-label="Akses pantas katalog">
-  <button type="button" onclick="showHome()"><span class="tab-emoji"><picture><img src="assets/animated-nav/home.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-house" hidden></i></span><span>Utama</span></button>
+  <button type="button" id="tab-home-btn" onclick="showHome()"><span class="tab-emoji"><picture><img src="assets/animated-nav/home.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-house" hidden></i></span><span>Utama</span></button>
   <button type="button" onclick="document.getElementById('shop-section').scrollIntoView({behavior:'smooth'});setPlatform('Roblox')"><span class="tab-emoji"><picture><img src="assets/animated-nav/roblox-cube.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-cube" hidden></i></span><span>Roblox</span></button>
   <button type="button" data-customer-hub-link onclick="showCustomerHub()"><span class="tab-emoji"><picture><img src="assets/animated-nav/customers.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-trophy" hidden></i></span><span>Pelanggan</span></button>
   <button type="button" onclick="openOrderHistory()"><span class="tab-emoji"><picture><img src="assets/animated-nav/orders.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span><span>Semak Pesanan</span></button>
-  <button type="button" onclick="openH4ReviewForm()"><span class="tab-emoji"><picture><img src="assets/animated-nav/write-review.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-pen-to-square" hidden></i></span><span>Hantar Ulasan</span></button>
+  <button type="button" id="tab-submit-review-btn" onclick="openH4ReviewForm()"><span class="tab-emoji"><picture><img src="assets/animated-nav/write-review.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-pen-to-square" hidden></i></span><span>Hantar Ulasan</span></button>
   <button type="button" id="tab-reviews-btn" onclick="openReviewsView()"><span class="tab-emoji"><picture><img src="assets/animated-nav/reviews.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-star" hidden></i></span><span>Ulasan</span></button>
   <button type="button" onclick="goSection('guide')"><span class="tab-emoji"><picture><img src="assets/animated-nav/guide.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-book-open" hidden></i></span><span>Panduan</span></button>
   <button type="button" onclick="goSection('faq')"><span class="tab-emoji"><picture><img src="assets/animated-nav/faq.webp" alt="" width="22" height="22" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-circle-question" hidden></i></span><span>FAQ</span></button>
@@ -495,10 +495,18 @@
       <small>Ulasan akan hilang dari menu dan tab untuk pelanggan. Boleh tunjuk semula bila dah siap.</small>
     </div>
     <section class="section-panel rv-panel">
+      <div class="rv-toolbar">
+        <div class="rv-sort" role="group" aria-label="Susun ulasan">
+          <button type="button" class="is-active" data-rv-sort="newest">Paling Baru</button>
+          <button type="button" data-rv-sort="oldest">Paling Lama</button>
+        </div>
+        <span class="rv-sort-note">Pilih susunan ulasan</span>
+      </div>
       <div id="reviews-list" class="rv-list" aria-live="polite"></div>
       <div class="rv-foot">
         <button type="button" id="rv-more" class="rv-more" onclick="loadMoreReviews()" hidden><i class="fa-solid fa-chevron-down"></i> Muat lagi ulasan</button>
         <p id="rv-status" class="rv-status">Memuatkan ulasan...</p>
+      <button type="button" class="rv-top" id="rv-top" onclick="scrollToReviewsTop()" aria-label="Kembali ke atas" hidden><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
       </div>
     </section>
   </div>
@@ -1078,6 +1086,35 @@
           <div class="vote-admin-status" id="review-showcase-admin-status">Log masuk untuk urus paparan ulasan.</div>
         </form>
       </section>
+      <section class="review-showcase-admin coach-admin" aria-labelledby="coach-admin-heading">
+        <div class="vote-admin-head">
+          <div><span>NOTIS PETUNJUK</span><h3 id="coach-admin-heading">Notis Petunjuk Custom</h3><p>Gelembung kecil dengan anak panah ke butang pilihan. Sesuai untuk umum fitur baru.</p></div>
+          <button type="button" onclick="loadCoachConfig(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+        </div>
+        <form class="review-showcase-admin-form" onsubmit="saveCoachConfig(event)">
+          <label class="vote-admin-toggle"><input id="coach-admin-active" type="checkbox"><span></span><b>Tunjuk notis di website</b></label>
+          <label>Tajuk notis<input id="coach-admin-title" type="text" maxlength="60" placeholder="Contoh: Ulasan dah pindah!"></label>
+          <label>Mesej <small>Maksimum 160 aksara.</small><input id="coach-admin-message" type="text" maxlength="160" placeholder="Contoh: Semua ulasan sekarang ada di tab Ulasan."></label>
+          <label>Halakan anak panah ke
+            <select id="coach-admin-target">
+              <option value="tab-reviews-btn">Tab Ulasan</option>
+              <option value="tab-submit-review-btn">Hantar Ulasan</option>
+              <option value="tab-home-btn">Utama / Home</option>
+              <option value="nav-search-btn">Cari</option>
+              <option value="nav-cart-btn">Troli</option>
+              <option value="nav-support-btn">Support</option>
+            </select>
+          </label>
+          <label>Kekerapan
+            <select id="coach-admin-frequency">
+              <option value="once">Sekali per pelawat (sehingga notis dikemas kini)</option>
+              <option value="always">Setiap kali buka website</option>
+            </select>
+          </label>
+          <div class="vote-admin-actions"><button type="submit" class="btn-primary"><i class="fa-solid fa-floppy-disk"></i> Simpan Notis</button></div>
+          <div class="vote-admin-status" id="coach-admin-status">Log masuk untuk urus notis.</div>
+        </form>
+      </section>
       <section class="vote-admin-panel" aria-labelledby="vote-admin-title">
         <div class="vote-admin-head"><div><span>FIREBASE CUSTOM VOTE</span><h3 id="vote-admin-title">Tetapan Undian</h3><p>Hidupkan, tukar ayat atau pilihan vote yang pelanggan nampak.</p></div><button type="button" onclick="loadCustomVote(true)"><i class="fa-solid fa-rotate"></i> Refresh</button></div>
         <form class="vote-admin-form" onsubmit="saveCustomVote(event)">
@@ -1135,10 +1172,10 @@
 </aside>
 <div id="toasts"></div>
 <div id="reviews-coach" class="rv-coach" hidden aria-hidden="true">
-  <div class="rv-coach-bubble" role="dialog" aria-label="Ulasan dah pindah ke tab Ulasan">
-    <button type="button" class="rv-coach-close" onclick="markReviewsCoachSeen()" aria-label="Tutup petunjuk">&times;</button>
-    <strong><i class="fa-solid fa-star" aria-hidden="true"></i> Ulasan dah pindah!</strong>
-    <span>Semua ulasan pembeli sekarang ada di tab <b>Ulasan</b>. Tekan butang tu untuk tengok.</span>
+  <div class="rv-coach-bubble" role="dialog" aria-label="Notis petunjuk">
+    <button type="button" class="rv-coach-close" onclick="markCoachSeen()" aria-label="Tutup petunjuk">&times;</button>
+    <strong class="rv-coach-title"><i class="fa-solid fa-star" aria-hidden="true"></i> <span class="rv-coach-title-text" id="coach-title-text">Ulasan dah pindah!</span></strong>
+    <span class="rv-coach-message" id="coach-message-text">Semua ulasan pembeli sekarang ada di tab Ulasan. Tekan butang tu untuk tengok.</span>
   </div>
 </div>
 <script src="admin-sessions.js?v=integrated-20261011"></script>
@@ -1146,7 +1183,7 @@
 <script defer src="review-submit-client.js?v=edit-policy-20261016"></script>
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script defer src="app.js?v=reviews-coach-v9-20261023"></script>
+<script defer src="app.js?v=reviews-sort-v11-20261023"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>

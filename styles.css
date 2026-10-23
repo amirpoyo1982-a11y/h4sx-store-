@@ -11355,3 +11355,29 @@ html.h4sx-opening-active body { overflow:hidden !important; }
   .rv-coach-bubble strong { font-size: 12px; }
   .rv-coach-bubble span { font-size: 10.5px; }
 }
+/* ===== Notis petunjuk custom ===== */
+.rv-coach-bubble .rv-coach-title-text { display: inline; margin: 0; color: inherit; font: inherit; }
+.coach-admin .review-showcase-admin-form input[type="text"] { min-height: 40px; width: 100%; padding: 8px 10px; border: 1px solid #c8e4f5; border-radius: 9px; color: #173c59; background: #fff; font: inherit; font-size: 12px; outline: none; }
+.coach-admin .review-showcase-admin-form input[type="text"]:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.1); }
+/* ===== Penapis susunan + butang kembali ke atas (tab ulasan) ===== */
+.rv-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.rv-sort { display: inline-flex; padding: 3px; border: 1px solid #cfe6f2; border-radius: 11px; background: #f2fbff; }
+.rv-sort button { min-height: 32px; padding: 0 13px; border: 0; border-radius: 8px; color: #4d7288; background: transparent; font: 800 10.5px inherit; cursor: pointer; transition: background .18s ease, color .18s ease; }
+.rv-sort button:hover { color: #0b6a8f; }
+.rv-sort button.is-active { color: #fff; background: linear-gradient(135deg,#0ea5e9,#0284c7); box-shadow: 0 4px 10px -4px rgba(2,132,199,.7); }
+.rv-sort-note { color: #7b93a4; font-size: 10px; }
+
+.rv-top { position: fixed; right: 16px; bottom: 96px; z-index: 2147482000; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.6); border-radius: 50%; color: #fff; background: linear-gradient(135deg,#0ea5e9,#0284c7); box-shadow: 0 12px 26px -10px rgba(2,84,120,.8); font-size: 16px; cursor: pointer; }
+.rv-top:hover { background: linear-gradient(135deg,#0284c7,#0369a1); }
+.rv-top[hidden] { display: none !important; }
+
+/* Warna nama & role bergerak, sama macam notis melayang */
+.rv-card-name strong.is-animated, .rv-card-roles .is-animated { animation: reviewIdentityFlow 3.4s linear infinite; }
+.rv-card-name strong.is-rainbow { animation: reviewIdentityRainbow 4.2s linear infinite; }
+.rv-card-roles .is-rainbow { animation: reviewIdentityRainbow 4.2s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .rv-card-name strong.is-animated, .rv-card-roles .is-animated, .rv-card-name strong.is-rainbow, .rv-card-roles .is-rainbow { animation: none; }
+}
+@media (max-width: 520px) {
+  .rv-top { right: 12px; bottom: 86px; width: 42px; height: 42px; font-size: 15px; }
+}
