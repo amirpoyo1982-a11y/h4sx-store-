@@ -39,15 +39,15 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
   assert.equal(item.name, 'Tiger Fruit');
   assert.equal(normalizeItemId('../secret'), '');
   assert.equal(productSharePath(3), '/item/3');
-  assert.equal(productImageProxyPath(3), '/og-image/3');
+  assert.equal(productImageProxyPath(3), '/og-image/3.png');
   assert.equal(productImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
-  assert.equal(productShareVersion(item), 'r2-1hbiej2');
-  assert.equal(productShareUrl(item), 'https://www.h4sxmy.xyz/item/3?v=r2-1hbiej2');
+  assert.equal(productShareVersion(item), 'r3-1hbiej2');
+  assert.equal(productShareUrl(item), 'https://www.h4sxmy.xyz/item/3?v=r3-1hbiej2');
   assert.equal(productOgImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
   assert.equal(catalogItemUrl(item), 'https://www.h4sxmy.xyz/?item=3');
   const html = sharePageHtml({ item });
   assert.match(html, /property="og:image" content="https:\/\/i\.imgur\.com\/kGXK1IB\.png"/);
-  assert.match(html, /property="og:url" content="https:\/\/www\.h4sxmy\.xyz\/item\/3\?v=r2-1hbiej2"/);
+  assert.match(html, /property="og:url" content="https:\/\/www\.h4sxmy\.xyz\/item\/3\?v=r3-1hbiej2"/);
   assert.match(html, /property="og:title" content="Tiger Fruit \| H4SX STORE"/);
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=3"\)/);
 });
@@ -55,6 +55,11 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
 test('Itemku images remain direct until their catalog image is replaced', () => {
   const item = { id: 45, img: 'https://imgop.itemku.com/?url=image.webp&w=48&q=75' };
   assert.equal(productOgImageUrl(item), item.img);
+});
+
+test('Postimg images use a H4SX PNG endpoint for WhatsApp compatibility', () => {
+  const item = { id: 38, img: 'https://i.postimg.cc/rw7q5tzx/image.png' };
+  assert.equal(productOgImageUrl(item), 'https://www.h4sxmy.xyz/og-image/38.png?v=r3-x7yjrh');
 });
 
 test('product share handler serves OG HTML for a catalog item', async () => {

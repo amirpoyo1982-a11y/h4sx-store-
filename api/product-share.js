@@ -37,7 +37,7 @@ async function serveOgImage(req, res) {
 
   let imageUrl = DEFAULT_OG_IMAGE;
   try {
-    const item = findInventoryItem(await loadItems(), normalizeItemId(req.query?.ogImage));
+    const item = findInventoryItem(await loadItems(), normalizeItemId(String(req.query?.ogImage || '').replace(/\.png$/i, '')));
     if (item && isVisibleCatalogItem(item)) imageUrl = productImageUrl(item);
   } catch (error) {
     console.warn('OG image inventory lookup failed:', error?.message || error);

@@ -2463,7 +2463,7 @@ function shareableProductLink(item) {
     hash ^= source.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r2-' + (hash >>> 0).toString(36);
+  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r3-' + (hash >>> 0).toString(36);
 }
 async function shareStoreContent(shareData, copiedMessage, promptLabel) {
   try {
