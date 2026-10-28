@@ -8,6 +8,29 @@
     {
       "source": "/review/",
       "destination": "/review/index.htm"
+    },
+    {
+      "source": "/item/:id",
+      "destination": "/api/product-share?id=:id"
+    },
+    {
+      "source": "/item/:id/",
+      "destination": "/api/product-share?id=:id"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "item"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|slackbot|discordbot|linkedinbot|pinterest|skypeuripreview|embedly|redditbot|applebot|iframely|vkshare|quora).*"
+        }
+      ],
+      "destination": "/api/product-share"
     }
   ]
 }

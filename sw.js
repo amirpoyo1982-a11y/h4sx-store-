@@ -1,8 +1,8 @@
-const CACHE_NAME = 'h4sx-pwa-20261023-reviews-sort-v11';
+const CACHE_NAME = 'h4sx-pwa-20261028-wa-share-v1';
 const APP_SHELL = [
   './index.htm',
   './preview-bypass.js?v=default-on-20261021',
-  './styles.css?v=reviews-sort-v11-20261023',
+  './styles.css?v=wa-share-review-links-20261028',
   './app.js?v=reviews-sort-v11-20261023',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
@@ -27,7 +27,7 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.includes('/api/')) return;
+  if (url.origin !== self.location.origin || url.pathname.includes('/api/') || /^\/item(?:\/|$)/.test(url.pathname)) return;
 
   if (request.mode === 'navigate') {
     const navigationCacheKey = /^\/review(?:\/|$)/.test(url.pathname) ? '/review' : url.pathname.endsWith('/h4sx-intro.html') ? './h4sx-intro.html?v=hs-intro-v8-20261008' : './index.htm';

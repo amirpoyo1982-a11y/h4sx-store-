@@ -11271,6 +11271,26 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .rv-card-bought i { color: #0ea5e9; font-size: 8px; }
 .rv-card-stars { display: flex; gap: 2px; font-size: 11px; }
 .rv-card-text { display: -webkit-box; margin: 0; overflow: hidden; color: #41637c; font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.rv-card-text .message-link,
+.review-popup-text .message-link {
+  color: #1a8fc7;
+  font-weight: 850;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  background-image: linear-gradient(90deg, #0284c7, #2fa8e0, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  border-bottom: 1.5px solid color-mix(in srgb, #2fa8e0 62%, #7c3aed);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.rv-card-text .message-link:hover,
+.review-popup-text .message-link:hover {
+  background-image: linear-gradient(90deg, #0369a1, #38bdf8, #a855f7);
+  border-bottom-color: #0ea5e9;
+}
 .rv-card.is-open .rv-card-text { display: block; -webkit-line-clamp: unset; }
 .rv-card-more { align-self: flex-start; padding: 0; border: 0; color: #0b83b8; background: none; font: inherit; font-size: 10.5px; font-weight: 800; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .rv-card-media { display: flex; align-items: center; gap: 8px; }
