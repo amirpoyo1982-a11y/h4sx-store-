@@ -18,6 +18,14 @@
       "destination": "/api/product-share?id=:id"
     },
     {
+      "source": "/og-image/:id",
+      "destination": "/api/og-image?id=:id"
+    },
+    {
+      "source": "/og-image/:id/",
+      "destination": "/api/og-image?id=:id"
+    },
+    {
       "source": "/",
       "has": [
         {

@@ -8,7 +8,10 @@ import {
   isShareCrawler,
   normalizeItemId,
   productImageUrl,
+  productOgImageUrl,
+  productImageProxyPath,
   productSharePath,
+  requestOrigin,
   sharePageHtml
 } from '../lib/product-share.js';
 import { formatReviewMessageText } from '../lib/review-links.js';
@@ -17,6 +20,12 @@ test('share crawler detection covers WhatsApp and social unfurlers', () => {
   assert.equal(isShareCrawler('WhatsApp/2.24.7.80 A'), true);
   assert.equal(isShareCrawler('facebookexternalhit/1.1'), true);
   assert.equal(isShareCrawler('Mozilla/5.0 Chrome/120.0'), false);
+});
+
+test('share metadata uses the active H4SX or Vercel host, not an arbitrary Host header', () => {
+  assert.equal(requestOrigin({ headers: { host: 'h4sx-store.vercel.app' } }), 'https://h4sx-store.vercel.app');
+  assert.equal(requestOrigin({ headers: { 'x-forwarded-host': 'www.h4sxmy.xyz', 'x-forwarded-proto': 'https' } }), 'https://www.h4sxmy.xyz');
+  assert.equal(requestOrigin({ headers: { host: 'attacker.example' } }), 'https://www.h4sxmy.xyz');
 });
 
 test('inventory lookup finds public products and builds WhatsApp image tags', () => {
@@ -28,12 +37,19 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
   assert.equal(item.name, 'Tiger Fruit');
   assert.equal(normalizeItemId('../secret'), '');
   assert.equal(productSharePath(3), '/item/3');
+  assert.equal(productImageProxyPath(3), '/og-image/3');
   assert.equal(productImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
+  assert.equal(productOgImageUrl(item), 'https://www.h4sxmy.xyz/og-image/3');
   assert.equal(catalogItemUrl(item), 'https://www.h4sxmy.xyz/?item=3');
   const html = sharePageHtml({ item });
-  assert.match(html, /property="og:image" content="https:\/\/i\.imgur\.com\/kGXK1IB\.png"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/3"/);
   assert.match(html, /property="og:title" content="Tiger Fruit \| H4SX STORE"/);
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=3"\)/);
+});
+
+test('Itemku images remain direct until their catalog image is replaced', () => {
+  const item = { id: 45, img: 'https://imgop.itemku.com/?url=image.webp&w=48&q=75' };
+  assert.equal(productOgImageUrl(item), item.img);
 });
 
 test('product share handler serves OG HTML for a catalog item', async () => {
@@ -47,11 +63,12 @@ test('product share handler serves OG HTML for a catalog item', async () => {
     send(body) { this.body = body; return this; },
     end() { this.ended = true; return this; }
   };
-  await handler({ method: 'GET', query: { id: '12' } }, response);
+  await handler({ method: 'GET', query: { id: '12' }, headers: { host: 'h4sx-store.vercel.app' } }, response);
   assert.equal(response.statusCode, 200);
   assert.match(response.headers['Content-Type'], /text\/html/);
   assert.match(response.body, /og:image/);
   assert.match(response.body, /Gas Fruit/);
+  assert.match(response.body, /https:\/\/h4sx-store\.vercel\.app\/og-image\/12/);
 });
 
 test('review text turns https URLs into clickable message links', () => {
