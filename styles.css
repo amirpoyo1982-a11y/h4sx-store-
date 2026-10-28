@@ -11270,7 +11270,7 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .rv-card-bought { display: inline-flex; align-items: center; gap: 4px; color: #6d8ba0; font-size: 9.5px; }
 .rv-card-bought i { color: #0ea5e9; font-size: 8px; }
 .rv-card-stars { display: flex; gap: 2px; font-size: 11px; }
-.rv-card-text { display: -webkit-box; margin: 0; overflow: hidden; color: #41637c; font-size: 12.5px; line-height: 1.55; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.rv-card-text { display: -webkit-box; margin: 0; padding: 13px 14px; overflow: hidden; border: 1px solid #dceaf1; border-radius: 12px; color: #41637c; background: #f5f9fc; font-size: 12.5px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
 .rv-card-text .message-link,
 .review-popup-text .message-link {
   color: #1a8fc7;
@@ -11330,7 +11330,7 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 }
 :root[data-theme="dark"] .rv-card { border-color: #24455c; background: #0f1d2b; box-shadow: none; }
 :root[data-theme="dark"] .rv-card-name strong { color: #eaf6ff; }
-:root[data-theme="dark"] .rv-card-text { color: #cfe4f2; }
+:root[data-theme="dark"] .rv-card-text { border-color: #24455c; color: #cfe4f2; background: #102435; }
 :root[data-theme="dark"] .rv-hero { border-color: #1d3d52; background: linear-gradient(135deg,#0b1826,#0a1c2b 58%,#081a20); }
 :root[data-theme="dark"] .rv-hero-copy h1 { color: #eaf6ff; }
 :root[data-theme="dark"] .rv-summary-card { border-color: #1d3d52; background: rgba(10,26,38,.9); }
