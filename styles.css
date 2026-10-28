@@ -11401,3 +11401,4 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 @media (max-width: 520px) {
   .rv-top { right: 12px; bottom: 86px; width: 42px; height: 42px; font-size: 15px; }
 }
+.product-modal-actions .pm-btn.share-wa>i { border-color:#73e5ad; background:#10b981; color:#fff; box-shadow:0 7px 16px rgba(16,185,129,.2); }

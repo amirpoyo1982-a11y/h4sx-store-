@@ -26,8 +26,9 @@ test('custom media rejects unsafe schemes and credentials; GIF upload and direct
 });
 
 import {replyImageCandidates,replyBackgroundType} from '../review/reply-theme.js';
-test('emoji.gg staff page resolves to actual media with PNG fallback instead of rendering HTML as an image',()=>{
- assert.deepEqual(replyImageCandidates('https://emoji.gg/emoji/150633-staff'),['https://cdn3.emoji.gg/emojis/150633-staff.gif','https://cdn3.emoji.gg/emojis/150633-staff.png','https://cdn3.emoji.gg/emojis/150633-staff.webp']);
+test('emoji.gg staff page resolves through the same-origin media proxy instead of rendering HTML as an image',()=>{
+ assert.deepEqual(replyImageCandidates('https://emoji.gg/emoji/150633-staff'),['/api/emoji?name=150633-staff']);
+ assert.deepEqual(replyImageCandidates('https://cdn3.emoji.gg/emojis/150633-staff.gif'),['/api/emoji?name=150633-staff']);
  assert.deepEqual(replyImageCandidates('javascript:alert(1)'),[]);
  assert.deepEqual(replyImageCandidates('data:image/gif;base64,AAAA'),['data:image/gif;base64,AAAA']);
 });

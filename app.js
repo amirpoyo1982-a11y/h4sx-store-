@@ -2374,7 +2374,7 @@ async function copyProductLinkById(id) {
   const link = shareableProductLink(item);
   try {
     await navigator.clipboard.writeText(link);
-    toast('Link barang disalin!');
+    toast('Link produk dengan preview WhatsApp disalin!');
   } catch(e) {
     window.prompt('Copy link barang:', link);
   }
@@ -2382,6 +2382,18 @@ async function copyProductLinkById(id) {
 function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
   copyProductLinkById(modalItemId);
+}
+function shareProductToWhatsApp(id) {
+  const item = inventory.find(entry => String(entry.id) === String(id));
+  if (!item) { toast('Barang tidak dijumpai', true); return; }
+  const price = Number(item.price || 0);
+  const priceText = Number.isFinite(price) && price > 0 ? ' — RM' + price.toFixed(2) : '';
+  const text = 'Tengok produk ini dekat H4SX STORE:\n' + item.name + priceText + '\n' + shareableProductLink(item);
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener,noreferrer');
+}
+function shareModalProductToWhatsApp() {
+  if (!modalItemId) { toast('Buka barang dulu', true); return; }
+  shareProductToWhatsApp(modalItemId);
 }
 async function copyTextWithFallback(text) {
   const value = String(text || '');
