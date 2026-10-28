@@ -19,11 +19,11 @@
     },
     {
       "source": "/og-image/:id",
-      "destination": "/api/og-image?id=:id"
+      "destination": "/api/product-share?ogImage=:id"
     },
     {
       "source": "/og-image/:id/",
-      "destination": "/api/og-image?id=:id"
+      "destination": "/api/product-share?ogImage=:id"
     },
     {
       "source": "/",
