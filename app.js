@@ -2455,7 +2455,15 @@ function storeShareOrigin() {
   return 'https://www.h4sxmy.xyz';
 }
 function shareableProductLink(item) {
-  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id));
+  const source = [item?.id, item?.updatedAt, item?.img, item?.image, item?.poster, item?.thumbnail]
+    .filter(value => value != null && value !== '')
+    .join('|');
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=' + (hash >>> 0).toString(36);
 }
 async function shareStoreContent(shareData, copiedMessage, promptLabel) {
   try {

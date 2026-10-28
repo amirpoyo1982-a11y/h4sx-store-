@@ -10,6 +10,8 @@ import {
   productImageUrl,
   productOgImageUrl,
   productImageProxyPath,
+  productShareUrl,
+  productShareVersion,
   productSharePath,
   requestOrigin,
   sharePageHtml
@@ -39,10 +41,13 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
   assert.equal(productSharePath(3), '/item/3');
   assert.equal(productImageProxyPath(3), '/og-image/3');
   assert.equal(productImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
-  assert.equal(productOgImageUrl(item), 'https://www.h4sxmy.xyz/og-image/3');
+  assert.equal(productShareVersion(item), '1hbiej2');
+  assert.equal(productShareUrl(item), 'https://www.h4sxmy.xyz/item/3?v=1hbiej2');
+  assert.equal(productOgImageUrl(item), 'https://www.h4sxmy.xyz/og-image/3?v=1hbiej2');
   assert.equal(catalogItemUrl(item), 'https://www.h4sxmy.xyz/?item=3');
   const html = sharePageHtml({ item });
-  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/3"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/3\?v=1hbiej2"/);
+  assert.match(html, /property="og:url" content="https:\/\/www\.h4sxmy\.xyz\/item\/3\?v=1hbiej2"/);
   assert.match(html, /property="og:title" content="Tiger Fruit \| H4SX STORE"/);
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=3"\)/);
 });
@@ -68,7 +73,7 @@ test('product share handler serves OG HTML for a catalog item', async () => {
   assert.match(response.headers['Content-Type'], /text\/html/);
   assert.match(response.body, /og:image/);
   assert.match(response.body, /Gas Fruit/);
-  assert.match(response.body, /https:\/\/h4sx-store\.vercel\.app\/og-image\/12/);
+  assert.match(response.body, /https:\/\/h4sx-store\.vercel\.app\/og-image\/12\?v=/);
 });
 
 test('review text turns https URLs into clickable message links', () => {
