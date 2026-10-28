@@ -6057,6 +6057,8 @@ function reviewCardHTML(item) {
     : '';
   const time = item.hideReviewTime === true ? '' : '<time>' + escapeHtml(toReviewTime(item.diciptaPada || item.timestamp || item.date)) + '</time>';
   const action = reviewAnnouncementAction(announcement);
+  const reportLink = item.reportDisabled === true || !item.id ? ''
+    : '<a class="rv-report-link" href="/review?reviewId=' + encodeURIComponent(String(item.id)) + '&report=1"><i class="fa-regular fa-flag" aria-hidden="true"></i> Lapor</a>';
   const backplate = item.identityBackplateEnabled === true;
   const nameBlock = customNameEmojiHTML(item.nameEmoji)
     + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>'
@@ -6077,7 +6079,7 @@ function reviewCardHTML(item) {
     + (longText ? '<button type="button" class="rv-card-more" data-rv-action="more">Baca lagi</button>' : '')
     + gif
     + media
-    + ((time || action) ? '<div class="rv-card-foot">' + time + action + '</div>' : '')
+    + ((time || action || reportLink) ? '<div class="rv-card-foot">' + time + reportLink + action + '</div>' : '')
     + '</article>';
 }
 

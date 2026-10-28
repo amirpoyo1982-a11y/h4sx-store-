@@ -3622,6 +3622,10 @@ Zixu hanya menggunakan SATU nombor telefon rasmi dan semua ulasan (review) dikaw
       card.classList.add("is-direct-link");
       const replyButton = card.querySelector(".admin-reply-view-toggle");
       if (replyButton?.getAttribute("aria-expanded") !== "true") replyButton?.click();
+      if (new URLSearchParams(window.location.search).get("report") === "1") {
+        const reportButton = card.querySelector(".review-report-btn");
+        if (reportButton) setTimeout(() => reportButton.click(), 250);
+      }
       setTimeout(() => card.classList.remove("is-direct-link"), 1900);
     });
   }
