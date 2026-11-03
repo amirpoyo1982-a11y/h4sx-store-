@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=42-catalog-emojis">
+  <link rel="stylesheet" href="catalog-control.css?v=43-admin-settings-sections">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -120,7 +120,7 @@
       </section>
 
       <section class="panel" data-panel="settings">
-        <div class="panel-head"><div><h2>Semua tetapan kedai</h2><p>Ini menggantikan <code>kedai.json</code>. Semua key lama kekal disokong.</p></div><button class="primary" id="save-config"><i class="fa-solid fa-floppy-disk"></i> Simpan realtime</button></div>
+        <div class="panel-head"><div><h2>Tetapan website</h2><p>Pengurusan operasi kedai dan ciri website diasingkan mengikut bahagian. Semua key lama kekal disokong.</p></div><button class="primary" id="save-config"><i class="fa-solid fa-floppy-disk"></i> Simpan realtime</button></div>
         <div class="whatsapp-settings">
           <div><span>WHATSAPP UTAMA</span><h3>Tukar link seluruh website</h3><p>Ubah sekali. Semua link support, checkout, helper dan konsultasi tanpa link khas akan ikut tetapan ini.</p></div>
           <label>Nombor atau link WhatsApp<div class="key-input"><input id="main-whatsapp-number" type="text" inputmode="url" autocomplete="url" placeholder="https://wa.me/H4SXMY"><button type="button" class="primary" id="save-main-whatsapp"><i class="fa-brands fa-whatsapp"></i> Simpan link</button></div><small>Boleh masukkan 01…, 601…, H4SXMY atau link penuh seperti https://wa.me/H4SXMY.</small></label>
@@ -162,16 +162,27 @@
           </div>
           <div class="theme-preview-actions"><button type="button" class="ghost" data-theme-preview="desktop"><i class="fa-solid fa-desktop"></i> Preview desktop</button><button type="button" class="ghost" data-theme-preview="mobile"><i class="fa-solid fa-mobile-screen"></i> Preview telefon</button><button type="button" class="primary" id="save-announcement"><i class="fa-solid fa-floppy-disk"></i> Simpan Announcement</button></div>
         </div>
-        <div class="quick-settings">
-          <label class="switch"><input id="quick-open" type="checkbox"><span></span> Kedai buka</label>
-          <label class="switch"><input id="quick-maintenance" type="checkbox"><span></span> Maintenance</label>
-          <label class="switch"><input id="quick-review-maintenance" type="checkbox"><span></span> Review maintenance</label>
-          <label class="switch"><input id="quick-reviews-area" type="checkbox"><span></span> Paparkan ruang ulasan</label>
-          <label class="switch"><input id="quick-banner" type="checkbox"><span></span> Promo banner</label>
-          <label class="switch"><input id="quick-spotlight" type="checkbox"><span></span> Pilihan H4SX</label>
-        </div>
-        <label class="editor-label">JSON tetapan penuh<textarea id="config-editor" class="json-editor" spellcheck="false"></textarea></label>
-        <p class="hint">Boleh edit flash sale, payment QR, waktu operasi, banner dan semua field Gist lama.</p>
+        <section class="store-operation-settings" aria-labelledby="store-operation-settings-title">
+          <div class="settings-group-head"><span>OPERASI KEDAI</span><h3 id="store-operation-settings-title">Status &amp; penutupan kedai</h3><p>Kawal kedai dibuka atau ditutup dan mod maintenance. Waktu operasi, hari tutup, tajuk serta mesej penutupan boleh diurus dalam tetapan lanjutan di bawah.</p></div>
+          <div class="quick-settings">
+            <label class="switch"><input id="quick-open" type="checkbox"><span></span> Kedai buka</label>
+            <label class="switch"><input id="quick-maintenance" type="checkbox"><span></span> Maintenance</label>
+          </div>
+        </section>
+        <section class="website-feature-settings" aria-labelledby="website-feature-settings-title">
+          <div class="settings-group-head"><span>CIRI WEBSITE</span><h3 id="website-feature-settings-title">Paparan ciri lain</h3><p>Togol ciri pelanggan dan promosi tanpa mencampurkannya dengan status operasi kedai.</p></div>
+          <div class="quick-settings">
+            <label class="switch"><input id="quick-review-maintenance" type="checkbox"><span></span> Review maintenance</label>
+            <label class="switch"><input id="quick-reviews-area" type="checkbox"><span></span> Paparkan ruang ulasan</label>
+            <label class="switch"><input id="quick-banner" type="checkbox"><span></span> Promo banner</label>
+            <label class="switch"><input id="quick-spotlight" type="checkbox"><span></span> Pilihan H4SX</label>
+          </div>
+        </section>
+        <section class="advanced-config-settings" aria-labelledby="advanced-config-settings-title">
+          <div class="settings-group-head"><span>TETAPAN LANJUTAN</span><h3 id="advanced-config-settings-title">Konfigurasi penuh</h3><p>Gunakan editor ini untuk waktu operasi, mesej penutupan, flash sale, QR pembayaran dan field lama yang belum mempunyai borang khusus.</p></div>
+          <label class="editor-label">JSON tetapan penuh<textarea id="config-editor" class="json-editor" spellcheck="false"></textarea></label>
+          <p class="hint">Perubahan quick toggle dan borang khusus dikekalkan dalam konfigurasi ini; simpan perubahan JSON menggunakan butang “Simpan realtime” di atas.</p>
+        </section>
       </section>
 
       <section class="panel" data-panel="migration">
