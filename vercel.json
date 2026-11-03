@@ -35,7 +35,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|slackbot|discordbot|linkedinbot|pinterest|skypeuripreview|embedly|redditbot|applebot|iframely|vkshare|quora).*"
+          "value": ".*(WhatsApp|whatsapp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview|Embedly|Redditbot|Applebot|iframely|vkShare|Quora).*"
         }
       ],
       "destination": "/api/product-share"

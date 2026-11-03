@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import {
   catalogItemUrl,
   createProductShareHandler,
@@ -23,6 +24,7 @@ import {
 import { formatReviewMessageText } from '../lib/review-links.js';
 
 const storeApp = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
+const vercelConfig = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
 
 test('share crawler detection covers WhatsApp and social unfurlers', () => {
   assert.equal(isShareCrawler('WhatsApp/2.24.7.80 A'), true);
@@ -36,6 +38,42 @@ test('share metadata uses the active H4SX or Vercel host, not an arbitrary Host 
   assert.equal(requestOrigin({ headers: { host: 'attacker.example' } }), 'https://www.h4sxmy.xyz');
 });
 
+test('storefront product links include the selected variant cache version and preserve navigation query', () => {
+  const versionStart = storeApp.indexOf('function productShareVersion(');
+  const versionEnd = storeApp.indexOf('\nfunction productLink', versionStart);
+  const start = storeApp.indexOf('function productLink(');
+  const end = storeApp.indexOf('\nfunction updateProductUrl', start);
+  assert.ok(versionStart >= 0 && versionEnd > versionStart, 'storefront cache version helper is present');
+  assert.ok(start >= 0 && end > start, 'productLink function is present');
+  const item = {
+    id: '23',
+    name: 'Gamepass Brookhaven',
+    img: 'https://i.imgur.com/base.png',
+    variants: [{ id: 'vehicle-pack', name: 'Vehicle Pack', img: 'https://i.imgur.com/vehicle-pack.png' }]
+  };
+  const result = vm.runInNewContext(
+    storeApp.slice(versionStart, versionEnd) + '\n'
+      + storeApp.slice(start, end) + '\nproductLink(item, "vehicle-pack")',
+    {
+      URL,
+      window: { location: { href: 'https://www.h4sxmy.xyz/?preview=on&game=brookhaven&part=roblox&item=23&variant=vehicle-pack' } },
+      item,
+      currentGame: 'Brookhaven',
+      gameGroupName: () => 'Brookhaven',
+      gameSlug: value => String(value).toLowerCase(),
+      normalizeKey: value => String(value).toLowerCase(),
+      inferPlatform: () => 'Roblox',
+      getProductVariant: (product, id) => product.variants.find(variant => variant.id === id)
+    }
+  );
+  const link = new URL(result);
+  assert.equal(link.searchParams.get('preview'), 'on');
+  assert.equal(link.searchParams.get('item'), '23');
+  assert.equal(link.searchParams.get('variant'), 'vehicle-pack');
+  assert.equal(link.searchParams.get('v'), productShareVersion(item, 'vehicle-pack'));
+  assert.match(link.searchParams.get('v'), /^r5-/);
+});
+
 test('inventory lookup finds public products and builds WhatsApp image tags', () => {
   const items = inventoryItems([
     { storeConfig: {} },
@@ -47,12 +85,15 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
   assert.equal(productSharePath(3), '/item/3');
   assert.equal(productImageProxyPath(3), '/og-image/3.png');
   assert.equal(productImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
-  assert.match(productShareVersion(item), /^r4-[a-z0-9]+$/);
+  assert.match(productShareVersion(item), /^r5-[a-z0-9]+$/);
   assert.equal(productShareUrl(item), 'https://www.h4sxmy.xyz/item/3?v=' + productShareVersion(item));
-  assert.equal(productOgImageUrl(item), 'https://i.imgur.com/kGXK1IB.png');
+  assert.equal(
+    productOgImageUrl(item),
+    'https://www.h4sxmy.xyz/og-image/3.png?v=' + productShareVersion(item)
+  );
   assert.equal(catalogItemUrl(item), 'https://www.h4sxmy.xyz/?item=3');
   const html = sharePageHtml({ item });
-  assert.match(html, /property="og:image" content="https:\/\/i\.imgur\.com\/kGXK1IB\.png"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/3\.png\?v=r5-[a-z0-9]+"/);
   assert(html.includes('property="og:url" content="' + productShareUrl(item) + '"'));
   assert.match(html, /property="og:title" content="Tiger Fruit \| H4SX STORE"/);
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=3"\)/);
@@ -82,7 +123,7 @@ test('variant links preserve selection and use the selected image in WhatsApp me
   assert.notEqual(productShareVersion(item, 'gold'), productShareVersion(item, 'blue'));
   const html = sharePageHtml({ item, variantId: 'gold' });
   assert.match(html, /property="og:title" content="Dragon Fruit - Golden \| H4SX STORE"/);
-  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/variant-item\.png\?v=r4-[a-z0-9]+&amp;variant=gold"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/variant-item\.png\?v=r5-[a-z0-9]+&amp;variant=gold"/);
   assert.match(html, /rel="canonical" href="https:\/\/www\.h4sxmy\.xyz\/\?item=variant-item&amp;variant=gold"/);
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=variant-item&variant=gold"\)/);
 });
@@ -162,7 +203,80 @@ test('Meta and WhatsApp CDN images use the first-party Open Graph image endpoint
     productShareVersion({ id: 39, mediaUrl: 'https://lookaside.fbsbx.com/image-b' })
   );
   assert.match(storeApp, /item\?\.mediaUrl, item\?\.video, item\?\.videoUrl/);
-  assert.match(storeApp, /\?v=r4-/);
+  assert.match(storeApp, /searchParams\.set\('v', productShareVersion\(item, variant\?\.id \|\| ''\)\)/);
+});
+
+test('root item-query links route to variant metadata for WhatsApp and proxy the selected Imgur image', async () => {
+  const rootRewrite = vercelConfig.rewrites.find(rewrite => rewrite.source === '/'
+    && rewrite.has?.some(condition => condition.type === 'query' && condition.key === 'item'));
+  assert.ok(rootRewrite, 'root item-query rewrite is configured');
+  assert.equal(rootRewrite.destination, '/api/product-share');
+  const userAgent = rootRewrite.has.find(condition => condition.type === 'header' && condition.key === 'user-agent');
+  assert.ok(userAgent, 'root metadata rewrite remains crawler-only for direct browser navigation');
+  const crawlerPattern = new RegExp(userAgent.value);
+  assert.equal(crawlerPattern.test('WhatsApp/2.24.7.80 A'), true);
+  assert.equal(crawlerPattern.test('Mozilla/5.0 Chrome/120.0'), false);
+
+  const variantImage = 'https://i.imgur.com/vehicle-pack.png';
+  const item = {
+    id: '23',
+    name: 'Gamepass Brookhaven',
+    variants: [{ id: 'vehicle-pack', name: 'Vehicle Pack', img: variantImage }]
+  };
+  const shareHandler = createProductShareHandler(async () => [item]);
+  const response = {
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    end() { this.ended = true; return this; }
+  };
+  await shareHandler({
+    method: 'GET',
+    query: { preview: 'on', game: 'brookhaven', part: 'roblox', item: '23', variant: 'vehicle-pack' },
+    headers: { 'user-agent': 'WhatsApp/2.24.7.80 A' }
+  }, response);
+  assert.match(response.body, /property="og:title" content="Gamepass Brookhaven - Vehicle Pack \| H4SX STORE"/);
+  assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/23\.png\?v=r5-[a-z0-9]+&amp;variant=vehicle-pack"/);
+
+  const proxyHandler = (await import('../api/product-share.js?root-variant-regression')).default;
+  const imageCalls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    imageCalls.push(String(url));
+    if (String(url).includes('/store/inventory.json')) {
+      return { ok: true, status: 200, json: async () => [item] };
+    }
+    if (String(url) === variantImage) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: name => name === 'content-type' ? 'image/png' : null },
+        arrayBuffer: async () => Uint8Array.from([7, 8, 9]).buffer
+      };
+    }
+    throw new Error('Unexpected image request: ' + String(url));
+  };
+  const imageResponse = {
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    redirect(code, url) { this.statusCode = code; this.location = url; return this; },
+    end() { this.ended = true; return this; }
+  };
+  try {
+    await proxyHandler({
+      method: 'GET',
+      query: { ogImage: '23.png', variant: 'vehicle-pack', v: 'r5-test' }
+    }, imageResponse);
+    assert.equal(imageResponse.statusCode, 200);
+    assert.equal(imageResponse.headers['Content-Type'], 'image/png');
+    assert.deepEqual([...imageResponse.body], [7, 8, 9]);
+    assert(imageCalls.includes(variantImage), 'proxy fetches the selected variant image');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('shared variant links are passed through URL routing into the product modal selection', () => {
@@ -268,7 +382,7 @@ test('product share handler returns the selected variant destination and image p
     end() { this.ended = true; return this; }
   };
   await handler({ method: 'GET', query: { id: '18', variant: 'gold' } }, response);
-  assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/18\.png\?v=r4-[a-z0-9]+&amp;variant=gold"/);
+  assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/18\.png\?v=r5-[a-z0-9]+&amp;variant=gold"/);
   assert.match(response.body, /property="og:title" content="Dragon Fruit - Golden \| H4SX STORE"/);
   assert.match(response.body, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=18&variant=gold"\)/);
 });

@@ -2203,11 +2203,15 @@ function updateGameUrl(name) {
       url.searchParams.set('game', gameSlug(name));
       url.searchParams.set('part', normalizeKey(activePlatform));
       url.searchParams.delete('item');
+      url.searchParams.delete('variant');
+      url.searchParams.delete('v');
       url.searchParams.delete('promo');
     } else {
       url.searchParams.delete('game');
       url.searchParams.delete('part');
       url.searchParams.delete('item');
+      url.searchParams.delete('variant');
+      url.searchParams.delete('v');
       url.searchParams.delete('promo');
     }
     history.replaceState(null, '', url.pathname + url.search + url.hash);
@@ -2342,7 +2346,32 @@ function currentGameLink() {
   url.searchParams.set('game', gameSlug(currentGame));
   url.searchParams.set('part', normalizeKey(activePlatform));
   url.searchParams.delete('item');
+  url.searchParams.delete('variant');
+  url.searchParams.delete('v');
   return url.toString();
+}
+function productShareVersion(item = {}, variantId = '') {
+  const base = [
+    item.id, item.updatedAt, item.poster, item.posterImg, item.thumbnail, item.thumb,
+    item.image, item.img, item.mediaUrl, item.video, item.videoUrl
+  ]
+    .filter(value => value != null && value !== '')
+    .join('|');
+  const variants = Array.isArray(item.variants) ? item.variants : (Array.isArray(item.types) ? item.types : []);
+  const variant = variants.find((entry, index) => entry && entry.active !== false
+    && String(entry.id ?? entry.value ?? entry.name ?? index).trim() === String(variantId || ''));
+  const source = variant
+    ? base + '|variant:' + String(variant.id ?? variant.value ?? variant.name ?? '') + '|' + [
+      variant.updatedAt, variant.poster, variant.posterImg, variant.thumbnail, variant.thumb,
+      variant.image, variant.img, variant.mediaUrl, variant.video, variant.videoUrl
+    ].filter(value => value != null && value !== '').join('|')
+    : base;
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return 'r5-' + (hash >>> 0).toString(36);
 }
 function productLink(item, variantId = '') {
   const url = new URL(window.location.href);
@@ -2353,6 +2382,7 @@ function productLink(item, variantId = '') {
   const variant = getProductVariant(item, variantId);
   if (variant) url.searchParams.set('variant', variant.id);
   else url.searchParams.delete('variant');
+  url.searchParams.set('v', productShareVersion(item, variant?.id || ''));
   url.searchParams.delete('promo');
   return url.toString();
 }
@@ -2367,6 +2397,7 @@ function clearProductUrlItem() {
     const url = new URL(window.location.href);
     url.searchParams.delete('item');
     url.searchParams.delete('variant');
+    url.searchParams.delete('v');
     url.searchParams.delete('promo');
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -2468,28 +2499,9 @@ function storeShareOrigin() {
   return 'https://www.h4sxmy.xyz';
 }
 function shareableProductLink(item, variantId = '') {
-  const sourceParts = [
-    item?.id, item?.updatedAt, item?.poster, item?.posterImg, item?.thumbnail, item?.thumb,
-    item?.image, item?.img, item?.mediaUrl, item?.video, item?.videoUrl
-  ]
-    .filter(value => value != null && value !== '')
-    .join('|');
   const variant = getProductVariant(item, variantId);
-  const sourceVariants = Array.isArray(item?.variants) ? item.variants : (Array.isArray(item?.types) ? item.types : []);
-  const sourceVariant = variant && sourceVariants.find((entry, index) => entry && entry.active !== false
-    && String(entry.id ?? entry.value ?? entry.name ?? index).trim() === variant.id);
-  const variantMedia = sourceVariant ? '|variant:' + variant.id + '|' + [
-    sourceVariant.updatedAt, sourceVariant.poster, sourceVariant.posterImg, sourceVariant.thumbnail, sourceVariant.thumb,
-    sourceVariant.image, sourceVariant.img, sourceVariant.mediaUrl, sourceVariant.video, sourceVariant.videoUrl
-  ].filter(value => value != null && value !== '').join('|') : '';
-  const source = sourceParts + variantMedia;
-  let hash = 2166136261;
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
   const url = new URL('/item/' + encodeURIComponent(String(item.id)), storeShareOrigin());
-  url.searchParams.set('v', 'r4-' + (hash >>> 0).toString(36));
+  url.searchParams.set('v', productShareVersion(item, variant?.id || ''));
   if (variant) url.searchParams.set('variant', variant.id);
   return url.href;
 }
