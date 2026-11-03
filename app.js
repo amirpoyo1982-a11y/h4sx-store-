@@ -2412,20 +2412,18 @@ async function copyCurrentGameLink() {
     window.prompt('Copy link kategori:', link);
   }
 }
-async function copyProductLinkById(id) {
+async function copyProductLinkById(id, variantId = '') {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item) { toast('Barang tidak jumpa', true); return; }
-  const link = shareableProductLink(item);
-  try {
-    await navigator.clipboard.writeText(link);
-    toast('Link produk dengan preview WhatsApp disalin!');
-  } catch(e) {
-    window.prompt('Copy link barang:', link);
-  }
+  const variant = getProductVariant(item, variantId);
+  const link = shareableProductLink(item, variant?.id || '');
+  const copied = await copyTextWithFallback(link);
+  if (copied) toast(variant ? 'Link variant disalin!' : 'Link produk disalin!');
+  else window.prompt(variant ? 'Copy link variant:' : 'Copy link produk:', link);
 }
 function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
-  copyProductLinkById(modalItemId);
+  return copyProductLinkById(modalItemId, modalVariantId);
 }
 function shareProductToWhatsApp(id) {
   const item = inventory.find(entry => String(entry.id) === String(id));
@@ -7608,13 +7606,6 @@ function buildAddBtnHTML(item, oos) {
   const action = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
   return '<button class="padd' + inCart + '" onclick="event.stopPropagation();event.preventDefault();' + action + '"><i class="fa-solid fa-cart-plus"></i><span class="padd-txt">Cart</span>' + qtyBadge + '</button>';
 }
-function buildQuickBarHTML(item, oos) {
-  if (oos) return '';
-  const hasVariants = productVariants(item).length > 0;
-  const cartAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
-  const buyAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
-  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();' + cartAction + '"><i class="fa-solid fa-cart-plus"></i> ' + (hasVariants ? 'Pilih Type' : 'Add Cart') + '</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
-}
 let quickPreviewItemId = null;
 function quickPreviewButtonHTML(item) {
   return '<button type="button" class="product-quick-preview-trigger" data-product-id="' + escapeHtml(String(item.id)) + '" onclick="event.stopPropagation();event.preventDefault();openProductQuickPreview(this.dataset.productId)" aria-label="Quick preview ' + escapeHtml(item.name || 'produk') + '" title="Quick Preview"><i class="fa-regular fa-eye"></i><span>Quick View</span></button>';
@@ -7912,9 +7903,9 @@ function productCardHTML(item) {
   const shareBtn = '<button class="pshare" type="button" onclick="event.stopPropagation();event.preventDefault();shareProductItem(' + item.id + ')" title="Kongsi item" aria-label="Kongsi ' + escapeHtml(item.name) + '"><i class="fa-solid fa-share-nodes"></i></button>';
   const buyAction = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
-  const quickBar = buildQuickBarHTML(item, oos);
   const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  const copyLinkBtn = '<button class="pdesc-copy pcard-copy-link" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductLinkById(' + item.id + ')" title="Copy link produk" aria-label="Copy link ' + escapeHtml(item.name) + '"><i class="fa-solid fa-link"></i> Copy Link</button>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pcard-utility-actions">' + copyDescBtn + copyLinkBtn + '</div><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -9158,6 +9149,8 @@ function renderProductModalSelection(item, refreshMedia = true) {
   const choice = document.getElementById('product-modal-choice');
   const variantWrap = document.getElementById('product-modal-variants');
   const quantityWrap = document.getElementById('product-modal-quantity');
+  const linkButtonLabel = document.querySelector('#product-modal-link-btn span');
+  if (linkButtonLabel) linkButtonLabel.textContent = selected ? 'Copy Link Type' : 'Copy Link';
   if (choice) choice.hidden = !variants.length;
   if (quantityWrap) quantityWrap.hidden = !variants.length;
   if (variantWrap) {

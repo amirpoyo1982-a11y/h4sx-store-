@@ -74,6 +74,41 @@ test('storefront product links include the selected variant cache version and pr
   assert.match(link.searchParams.get('v'), /^r5-/);
 });
 
+test('product cards copy product links and the modal copies the selected variant link', async () => {
+  assert.doesNotMatch(storeApp, /function buildQuickBarHTML|class="pquick"/);
+  assert.match(storeApp, /pcard-copy-link/);
+  const copyStart = storeApp.indexOf('async function copyProductLinkById(');
+  const modalStart = storeApp.indexOf('\nfunction copyModalProductLink()', copyStart);
+  const modalEnd = storeApp.indexOf('\nfunction shareProductToWhatsApp', modalStart);
+  assert.ok(copyStart >= 0 && modalStart > copyStart && modalEnd > modalStart);
+
+  const item = {
+    id: 'variant-item',
+    variants: [{ id: 'gold', name: 'Golden' }]
+  };
+  const copiedLinks = [];
+  const messages = [];
+  await vm.runInNewContext(
+    storeApp.slice(copyStart, modalStart) + storeApp.slice(modalStart, modalEnd)
+      + '\ncopyModalProductLink().then(() => copyProductLinkById("variant-item"))',
+    {
+      inventory: [item],
+      modalItemId: item.id,
+      modalVariantId: 'gold',
+      getProductVariant: (product, variantId) => product.variants.find(variant => variant.id === variantId),
+      shareableProductLink: (product, variantId) => 'https://www.h4sxmy.xyz/item/' + product.id
+        + (variantId ? '?variant=' + variantId : ''),
+      copyTextWithFallback: async link => { copiedLinks.push(link); return true; },
+      toast: message => messages.push(message)
+    }
+  );
+  assert.deepEqual(copiedLinks, [
+    'https://www.h4sxmy.xyz/item/variant-item?variant=gold',
+    'https://www.h4sxmy.xyz/item/variant-item'
+  ]);
+  assert.deepEqual(messages, ['Link variant disalin!', 'Link produk disalin!']);
+});
+
 test('inventory lookup finds public products and builds WhatsApp image tags', () => {
   const items = inventoryItems([
     { storeConfig: {} },
