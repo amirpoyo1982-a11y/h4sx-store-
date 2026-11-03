@@ -60,3 +60,16 @@ test('Store and Review close panels load and use the shared safe message rendere
   assert.match(storeCss, /\.closure-contact \{/);
   assert.match(reviewCss, /\.shop-closed-contact \{/);
 });
+
+test('Store and Review show the configured daily schedule but hide it for manual closure and maintenance', () => {
+  assert.match(storeApp, /tutup_jam:\s*"23:30"/);
+  assert.match(storeApp, /business_hours_text:\s*"Setiap hari: 9:00 PG – 11:30 PTG"/);
+  assert.match(storeApp, /updateBusinessHoursDisplay\(currentStoreConfig, false, closureType === 'hours'\)/);
+  assert.match(storeApp, /hoursPillEl\.style\.display = showHours \? 'inline-flex' : 'none'/);
+  assert.match(reviewPage, /id="reviewBusinessHours"/);
+  assert.match(reviewApp, /flagOn\(data\?\.maintenance\) \|\| flagOff\(data\?\.bukakedai\)/);
+  assert.match(reviewApp, /paparKedaiTutup\('🛠️'.*?, '', 'maintenance'\)/);
+  assert.match(reviewApp, /paparKedaiTutup\('🚫'.*?, ''\)/);
+  assert.match(storePage, /class="closure-review-link"/);
+  assert.match(reviewPage, /class="shop-closed-store"/);
+});

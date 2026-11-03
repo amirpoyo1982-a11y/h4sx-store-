@@ -378,13 +378,17 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   }
 
   function reviewBusinessHoursLabel(config = {}) {
-    const start = parseReviewBusinessTime(config.buka_jam);
-    const end = parseReviewBusinessTime(config.tutup_jam);
+    const hasConfiguredTimes = config.buka_jam != null || config.tutup_jam != null;
+    const start = parseReviewBusinessTime(config.buka_jam ?? "09:00");
+    const end = parseReviewBusinessTime(config.tutup_jam ?? "23:30");
     if (start === null || end === null) return config.business_hours_text || "";
     const format = minutes => {
       const hour = Math.floor(minutes / 60);
       return (hour % 12 || 12) + ":" + String(minutes % 60).padStart(2, "0") + (hour < 12 ? " PG" : " PTG");
     };
+    if ((!hasConfiguredTimes || config.buka_jam == null || config.tutup_jam == null) && config.business_hours_text) {
+      return String(config.business_hours_text);
+    }
     return (Array.isArray(config.tutup_hari) && config.tutup_hari.length ? "Waktu operasi" : "Setiap hari")
       + ": " + format(start) + " – " + format(end);
   }
@@ -682,6 +686,15 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       }
       if (data) latestReviewStoreConfig = data;
       const hoursText = reviewBusinessHoursLabel(data || {});
+      const hoursBanner = document.getElementById("reviewBusinessHours");
+      if (hoursBanner) {
+        const label = hoursBanner.querySelector("span");
+        if (label) label.textContent = hoursText;
+        hoursBanner.hidden = !hoursText || isPreviewBypass() ||
+          flagOn(data?.maintenance) || flagOff(data?.bukakedai) ||
+          flagOn(data?.review_maintenance) || flagOn(data?.maintenance_review) ||
+          flagOn(data?.ulasan_maintenance) || flagOn(data?.reviews_maintenance);
+      }
       reviewClosureCopy = {
         closedTitle: String(data?.tajuk_tutup || data?.closed_title || '').trim(),
         closedMessage: String(data?.mesej_tutup || data?.closed_message || '').trim(),
@@ -707,7 +720,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
           '🔧',
           data.review_maintenance_title || 'Ulasan Dalam Penyelenggaraan',
           data.review_maintenance_message || data.review_maintenance_msg || 'Sistem ulasan sedang diproses dan dikemas semula. Kemungkinan besar feature ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
-          hoursText,
+          '',
           'maintenance'
         );
         return;
@@ -715,13 +728,13 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
 
       // 2. Mod penyelenggaraan global — untuk tutup semua website kalau perlu.
       if (data && flagOn(data.maintenance)) {
-        paparKedaiTutup('🛠️', 'Dalam Penyelenggaraan', 'Kedai sedang dalam penyelenggaraan buat masa ini. Sila cuba lagi sebentar lagi.', hoursText, 'maintenance');
+        paparKedaiTutup('🛠️', 'Dalam Penyelenggaraan', 'Kedai sedang dalam penyelenggaraan buat masa ini. Sila cuba lagi sebentar lagi.', '', 'maintenance');
         return;
       }
 
       // 3. Suis manual admin — bukakedai:false = tutup terus, tak kira jam
       if (data && flagOff(data.bukakedai)) {
-        paparKedaiTutup('🚫', 'Kedai Ditutup Sementara', 'Kami sedang berehat. Sila kembali kemudian.', hoursText);
+        paparKedaiTutup('🚫', 'Kedai Ditutup Sementara', 'Kami sedang berehat. Sila kembali kemudian.', '');
         return;
       }
 

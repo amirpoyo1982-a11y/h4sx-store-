@@ -52,7 +52,7 @@
       } catch(e) {}
     })();
   </script>
-  <link rel="stylesheet" href="/review/review-style.css?v=gradient-message-links-20261028">
+  <link rel="stylesheet" href="/review/review-style.css?v=store-hours-media-20261103">
   <link rel="stylesheet" href="/review/review-midmonth.css?v=anonymous-review-20261018">
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"></script>
@@ -91,7 +91,10 @@
    <h1 class="shop-closed-title" id="shopClosedTitle">Kedai Ditutup Sementara</h1>
    <p id="shopClosedMsg" class="shop-closed-msg" aria-live="polite">Kami sedang berehat. Sila kembali kemudian.</p>
    <div id="shopClosedTime" class="shop-closed-time" style="display: none;" aria-label="Waktu operasi"></div>
-   <a id="shopClosedContact" class="shop-closed-contact" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Hubungi Admin</a>
+   <div class="shop-closed-actions">
+     <a id="shopClosedStore" class="shop-closed-store" href="https://www.h4sxmy.xyz/"><i class="fa-solid fa-store" aria-hidden="true"></i> Ke kedai utama</a>
+     <a id="shopClosedContact" class="shop-closed-contact" href="#" target="_blank" rel="noopener noreferrer" hidden><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> Hubungi Admin</a>
+   </div>
   </div>
 </div>
 
@@ -733,6 +736,7 @@
         <button class="hero-share-link" type="button" onclick="shareH4sxReview()"><i class="fa-solid fa-share-nodes"></i> Ajak Kawan</button>
         <a class="hero-store-link" href="https://www.h4sxmy.xyz/">Ke Kedai Utama <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
       </div>
+      <div id="reviewBusinessHours" class="review-business-hours" hidden><i class="fa-solid fa-clock" aria-hidden="true"></i><span></span></div>
       <div class="review-publish-stamp" id="reviewPublishStamp" hidden><i class="fa-regular fa-clock" aria-hidden="true"></i><span>Last update <time id="reviewPublishTime"></time></span></div>
     </div>
     <aside class="hero-ledger" aria-label="Ringkasan sistem ulasan">
@@ -1024,7 +1028,7 @@
 <script src="/review-submit-client.js?v=edit-policy-20261016"></script>
 <script src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
-<script type="module" src="/review/review-app.js?v=store-report-link-20261028"></script>
+<script type="module" src="/review/review-app.js?v=store-hours-media-20261103"></script>
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
 </html>

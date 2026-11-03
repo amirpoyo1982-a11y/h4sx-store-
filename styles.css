@@ -11405,3 +11405,64 @@ html.h4sx-opening-active body { overflow:hidden !important; }
   .rv-top { right: 12px; bottom: 86px; width: 42px; height: 42px; font-size: 15px; }
 }
 .product-modal-actions .pm-btn.share-wa>i { border-color:#73e5ad; background:#10b981; color:#fff; box-shadow:0 7px 16px rgba(16,185,129,.2); }
+
+/* Clear status and useful next steps in the storefront closure card. */
+#closure-overlay .closure-status {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 12px;
+  padding: 8px 13px;
+  border: 1px solid rgba(14, 165, 233, .24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .76);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+#closure-overlay[data-closure-type="maintenance"] .closure-icon {
+  background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+  color: #fff !important;
+  border-color: rgba(234, 88, 12, .2) !important;
+}
+#closure-overlay[data-closure-type="hours"] .closure-icon {
+  background: linear-gradient(135deg, #38bdf8, #0369a1) !important;
+  color: #fff !important;
+}
+.closure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.closure-actions .closure-contact,
+.closure-review-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0 !important;
+  padding: 11px 17px;
+  border: 1px solid rgba(255, 255, 255, .55);
+  border-radius: 13px !important;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.closure-actions .closure-contact { box-shadow: 0 13px 25px rgba(14,165,233,.22) !important; }
+.closure-review-link {
+  color: #075985;
+  background: rgba(255, 255, 255, .8);
+  border-color: rgba(14, 165, 233, .22);
+}
+.closure-actions .closure-contact:hover,
+.closure-review-link:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(8,47,73,.16) !important; }
+.closure-actions a:focus-visible { outline: 3px solid #0369a1; outline-offset: 3px; }
+.bh-desc[hidden] { display: none !important; }
+@media (max-width: 520px) {
+  .closure-actions { flex-direction: column; }
+  .closure-actions a { width: 100%; box-sizing: border-box; }
+}

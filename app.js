@@ -2455,7 +2455,10 @@ function storeShareOrigin() {
   return 'https://www.h4sxmy.xyz';
 }
 function shareableProductLink(item) {
-  const source = [item?.id, item?.updatedAt, item?.img, item?.image, item?.poster, item?.thumbnail]
+  const source = [
+    item?.id, item?.updatedAt, item?.poster, item?.posterImg, item?.thumbnail, item?.thumb,
+    item?.image, item?.img, item?.mediaUrl, item?.video, item?.videoUrl
+  ]
     .filter(value => value != null && value !== '')
     .join('|');
   let hash = 2166136261;
@@ -2463,7 +2466,7 @@ function shareableProductLink(item) {
     hash ^= source.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r3-' + (hash >>> 0).toString(36);
+  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r4-' + (hash >>> 0).toString(36);
 }
 async function shareStoreContent(shareData, copiedMessage, promptLabel) {
   try {
@@ -2521,9 +2524,9 @@ let currentStoreConfig = {
   promo_banner_interval: 5500,
   promo_banners: [],
   buka_jam: "09:00", // 9 AM
-  tutup_jam: "00:00", // Midnight
+  tutup_jam: "23:30",
   tutup_hari: [], // Days to close (e.g., ["Jumaat", "Ahad"])
-  business_hours_text: "Isnin - Ahad: 9AM - 12AM",
+  business_hours_text: "Setiap hari: 9:00 PG – 11:30 PTG",
   // Announcement settings
   announcement_active: false,
   announcement_id: "v1", // Change this ID every time you want a new banner
@@ -2755,14 +2758,17 @@ function businessHoursLabel(config) {
   return (hasClosedDays ? 'Waktu operasi' : 'Setiap hari') + ': ' + format(start) + ' – ' + format(end);
 }
 
-function updateBusinessHoursDisplay(config, isOpen) {
+function updateBusinessHoursDisplay(config, isOpen, showSchedule = true) {
   const hoursTextEl = document.getElementById('business-hours-text');
   const statusTextEl = document.getElementById('bh-status-text');
   const statusDotEl = document.querySelector('.bh-dot');
   const statusEl = document.getElementById('bh-status');
   updateBusinessClock();
   
-  if (hoursTextEl) hoursTextEl.textContent = businessHoursLabel(config);
+  if (hoursTextEl) {
+    hoursTextEl.hidden = !showSchedule;
+    hoursTextEl.textContent = showSchedule ? businessHoursLabel(config) : '';
+  }
   
   if (statusTextEl && statusDotEl && statusEl) {
     if (isOpen) {
@@ -2790,12 +2796,12 @@ async function checkStore(configData) {
     if (isPreviewBypass()) {
       if (overlay) overlay.style.display = 'none';
       document.body.style.overflow = '';
-      updateBusinessHoursDisplay(currentStoreConfig, false);
+      updateBusinessHoursDisplay(currentStoreConfig, false, false);
       return;
     }
     console.warn('Store config unavailable; keeping the storefront closed until the next check.');
     if (overlay) showClosure('Status Kedai Belum Dapat Disahkan', 'SEMENTARA DITUTUP', 'Sambungan ke status kedai terganggu. Sila cuba semula sebentar lagi.', 'closed');
-    updateBusinessHoursDisplay(currentStoreConfig, false);
+    updateBusinessHoursDisplay(currentStoreConfig, false, false);
     return;
   } else {
     const normalizedConfig = normalizeKedaiConfig(d);
@@ -2878,7 +2884,7 @@ async function checkStore(configData) {
     // Preview grants access to the page, not an "open" store status.
     overlay.style.display = 'none';
     document.body.style.overflow = '';
-    updateBusinessHoursDisplay(currentStoreConfig, !shouldClose);
+    updateBusinessHoursDisplay(currentStoreConfig, !shouldClose, !shouldClose || closureType === 'hours');
     checkAndShowAnnouncement();
     return;
   }
@@ -2888,7 +2894,7 @@ async function checkStore(configData) {
     const announcementModal = document.getElementById('h4sx-announcement-modal');
     if (announcementModal) closeAnnouncementModal(announcementModal);
     showClosure(title, status, message, closureType);
-    updateBusinessHoursDisplay(currentStoreConfig, false);
+    updateBusinessHoursDisplay(currentStoreConfig, false, closureType === 'hours');
   } else {
     console.log('Store is open, hiding overlay');
     overlay.style.display = 'none';
@@ -2951,9 +2957,10 @@ function showClosure(title, status, message, type = 'closed') {
   if (statusEl) statusEl.textContent = status;
   if (messageEl) window.H4SXClosureMessage.render(messageEl, message);
   if (hoursPillEl && hoursTextEl) {
-    const hoursText = businessHoursLabel(currentStoreConfig);
+    const showHours = type === 'hours';
+    const hoursText = showHours ? businessHoursLabel(currentStoreConfig) : '';
     hoursTextEl.textContent = hoursText.replace(/\s*\|\s*$/, '');
-    hoursPillEl.style.display = 'inline-flex';
+    hoursPillEl.style.display = showHours ? 'inline-flex' : 'none';
   }
   
   overlay.style.display = 'flex';
