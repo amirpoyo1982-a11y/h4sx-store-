@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   catalogItemUrl,
   createProductShareHandler,
+  findProductVariant,
   findInventoryItem,
   inventoryItems,
   isProxyableProductImage,
@@ -12,6 +13,7 @@ import {
   productImageUrl,
   productOgImageUrl,
   productImageProxyPath,
+  productShareItem,
   productShareUrl,
   productShareVersion,
   productSharePath,
@@ -56,6 +58,86 @@ test('inventory lookup finds public products and builds WhatsApp image tags', ()
   assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=3"\)/);
 });
 
+test('variant links preserve selection and use the selected image in WhatsApp metadata', () => {
+  const item = {
+    id: 'variant-item',
+    name: 'Dragon Fruit',
+    price: 5,
+    poster: 'https://i.imgur.com/base-poster.png',
+    img: 'https://i.imgur.com/base.png',
+    variants: [
+      { id: 'gold', name: 'Golden', price: 8, img: 'https://lookaside.fbsbx.com/whatsapp_business/gold.png' },
+      { id: 'blue', name: 'Blue', price: 7, img: 'https://i.imgur.com/blue.png' }
+    ]
+  };
+  const selected = findProductVariant(item, 'gold');
+  assert.equal(selected.name, 'Golden');
+  assert.equal(productImageUrl(productShareItem(item, 'gold')), 'https://lookaside.fbsbx.com/whatsapp_business/gold.png');
+  assert.equal(
+    productOgImageUrl(item, undefined, 'gold'),
+    'https://www.h4sxmy.xyz/og-image/variant-item.png?v=' + productShareVersion(item, 'gold') + '&variant=gold'
+  );
+  assert.equal(productShareUrl(item, undefined, 'gold'), 'https://www.h4sxmy.xyz/item/variant-item?v=' + productShareVersion(item, 'gold') + '&variant=gold');
+  assert.equal(catalogItemUrl(item, undefined, 'gold'), 'https://www.h4sxmy.xyz/?item=variant-item&variant=gold');
+  assert.notEqual(productShareVersion(item, 'gold'), productShareVersion(item, 'blue'));
+  const html = sharePageHtml({ item, variantId: 'gold' });
+  assert.match(html, /property="og:title" content="Dragon Fruit - Golden \| H4SX STORE"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/variant-item\.png\?v=r4-[a-z0-9]+&amp;variant=gold"/);
+  assert.match(html, /rel="canonical" href="https:\/\/www\.h4sxmy\.xyz\/\?item=variant-item&amp;variant=gold"/);
+  assert.match(html, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=variant-item&variant=gold"\)/);
+});
+
+test('variant image proxy fetches the selected variant image', async () => {
+  const handler = (await import('../api/product-share.js')).default;
+  const variantImage = 'https://lookaside.fbsbx.com/whatsapp_business/attachments/gold-media';
+  const calls = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), options });
+    if (String(url).includes('/store/inventory.json')) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => [
+          {
+            id: 'variant-proxy',
+            poster: 'https://i.imgur.com/base-poster.png',
+            img: 'https://i.imgur.com/base.png',
+            variants: [{ id: 'gold', name: 'Golden', img: variantImage }]
+          },
+          { id: 'media-1', img: 'https://lookaside.fbsbx.com/whatsapp_business/attachments/opaque-media' }
+        ]
+      };
+    }
+    if (String(url) === variantImage) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: name => name === 'content-type' ? 'image/png' : null },
+        arrayBuffer: async () => Uint8Array.from([4, 5, 6]).buffer
+      };
+    }
+    throw new Error('Unexpected image request: ' + String(url));
+  };
+  const response = {
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    redirect(code, url) { this.statusCode = code; this.location = url; return this; },
+    end() { this.ended = true; return this; }
+  };
+  try {
+    await handler({ method: 'GET', query: { ogImage: 'variant-proxy.png', variant: 'gold' } }, response);
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['Content-Type'], 'image/png');
+    assert.deepEqual([...response.body], [4, 5, 6]);
+    assert(calls.some(call => call.url === variantImage));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('Itemku images remain direct until their catalog image is replaced', () => {
   const item = { id: 45, img: 'https://imgop.itemku.com/?url=image.webp&w=48&q=75' };
   assert.equal(productOgImageUrl(item), item.img);
@@ -81,6 +163,15 @@ test('Meta and WhatsApp CDN images use the first-party Open Graph image endpoint
   );
   assert.match(storeApp, /item\?\.mediaUrl, item\?\.video, item\?\.videoUrl/);
   assert.match(storeApp, /\?v=r4-/);
+});
+
+test('shared variant links are passed through URL routing into the product modal selection', () => {
+  assert.match(storeApp, /function getVariantFromUrl\(\)[\s\S]*?searchParams\.get\('variant'\)/);
+  assert.match(storeApp, /openGame\(gameGroupName\(item\), \{ fromUrl: true, itemId: item\.id, variantId \}\)/);
+  assert.match(storeApp, /openProductImage\(options\.itemId, \{[\s\S]*?variantId: options\.variantId/);
+  assert.match(storeApp, /const requestedVariant = variants\.find\(variant => variant\.id === String\(options\.variantId \|\| ''\)\)/);
+  assert.match(storeApp, /updateProductUrl\(item, modalVariantId\)/);
+  assert.match(storeApp, /shareModalProductVariant/);
 });
 
 test('image endpoint proxies allowlisted WhatsApp media and rejects unsafe redirect destinations', async () => {
@@ -160,6 +251,26 @@ test('product share handler serves OG HTML for a catalog item', async () => {
   assert.match(response.body, /og:image/);
   assert.match(response.body, /Gas Fruit/);
   assert.match(response.body, /https:\/\/i\.imgur\.com\/zkDHakz\.png/);
+});
+
+test('product share handler returns the selected variant destination and image preview', async () => {
+  const handler = createProductShareHandler(async () => [{
+    id: '18',
+    name: 'Dragon Fruit',
+    img: 'https://i.imgur.com/base.png',
+    variants: [{ id: 'gold', name: 'Golden', img: 'https://lookaside.fbsbx.com/whatsapp_business/gold.png' }]
+  }]);
+  const response = {
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    end() { this.ended = true; return this; }
+  };
+  await handler({ method: 'GET', query: { id: '18', variant: 'gold' } }, response);
+  assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/18\.png\?v=r4-[a-z0-9]+&amp;variant=gold"/);
+  assert.match(response.body, /property="og:title" content="Dragon Fruit - Golden \| H4SX STORE"/);
+  assert.match(response.body, /location\.replace\("https:\/\/www\.h4sxmy\.xyz\/\?item=18&variant=gold"\)/);
 });
 
 test('review text turns https URLs into clickable message links', () => {

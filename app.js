@@ -2235,6 +2235,14 @@ function getItemFromUrl() {
     return '';
   }
 }
+function getVariantFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return (url.searchParams.get('variant') || '').trim();
+  } catch(e) {
+    return '';
+  }
+}
 function getPromoFromUrl() {
   try {
     const url = new URL(window.location.href);
@@ -2271,16 +2279,17 @@ function findProductByRoute(value) {
 function openGameFromUrl() {
   const route = getGameFromUrl();
   const itemRoute = getItemFromUrl();
+  const variantId = getVariantFromUrl();
   const item = findProductByRoute(itemRoute);
   if (!route && item) {
     activePlatform = inferPlatform(item, gameGroupName(item));
-    openGame(gameGroupName(item), { fromUrl: true, itemId: item.id });
+    openGame(gameGroupName(item), { fromUrl: true, itemId: item.id, variantId });
     return true;
   }
   if (!route) return false;
   const name = findGameByRoute(route) || (item ? gameGroupName(item) : '');
   if (!name) return false;
-  openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute });
+  openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute, variantId });
   return true;
 }
 let handledPromoRoute = '';
@@ -2335,18 +2344,21 @@ function currentGameLink() {
   url.searchParams.delete('item');
   return url.toString();
 }
-function productLink(item) {
+function productLink(item, variantId = '') {
   const url = new URL(window.location.href);
   const gameName = gameGroupName(item) || currentGame;
   url.searchParams.set('game', gameSlug(gameName));
   url.searchParams.set('part', normalizeKey(inferPlatform(item, gameName)));
   url.searchParams.set('item', String(item.id));
+  const variant = getProductVariant(item, variantId);
+  if (variant) url.searchParams.set('variant', variant.id);
+  else url.searchParams.delete('variant');
   url.searchParams.delete('promo');
   return url.toString();
 }
-function updateProductUrl(item) {
+function updateProductUrl(item, variantId = '') {
   try {
-    const url = new URL(productLink(item));
+    const url = new URL(productLink(item, variantId));
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
 }
@@ -2354,6 +2366,7 @@ function clearProductUrlItem() {
   try {
     const url = new URL(window.location.href);
     url.searchParams.delete('item');
+    url.searchParams.delete('variant');
     url.searchParams.delete('promo');
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -2454,19 +2467,31 @@ function storeShareOrigin() {
   } catch (error) {}
   return 'https://www.h4sxmy.xyz';
 }
-function shareableProductLink(item) {
-  const source = [
+function shareableProductLink(item, variantId = '') {
+  const sourceParts = [
     item?.id, item?.updatedAt, item?.poster, item?.posterImg, item?.thumbnail, item?.thumb,
     item?.image, item?.img, item?.mediaUrl, item?.video, item?.videoUrl
   ]
     .filter(value => value != null && value !== '')
     .join('|');
+  const variant = getProductVariant(item, variantId);
+  const sourceVariants = Array.isArray(item?.variants) ? item.variants : (Array.isArray(item?.types) ? item.types : []);
+  const sourceVariant = variant && sourceVariants.find((entry, index) => entry && entry.active !== false
+    && String(entry.id ?? entry.value ?? entry.name ?? index).trim() === variant.id);
+  const variantMedia = sourceVariant ? '|variant:' + variant.id + '|' + [
+    sourceVariant.updatedAt, sourceVariant.poster, sourceVariant.posterImg, sourceVariant.thumbnail, sourceVariant.thumb,
+    sourceVariant.image, sourceVariant.img, sourceVariant.mediaUrl, sourceVariant.video, sourceVariant.videoUrl
+  ].filter(value => value != null && value !== '').join('|') : '';
+  const source = sourceParts + variantMedia;
   let hash = 2166136261;
   for (let index = 0; index < source.length; index += 1) {
     hash ^= source.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
-  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r4-' + (hash >>> 0).toString(36);
+  const url = new URL('/item/' + encodeURIComponent(String(item.id)), storeShareOrigin());
+  url.searchParams.set('v', 'r4-' + (hash >>> 0).toString(36));
+  if (variant) url.searchParams.set('variant', variant.id);
+  return url.href;
 }
 async function shareStoreContent(shareData, copiedMessage, promptLabel) {
   try {
@@ -2499,6 +2524,18 @@ async function shareProductItem(id) {
     text: 'Tengok item ini dekat H4SX STORE: ' + item.name + ' (' + price + ')',
     url: shareableProductLink(item)
   }, 'Link item sudah disalin!', 'Copy link item ini:');
+}
+async function shareModalProductVariant() {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  const variant = getProductVariant(item, modalVariantId);
+  if (!item || !variant) { toast('Pilih variant dahulu', true); return; }
+  const displayItem = effectiveProductItem(item, variant.id);
+  const price = 'RM' + Number(displayItem.price || 0).toFixed(2);
+  await shareStoreContent({
+    title: item.name + ' - ' + variant.name + ' | H4SX STORE',
+    text: 'Tengok ' + item.name + ' (' + variant.name + ', ' + price + ') dekat H4SX STORE:',
+    url: shareableProductLink(item, variant.id)
+  }, 'Link variant sudah disalin!', 'Copy link variant ini:');
 }
 function getStickyOffset() {
   return 16;
@@ -9161,6 +9198,7 @@ function selectProductVariant(variantId) {
   if (!item || !getProductVariant(item, variantId)) return;
   modalVariantId = String(variantId);
   modalQuantity = 1;
+  updateProductUrl(item, modalVariantId);
   const promoInput = document.getElementById('product-modal-promo-input');
   if (promoInput) promoInput.value = savedProductPromoCode(modalEffectiveItem(item));
   renderProductModalSelection(item);
@@ -9197,7 +9235,7 @@ function openProductImage(id, options = {}) {
   modalVariantId = requestedVariant?.id || variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
   modalQuantity = 1;
   resetModalProductDescription();
-  if (!options.fromUrl) updateProductUrl(item);
+  if (!options.fromUrl) updateProductUrl(item, modalVariantId);
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
   const gameEl = document.getElementById('product-modal-game');

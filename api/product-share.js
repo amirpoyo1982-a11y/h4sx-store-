@@ -2,12 +2,14 @@ import {
   DEFAULT_OG_IMAGE,
   INVENTORY_URL,
   createProductShareHandler,
+  findProductVariant,
   findInventoryItem,
   isProxyableProductImage,
   inventoryItems,
   isVisibleCatalogItem,
   normalizeItemId,
-  productImageUrl
+  productImageUrl,
+  productShareItem
 } from '../lib/product-share.js';
 
 let cache = { at: 0, items: [] };
@@ -40,7 +42,9 @@ async function serveOgImage(req, res) {
   try {
     const item = findInventoryItem(await loadItems(), normalizeItemId(String(req.query?.ogImage || '').replace(/\.png$/i, '')));
     if (item && isVisibleCatalogItem(item)) {
-      const candidate = productImageUrl(item);
+      const variantId = String(req.query?.variant || '').trim();
+      const variant = findProductVariant(item, variantId);
+      const candidate = productImageUrl(variant ? productShareItem(item, variantId) : item);
       if (isProxyableProductImage(candidate)) imageUrl = candidate;
     }
   } catch (error) {
