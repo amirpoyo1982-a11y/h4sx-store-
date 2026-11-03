@@ -1,5 +1,22 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "^/$",
+      "has": [
+        {
+          "type": "query",
+          "key": "item"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|whatsapp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview|Embedly|Redditbot|Applebot|iframely|vkShare|Quora).*"
+        }
+      ],
+      "dest": "/api/product-share"
+    }
+  ],
   "rewrites": [
     {
       "source": "/review",
@@ -24,21 +41,6 @@
     {
       "source": "/og-image/:id/",
       "destination": "/api/product-share?ogImage=:id"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "item"
-        },
-        {
-          "type": "header",
-          "key": "user-agent",
-          "value": ".*(WhatsApp|whatsapp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|Pinterest|SkypeUriPreview|Embedly|Redditbot|Applebot|iframely|vkShare|Quora).*"
-        }
-      ],
-      "destination": "/api/product-share"
     }
   ]
 }

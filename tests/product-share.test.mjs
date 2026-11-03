@@ -206,43 +206,45 @@ test('Meta and WhatsApp CDN images use the first-party Open Graph image endpoint
   assert.match(storeApp, /searchParams\.set\('v', productShareVersion\(item, variant\?\.id \|\| ''\)\)/);
 });
 
-test('root item-query links route to variant metadata for WhatsApp and proxy the selected Imgur image', async () => {
-  const rootRewrite = vercelConfig.rewrites.find(rewrite => rewrite.source === '/'
-    && rewrite.has?.some(condition => condition.type === 'query' && condition.key === 'item'));
-  assert.ok(rootRewrite, 'root item-query rewrite is configured');
-  assert.equal(rootRewrite.destination, '/api/product-share');
-  const userAgent = rootRewrite.has.find(condition => condition.type === 'header' && condition.key === 'user-agent');
-  assert.ok(userAgent, 'root metadata rewrite remains crawler-only for direct browser navigation');
-  const crawlerPattern = new RegExp(userAgent.value);
-  assert.equal(crawlerPattern.test('WhatsApp/2.24.7.80 A'), true);
-  assert.equal(crawlerPattern.test('Mozilla/5.0 Chrome/120.0'), false);
+test('root product links serve selected variant metadata to WhatsApp without changing browser navigation', async () => {
+  const rootRoute = vercelConfig.routes.find(route => route.src === '^/$'
+    && route.has?.some(condition => condition.type === 'query' && condition.key === 'item'));
+  assert.ok(rootRoute, 'root product route runs before the static index file');
+  assert.equal(rootRoute.dest, '/api/product-share');
+  assert.equal(vercelConfig.rewrites.some(rewrite => rewrite.source === '/'), false);
+
+  const sharedUrl = new URL(
+    'https://www.h4sxmy.xyz/?preview=on&game=brookhaven&part=roblox&item=23&variant=vehicle-pack&v=r5-livecheck'
+  );
+  const userAgent = rootRoute.has.find(condition => condition.type === 'header' && condition.key === 'user-agent');
+  assert.ok(userAgent, 'root product route is crawler-only');
+  const routeMatches = (route, url, agent) => route.src === '^/$'
+    && url.pathname === '/'
+    && route.has.every(condition => {
+      const value = condition.type === 'query'
+        ? url.searchParams.get(condition.key)
+        : condition.type === 'header' && condition.key === 'user-agent' ? agent : null;
+      return value != null && (condition.value == null || new RegExp(condition.value).test(value));
+    });
+  assert.equal(routeMatches(rootRoute, sharedUrl, 'WhatsApp/2.24.7.80 A'), true);
+  assert.equal(routeMatches(rootRoute, sharedUrl, 'Mozilla/5.0 Chrome/120.0'), false);
+  assert(readFileSync(new URL('../index.htm', import.meta.url), 'utf8').includes('<html'));
 
   const variantImage = 'https://i.imgur.com/vehicle-pack.png';
   const item = {
     id: '23',
     name: 'Gamepass Brookhaven',
-    variants: [{ id: 'vehicle-pack', name: 'Vehicle Pack', img: variantImage }]
+    variants: [{
+      id: 'vehicle-pack',
+      name: 'Vehicle Pack',
+      price: 12.5,
+      description: 'Pakej kenderaan eksklusif',
+      img: variantImage
+    }]
   };
-  const shareHandler = createProductShareHandler(async () => [item]);
-  const response = {
-    headers: {},
-    setHeader(name, value) { this.headers[name] = value; },
-    status(code) { this.statusCode = code; return this; },
-    send(body) { this.body = body; return this; },
-    end() { this.ended = true; return this; }
-  };
-  await shareHandler({
-    method: 'GET',
-    query: { preview: 'on', game: 'brookhaven', part: 'roblox', item: '23', variant: 'vehicle-pack' },
-    headers: { 'user-agent': 'WhatsApp/2.24.7.80 A' }
-  }, response);
-  assert.match(response.body, /property="og:title" content="Gamepass Brookhaven - Vehicle Pack \| H4SX STORE"/);
-  assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/23\.png\?v=r5-[a-z0-9]+&amp;variant=vehicle-pack"/);
-
-  const proxyHandler = (await import('../api/product-share.js?root-variant-regression')).default;
-  const imageCalls = [];
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
+  const imageCalls = [];
+  globalThis.fetch = async url => {
     imageCalls.push(String(url));
     if (String(url).includes('/store/inventory.json')) {
       return { ok: true, status: 200, json: async () => [item] };
@@ -257,6 +259,13 @@ test('root item-query links route to variant metadata for WhatsApp and proxy the
     }
     throw new Error('Unexpected image request: ' + String(url));
   };
+  const response = {
+    headers: {},
+    setHeader(name, value) { this.headers[name] = value; },
+    status(code) { this.statusCode = code; return this; },
+    send(body) { this.body = body; return this; },
+    end() { this.ended = true; return this; }
+  };
   const imageResponse = {
     headers: {},
     setHeader(name, value) { this.headers[name] = value; },
@@ -266,9 +275,21 @@ test('root item-query links route to variant metadata for WhatsApp and proxy the
     end() { this.ended = true; return this; }
   };
   try {
+    const handler = (await import('../api/product-share.js?root-variant-regression')).default;
+    await handler({
+      method: 'GET',
+      query: Object.fromEntries(sharedUrl.searchParams),
+      headers: { 'user-agent': 'WhatsApp/2.24.7.80 A' }
+    }, response);
+    assert.equal(response.statusCode, 200);
+    assert.match(response.body, /property="og:title" content="Gamepass Brookhaven - Vehicle Pack \| H4SX STORE"/);
+    assert.match(response.body, /property="og:description" content="RM12\.50 · Pakej kenderaan eksklusif"/);
+    assert.match(response.body, /property="og:image" content="https:\/\/www\.h4sxmy\.xyz\/og-image\/23\.png\?v=r5-[a-z0-9]+&amp;variant=vehicle-pack"/);
+
+    const proxyHandler = (await import('../api/product-share.js?root-variant-image-regression')).default;
     await proxyHandler({
       method: 'GET',
-      query: { ogImage: '23.png', variant: 'vehicle-pack', v: 'r5-test' }
+      query: { ogImage: '23.png', variant: 'vehicle-pack', v: 'r5-livecheck' }
     }, imageResponse);
     assert.equal(imageResponse.statusCode, 200);
     assert.equal(imageResponse.headers['Content-Type'], 'image/png');
