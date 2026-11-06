@@ -3712,6 +3712,8 @@ details.faq[open] .faq-ic {
 .order-copy-code:hover { transform:translateY(-1px); border-color:var(--primary); background:#e0f7ff; }
 .order-copy-code.copied { border-color:rgba(34,197,94,.35); background:var(--green-bg); color:var(--green); }
 .order-status { display:inline-flex; margin-top:6px; padding:3px 8px; border-radius:99px; background:var(--green-bg); color:var(--green); font-size:10px; font-weight:900; }
+.order-status.status-pesanan-anda-sedang-disahkan { background:#fff4d9; color:#9b6c00; }
+.customer-order-status-pill.status-pesanan-anda-sedang-disahkan { background:#e6f3ff; color:#1769aa; }
 .customer-order-admin-message {
   display:grid;
   grid-template-columns:38px minmax(0,1fr) auto;

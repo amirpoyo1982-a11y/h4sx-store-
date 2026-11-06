@@ -860,7 +860,7 @@
     <button class="order-modal-close" onclick="closeOrderHistory()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
     <div class="order-modal-kicker"><i class="fa-solid fa-receipt"></i> H4SX STORE</div>
     <h2>Histori Transaksi</h2>
-    <p>Masukkan nombor transaksi atau nombor WhatsApp semasa membuat order.</p>
+    <p>Masukkan nombor transaksi, username atau nombor WhatsApp semasa membuat order.</p>
     <button type="button" id="customer-order-launch" class="customer-order-launch" onclick="openCustomerOrder()" hidden><i class="fa-solid fa-bag-shopping"></i><span><strong>Buat Pesanan Sendiri</strong><small>Pilih item, dapatkan Order ID dan bayar melalui QR.</small></span><i class="fa-solid fa-arrow-right"></i></button>
     <div id="customer-order-recovery" class="customer-order-recovery" hidden>
       <div class="customer-order-recovery-head"><span><i class="fa-solid fa-location-crosshairs"></i></span><div><strong>Track pesanan baru</strong><small>Buka semula halaman bayaran dan status menggunakan Order ID.</small></div></div>
@@ -868,7 +868,7 @@
       <form class="customer-order-lookup" onsubmit="lookupCustomerOrder(event)"><input id="customer-order-lookup-id" autocomplete="off" placeholder="Contoh: H4SX-20260929-ABCDE" aria-label="Order ID pesanan"><button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Semak</button></form>
     </div>
     <form class="order-search-form" onsubmit="findOrder(event)">
-      <input id="order-search-code" autocomplete="off" placeholder="No. transaksi atau WhatsApp" aria-label="Nombor transaksi atau WhatsApp">
+      <input id="order-search-code" autocomplete="off" placeholder="No. transaksi, username atau WhatsApp" aria-label="Nombor transaksi, username atau WhatsApp">
       <button type="submit">Cari</button>
     </form>
     <div id="order-search-result" class="order-search-result">Belum ada carian.</div>
@@ -1143,12 +1143,14 @@
       <form class="order-form" onsubmit="saveManualOrder(event)">
         <div class="order-form-grid">
           <label>No. transaksi<div class="order-code-input"><input id="manual-order-code" placeholder="H4SX-AB12CD" required><button type="button" onclick="generateManualOrderCode()" title="Generate nombor transaksi"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate</button></div></label>
-          <label>No. WhatsApp<input id="manual-order-phone" inputmode="tel" placeholder="0123456789" required></label>
+          <label>Username <small>Pilihan jika isi No. WhatsApp</small><input id="manual-order-username" maxlength="50" autocomplete="off" placeholder="Contoh: haziq123"></label>
+          <label>No. WhatsApp <small>Pilihan jika isi username</small><input id="manual-order-phone" inputmode="tel" placeholder="0123456789"></label>
+          <small class="order-wide" id="manual-order-identity-help">Isi username atau No. WhatsApp (salah satu wajib).</small>
           <label>Nama produk<input id="manual-order-product" placeholder="Permanent Dragon" required></label>
           <label>Harga (RM)<input id="manual-order-price" type="number" min="0" step="0.01" placeholder="130" required></label>
           <label>Tarikh & masa transaksi<input id="manual-order-datetime" type="datetime-local" required></label>
           <label class="order-wide">Link gambar produk <small>(atau paste gambar di bawah)</small><input id="manual-order-image" type="url" placeholder="https://.../gambar.png"></label>
-          <label>Status<select id="manual-order-status"><option value="Dalam proses">Dalam proses</option><option value="Siap">Siap</option><option value="Dibatalkan">Dibatalkan</option></select></label>
+          <label>Status<select id="manual-order-status"><option value="Dalam proses">Dalam proses</option><option value="Pesanan anda sedang disahkan">Pesanan anda sedang disahkan</option><option value="Siap">Siap</option><option value="Dibatalkan">Dibatalkan</option></select></label>
         </div>
         <div id="order-image-paste" class="order-image-paste" tabindex="0" onpaste="handleOrderImagePaste(event)">
           <i class="fa-solid fa-paste"></i><strong>Paste gambar / screenshot di sini</strong><small>Tekan kotak ini, kemudian Ctrl + V. Atau pilih fail.</small>

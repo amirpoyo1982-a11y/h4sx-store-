@@ -1764,7 +1764,7 @@ byId('save-order-flow').addEventListener('click', async event => {
   finally { setBusy(button, false); }
 });
 
-const CUSTOMER_ORDER_STATUS_LIST = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed','Dibatalkan'];
+const CUSTOMER_ORDER_STATUS_LIST = ['Menunggu Pembayaran','Menunggu Pengesahan','Pesanan anda sedang disahkan','Sudah Dibayar','Sedang Diproses','Completed','Dibatalkan'];
 const CUSTOMER_ORDER_SOUND_KEY = 'h4sx_customer_order_sound_enabled';
 
 function customerOrderSoundEnabled() {
@@ -1862,7 +1862,7 @@ function renderCustomerOrders() {
     const haystack = [order.id, status, order.phoneMasked, privateData.phone, privateData.customerName, ...(Array.isArray(order.items) ? order.items.map(item => item.name) : Object.values(order.items || {}).map(item => item.name))].join(' ').toLowerCase();
     return (!query || haystack.includes(query)) && (!filter || status === filter);
   });
-  const pendingCount = customerOrders.filter(order => effectiveAdminOrderStatus(order) === 'Menunggu Pengesahan').length;
+  const pendingCount = customerOrders.filter(order => ['Menunggu Pengesahan','Pesanan anda sedang disahkan'].includes(effectiveAdminOrderStatus(order))).length;
   const badge = byId('pending-order-count');
   if (badge) { badge.textContent = pendingCount; badge.hidden = !pendingCount; }
   list.innerHTML = filtered.length ? filtered.map(order => {
@@ -1883,7 +1883,7 @@ function renderCustomerOrders() {
       '<label>Password Email<input data-delivery-field="emailPassword" value="' + escapeHtml(delivery.emailPassword || '') + '" placeholder="Password email jika perlu"></label>' +
       '<label class="wide">License / Kod Pengaktifan<input data-delivery-field="licenseKey" value="' + escapeHtml(delivery.licenseKey || '') + '" placeholder="License key atau kod aktivasi aplikasi"></label></div><button class="primary" data-action="save-customer-delivery" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-shield-halved"></i> Simpan Maklumat Serahan</button></div>' +
       '<div class="customer-order-row-actions"><select data-order-status="' + escapeHtml(order.id) + '">' + statusOptions + '</select><button class="primary" data-action="save-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-floppy-disk"></i> Simpan status</button>' +
-      (status === 'Menunggu Pengesahan' ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') +
+      (['Menunggu Pengesahan','Pesanan anda sedang disahkan'].includes(status) ? '<button class="confirm-payment" data-action="confirm-customer-payment" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-check-double"></i> Confirm Bayaran</button>' : '') +
       '<button class="delete-customer-order" data-action="delete-customer-order" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-trash"></i> Delete</button></div></article>';
   }).join('') : '<div class="empty">Tiada pesanan sepadan.</div>';
   hydrateCustomerOrderDeliveries(filtered);
@@ -1916,7 +1916,7 @@ async function updateCustomerOrderStatus(orderId, status, button) {
     };
     if (status === 'Sudah Dibayar') updates[ROOT + '/customer_orders/' + orderId + '/paidAt'] = firebase.database.ServerValue.TIMESTAMP;
     if (status === 'Completed') updates[ROOT + '/customer_orders/' + orderId + '/completedAt'] = firebase.database.ServerValue.TIMESTAMP;
-    if (status !== 'Menunggu Pengesahan') updates[ROOT + '/customer_payment_claims/' + orderId] = null;
+    if (!['Menunggu Pengesahan','Pesanan anda sedang disahkan'].includes(status)) updates[ROOT + '/customer_payment_claims/' + orderId] = null;
     await withTimeout(database.ref().update(updates), 'Kemaskini status order');
     notify('Status ' + orderId + ' ditukar kepada ' + status + '.');
   } catch (error) { notify(error.message, true); }

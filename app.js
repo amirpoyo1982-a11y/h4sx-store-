@@ -733,7 +733,7 @@ let modalVariantId = '', modalQuantity = 1;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 const CUSTOMER_ORDER_STORAGE_KEY = 'h4sx_customer_order_id';
 const CUSTOMER_ORDER_ACCESS_PREFIX = 'h4sx_customer_order_access_';
-const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed'];
+const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Pesanan anda sedang disahkan','Sudah Dibayar','Sedang Diproses','Completed'];
 let activeCustomerOrderId = '';
 let activeCustomerOrder = null;
 let activeCustomerOrderClaim = null;
@@ -1263,9 +1263,9 @@ function renderCustomerOrderStatus() {
   const adminNote = String(activeCustomerOrder.adminNote || '').trim();
   if (adminNoteWrap) adminNoteWrap.hidden = !adminNote;
   if (adminNoteText) adminNoteText.textContent = adminNote;
-  const labels = ['Order diterima','Menunggu semakan bayaran','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
+  const labels = ['Order diterima','Menunggu semakan bayaran','Pesanan anda sedang disahkan','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
   const timeline = document.getElementById('customer-order-timeline');
-  if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Admin akan semak TNG / bank' : index === 2 ? 'Pembayaran sah' : index === 3 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
+  if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Pelanggan telah menghantar bayaran untuk semakan' : index === 2 ? 'Admin sedang mengesahkan pesanan' : index === 3 ? 'Pembayaran sah' : index === 4 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
   const summary = document.getElementById('customer-order-summary');
   if (summary) summary.innerHTML = '<div><span>Item</span><strong>' + escapeHtml((activeCustomerOrder.items || []).map(item => item.name + ' ×' + item.qty).join(', ')) + '</strong></div><div><span>Jumlah</span><strong>' + formatCustomerOrderMoney(activeCustomerOrder.total) + '</strong></div><div><span>WhatsApp</span><strong>' + escapeHtml(activeCustomerOrder.phoneMasked || '-') + '</strong></div>';
   const receipt = document.getElementById('customer-order-receipt');
@@ -3673,6 +3673,7 @@ let promoTurnstileTimeout = null;
 let pendingOrderImageFile = null;
 let editingOrderCode = null;
 let editingOriginalPhone = '';
+let editingOriginalUsername = '';
 const STORE_VISITOR_KEY = 'h4sx_store_visitor_id';
 const STORE_VISITOR_FIRST_SEEN_KEY = 'h4sx_store_visitor_first_seen';
 const CUSTOM_VOTE_CONFIG_COLLECTION = 'store_settings';
@@ -4687,6 +4688,18 @@ function normaliseOrderPhone(value) {
   if (phone.startsWith('0')) phone = '60' + phone.slice(1);
   return phone;
 }
+function normaliseOrderUsername(value) {
+  return String(value || '').trim().replace(/^@/, '').toLowerCase();
+}
+function validateManualOrderIdentity(phoneValue, usernameValue) {
+  const phone = String(phoneValue || '').trim();
+  const username = String(usernameValue || '').trim();
+  const normalizedPhone = normaliseOrderPhone(phone);
+  if (!phone && !username) throw new Error('Masukkan username atau nombor WhatsApp.');
+  if (phone && (normalizedPhone.length < 9 || normalizedPhone.length > 15)) throw new Error('Nombor WhatsApp mesti mengandungi 9 hingga 15 digit.');
+  if (username.length > 50) throw new Error('Username tidak boleh melebihi 50 aksara.');
+  return { phone, username };
+}
 async function phoneLookupId(value) {
   const phone = normaliseOrderPhone(value);
   if (phone.length < 9) return '';
@@ -4694,10 +4707,17 @@ async function phoneLookupId(value) {
   const hash = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
-async function updatePhoneLookup(phone, code, previousPhone = '') {
-  const nextId = await phoneLookupId(phone);
-  const previousId = await phoneLookupId(previousPhone);
-  if (!nextId) throw new Error('Nombor WhatsApp tak sah');
+async function usernameLookupId(value) {
+  const username = normaliseOrderUsername(value);
+  if (!username) return '';
+  const bytes = new TextEncoder().encode('h4sx-order-username:' + username);
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+async function updateOrderLookup(lookupIdFor, value, code, previousValue, identityName) {
+  const nextId = await lookupIdFor(value);
+  const previousId = await lookupIdFor(previousValue);
+  if (value && !nextId) throw new Error(identityName + ' tak sah');
   if (previousId && previousId !== nextId) {
     const oldRef = db.collection('order_lookups').doc(previousId);
     const oldSnap = await oldRef.get();
@@ -4705,18 +4725,31 @@ async function updatePhoneLookup(phone, code, previousPhone = '') {
     if (oldCodes.length) await oldRef.set({ orderCodes:oldCodes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     else await oldRef.delete();
   }
+  if (!nextId) return;
   const ref = db.collection('order_lookups').doc(nextId);
   const snap = await ref.get();
   const codes = Array.from(new Set([...(snap.data()?.orderCodes || []), code]));
   await ref.set({ orderCodes:codes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
 }
-async function removePhoneLookup(phone, code) {
-  const lookupId = await phoneLookupId(phone); if (!lookupId) return;
+function updatePhoneLookup(phone, code, previousPhone = '') {
+  return updateOrderLookup(phoneLookupId, phone, code, previousPhone, 'Nombor WhatsApp');
+}
+function updateUsernameLookup(username, code, previousUsername = '') {
+  return updateOrderLookup(usernameLookupId, username, code, previousUsername, 'Username');
+}
+async function removeOrderLookup(lookupIdFor, value, code) {
+  const lookupId = await lookupIdFor(value); if (!lookupId) return;
   const ref = db.collection('order_lookups').doc(lookupId); const snap = await ref.get();
   if (!snap.exists) return;
   const codes = (snap.data().orderCodes || []).filter(item => item !== code);
   if (codes.length) await ref.set({ orderCodes:codes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
   else await ref.delete();
+}
+function removePhoneLookup(phone, code) {
+  return removeOrderLookup(phoneLookupId, phone, code);
+}
+function removeUsernameLookup(username, code) {
+  return removeOrderLookup(usernameLookupId, username, code);
 }
 function maskOrderPhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
@@ -5339,7 +5372,7 @@ async function uploadOrderImage(code) {
   return dataUrl;
 }
 function resetManualOrderForm() {
-  editingOrderCode = null; editingOriginalPhone = ''; pendingOrderImageFile = null;
+  editingOrderCode = null; editingOriginalPhone = ''; editingOriginalUsername = ''; pendingOrderImageFile = null;
   const form = document.querySelector('#order-admin-form-wrap form'); if (form) form.reset();
   setDefaultManualOrderDate();
   const preview = document.getElementById('order-image-preview'); if (preview) { preview.hidden = true; preview.innerHTML = ''; }
@@ -5352,12 +5385,16 @@ async function saveManualOrder(event) {
   if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
   const code = editingOrderCode || normaliseOrderCode(document.getElementById('manual-order-code').value);
   if (!/^H4SX-[A-Z0-9]{4,}$/.test(code)) return toast('Gunakan format nombor transaksi: H4SX-AB12CD', true);
+  let identity;
+  try {
+    identity = validateManualOrderIdentity(document.getElementById('manual-order-phone').value, document.getElementById('manual-order-username').value);
+  } catch (error) { return toast(error.message, true); }
   try {
     const image = await uploadOrderImage(code);
     if (!image) return toast('Letak link gambar atau paste screenshot produk.', true);
     const data = {
       code,
-      phoneMasked: maskOrderPhone(document.getElementById('manual-order-phone').value),
+      phoneMasked: identity.phone ? maskOrderPhone(identity.phone) : '',
       product: String(document.getElementById('manual-order-product').value || '').trim(),
       price: Number(document.getElementById('manual-order-price').value || 0),
       image,
@@ -5365,13 +5402,15 @@ async function saveManualOrder(event) {
       orderedAt: new Date(document.getElementById('manual-order-datetime').value).toISOString(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    const privateData = { phone: String(document.getElementById('manual-order-phone').value || '').trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-    const fullPhone = String(document.getElementById('manual-order-phone').value || '').trim();
+    const privateData = { phone:identity.phone, username:identity.username, updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
     await Promise.all([
       db.collection('orders').doc(code).set(data, { merge:true }),
-      db.collection('order_private').doc(code).set({ ...privateData, phone:fullPhone }, { merge:true })
+      db.collection('order_private').doc(code).set(privateData, { merge:true })
     ]);
-    await updatePhoneLookup(fullPhone, code, editingOriginalPhone);
+    await Promise.all([
+      updatePhoneLookup(identity.phone, code, editingOriginalPhone),
+      updateUsernameLookup(identity.username, code, editingOriginalUsername)
+    ]);
     resetManualOrderForm(); await loadAdminOrders(); toast('Transaksi ' + code + ' telah disimpan.');
   } catch (error) { console.error(error); toast(error.message || 'Tak dapat simpan transaksi. Semak Firestore Rules.', true); }
 }
@@ -5394,7 +5433,8 @@ async function editManualOrder(code) {
     const item = snap.data(); editingOrderCode = code;
     document.getElementById('manual-order-code').value = code; document.getElementById('manual-order-code').readOnly = true; document.getElementById('manual-order-code').style.opacity = '.65';
     editingOriginalPhone = privateSnap.exists ? (privateSnap.data().phone || '') : '';
-    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-datetime').value = toDateTimeLocalValue(item.orderedAt || item.updatedAt); document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
+    editingOriginalUsername = privateSnap.exists ? (privateSnap.data().username || '') : '';
+    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-username').value = editingOriginalUsername; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-datetime').value = toDateTimeLocalValue(item.orderedAt || item.updatedAt); document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
     const preview = document.getElementById('order-image-preview'); if (preview && item.image) { preview.hidden = false; preview.innerHTML = '<img src="' + escapeHtml(item.image) + '" alt="Gambar semasa">'; }
     document.getElementById('manual-order-cancel').hidden = false; document.getElementById('manual-order-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update transaksi';
     document.querySelector('.order-form-grid')?.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -5406,7 +5446,12 @@ async function deleteManualOrder(code) {
     const privateSnap = await db.collection('order_private').doc(code).get();
     await Promise.all([db.collection('orders').doc(code).delete(), db.collection('order_private').doc(code).delete()]);
     // Lookup hanya indeks carian; jangan biar ia menghalang transaksi utama dipadam.
-    try { await removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code); } catch (lookupError) { console.warn('Lookup cleanup skipped', lookupError); }
+    try {
+      await Promise.all([
+        removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code),
+        removeUsernameLookup(privateSnap.exists ? privateSnap.data().username : '', code)
+      ]);
+    } catch (lookupError) { console.warn('Lookup cleanup skipped', lookupError); }
     await loadAdminOrders(); toast('Transaksi dipadam.');
   } catch(error) { console.error(error); toast('Tak dapat padam transaksi. Semak login admin dan Firestore Rules.', true); }
 }
@@ -5475,20 +5520,24 @@ async function findOrder(event) {
     if (code.startsWith('H4SX-')) {
       const snap = await db.collection('orders').doc(code).get(); if (snap.exists) records = [{ code, ...snap.data() }];
     } else {
-      const lookupId = await phoneLookupId(search);
+      const usernameSearch = !/^[+\d\s().-]+$/.test(search);
+      const lookupId = usernameSearch ? await usernameLookupId(search) : await phoneLookupId(search);
       if (lookupId) {
         const lookup = await db.collection('order_lookups').doc(lookupId).get();
         const codes = lookup.exists ? (lookup.data().orderCodes || []) : [];
         const orders = await Promise.all(codes.map(orderCode => db.collection('orders').doc(orderCode).get()));
-        records = orders.filter(snap => snap.exists).map(snap => ({ code:snap.id, ...snap.data() }));
+        records = orders.filter(snap => snap.exists).map(snap => ({ code:snap.id, ...snap.data(), usernameSearch }));
       }
     }
-    if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi atau WhatsApp dengan admin.'; return; }
+    if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi, username atau WhatsApp dengan admin.'; return; }
     box.innerHTML = records.map(item => {
       const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : '';
       const invoiceCode = escapeHtml(item.code || '');
       const invoice = '<span class="order-invoice-line"><small>No. transaksi: <b>' + invoiceCode + '</b></small><button class="order-copy-code" type="button" data-code="' + invoiceCode + '" onclick="copyInvoiceCode(this.dataset.code,this)" aria-label="Salin nombor transaksi"><i class="fa-regular fa-copy"></i><span>Copy</span></button></span>';
-      return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong>' + invoice + '<small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
+      const status = item.status || 'Dalam proses';
+      const statusClass = status.toLowerCase().replace(/\s+/g, '-');
+      const customerIdentity = item.usernameSearch ? '<small>Username: ' + escapeHtml(search.replace(/^@/, '')) + '</small>' : '<small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Tidak diberikan') + '</small>';
+      return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong>' + invoice + customerIdentity + '<small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status status-' + escapeHtml(statusClass) + '">' + escapeHtml(status) + '</span></div></div>';
     }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
 }
