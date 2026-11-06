@@ -35,6 +35,17 @@ function shouldShowReviewSystemPopup() {
   }
 }
 
+function isClosedCatalogView(config = currentStoreConfig) {
+  if (!flagOff(config.store_closed_notice_visible) || flagOn(config.maintenance)) return false;
+  return flagOff(config.bukakedai) || shouldStoreCloseAutomatically(config).closed;
+}
+
+function blockOrderInClosedCatalogView() {
+  if (!isClosedCatalogView()) return false;
+  toast('Kedai sedang ditutup. Katalog boleh dilihat tetapi pesanan tidak tersedia.', true);
+  return true;
+}
+
 function openReviewSystemPopup() {
   const popup = document.getElementById('review-system-popup');
   if (!popup || !shouldShowReviewSystemPopup() || autoPopupShownThisPage || isDirectCatalogVisit()) return;
@@ -146,6 +157,7 @@ function formatReceiptDateTime() {
 }
 
 function openReceipt() {
+  if (blockOrderInClosedCatalogView()) return;
   const username = document.getElementById('roblox-username').value || '-';
   const receiptCode = generateReceiptCode();
   const receiptDatetime = formatReceiptDateTime();
@@ -961,6 +973,7 @@ async function generateCustomerOrderId() {
 
 async function submitCustomerOrder(event) {
   event.preventDefault();
+  if (blockOrderInClosedCatalogView()) return;
   if (!realtimeDb) return toast('Firebase belum bersedia. Cuba semula sekejap lagi.', true);
   if (!customerOrderConfig().enabled) return toast('Feature pesanan sedang ditutup.', true);
   const button = document.getElementById('customer-order-submit');
@@ -2564,6 +2577,8 @@ function backCO() { currentGame ? showView('product-view') : showHome(); }
 let currentStoreConfig = {
   bukakedai: true,
   maintenance: false,
+  store_closed_notice_visible: true,
+  review_closed_notice_visible: true,
   review_maintenance: false,
   reviews_section_visible: true,
   review_maintenance_message: 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
@@ -2818,6 +2833,7 @@ function updateBusinessHoursDisplay(config, isOpen, showSchedule = true) {
   }
   
   if (statusTextEl && statusDotEl && statusEl) {
+    statusEl.style.display = !isOpen && !flagOn(config.maintenance) && flagOff(config.store_closed_notice_visible) ? 'none' : '';
     if (isOpen) {
       statusTextEl.textContent = "BUKA";
       statusDotEl.classList.remove('closed');
@@ -2940,7 +2956,12 @@ async function checkStore(configData) {
     console.log(`Showing ${closureType} popup`);
     const announcementModal = document.getElementById('h4sx-announcement-modal');
     if (announcementModal) closeAnnouncementModal(announcementModal);
-    showClosure(title, status, message, closureType);
+    if (closureType !== 'maintenance' && flagOff(currentStoreConfig.store_closed_notice_visible)) {
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    } else {
+      showClosure(title, status, message, closureType);
+    }
     updateBusinessHoursDisplay(currentStoreConfig, false, closureType === 'hours');
   } else {
     console.log('Store is open, hiding overlay');
@@ -8689,6 +8710,7 @@ function updateAddButtons() {
   }
 }
 function addCart(input, originEl, options = {}) {
+  if (blockOrderInClosedCatalogView()) return;
   let item, name;
   if (typeof input === 'number') {
     item = inventory.find(i=>i.id===input);
@@ -8997,6 +9019,7 @@ function handleRobloxUsernameInput() {
   valCO();
 }
 function goCO(focusPayment) {
+  if (blockOrderInClosedCatalogView()) return;
   if (!cartItems.length) { toast('Cart is empty',true); return; }
   document.getElementById('cart-overlay').classList.remove('show');
   let tot = 0;
@@ -9408,6 +9431,7 @@ function showRobloxUsernamePrompt(item, onConfirmed) {
   setTimeout(() => input.focus(), 80);
 }
 function buyNowItem(id, promoCode = '', options = {}) {
+  if (blockOrderInClosedCatalogView()) return;
   const baseItem = inventory.find(i => i.id === id);
   if (!baseItem || !isCustomerProductVisible(baseItem)) return toast('Produk ini sedang disembunyikan.', true);
   if (productRequiresRobloxLookup(baseItem) && !options.robloxProfile) {

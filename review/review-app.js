@@ -734,6 +734,10 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
 
       // 3. Suis manual admin — bukakedai:false = tutup terus, tak kira jam
       if (data && flagOff(data.bukakedai)) {
+        if (flagOff(data.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
         paparKedaiTutup('🚫', 'Kedai Ditutup Sementara', 'Kami sedang berehat. Sila kembali kemudian.', '');
         return;
       }
@@ -741,10 +745,18 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       // 4–5. Hari cuti dan jadual waktu, termasuk operasi lintas tengah malam.
       const automaticClosure = reviewAutomaticClosure(data || {});
       if (automaticClosure.reason === "Hari Tutup") {
+        if (flagOff(data?.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
         paparKedaiTutup('📅', 'Kedai Tutup Hari Ini', 'Kami tidak beroperasi pada hari ini.', hoursText);
         return;
       }
       if (automaticClosure.closed) {
+        if (flagOff(data?.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
         paparKedaiTutup('🕐', 'Di Luar Waktu Operasi', 'Kami sedang tutup buat masa ini. Sila kembali semasa waktu operasi kami.', hoursText);
         return;
       }

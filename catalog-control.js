@@ -1488,7 +1488,9 @@ function writeConfigEditor() {
   byId('main-whatsapp-number').value = storeConfig.whatsapp_link || storeConfig.whatsappLink || storeConfig.whatsapp_number || storeConfig.whatsappNumber || storeConfig.contact?.whatsapp || storeConfig.support?.whatsapp || '';
   byId('quick-open').checked = storeConfig.bukakedai !== false && String(storeConfig.bukakedai).toLowerCase() !== 'false';
   byId('quick-maintenance').checked = storeConfig.maintenance === true || String(storeConfig.maintenance).toLowerCase() === 'true';
+  byId('quick-store-closed-notice').checked = storeConfig.store_closed_notice_visible !== false && String(storeConfig.store_closed_notice_visible).toLowerCase() !== 'false';
   byId('quick-review-maintenance').checked = storeConfig.review_maintenance === true || String(storeConfig.review_maintenance).toLowerCase() === 'true';
+  byId('quick-review-closed-notice').checked = storeConfig.review_closed_notice_visible !== false && String(storeConfig.review_closed_notice_visible).toLowerCase() !== 'false';
   byId('quick-reviews-area').checked = storeConfig.reviews_section_visible !== false && String(storeConfig.reviews_section_visible).toLowerCase() !== 'false';
   byId('quick-banner').checked = storeConfig.promo_banner_active === true || String(storeConfig.promo_banner_active).toLowerCase() === 'true';
   byId('quick-spotlight').checked = storeConfig.product_spotlight_enabled !== false && String(storeConfig.product_spotlight_enabled).toLowerCase() !== 'false';
@@ -1651,12 +1653,14 @@ byId('save-announcement').addEventListener('click', async event => {
   finally { setBusy(button, false); }
 });
 
-['quick-open','quick-maintenance','quick-review-maintenance','quick-reviews-area','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
+['quick-open','quick-maintenance','quick-store-closed-notice','quick-review-maintenance','quick-review-closed-notice','quick-reviews-area','quick-banner','quick-spotlight'].forEach(id => byId(id).addEventListener('change', () => {
   try {
     const current = JSON.parse(byId('config-editor').value || '{}');
     current.bukakedai = byId('quick-open').checked;
     current.maintenance = byId('quick-maintenance').checked;
+    current.store_closed_notice_visible = byId('quick-store-closed-notice').checked;
     current.review_maintenance = byId('quick-review-maintenance').checked;
+    current.review_closed_notice_visible = byId('quick-review-closed-notice').checked;
     current.reviews_section_visible = byId('quick-reviews-area').checked;
     current.promo_banner_active = byId('quick-banner').checked;
     current.product_spotlight_enabled = byId('quick-spotlight').checked;

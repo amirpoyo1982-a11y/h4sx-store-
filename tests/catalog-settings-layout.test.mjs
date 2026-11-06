@@ -19,9 +19,10 @@ test('store operations and unrelated website feature toggles have separate setti
   const operations = section('store-operation-settings');
   const features = section('website-feature-settings');
 
-  assert.deepEqual(quickToggleIds(operations), ['quick-open', 'quick-maintenance']);
+  assert.deepEqual(quickToggleIds(operations), ['quick-open', 'quick-maintenance', 'quick-store-closed-notice']);
   assert.deepEqual(quickToggleIds(features), [
     'quick-review-maintenance',
+    'quick-review-closed-notice',
     'quick-reviews-area',
     'quick-banner',
     'quick-spotlight'
@@ -40,10 +41,12 @@ test('full legacy configuration remains available in a separate advanced section
 });
 
 test('existing quick toggles retain their configuration keys and event wiring', () => {
-  assert.match(app, /'quick-open','quick-maintenance','quick-review-maintenance','quick-reviews-area','quick-banner','quick-spotlight'/);
+  assert.match(app, /'quick-open','quick-maintenance','quick-store-closed-notice','quick-review-maintenance','quick-review-closed-notice','quick-reviews-area','quick-banner','quick-spotlight'/);
   assert.match(app, /current\.bukakedai = byId\('quick-open'\)\.checked/);
   assert.match(app, /current\.maintenance = byId\('quick-maintenance'\)\.checked/);
+  assert.match(app, /current\.store_closed_notice_visible = byId\('quick-store-closed-notice'\)\.checked/);
   assert.match(app, /current\.review_maintenance = byId\('quick-review-maintenance'\)\.checked/);
+  assert.match(app, /current\.review_closed_notice_visible = byId\('quick-review-closed-notice'\)\.checked/);
   assert.match(app, /current\.reviews_section_visible = byId\('quick-reviews-area'\)\.checked/);
   assert.match(app, /current\.promo_banner_active = byId\('quick-banner'\)\.checked/);
   assert.match(app, /current\.product_spotlight_enabled = byId\('quick-spotlight'\)\.checked/);
