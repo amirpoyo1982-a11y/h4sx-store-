@@ -77,7 +77,8 @@ test('Store and Review show the configured daily schedule but hide it for manual
 test('closed notices can be hidden without marking the store open or allowing orders', () => {
   assert.match(storeApp, /store_closed_notice_visible:\s*true/);
   assert.match(storeApp, /review_closed_notice_visible:\s*true/);
-  assert.match(storeApp, /statusEl\.style\.display = !isOpen && !flagOn\(config\.maintenance\) && flagOff\(config\.store_closed_notice_visible\) \? 'none' : ''/);
+  assert.match(storeApp, /statusEl\.style\.display = ''/);
+  assert.match(storeApp, /statusTextEl\.textContent = "TUTUP"/);
   assert.match(storeApp, /closureType !== 'maintenance' && flagOff\(currentStoreConfig\.store_closed_notice_visible\)/);
   assert.match(storeApp, /function isClosedCatalogView\(config = currentStoreConfig\)/);
   assert.match(storeApp, /function blockOrderInClosedCatalogView\(\)/);

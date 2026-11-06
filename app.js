@@ -2833,7 +2833,7 @@ function updateBusinessHoursDisplay(config, isOpen, showSchedule = true) {
   }
   
   if (statusTextEl && statusDotEl && statusEl) {
-    statusEl.style.display = !isOpen && !flagOn(config.maintenance) && flagOff(config.store_closed_notice_visible) ? 'none' : '';
+    statusEl.style.display = '';
     if (isOpen) {
       statusTextEl.textContent = "BUKA";
       statusDotEl.classList.remove('closed');
