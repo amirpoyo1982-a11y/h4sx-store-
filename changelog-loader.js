@@ -1,35 +1,32 @@
 const CHANGELOG_DATA = {
-  title: 'H4SX Lebih Lancar',
-  subtitle: 'Perubahan terbaru untuk pelanggan: lebih mudah pilih item, semak maklumat dan terus chat kami.',
-  date: '8 Oktober 2026',
-  releasedAt: '2026-10-08T00:00:00+08:00',
+  title: 'Kongsi & Kawal Kedai',
+  subtitle: 'Kongsi produk dengan mudah, nikmati paparan lebih kemas dan kawal notis kedai dengan lebih jelas.',
+  date: '6 November 2026',
+  releasedAt: '2026-11-06T00:00:00+08:00',
   time: 'Update pelanggan',
-  version: 'v6.2',
+  version: 'v6.3',
   sections: [
     {
       type: 'added',
-      title: 'WhatsApp & pesanan',
+      title: 'Kongsi produk',
       items: [
-        { icon: 'fa-brands fa-whatsapp', text: '<strong>Chat terus tanpa tunggu</strong><br>Pada pilihan konsultasi, tekan Terus ke WhatsApp tanpa menunggu masa tamat.' },
-        { icon: 'fa-comment-dots', text: '<strong>Mesej lebih mudah dibaca</strong><br>Ayat WhatsApp kini ikut item yang dipilih dan bahagian penting ditulis tebal.' }
+        { icon: 'fa-link', text: '<strong>Copy Link pada kad produk</strong><br>Salin pautan produk terus daripada kad individu.' },
+        { icon: 'fa-link', text: '<strong>Copy Link pilihan variant</strong><br>Salin pautan variant yang dipilih terus daripada modal produk.' }
+      ]
+    },
+    {
+      type: 'removed',
+      title: 'Paparan produk',
+      items: [
+        { icon: 'fa-image', text: '<strong>Ruang gambar produk lebih luas</strong><br>Butang WhatsApp dan “Pilih Type” dibuang daripada lapisan atas gambar kad produk.' }
       ]
     },
     {
       type: 'info',
-      title: 'Banner & game',
+      title: 'Kawalan notis kedai',
       items: [
-        { icon: 'fa-hand-pointer', text: '<strong>Banner boleh diseret</strong><br>Gerakkan promosi ke kiri atau kanan tanpa tersalah buka pautan.' },
-        { icon: 'fa-tags', text: '<strong>Semua harga turun dipaparkan</strong><br>Setiap produk atau pilihan yang turun harga kini ada baris sendiri dengan jumlah jimat.' },
-        { icon: 'fa-circle-exclamation', text: '<strong>Notis game lebih jelas</strong><br>Maklumat penting sebelum membeli dipaparkan pada game yang berkaitan.' }
-      ]
-    },
-    {
-      type: 'fixed',
-      title: 'Pengalaman kedai',
-      items: [
-        { icon: 'fa-link', text: '<strong>Pautan game terus dibuka</strong><br>Masuk melalui link promosi tidak lagi mengulang intro kedai.' },
-        { icon: 'fa-clock', text: '<strong>Waktu kedai lebih tepat</strong><br>Jadual yang melangkaui tengah malam kini mengikut waktu Malaysia dengan betul.' },
-        { icon: 'fa-mobile-screen-button', text: '<strong>Lebih selesa di telefon</strong><br>Paparan awal lebih ringan dan notis tidak lagi bertindih di atas skrin.' }
+        { icon: 'fa-toggle-on', text: '<strong>Notis tutup Store dan Review dikawal berasingan</strong><br>Admin boleh memilih untuk memaparkan atau menyembunyikan setiap notis tutup biasa; notis maintenance tetap dipaparkan.' },
+        { icon: 'fa-store', text: '<strong>Status TUTUP kekal kelihatan</strong><br>Apabila notis penuh disembunyikan, status kedai pada bar atas tetap memaparkan TUTUP. Pelanggan boleh melihat katalog, tetapi pesanan tetap disekat selagi <code>bukakedai</code> ditutup.' }
       ]
     }
   ]
