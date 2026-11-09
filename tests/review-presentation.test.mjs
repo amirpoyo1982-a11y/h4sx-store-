@@ -31,3 +31,24 @@ test('only the confirmed official admin identity receives the H4SX logo', () => 
   assert.equal(presentation.profileImageUrl({ adminAuthorUid: OFFICIAL_REVIEW_ADMIN_UID, adminIdentityConfirmed: false, profileImg: 'https://example.com/avatar.png' }), 'https://example.com/avatar.png');
   assert.equal(presentation.profileImageUrl({ adminAuthorUid: 'untrusted', adminIdentityConfirmed: true, profileImg: 'https://example.com/avatar.png' }), 'https://example.com/avatar.png');
 });
+
+test('pinned then featured reviews stay above regular reviews in either date sort', () => {
+  const reviews = [
+    { id: 'old', diciptaPada: '2024-01-01' },
+    { id: 'feature-old', featured: true, featuredAt: '2025-01-01', diciptaPada: '2020-01-01' },
+    { id: 'pin-old', pinned: true, pinnedAt: '2025-01-01', diciptaPada: '2019-01-01' },
+    { id: 'new', diciptaPada: '2026-01-01' },
+    { id: 'pin-new', pinned: true, pinnedAt: '2026-01-01', diciptaPada: '2018-01-01' },
+    { id: 'feature-new', featured: true, featuredAt: '2026-01-01', diciptaPada: '2017-01-01' },
+    { id: 'hidden-pin', pinned: true, moderationStatus: 'hidden', diciptaPada: '2027-01-01' }
+  ];
+
+  assert.deepEqual(
+    [...presentation.orderReviews(reviews)].map(item => item.id),
+    ['pin-new', 'pin-old', 'feature-new', 'feature-old', 'new', 'old']
+  );
+  assert.deepEqual(
+    [...presentation.orderReviews(reviews, 'oldest')].map(item => item.id),
+    ['pin-new', 'pin-old', 'feature-new', 'feature-old', 'old', 'new']
+  );
+});

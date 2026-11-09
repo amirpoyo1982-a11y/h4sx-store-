@@ -49,11 +49,41 @@
     return isOfficialAdmin(data) ? H4SX_LOGO_URL : String(data.profileImg || '');
   }
 
+  function orderReviews(list = [], sort = 'newest') {
+    const direction = sort === 'oldest' ? 1 : -1;
+    const recordTime = value => {
+      if (typeof value?.toMillis === 'function') return value.toMillis();
+      if (typeof value?.toDate === 'function') return value.toDate().getTime();
+      const time = new Date(value || '').getTime();
+      return Number.isFinite(time) ? time : 0;
+    };
+    const reviewTime = item => recordTime(item.diciptaPada || item.timestamp || item.date);
+    const publicReviews = list.filter(item =>
+      !['hidden', 'rejected', 'pending', 'trash'].includes(String(item.moderationStatus || 'published').trim().toLowerCase())
+    );
+    return publicReviews.slice().sort((a, b) => {
+      const priority = Number(b.pinned === true) - Number(a.pinned === true)
+        || Number(b.featured === true) - Number(a.featured === true);
+      if (priority) return priority;
+      if (a.pinned === true) {
+        const pinnedTime = recordTime(b.pinnedAt) - recordTime(a.pinnedAt);
+        if (pinnedTime) return pinnedTime;
+      } else if (a.featured === true) {
+        const featuredTime = recordTime(b.featuredAt) - recordTime(a.featuredAt);
+        if (featuredTime) return featuredTime;
+      }
+      const dateDifference = (reviewTime(a) - reviewTime(b)) * direction;
+      if (dateDifference) return dateDifference;
+      return String(a.id || '').localeCompare(String(b.id || '')) * direction;
+    });
+  }
+
   root.H4ReviewPresentation = Object.freeze({
     isOfficialAdmin,
     badgeStyle,
     nameStyle,
     nameClass,
-    profileImageUrl
+    profileImageUrl,
+    orderReviews
   });
 })(typeof window === 'undefined' ? globalThis : window);

@@ -6243,13 +6243,7 @@ function reviewSortTime(item) {
 }
 
 function reviewsViewItemList(list = latestReviewStatsData) {
-  const items = uniqueReviewRecords(orderedReviewShowcaseRecords(list));
-  const dir = reviewsViewSort === 'oldest' ? 1 : -1;
-  return items.sort((a, b) => {
-    const diff = reviewSortTime(a) - reviewSortTime(b);
-    if (diff) return diff * dir;
-    return String(a.id || '').localeCompare(String(b.id || '')) * dir;
-  });
+  return reviewPresentation().orderReviews(uniqueReviewRecords(list), reviewsViewSort);
 }
 
 function setReviewsSortButtons() {
