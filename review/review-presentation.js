@@ -49,6 +49,32 @@
     return isOfficialAdmin(data) ? H4SX_LOGO_URL : String(data.profileImg || '');
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
+  function badgeClass(data = {}) {
+    const animated = data.badgeAnimated !== false || data.badgeRainbow === true;
+    return 'review-identity-role' + (animated ? ' is-animated' : '') + (data.badgeRainbow === true ? ' is-rainbow' : '');
+  }
+
+  function badgeMarkup(data = {}, emojiMarkup = '') {
+    const text = String(data.badgeText || data.role || '').trim();
+    return text
+      ? `<span class="${badgeClass(data)}" style="${badgeStyle(data)}">${emojiMarkup}${escapeHtml(text)}</span>`
+      : '';
+  }
+
+  function nameMarkup(data = {}, text = '', isReviewAdmin = false) {
+    return `<strong class="${nameClass(data)}" style="${nameStyle(data, isReviewAdmin)}">${escapeHtml(text)}</strong>`;
+  }
+
   function orderReviews(list = [], sort = 'newest') {
     const direction = sort === 'oldest' ? 1 : -1;
     const recordTime = value => {
@@ -83,6 +109,9 @@
     badgeStyle,
     nameStyle,
     nameClass,
+    nameMarkup,
+    badgeClass,
+    badgeMarkup,
     profileImageUrl,
     orderReviews
   });

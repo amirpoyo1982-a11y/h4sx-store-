@@ -1,10 +1,10 @@
-const CACHE_NAME = 'h4sx-pwa-20261110-review-pin-order-v7';
+const CACHE_NAME = 'h4sx-pwa-20261110-review-identity-fix-v8';
 const APP_SHELL = [
   './index.htm',
   './preview-bypass.js?v=default-on-20261021',
-  './review/review-presentation.js?v=review-pin-order-20261110',
-  './styles.css?v=review-pin-order-20261110',
-  './app.js?v=review-pin-order-20261110',
+  './review/review-presentation.js?v=review-identity-fix-20261110',
+  './styles.css?v=review-identity-fix-20261110',
+  './app.js?v=review-identity-fix-20261110',
   './changelog-loader.js?v=price-drop-v62-20261008',
   './h4sx-intro.html?v=hs-intro-v8-20261008',
   './review-media.js?v=admin-feedback-edit-20261015',

@@ -5617,9 +5617,6 @@ function reviewPresentation() {
   if (!window.H4ReviewPresentation) throw new Error('Review presentation helpers are unavailable.');
   return window.H4ReviewPresentation;
 }
-  function reviewIdentityBadgeStyle(data = {}) {
-    return reviewPresentation().badgeStyle(data);
-  }
   function reviewIdentityMedalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
     const c2 = warnaHexSah(data.medalColor2, '#e05252');
@@ -5634,16 +5631,9 @@ function reviewPresentation() {
     const border = outline ? `1.5px solid ${rainbow ? '#7c3aed' : glow}` : '1px solid rgba(255,255,255,.48)';
     return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
   }
-  function reviewIdentityNameStyle(data = {}, isReviewAdmin = false) {
-    return reviewPresentation().nameStyle(data, isReviewAdmin);
-  }
-  function reviewIdentityNameClass(data = {}) {
-    return reviewPresentation().nameClass(data);
-  }
   function reviewIdentityProfileImageUrl(data = {}) {
     return reviewPresentation().profileImageUrl(data);
   }
-
 function reviewIdentityCheck(data = {}) {
   if (data.customCheckEnabled !== true) return '';
   const color = warnaHexSah(data.customCheckColor, '#0284c7');
@@ -5651,10 +5641,7 @@ function reviewIdentityCheck(data = {}) {
   return '<span class="review-identity-check' + (gif ? ' is-gif' : '') + '" style="--check-color:' + color + ';zoom:' + (Number.isFinite(Number(data.customCheckSize)) && Number(data.customCheckSize) > 0 ? Math.max(70, Math.min(200, Number(data.customCheckSize))) / 100 : 1) + '" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>' + gif + '</span>';
 }
 function reviewIdentityRole(data = {}) {
-  const text = String(data.badgeText || data.role || '').trim();
-  const animated = data.badgeAnimated !== false || data.badgeRainbow === true;
-  const rainbow = data.badgeRainbow === true;
-  const badge = text ? '<span class="review-identity-role' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '') + '" style="' + reviewIdentityBadgeStyle(data) + '">' + customNameEmojiHTML(data.badgeEmoji) + escapeHtml(text) + '</span>' : '';
+  const badge = reviewPresentation().badgeMarkup(data, customNameEmojiHTML(data.badgeEmoji));
   const medalText = String(data.medalText || '').trim();
   const medal = medalText ? '<span class="review-identity-medal' + (data.medalAnimated !== false || data.medalRainbow === true ? ' is-animated' : '') + '" style="' + reviewIdentityMedalStyle(data) + '">' + customNameEmojiHTML(data.medalEmoji) + escapeHtml(medalText) + '</span>' : '';
   return badge + medal;
@@ -6035,7 +6022,7 @@ function showReviewShowcasePopup(item, total) {
     '<div class="review-popup-link">' +
     '<span class="review-popup-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>' +
     '<span class="review-popup-copy">' +
-    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
+    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + reviewPresentation().nameMarkup(item, name, officialAdminReview) + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + formatReviewMessageText(text) + '</span>' + readMore + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton + videoButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
@@ -6182,7 +6169,7 @@ function reviewCardHTML(item) {
     : '<a class="rv-report-link" href="/review?reviewId=' + encodeURIComponent(String(item.id)) + '&report=1"><i class="fa-regular fa-flag" aria-hidden="true"></i> Lapor</a>';
   const backplate = item.identityBackplateEnabled === true;
   const nameBlock = customNameEmojiHTML(item.nameEmoji)
-    + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>'
+    + reviewPresentation().nameMarkup(item, name, officialAdminReview)
     + reviewIdentityCheck(item);
   return '<article class="rv-card">'
     + '<div class="rv-card-head">'
