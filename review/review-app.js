@@ -888,16 +888,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return /^#[0-9a-f]{6}$/i.test(nilai || '') ? nilai : fallback;
   }
   function badgeStyle(data = {}) {
-    const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
-    const text = warnaHexSah(data.badgeTextColor, '#ffffff');
-    const glow = warnaHexSah(data.badgeGlowColor, c1);
-    const gradient = data.badgeGradient !== false;
-    const rainbow = data.badgeRainbow === true;
-    const bg = rainbow
-      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
-      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `zoom:${badgeSizePercent(data.badgeSize) / 100}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+    return window.H4ReviewPresentation.badgeStyle(data);
   }
   function medalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
@@ -914,24 +905,10 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
   }
   function nameStyle(data = {}, isReviewAdmin = false) {
-    if (data.nameColorEnabled !== true) {
-      return isReviewAdmin ? 'color: var(--accent);' : '';
-    }
-    const c1 = warnaHexSah(data.nameColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.nameColor2, '#7c3aed');
-    const glow = warnaHexSah(data.nameGlowColor, c1);
-    const weight = ['700','800','900'].includes(String(data.nameWeight)) ? String(data.nameWeight) : '800';
-    const gradient = data.nameGradient !== false;
-    const rainbow = data.nameRainbow === true;
-    const base = `font-weight:${weight}; text-shadow:0 2px 12px ${glow}55;`;
-    if (rainbow) return `${base} color:#ff3158; background:linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
-    if (!gradient) return `${base} color:${c1};`;
-    return `${base} color:${c1}; background:linear-gradient(120deg, ${c1}, ${c2}, ${c1}); background-size:230% 230%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+    return window.H4ReviewPresentation.nameStyle(data, isReviewAdmin);
   }
   function nameClass(data = {}) {
-    const rainbow = data.nameColorEnabled === true && data.nameRainbow === true;
-    const animated = data.nameColorEnabled === true && (rainbow || (data.nameAnimated !== false && data.nameGradient !== false));
-    return 'buyer-name custom-name' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '');
+    return window.H4ReviewPresentation.nameClass(data);
   }
   function reviewEmojiCandidates(value) {
     const raw = String(value || '').trim();

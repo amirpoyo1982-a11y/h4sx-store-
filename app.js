@@ -5613,17 +5613,12 @@ function badgeStyle(data = {}) {
   const bg = gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1;
   return `background:${bg}; color:${text}; --badge-glow:${glow}; box-shadow:0 4px 16px -8px ${glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
 }
+function reviewPresentation() {
+  if (!window.H4ReviewPresentation) throw new Error('Review presentation helpers are unavailable.');
+  return window.H4ReviewPresentation;
+}
   function reviewIdentityBadgeStyle(data = {}) {
-    const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
-    const text = warnaHexSah(data.badgeTextColor, '#ffffff');
-    const glow = warnaHexSah(data.badgeGlowColor, c1);
-    const gradient = data.badgeGradient !== false;
-    const rainbow = data.badgeRainbow === true;
-    const bg = rainbow
-      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
-      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `zoom:${Number.isFinite(Number(data.badgeSize)) && Number(data.badgeSize) > 0 ? Math.max(70, Math.min(200, Number(data.badgeSize))) / 100 : 1}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+    return reviewPresentation().badgeStyle(data);
   }
   function reviewIdentityMedalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
@@ -5640,24 +5635,13 @@ function badgeStyle(data = {}) {
     return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
   }
   function reviewIdentityNameStyle(data = {}, isReviewAdmin = false) {
-    if (data.nameColorEnabled !== true) {
-      return isReviewAdmin ? 'color: var(--accent);' : '';
-    }
-    const c1 = warnaHexSah(data.nameColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.nameColor2, '#7c3aed');
-    const glow = warnaHexSah(data.nameGlowColor, c1);
-    const weight = ['700','800','900'].includes(String(data.nameWeight)) ? String(data.nameWeight) : '800';
-    const gradient = data.nameGradient !== false;
-    const rainbow = data.nameRainbow === true;
-    const base = `font-weight:${weight}; text-shadow:0 2px 12px ${glow}55;`;
-    if (rainbow) return `${base} color:#ff3158; background:linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
-    if (!gradient) return `${base} color:${c1};`;
-    return `${base} color:${c1}; background:linear-gradient(120deg, ${c1}, ${c2}, ${c1}); background-size:230% 230%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+    return reviewPresentation().nameStyle(data, isReviewAdmin);
   }
   function reviewIdentityNameClass(data = {}) {
-    const rainbow = data.nameColorEnabled === true && data.nameRainbow === true;
-    const animated = data.nameColorEnabled === true && (rainbow || (data.nameAnimated !== false && data.nameGradient !== false));
-    return 'buyer-name custom-name' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '');
+    return reviewPresentation().nameClass(data);
+  }
+  function reviewIdentityProfileImageUrl(data = {}) {
+    return reviewPresentation().profileImageUrl(data);
   }
 
 function reviewIdentityCheck(data = {}) {
@@ -5669,7 +5653,8 @@ function reviewIdentityCheck(data = {}) {
 function reviewIdentityRole(data = {}) {
   const text = String(data.badgeText || data.role || '').trim();
   const animated = data.badgeAnimated !== false || data.badgeRainbow === true;
-  const badge = text ? '<span class="review-identity-role' + (animated ? ' is-animated' : '') + '" style="' + reviewIdentityBadgeStyle(data) + '">' + customNameEmojiHTML(data.badgeEmoji) + escapeHtml(text) + '</span>' : '';
+  const rainbow = data.badgeRainbow === true;
+  const badge = text ? '<span class="review-identity-role' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '') + '" style="' + reviewIdentityBadgeStyle(data) + '">' + customNameEmojiHTML(data.badgeEmoji) + escapeHtml(text) + '</span>' : '';
   const medalText = String(data.medalText || '').trim();
   const medal = medalText ? '<span class="review-identity-medal' + (data.medalAnimated !== false || data.medalRainbow === true ? ' is-animated' : '') + '" style="' + reviewIdentityMedalStyle(data) + '">' + customNameEmojiHTML(data.medalEmoji) + escapeHtml(medalText) + '</span>' : '';
   return badge + medal;
@@ -6017,8 +6002,10 @@ function showReviewShowcasePopup(item, total) {
   const name = item.nama || item.name || 'Pelanggan';
   const text = (item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.').replace(/^cdg\s*[-:]\s*/i, '');
   const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="Profil ' + escapeHtml(name) + '">'
+  const officialAdminReview = reviewPresentation().isOfficialAdmin(item);
+  const profileImageUrl = reviewIdentityProfileImageUrl(item);
+  const avatar = profileImageUrl
+    ? '<img src="' + escapeHtml(profileImageUrl) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="' + (officialAdminReview ? 'H4SX Admin' : 'Profil ' + escapeHtml(name)) + '">'
     : escapeHtml(item.emojiProfil || initials);
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleMarkup = reviewIdentityRole(item);
@@ -6046,7 +6033,7 @@ function showReviewShowcasePopup(item, total) {
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
     '</div>' +
     '<div class="review-popup-link">' +
-    '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
+    '<span class="review-popup-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>' +
     '<span class="review-popup-copy">' +
     reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + formatReviewMessageText(text) + '</span>' + readMore + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
@@ -6164,8 +6151,10 @@ function reviewCardHTML(item) {
   const zoomStyle = window.H4ReviewMedia?.profileZoomStyle
     ? window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100, item.profileOffsetY ?? 0)
     : 'object-fit:cover';
-  const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + zoomStyle + '" alt="Profil ' + escapeHtml(name) + '" loading="lazy" decoding="async">'
+  const officialAdminReview = reviewPresentation().isOfficialAdmin(item);
+  const profileImageUrl = reviewIdentityProfileImageUrl(item);
+  const avatar = profileImageUrl
+    ? '<img src="' + escapeHtml(profileImageUrl) + '" style="' + zoomStyle + '" alt="' + (officialAdminReview ? 'H4SX Admin' : 'Profil ' + escapeHtml(name)) + '" loading="lazy" decoding="async">'
     : escapeHtml(item.emojiProfil || reviewCardInitials(name));
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const stars = item.hideRating === true
@@ -6197,7 +6186,7 @@ function reviewCardHTML(item) {
     + reviewIdentityCheck(item);
   return '<article class="rv-card">'
     + '<div class="rv-card-head">'
-    + '<span class="rv-avatar"' + avatarStyle + '>' + avatar + '</span>'
+    + '<span class="rv-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>'
     + '<div class="rv-card-id">'
     + (backplate ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '')
     + '<span class="rv-card-name">' + nameBlock + '</span>'
