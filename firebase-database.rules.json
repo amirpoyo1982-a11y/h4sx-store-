@@ -25,6 +25,13 @@
           ".write": "(auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3') || (!data.exists() && root.child('store/customer_orders').child($orderId).exists() && newData.child('orderId').val() === $orderId)",
           ".validate": "newData.hasChildren(['orderId','claimedAt']) && newData.child('orderId').val() === $orderId && newData.child('claimedAt').isNumber()"
         }
+      },
+      "customer_payment_proofs": {
+        ".read": "auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3'",
+        "$orderId": {
+          ".write": "(auth != null && auth.uid === 'LWRN6IDv4OV1PZd7Vldgp6F9pdH3') || (!data.exists() && root.child('store/customer_orders').child($orderId).exists() && newData.child('orderId').val() === $orderId)",
+          ".validate": "newData.hasChildren(['orderId','image','submittedAt']) && newData.child('orderId').val() === $orderId && newData.child('image').isString() && newData.child('image').val().matches(/^data:image\\/jpeg;base64,/) && newData.child('image').val().length <= 450000 && newData.child('submittedAt').isNumber()"
+        }
       }
     },
     "customer_order_private": {

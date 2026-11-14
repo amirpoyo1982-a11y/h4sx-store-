@@ -8,14 +8,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-  <link rel="stylesheet" href="catalog-control.css?v=42-catalog-emojis">
+  <link rel="stylesheet" href="catalog-control.css?v=payment-proof-20261115">
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-  <script defer src="catalog-control.js?v=admin-upgrades-20261016"></script>
+  <script defer src="catalog-control.js?v=payment-proof-20261115"></script>
 </head>
 <body>
   <div id="toast" class="toast" role="status"></div>
+  <div id="customer-proof-viewer" class="customer-proof-viewer" hidden role="dialog" aria-modal="true" aria-label="Bukti pembayaran">
+    <div class="customer-proof-viewer-card">
+      <img id="customer-proof-viewer-img" alt="Bukti pembayaran pelanggan">
+      <div class="customer-proof-viewer-actions"><a id="customer-proof-viewer-open" class="ghost" href="#" download="bukti-pembayaran.jpg"><i class="fa-solid fa-download"></i> Muat turun</a><button type="button" class="ghost" id="customer-proof-viewer-close"><i class="fa-solid fa-xmark"></i> Tutup</button></div>
+    </div>
+  </div>
   <main class="shell">
     <section id="login-view" class="login-card">
       <div class="brand"><span>H4</span>SX</div>

@@ -895,6 +895,7 @@ function openCustomerOrderById(orderId) {
   activeCustomerOrderDelivery = null;
   activeCustomerOrderPrivate = null;
   activeCustomerOrderAccessToken = storedCustomerOrderAccess(id);
+  clearPaymentProof();
   try { localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, id); } catch (error) {}
   updateLastCustomerOrderButton();
   const modal = document.getElementById('customer-order-modal');
@@ -941,6 +942,7 @@ function startNewCustomerOrder() {
   activeCustomerOrderPrivate = null;
   activeCustomerOrderAccessToken = '';
   closeCustomerOrderWhatsAppPrompt();
+  clearPaymentProof();
   document.getElementById('customer-order-form')?.reset();
   const qty = document.getElementById('customer-order-qty');
   if (qty) qty.value = '1';
@@ -1123,13 +1125,26 @@ async function markCustomerOrderPaid() {
     setCustomerOrderView('status');
     return renderCustomerOrderStatus();
   }
+  if (activeCustomerOrderClaim) {
+    setCustomerOrderView('status');
+    return renderCustomerOrderStatus();
+  }
+  if (!pendingPaymentProofFile) {
+    document.getElementById('customer-order-proof-drop')?.classList.add('needs-proof');
+    return toast('Sila muat naik bukti pembayaran (resit) dahulu.', true);
+  }
   const button = document.getElementById('customer-order-paid');
   const original = button.innerHTML;
   button.disabled = true;
-  button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghantar...';
+  button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghantar bukti...';
   try {
-    await realtimeDb.ref(REALTIME_STORE_ROOT + '/customer_payment_claims/' + activeCustomerOrderId).set({ orderId:activeCustomerOrderId, claimedAt:firebase.database.ServerValue.TIMESTAMP });
-    activeCustomerOrderClaim = { orderId:activeCustomerOrderId, claimedAt:Date.now() };
+    const proofImage = await compressPaymentProof(pendingPaymentProofFile);
+    const updates = {};
+    updates[REALTIME_STORE_ROOT + '/customer_payment_proofs/' + activeCustomerOrderId] = { orderId:activeCustomerOrderId, image:proofImage, submittedAt:firebase.database.ServerValue.TIMESTAMP };
+    updates[REALTIME_STORE_ROOT + '/customer_payment_claims/' + activeCustomerOrderId] = { orderId:activeCustomerOrderId, claimedAt:firebase.database.ServerValue.TIMESTAMP, hasProof:true };
+    await realtimeDb.ref().update(updates);
+    activeCustomerOrderClaim = { orderId:activeCustomerOrderId, claimedAt:Date.now(), hasProof:true };
+    clearPaymentProof();
     setCustomerOrderView('status');
     renderCustomerOrderStatus();
     toast('Bayaran dihantar untuk semakan admin.');
@@ -1140,6 +1155,82 @@ async function markCustomerOrderPaid() {
     button.disabled = false;
     button.innerHTML = original;
   }
+}
+
+let pendingPaymentProofFile = null;
+let pendingPaymentProofUrl = '';
+const PAYMENT_PROOF_MAX_FILE_BYTES = 15 * 1024 * 1024;
+const PAYMENT_PROOF_MAX_DATA_URL = 420000;
+
+function clearPaymentProof() {
+  if (pendingPaymentProofUrl) {
+    try { URL.revokeObjectURL(pendingPaymentProofUrl); } catch (error) {}
+  }
+  pendingPaymentProofFile = null;
+  pendingPaymentProofUrl = '';
+  const input = document.getElementById('customer-order-proof-input');
+  const preview = document.getElementById('customer-order-proof-preview');
+  const image = document.getElementById('customer-order-proof-img');
+  const name = document.getElementById('customer-order-proof-name');
+  const drop = document.getElementById('customer-order-proof-drop');
+  if (input) input.value = '';
+  if (image) image.removeAttribute('src');
+  if (preview) preview.hidden = true;
+  if (name) name.textContent = 'Tekan untuk pilih gambar resit';
+  if (drop) drop.classList.remove('has-file', 'needs-proof');
+}
+
+function handleCustomerPaymentProof(input) {
+  const file = input?.files?.[0];
+  if (!file) return clearPaymentProof();
+  if (!file.type || !file.type.startsWith('image/')) {
+    clearPaymentProof();
+    return toast('Sila pilih fail gambar (screenshot atau foto resit).', true);
+  }
+  if (file.size > PAYMENT_PROOF_MAX_FILE_BYTES) {
+    clearPaymentProof();
+    return toast('Gambar terlalu besar. Maksimum 15MB.', true);
+  }
+  if (pendingPaymentProofUrl) {
+    try { URL.revokeObjectURL(pendingPaymentProofUrl); } catch (error) {}
+  }
+  pendingPaymentProofFile = file;
+  pendingPaymentProofUrl = URL.createObjectURL(file);
+  const preview = document.getElementById('customer-order-proof-preview');
+  const image = document.getElementById('customer-order-proof-img');
+  const name = document.getElementById('customer-order-proof-name');
+  const drop = document.getElementById('customer-order-proof-drop');
+  if (image) image.src = pendingPaymentProofUrl;
+  if (preview) preview.hidden = false;
+  if (name) name.textContent = file.name || 'Bukti pembayaran dipilih';
+  if (drop) {
+    drop.classList.remove('needs-proof');
+    drop.classList.add('has-file');
+  }
+}
+
+async function compressPaymentProof(file) {
+  let bitmap;
+  try { bitmap = await createImageBitmap(file); }
+  catch (error) { throw new Error('Gambar tidak dapat dibaca. Guna screenshot JPG, PNG atau WebP.'); }
+  try {
+    const attempts = [[1200, 0.82], [1000, 0.72], [800, 0.62], [640, 0.5]];
+    for (const [maxSide, quality] of attempts) {
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      if (dataUrl.startsWith('data:image/jpeg') && dataUrl.length <= PAYMENT_PROOF_MAX_DATA_URL) return dataUrl;
+    }
+  } finally {
+    if (typeof bitmap.close === 'function') bitmap.close();
+  }
+  throw new Error('Gambar terlalu besar. Crop screenshot resit dan cuba lagi.');
 }
 
 function customerOrderEffectiveStatus() {
