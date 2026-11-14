@@ -33,6 +33,7 @@ let customerOrders = [];
 let customerOrderClaims = {};
 let customerOrderPrivate = {};
 let customerOrderDeliveryCache = {};
+let customerOrdersRenderTimer = 0;
 let leaderboardConfig = { active:false, title:'Top Pelanggan H4SX', subtitle:'Terima kasih kepada pelanggan yang terus menyokong H4SX STORE.', defaultPeriod:'daily' };
 let leaderboardEntries = [];
 let leaderboardAdminPeriod = 'daily';
@@ -223,17 +224,17 @@ function startListeners() {
     customerOrders = nextOrders;
     knownCustomerOrderIds = nextIds;
     if (!customerOrdersReady) customerOrdersReady = true;
-    renderCustomerOrders();
+    scheduleCustomerOrdersRender();
     markSynced();
     if (newOrders.length) announceNewCustomerOrders(newOrders);
   }, realtimeError);
   database.ref(ROOT + '/customer_payment_claims').on('value', snapshot => {
     customerOrderClaims = snapshot.val() || {};
-    renderCustomerOrders();
+    scheduleCustomerOrdersRender();
   }, realtimeError);
   database.ref('customer_order_private').on('value', snapshot => {
     customerOrderPrivate = snapshot.val() || {};
-    renderCustomerOrders();
+    scheduleCustomerOrdersRender();
   }, realtimeError);
 }
 
@@ -1850,6 +1851,14 @@ async function decryptOrderDelivery(cipher, token) {
   return JSON.parse(new TextDecoder().decode(plain));
 }
 
+function scheduleCustomerOrdersRender() {
+  if (customerOrdersRenderTimer) return;
+  customerOrdersRenderTimer = setTimeout(() => {
+    customerOrdersRenderTimer = 0;
+    renderCustomerOrders();
+  }, 80);
+}
+
 function renderCustomerOrders() {
   const list = byId('customer-orders-list');
   if (!list) return;
@@ -2052,8 +2061,8 @@ byId('customer-order-sound-test').addEventListener('click', () => {
   speakNewCustomerOrder(1, true);
   notify('Test suara: Order baru masuk.');
 });
-byId('customer-order-search').addEventListener('input', renderCustomerOrders);
-byId('customer-order-filter').addEventListener('change', renderCustomerOrders);
+byId('customer-order-search').addEventListener('input', scheduleCustomerOrdersRender);
+byId('customer-order-filter').addEventListener('change', scheduleCustomerOrdersRender);
 byId('customer-orders-list').addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
