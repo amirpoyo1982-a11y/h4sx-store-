@@ -1869,12 +1869,16 @@ function renderCustomerOrders() {
     const privateData = customerOrderPrivate[order.id] || {};
     const items = Array.isArray(order.items) ? order.items : Object.values(order.items || {});
     const status = effectiveAdminOrderStatus(order);
+    const claim = customerOrderClaims[order.id] || {};
     const delivery = customerOrderDeliveryCache[order.id] || {};
     const statusOptions = CUSTOMER_ORDER_STATUS_LIST.map(value => '<option value="' + value + '"' + (value === status ? ' selected' : '') + '>' + value + '</option>').join('');
     return '<article class="customer-order-row status-' + escapeHtml(status.toLowerCase().replace(/\s+/g, '-')) + '">' +
       '<div class="customer-order-row-head"><div><span>' + escapeHtml(status) + '</span><strong>' + escapeHtml(order.id) + '</strong><small>' + formatAdminOrderDate(order.createdAt) + '</small></div><b>RM' + Number(order.total || 0).toFixed(2) + '</b></div>' +
       '<div class="customer-order-row-info"><div><small>PELANGGAN</small><strong>' + escapeHtml(privateData.customerName || 'Data private belum dimuat') + '</strong><span>' + escapeHtml(privateData.phone || order.phoneMasked || '-') + '</span></div><div><small>ITEM</small><strong>' + escapeHtml(items.map(item => item.name + ' ×' + Number(item.qty || 1)).join(', ') || '-') + '</strong><span>' + escapeHtml(privateData.username ? 'Username: ' + privateData.username : '') + '</span></div></div>' +
       (privateData.note ? '<div class="customer-order-note"><i class="fa-regular fa-note-sticky"></i><span><b>Nota pelanggan</b>' + escapeHtml(privateData.note) + '</span></div>' : '') +
+      '<div class="customer-order-proof' + (claim.hasProof ? '' : ' is-missing') + '">' + (claim.hasProof
+        ? '<button type="button" class="customer-order-proof-thumb" data-action="view-payment-proof" data-id="' + escapeHtml(order.id) + '" title="Lihat bukti pembayaran"><span style="display:grid;place-items:center;width:100%;height:100%;background:#10233b;color:var(--cyan);font-size:28px"><i class="fa-solid fa-receipt"></i></span></button><div class="customer-order-proof-copy"><small>BUKTI PEMBAYARAN</small><strong>Pelanggan telah hantar resit</strong><span>Dihantar: ' + formatAdminOrderDate(claim.claimedAt) + '</span></div><button class="ghost" data-action="view-payment-proof" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-eye"></i> Lihat Bukti</button>'
+        : '<span><i class="fa-solid fa-receipt"></i> Bukti pembayaran: ' + (status === 'Menunggu Pembayaran' ? 'belum dihantar pelanggan.' : 'tiada dalam tuntutan semasa. ') + (status === 'Menunggu Pembayaran' ? '' : '<button class="ghost" data-action="view-payment-proof" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-eye"></i> Semak bukti tersimpan</button>') + '</span>') + '</div>' +
       '<div class="customer-order-admin-note"><label><span><i class="fa-solid fa-user-shield"></i> NOTA ADMIN UNTUK PELANGGAN</span><textarea data-order-admin-note="' + escapeHtml(order.id) + '" maxlength="400" rows="2" placeholder="Contoh: Bayaran dah disahkan. Sila chat admin untuk proses pesanan.">' + escapeHtml(order.adminNote || '') + '</textarea></label><button class="ghost" data-action="save-customer-order-note" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-note-sticky"></i> Simpan nota</button></div>' +
       '<div class="customer-order-delivery-editor"><div class="customer-order-delivery-editor-head"><div><span>SERAHAN SELAMAT</span><strong>Akaun, email atau license</strong></div><button class="ghost" data-action="copy-delivery-access" data-id="' + escapeHtml(order.id) + '"><i class="fa-solid fa-key"></i> Copy Kod Akses</button></div><div class="customer-order-delivery-fields">' +
       '<label>Nama / Username<input data-delivery-field="username" value="' + escapeHtml(delivery.username || '') + '" placeholder="Username akaun"></label>' +
@@ -1917,6 +1921,8 @@ async function updateCustomerOrderStatus(orderId, status, button) {
     if (status === 'Sudah Dibayar') updates[ROOT + '/customer_orders/' + orderId + '/paidAt'] = firebase.database.ServerValue.TIMESTAMP;
     if (status === 'Completed') updates[ROOT + '/customer_orders/' + orderId + '/completedAt'] = firebase.database.ServerValue.TIMESTAMP;
     if (!['Menunggu Pengesahan','Pesanan anda sedang disahkan'].includes(status)) updates[ROOT + '/customer_payment_claims/' + orderId] = null;
+    if (status === 'Menunggu Pembayaran') updates[ROOT + '/customer_payment_proofs/' + orderId] = null;
+    if (status === 'Menunggu Pembayaran') delete customerPaymentProofCache[orderId];
     await withTimeout(database.ref().update(updates), 'Kemaskini status order');
     notify('Status ' + orderId + ' ditukar kepada ' + status + '.');
   } catch (error) { notify(error.message, true); }
@@ -1994,12 +2000,45 @@ async function deleteCustomerOrder(orderId, button) {
     await withTimeout(database.ref().update({
       [ROOT + '/customer_orders/' + orderId]: null,
       [ROOT + '/customer_payment_claims/' + orderId]: null,
+      [ROOT + '/customer_payment_proofs/' + orderId]: null,
       ['customer_order_private/' + orderId]: null
     }), 'Delete pesanan');
     notify('Pesanan ' + orderId + ' sudah dipadam.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(button, false); }
 }
+
+const customerPaymentProofCache = {};
+
+function closeCustomerProofViewer() {
+  const viewer = byId('customer-proof-viewer');
+  if (viewer) viewer.hidden = true;
+  const image = byId('customer-proof-viewer-img');
+  if (image) image.removeAttribute('src');
+}
+
+async function viewCustomerPaymentProof(orderId, button) {
+  setBusy(button, true, 'Memuat...');
+  try {
+    let image = customerPaymentProofCache[orderId];
+    if (!image) {
+      const snapshot = await withTimeout(database.ref(ROOT + '/customer_payment_proofs/' + orderId).once('value'), 'Muat bukti pembayaran');
+      image = snapshot.val()?.image || '';
+      if (image) customerPaymentProofCache[orderId] = image;
+    }
+    if (!image || !/^data:image\/(jpeg|png|webp);base64,/.test(image)) return notify('Tiada bukti pembayaran untuk order ' + orderId + '.', true);
+    byId('customer-proof-viewer-img').src = image;
+    const link = byId('customer-proof-viewer-open');
+    link.href = image;
+    link.download = 'bukti-' + orderId + '.jpg';
+    byId('customer-proof-viewer').hidden = false;
+  } catch (error) { notify(error.message, true); }
+  finally { setBusy(button, false); }
+}
+
+byId('customer-proof-viewer-close').addEventListener('click', closeCustomerProofViewer);
+byId('customer-proof-viewer').addEventListener('click', event => { if (event.target.id === 'customer-proof-viewer') closeCustomerProofViewer(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeCustomerProofViewer(); });
 
 byId('refresh-customer-orders').addEventListener('click', renderCustomerOrders);
 byId('customer-order-sound-toggle').addEventListener('click', () => {
@@ -2021,6 +2060,7 @@ byId('customer-orders-list').addEventListener('click', event => {
   const orderId = button.dataset.id;
   if (button.dataset.action === 'delete-customer-order') return deleteCustomerOrder(orderId, button);
   if (button.dataset.action === 'confirm-customer-payment') return updateCustomerOrderStatus(orderId, 'Sudah Dibayar', button);
+  if (button.dataset.action === 'view-payment-proof') return viewCustomerPaymentProof(orderId, button);
   if (button.dataset.action === 'save-customer-order-note') return updateCustomerOrderAdminNote(orderId, button);
   if (button.dataset.action === 'save-customer-delivery') return saveCustomerOrderDelivery(orderId, button);
   if (button.dataset.action === 'copy-delivery-access') return copyCustomerDeliveryAccess(orderId, button);

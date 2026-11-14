@@ -72,7 +72,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=review-identity-fix-20261110">
+  <link rel="stylesheet" href="styles.css?v=payment-proof-20261115">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -922,8 +922,14 @@
         <div class="customer-payment-qr"><img id="customer-order-qr" alt="QR pembayaran H4SX Store"><div id="customer-order-qr-empty"><i class="fa-solid fa-qrcode"></i><span>QR belum ditetapkan admin</span></div></div>
         <div class="customer-payment-info"><small>BAYAR KEPADA</small><h3 id="customer-order-recipient">H4SX Store</h3><p id="customer-order-instructions">Scan QR dan buat pembayaran mengikut jumlah pesanan.</p><div><span>Jumlah tepat</span><strong id="customer-order-pay-total">RM0.00</strong></div></div>
       </div>
-      <div class="customer-payment-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Pastikan jumlah betul. Tekan butang di bawah hanya selepas pembayaran berjaya.</span></div>
-      <button type="button" class="customer-order-primary" id="customer-order-paid" onclick="markCustomerOrderPaid()"><i class="fa-solid fa-check-double"></i> Saya Dah Bayar</button>
+      <div class="customer-payment-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Pastikan jumlah betul. Selepas bayar, muat naik resit pembayaran di bawah dan tekan butang hantar.</span></div>
+      <div class="customer-proof-box" id="customer-order-proof-box">
+        <div class="customer-proof-head"><i class="fa-solid fa-receipt"></i><div><strong>Muat naik bukti pembayaran</strong><small>Wajib. Screenshot atau foto resit TNG / DuitNow / bank (JPG, PNG atau WebP).</small></div></div>
+        <label class="customer-proof-drop" for="customer-order-proof-input" id="customer-order-proof-drop"><i class="fa-solid fa-cloud-arrow-up"></i><span id="customer-order-proof-name">Tekan untuk pilih gambar resit</span></label>
+        <input type="file" id="customer-order-proof-input" accept="image/*" hidden onchange="handleCustomerPaymentProof(this)">
+        <div class="customer-proof-preview" id="customer-order-proof-preview" hidden><img id="customer-order-proof-img" alt="Preview bukti pembayaran"><button type="button" onclick="clearPaymentProof()"><i class="fa-solid fa-trash"></i> Buang</button></div>
+      </div>
+      <button type="button" class="customer-order-primary" id="customer-order-paid" onclick="markCustomerOrderPaid()"><i class="fa-solid fa-paper-plane"></i> Hantar Bukti &amp; Saya Dah Bayar</button>
       <button type="button" class="customer-order-secondary" onclick="showCustomerOrderStatus()">Semak status pesanan</button>
     </section>
 
@@ -1199,7 +1205,7 @@
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
 <script src="review/review-presentation.js?v=review-identity-fix-20261110"></script>
-<script defer src="app.js?v=review-identity-fix-20261110"></script>
+<script defer src="app.js?v=payment-proof-20261115"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
