@@ -1151,7 +1151,9 @@ async function markCustomerOrderPaid() {
   button.disabled = true;
   button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Menghantar bukti...';
   try {
-    const proofImage = await compressPaymentProof(pendingPaymentProofFile);
+    if (!pendingPaymentProofData && pendingPaymentProofTask) await pendingPaymentProofTask;
+    const proofImage = pendingPaymentProofData;
+    if (!proofImage) throw new Error('Gambar resit belum siap diproses. Sila pilih semula gambar resit.');
     const updates = {};
     updates[REALTIME_STORE_ROOT + '/customer_payment_proofs/' + activeCustomerOrderId] = { orderId:activeCustomerOrderId, image:proofImage, submittedAt:firebase.database.ServerValue.TIMESTAMP };
     updates[REALTIME_STORE_ROOT + '/customer_payment_claims/' + activeCustomerOrderId] = { orderId:activeCustomerOrderId, claimedAt:firebase.database.ServerValue.TIMESTAMP, hasProof:true };
@@ -1171,16 +1173,17 @@ async function markCustomerOrderPaid() {
 }
 
 let pendingPaymentProofFile = null;
-let pendingPaymentProofUrl = '';
+let pendingPaymentProofData = '';
+let pendingPaymentProofTask = null;
+let pendingPaymentProofToken = 0;
 const PAYMENT_PROOF_MAX_FILE_BYTES = 15 * 1024 * 1024;
 const PAYMENT_PROOF_MAX_DATA_URL = 420000;
 
 function clearPaymentProof() {
-  if (pendingPaymentProofUrl) {
-    try { URL.revokeObjectURL(pendingPaymentProofUrl); } catch (error) {}
-  }
+  pendingPaymentProofToken++;
   pendingPaymentProofFile = null;
-  pendingPaymentProofUrl = '';
+  pendingPaymentProofData = '';
+  pendingPaymentProofTask = null;
   const input = document.getElementById('customer-order-proof-input');
   const preview = document.getElementById('customer-order-proof-preview');
   const image = document.getElementById('customer-order-proof-img');
@@ -1204,22 +1207,31 @@ function handleCustomerPaymentProof(input) {
     clearPaymentProof();
     return toast('Gambar terlalu besar. Maksimum 15MB.', true);
   }
-  if (pendingPaymentProofUrl) {
-    try { URL.revokeObjectURL(pendingPaymentProofUrl); } catch (error) {}
-  }
+  const token = ++pendingPaymentProofToken;
   pendingPaymentProofFile = file;
-  pendingPaymentProofUrl = URL.createObjectURL(file);
+  pendingPaymentProofData = '';
   const preview = document.getElementById('customer-order-proof-preview');
   const image = document.getElementById('customer-order-proof-img');
   const name = document.getElementById('customer-order-proof-name');
   const drop = document.getElementById('customer-order-proof-drop');
-  if (image) image.src = pendingPaymentProofUrl;
-  if (preview) preview.hidden = false;
-  if (name) name.textContent = file.name || 'Bukti pembayaran dipilih';
+  if (image) image.removeAttribute('src');
+  if (preview) preview.hidden = true;
+  if (name) name.textContent = (file.name || 'Bukti pembayaran') + ' - sedang diproses...';
   if (drop) {
     drop.classList.remove('needs-proof');
     drop.classList.add('has-file');
   }
+  pendingPaymentProofTask = compressPaymentProof(file).then(data => {
+    if (token !== pendingPaymentProofToken) return;
+    pendingPaymentProofData = data;
+    if (image) image.src = data;
+    if (preview) preview.hidden = false;
+    if (name) name.textContent = file.name || 'Bukti pembayaran dipilih';
+  }).catch(error => {
+    if (token !== pendingPaymentProofToken) return;
+    clearPaymentProof();
+    toast(error.message || 'Gambar tidak dapat diproses.', true);
+  });
 }
 
 async function compressPaymentProof(file) {
@@ -1229,6 +1241,7 @@ async function compressPaymentProof(file) {
   try {
     const attempts = [[1200, 0.82], [1000, 0.72], [800, 0.62], [640, 0.5]];
     for (const [maxSide, quality] of attempts) {
+      await new Promise(resolve => setTimeout(resolve, 0));
       const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(bitmap.width * scale));
