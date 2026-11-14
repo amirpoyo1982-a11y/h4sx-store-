@@ -35,6 +35,17 @@ function shouldShowReviewSystemPopup() {
   }
 }
 
+function isClosedCatalogView(config = currentStoreConfig) {
+  if (!flagOff(config.store_closed_notice_visible) || flagOn(config.maintenance)) return false;
+  return flagOff(config.bukakedai) || shouldStoreCloseAutomatically(config).closed;
+}
+
+function blockOrderInClosedCatalogView() {
+  if (!isClosedCatalogView()) return false;
+  toast('Kedai sedang ditutup. Katalog boleh dilihat tetapi pesanan tidak tersedia.', true);
+  return true;
+}
+
 function openReviewSystemPopup() {
   const popup = document.getElementById('review-system-popup');
   if (!popup || !shouldShowReviewSystemPopup() || autoPopupShownThisPage || isDirectCatalogVisit()) return;
@@ -146,6 +157,7 @@ function formatReceiptDateTime() {
 }
 
 function openReceipt() {
+  if (blockOrderInClosedCatalogView()) return;
   const username = document.getElementById('roblox-username').value || '-';
   const receiptCode = generateReceiptCode();
   const receiptDatetime = formatReceiptDateTime();
@@ -721,7 +733,7 @@ let modalVariantId = '', modalQuantity = 1;
 const CART_STORAGE_KEY = 'h4sx_cart_v1';
 const CUSTOMER_ORDER_STORAGE_KEY = 'h4sx_customer_order_id';
 const CUSTOMER_ORDER_ACCESS_PREFIX = 'h4sx_customer_order_access_';
-const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Sudah Dibayar','Sedang Diproses','Completed'];
+const CUSTOMER_ORDER_STATUSES = ['Menunggu Pembayaran','Menunggu Pengesahan','Pesanan anda sedang disahkan','Sudah Dibayar','Sedang Diproses','Completed'];
 let activeCustomerOrderId = '';
 let activeCustomerOrder = null;
 let activeCustomerOrderClaim = null;
@@ -963,6 +975,7 @@ async function generateCustomerOrderId() {
 
 async function submitCustomerOrder(event) {
   event.preventDefault();
+  if (blockOrderInClosedCatalogView()) return;
   if (!realtimeDb) return toast('Firebase belum bersedia. Cuba semula sekejap lagi.', true);
   if (!customerOrderConfig().enabled) return toast('Feature pesanan sedang ditutup.', true);
   const button = document.getElementById('customer-order-submit');
@@ -1341,9 +1354,9 @@ function renderCustomerOrderStatus() {
   const adminNote = String(activeCustomerOrder.adminNote || '').trim();
   if (adminNoteWrap) adminNoteWrap.hidden = !adminNote;
   if (adminNoteText) adminNoteText.textContent = adminNote;
-  const labels = ['Order diterima','Menunggu semakan bayaran','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
+  const labels = ['Order diterima','Menunggu semakan bayaran','Pesanan anda sedang disahkan','Bayaran disahkan','Pesanan sedang diproses','Pesanan siap'];
   const timeline = document.getElementById('customer-order-timeline');
-  if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Admin akan semak TNG / bank' : index === 2 ? 'Pembayaran sah' : index === 3 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
+  if (timeline) timeline.innerHTML = labels.map((label, index) => '<div class="' + (cancelled ? '' : (index < statusIndex ? 'done' : index === statusIndex ? 'active' : '')) + '"><span><i class="fa-solid ' + (index < statusIndex || status === 'Completed' ? 'fa-check' : 'fa-circle') + '"></i></span><div><strong>' + label + '</strong><small>' + (index === 0 ? 'Order ID telah dijana' : index === 1 ? 'Pelanggan telah menghantar bayaran untuk semakan' : index === 2 ? 'Admin sedang mengesahkan pesanan' : index === 3 ? 'Pembayaran sah' : index === 4 ? 'Admin sedang menyediakan item' : 'Resit digital tersedia') + '</small></div></div>').join('');
   const summary = document.getElementById('customer-order-summary');
   if (summary) summary.innerHTML = '<div><span>Item</span><strong>' + escapeHtml((activeCustomerOrder.items || []).map(item => item.name + ' ×' + item.qty).join(', ')) + '</strong></div><div><span>Jumlah</span><strong>' + formatCustomerOrderMoney(activeCustomerOrder.total) + '</strong></div><div><span>WhatsApp</span><strong>' + escapeHtml(activeCustomerOrder.phoneMasked || '-') + '</strong></div>';
   const receipt = document.getElementById('customer-order-receipt');
@@ -2294,11 +2307,15 @@ function updateGameUrl(name) {
       url.searchParams.set('game', gameSlug(name));
       url.searchParams.set('part', normalizeKey(activePlatform));
       url.searchParams.delete('item');
+      url.searchParams.delete('variant');
+      url.searchParams.delete('v');
       url.searchParams.delete('promo');
     } else {
       url.searchParams.delete('game');
       url.searchParams.delete('part');
       url.searchParams.delete('item');
+      url.searchParams.delete('variant');
+      url.searchParams.delete('v');
       url.searchParams.delete('promo');
     }
     history.replaceState(null, '', url.pathname + url.search + url.hash);
@@ -2322,6 +2339,14 @@ function getItemFromUrl() {
   try {
     const url = new URL(window.location.href);
     return (url.searchParams.get('item') || '').trim();
+  } catch(e) {
+    return '';
+  }
+}
+function getVariantFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    return (url.searchParams.get('variant') || '').trim();
   } catch(e) {
     return '';
   }
@@ -2362,16 +2387,17 @@ function findProductByRoute(value) {
 function openGameFromUrl() {
   const route = getGameFromUrl();
   const itemRoute = getItemFromUrl();
+  const variantId = getVariantFromUrl();
   const item = findProductByRoute(itemRoute);
   if (!route && item) {
     activePlatform = inferPlatform(item, gameGroupName(item));
-    openGame(gameGroupName(item), { fromUrl: true, itemId: item.id });
+    openGame(gameGroupName(item), { fromUrl: true, itemId: item.id, variantId });
     return true;
   }
   if (!route) return false;
   const name = findGameByRoute(route) || (item ? gameGroupName(item) : '');
   if (!name) return false;
-  openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute });
+  openGame(name, { fromUrl: true, itemId: item ? item.id : itemRoute, variantId });
   return true;
 }
 let handledPromoRoute = '';
@@ -2424,20 +2450,49 @@ function currentGameLink() {
   url.searchParams.set('game', gameSlug(currentGame));
   url.searchParams.set('part', normalizeKey(activePlatform));
   url.searchParams.delete('item');
+  url.searchParams.delete('variant');
+  url.searchParams.delete('v');
   return url.toString();
 }
-function productLink(item) {
+function productShareVersion(item = {}, variantId = '') {
+  const base = [
+    item.id, item.updatedAt, item.poster, item.posterImg, item.thumbnail, item.thumb,
+    item.image, item.img, item.mediaUrl, item.video, item.videoUrl
+  ]
+    .filter(value => value != null && value !== '')
+    .join('|');
+  const variants = Array.isArray(item.variants) ? item.variants : (Array.isArray(item.types) ? item.types : []);
+  const variant = variants.find((entry, index) => entry && entry.active !== false
+    && String(entry.id ?? entry.value ?? entry.name ?? index).trim() === String(variantId || ''));
+  const source = variant
+    ? base + '|variant:' + String(variant.id ?? variant.value ?? variant.name ?? '') + '|' + [
+      variant.updatedAt, variant.poster, variant.posterImg, variant.thumbnail, variant.thumb,
+      variant.image, variant.img, variant.mediaUrl, variant.video, variant.videoUrl
+    ].filter(value => value != null && value !== '').join('|')
+    : base;
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return 'r5-' + (hash >>> 0).toString(36);
+}
+function productLink(item, variantId = '') {
   const url = new URL(window.location.href);
   const gameName = gameGroupName(item) || currentGame;
   url.searchParams.set('game', gameSlug(gameName));
   url.searchParams.set('part', normalizeKey(inferPlatform(item, gameName)));
   url.searchParams.set('item', String(item.id));
+  const variant = getProductVariant(item, variantId);
+  if (variant) url.searchParams.set('variant', variant.id);
+  else url.searchParams.delete('variant');
+  url.searchParams.set('v', productShareVersion(item, variant?.id || ''));
   url.searchParams.delete('promo');
   return url.toString();
 }
-function updateProductUrl(item) {
+function updateProductUrl(item, variantId = '') {
   try {
-    const url = new URL(productLink(item));
+    const url = new URL(productLink(item, variantId));
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
 }
@@ -2445,6 +2500,8 @@ function clearProductUrlItem() {
   try {
     const url = new URL(window.location.href);
     url.searchParams.delete('item');
+    url.searchParams.delete('variant');
+    url.searchParams.delete('v');
     url.searchParams.delete('promo');
     history.replaceState(null, '', url.pathname + url.search + url.hash);
   } catch(e) {}
@@ -2459,20 +2516,18 @@ async function copyCurrentGameLink() {
     window.prompt('Copy link kategori:', link);
   }
 }
-async function copyProductLinkById(id) {
+async function copyProductLinkById(id, variantId = '') {
   const item = inventory.find(i => String(i.id) === String(id));
   if (!item) { toast('Barang tidak jumpa', true); return; }
-  const link = shareableProductLink(item);
-  try {
-    await navigator.clipboard.writeText(link);
-    toast('Link produk dengan preview WhatsApp disalin!');
-  } catch(e) {
-    window.prompt('Copy link barang:', link);
-  }
+  const variant = getProductVariant(item, variantId);
+  const link = shareableProductLink(item, variant?.id || '');
+  const copied = await copyTextWithFallback(link);
+  if (copied) toast(variant ? 'Link variant disalin!' : 'Link produk disalin!');
+  else window.prompt(variant ? 'Copy link variant:' : 'Copy link produk:', link);
 }
 function copyModalProductLink() {
   if (!modalItemId) { toast('Buka barang dulu', true); return; }
-  copyProductLinkById(modalItemId);
+  return copyProductLinkById(modalItemId, modalVariantId);
 }
 function shareProductToWhatsApp(id) {
   const item = inventory.find(entry => String(entry.id) === String(id));
@@ -2545,16 +2600,12 @@ function storeShareOrigin() {
   } catch (error) {}
   return 'https://www.h4sxmy.xyz';
 }
-function shareableProductLink(item) {
-  const source = [item?.id, item?.updatedAt, item?.img, item?.image, item?.poster, item?.thumbnail]
-    .filter(value => value != null && value !== '')
-    .join('|');
-  let hash = 2166136261;
-  for (let index = 0; index < source.length; index += 1) {
-    hash ^= source.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return storeShareOrigin().replace(/\/$/, '') + '/item/' + encodeURIComponent(String(item.id)) + '?v=r3-' + (hash >>> 0).toString(36);
+function shareableProductLink(item, variantId = '') {
+  const variant = getProductVariant(item, variantId);
+  const url = new URL('/item/' + encodeURIComponent(String(item.id)), storeShareOrigin());
+  url.searchParams.set('v', productShareVersion(item, variant?.id || ''));
+  if (variant) url.searchParams.set('variant', variant.id);
+  return url.href;
 }
 async function shareStoreContent(shareData, copiedMessage, promptLabel) {
   try {
@@ -2588,6 +2639,18 @@ async function shareProductItem(id) {
     url: shareableProductLink(item)
   }, 'Link item sudah disalin!', 'Copy link item ini:');
 }
+async function shareModalProductVariant() {
+  const item = inventory.find(entry => String(entry.id) === String(modalItemId));
+  const variant = getProductVariant(item, modalVariantId);
+  if (!item || !variant) { toast('Pilih variant dahulu', true); return; }
+  const displayItem = effectiveProductItem(item, variant.id);
+  const price = 'RM' + Number(displayItem.price || 0).toFixed(2);
+  await shareStoreContent({
+    title: item.name + ' - ' + variant.name + ' | H4SX STORE',
+    text: 'Tengok ' + item.name + ' (' + variant.name + ', ' + price + ') dekat H4SX STORE:',
+    url: shareableProductLink(item, variant.id)
+  }, 'Link variant sudah disalin!', 'Copy link variant ini:');
+}
 function getStickyOffset() {
   return 16;
 }
@@ -2605,6 +2668,8 @@ function backCO() { currentGame ? showView('product-view') : showHome(); }
 let currentStoreConfig = {
   bukakedai: true,
   maintenance: false,
+  store_closed_notice_visible: true,
+  review_closed_notice_visible: true,
   review_maintenance: false,
   reviews_section_visible: true,
   review_maintenance_message: 'Feature ulasan sedang diproses dan dikemas semula. Kemungkinan besar sistem ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
@@ -2612,9 +2677,9 @@ let currentStoreConfig = {
   promo_banner_interval: 5500,
   promo_banners: [],
   buka_jam: "09:00", // 9 AM
-  tutup_jam: "00:00", // Midnight
+  tutup_jam: "23:30",
   tutup_hari: [], // Days to close (e.g., ["Jumaat", "Ahad"])
-  business_hours_text: "Isnin - Ahad: 9AM - 12AM",
+  business_hours_text: "Setiap hari: 9:00 PG – 11:30 PTG",
   // Announcement settings
   announcement_active: false,
   announcement_id: "v1", // Change this ID every time you want a new banner
@@ -2846,16 +2911,20 @@ function businessHoursLabel(config) {
   return (hasClosedDays ? 'Waktu operasi' : 'Setiap hari') + ': ' + format(start) + ' – ' + format(end);
 }
 
-function updateBusinessHoursDisplay(config, isOpen) {
+function updateBusinessHoursDisplay(config, isOpen, showSchedule = true) {
   const hoursTextEl = document.getElementById('business-hours-text');
   const statusTextEl = document.getElementById('bh-status-text');
   const statusDotEl = document.querySelector('.bh-dot');
   const statusEl = document.getElementById('bh-status');
   updateBusinessClock();
   
-  if (hoursTextEl) hoursTextEl.textContent = businessHoursLabel(config);
+  if (hoursTextEl) {
+    hoursTextEl.hidden = !showSchedule;
+    hoursTextEl.textContent = showSchedule ? businessHoursLabel(config) : '';
+  }
   
   if (statusTextEl && statusDotEl && statusEl) {
+    statusEl.style.display = '';
     if (isOpen) {
       statusTextEl.textContent = "BUKA";
       statusDotEl.classList.remove('closed');
@@ -2881,12 +2950,12 @@ async function checkStore(configData) {
     if (isPreviewBypass()) {
       if (overlay) overlay.style.display = 'none';
       document.body.style.overflow = '';
-      updateBusinessHoursDisplay(currentStoreConfig, false);
+      updateBusinessHoursDisplay(currentStoreConfig, false, false);
       return;
     }
     console.warn('Store config unavailable; keeping the storefront closed until the next check.');
     if (overlay) showClosure('Status Kedai Belum Dapat Disahkan', 'SEMENTARA DITUTUP', 'Sambungan ke status kedai terganggu. Sila cuba semula sebentar lagi.', 'closed');
-    updateBusinessHoursDisplay(currentStoreConfig, false);
+    updateBusinessHoursDisplay(currentStoreConfig, false, false);
     return;
   } else {
     const normalizedConfig = normalizeKedaiConfig(d);
@@ -2969,7 +3038,7 @@ async function checkStore(configData) {
     // Preview grants access to the page, not an "open" store status.
     overlay.style.display = 'none';
     document.body.style.overflow = '';
-    updateBusinessHoursDisplay(currentStoreConfig, !shouldClose);
+    updateBusinessHoursDisplay(currentStoreConfig, !shouldClose, !shouldClose || closureType === 'hours');
     checkAndShowAnnouncement();
     return;
   }
@@ -2978,8 +3047,13 @@ async function checkStore(configData) {
     console.log(`Showing ${closureType} popup`);
     const announcementModal = document.getElementById('h4sx-announcement-modal');
     if (announcementModal) closeAnnouncementModal(announcementModal);
-    showClosure(title, status, message, closureType);
-    updateBusinessHoursDisplay(currentStoreConfig, false);
+    if (closureType !== 'maintenance' && flagOff(currentStoreConfig.store_closed_notice_visible)) {
+      overlay.style.display = 'none';
+      document.body.style.overflow = '';
+    } else {
+      showClosure(title, status, message, closureType);
+    }
+    updateBusinessHoursDisplay(currentStoreConfig, false, closureType === 'hours');
   } else {
     console.log('Store is open, hiding overlay');
     overlay.style.display = 'none';
@@ -3042,9 +3116,10 @@ function showClosure(title, status, message, type = 'closed') {
   if (statusEl) statusEl.textContent = status;
   if (messageEl) window.H4SXClosureMessage.render(messageEl, message);
   if (hoursPillEl && hoursTextEl) {
-    const hoursText = businessHoursLabel(currentStoreConfig);
+    const showHours = type === 'hours';
+    const hoursText = showHours ? businessHoursLabel(currentStoreConfig) : '';
     hoursTextEl.textContent = hoursText.replace(/\s*\|\s*$/, '');
-    hoursPillEl.style.display = 'inline-flex';
+    hoursPillEl.style.display = showHours ? 'inline-flex' : 'none';
   }
   
   overlay.style.display = 'flex';
@@ -3689,6 +3764,7 @@ let promoTurnstileTimeout = null;
 let pendingOrderImageFile = null;
 let editingOrderCode = null;
 let editingOriginalPhone = '';
+let editingOriginalUsername = '';
 const STORE_VISITOR_KEY = 'h4sx_store_visitor_id';
 const STORE_VISITOR_FIRST_SEEN_KEY = 'h4sx_store_visitor_first_seen';
 const CUSTOM_VOTE_CONFIG_COLLECTION = 'store_settings';
@@ -4703,6 +4779,18 @@ function normaliseOrderPhone(value) {
   if (phone.startsWith('0')) phone = '60' + phone.slice(1);
   return phone;
 }
+function normaliseOrderUsername(value) {
+  return String(value || '').trim().replace(/^@/, '').toLowerCase();
+}
+function validateManualOrderIdentity(phoneValue, usernameValue) {
+  const phone = String(phoneValue || '').trim();
+  const username = String(usernameValue || '').trim();
+  const normalizedPhone = normaliseOrderPhone(phone);
+  if (!phone && !username) throw new Error('Masukkan username atau nombor WhatsApp.');
+  if (phone && (normalizedPhone.length < 9 || normalizedPhone.length > 15)) throw new Error('Nombor WhatsApp mesti mengandungi 9 hingga 15 digit.');
+  if (username.length > 50) throw new Error('Username tidak boleh melebihi 50 aksara.');
+  return { phone, username };
+}
 async function phoneLookupId(value) {
   const phone = normaliseOrderPhone(value);
   if (phone.length < 9) return '';
@@ -4710,10 +4798,17 @@ async function phoneLookupId(value) {
   const hash = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
-async function updatePhoneLookup(phone, code, previousPhone = '') {
-  const nextId = await phoneLookupId(phone);
-  const previousId = await phoneLookupId(previousPhone);
-  if (!nextId) throw new Error('Nombor WhatsApp tak sah');
+async function usernameLookupId(value) {
+  const username = normaliseOrderUsername(value);
+  if (!username) return '';
+  const bytes = new TextEncoder().encode('h4sx-order-username:' + username);
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+async function updateOrderLookup(lookupIdFor, value, code, previousValue, identityName) {
+  const nextId = await lookupIdFor(value);
+  const previousId = await lookupIdFor(previousValue);
+  if (value && !nextId) throw new Error(identityName + ' tak sah');
   if (previousId && previousId !== nextId) {
     const oldRef = db.collection('order_lookups').doc(previousId);
     const oldSnap = await oldRef.get();
@@ -4721,18 +4816,31 @@ async function updatePhoneLookup(phone, code, previousPhone = '') {
     if (oldCodes.length) await oldRef.set({ orderCodes:oldCodes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
     else await oldRef.delete();
   }
+  if (!nextId) return;
   const ref = db.collection('order_lookups').doc(nextId);
   const snap = await ref.get();
   const codes = Array.from(new Set([...(snap.data()?.orderCodes || []), code]));
   await ref.set({ orderCodes:codes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
 }
-async function removePhoneLookup(phone, code) {
-  const lookupId = await phoneLookupId(phone); if (!lookupId) return;
+function updatePhoneLookup(phone, code, previousPhone = '') {
+  return updateOrderLookup(phoneLookupId, phone, code, previousPhone, 'Nombor WhatsApp');
+}
+function updateUsernameLookup(username, code, previousUsername = '') {
+  return updateOrderLookup(usernameLookupId, username, code, previousUsername, 'Username');
+}
+async function removeOrderLookup(lookupIdFor, value, code) {
+  const lookupId = await lookupIdFor(value); if (!lookupId) return;
   const ref = db.collection('order_lookups').doc(lookupId); const snap = await ref.get();
   if (!snap.exists) return;
   const codes = (snap.data().orderCodes || []).filter(item => item !== code);
   if (codes.length) await ref.set({ orderCodes:codes, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
   else await ref.delete();
+}
+function removePhoneLookup(phone, code) {
+  return removeOrderLookup(phoneLookupId, phone, code);
+}
+function removeUsernameLookup(username, code) {
+  return removeOrderLookup(usernameLookupId, username, code);
 }
 function maskOrderPhone(value) {
   const digits = String(value || '').replace(/\D/g, '');
@@ -5355,7 +5463,7 @@ async function uploadOrderImage(code) {
   return dataUrl;
 }
 function resetManualOrderForm() {
-  editingOrderCode = null; editingOriginalPhone = ''; pendingOrderImageFile = null;
+  editingOrderCode = null; editingOriginalPhone = ''; editingOriginalUsername = ''; pendingOrderImageFile = null;
   const form = document.querySelector('#order-admin-form-wrap form'); if (form) form.reset();
   setDefaultManualOrderDate();
   const preview = document.getElementById('order-image-preview'); if (preview) { preview.hidden = true; preview.innerHTML = ''; }
@@ -5368,12 +5476,16 @@ async function saveManualOrder(event) {
   if (!db || !orderAuth?.currentUser) return toast('Sila log masuk sebagai admin dahulu.', true);
   const code = editingOrderCode || normaliseOrderCode(document.getElementById('manual-order-code').value);
   if (!/^H4SX-[A-Z0-9]{4,}$/.test(code)) return toast('Gunakan format nombor transaksi: H4SX-AB12CD', true);
+  let identity;
+  try {
+    identity = validateManualOrderIdentity(document.getElementById('manual-order-phone').value, document.getElementById('manual-order-username').value);
+  } catch (error) { return toast(error.message, true); }
   try {
     const image = await uploadOrderImage(code);
     if (!image) return toast('Letak link gambar atau paste screenshot produk.', true);
     const data = {
       code,
-      phoneMasked: maskOrderPhone(document.getElementById('manual-order-phone').value),
+      phoneMasked: identity.phone ? maskOrderPhone(identity.phone) : '',
       product: String(document.getElementById('manual-order-product').value || '').trim(),
       price: Number(document.getElementById('manual-order-price').value || 0),
       image,
@@ -5381,13 +5493,15 @@ async function saveManualOrder(event) {
       orderedAt: new Date(document.getElementById('manual-order-datetime').value).toISOString(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    const privateData = { phone: String(document.getElementById('manual-order-phone').value || '').trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-    const fullPhone = String(document.getElementById('manual-order-phone').value || '').trim();
+    const privateData = { phone:identity.phone, username:identity.username, updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
     await Promise.all([
       db.collection('orders').doc(code).set(data, { merge:true }),
-      db.collection('order_private').doc(code).set({ ...privateData, phone:fullPhone }, { merge:true })
+      db.collection('order_private').doc(code).set(privateData, { merge:true })
     ]);
-    await updatePhoneLookup(fullPhone, code, editingOriginalPhone);
+    await Promise.all([
+      updatePhoneLookup(identity.phone, code, editingOriginalPhone),
+      updateUsernameLookup(identity.username, code, editingOriginalUsername)
+    ]);
     resetManualOrderForm(); await loadAdminOrders(); toast('Transaksi ' + code + ' telah disimpan.');
   } catch (error) { console.error(error); toast(error.message || 'Tak dapat simpan transaksi. Semak Firestore Rules.', true); }
 }
@@ -5410,7 +5524,8 @@ async function editManualOrder(code) {
     const item = snap.data(); editingOrderCode = code;
     document.getElementById('manual-order-code').value = code; document.getElementById('manual-order-code').readOnly = true; document.getElementById('manual-order-code').style.opacity = '.65';
     editingOriginalPhone = privateSnap.exists ? (privateSnap.data().phone || '') : '';
-    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-datetime').value = toDateTimeLocalValue(item.orderedAt || item.updatedAt); document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
+    editingOriginalUsername = privateSnap.exists ? (privateSnap.data().username || '') : '';
+    document.getElementById('manual-order-phone').value = editingOriginalPhone; document.getElementById('manual-order-username').value = editingOriginalUsername; document.getElementById('manual-order-product').value = item.product || ''; document.getElementById('manual-order-price').value = item.price || ''; document.getElementById('manual-order-datetime').value = toDateTimeLocalValue(item.orderedAt || item.updatedAt); document.getElementById('manual-order-image').value = item.image || ''; document.getElementById('manual-order-status').value = item.status || 'Dalam proses';
     const preview = document.getElementById('order-image-preview'); if (preview && item.image) { preview.hidden = false; preview.innerHTML = '<img src="' + escapeHtml(item.image) + '" alt="Gambar semasa">'; }
     document.getElementById('manual-order-cancel').hidden = false; document.getElementById('manual-order-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update transaksi';
     document.querySelector('.order-form-grid')?.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -5422,7 +5537,12 @@ async function deleteManualOrder(code) {
     const privateSnap = await db.collection('order_private').doc(code).get();
     await Promise.all([db.collection('orders').doc(code).delete(), db.collection('order_private').doc(code).delete()]);
     // Lookup hanya indeks carian; jangan biar ia menghalang transaksi utama dipadam.
-    try { await removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code); } catch (lookupError) { console.warn('Lookup cleanup skipped', lookupError); }
+    try {
+      await Promise.all([
+        removePhoneLookup(privateSnap.exists ? privateSnap.data().phone : '', code),
+        removeUsernameLookup(privateSnap.exists ? privateSnap.data().username : '', code)
+      ]);
+    } catch (lookupError) { console.warn('Lookup cleanup skipped', lookupError); }
     await loadAdminOrders(); toast('Transaksi dipadam.');
   } catch(error) { console.error(error); toast('Tak dapat padam transaksi. Semak login admin dan Firestore Rules.', true); }
 }
@@ -5491,20 +5611,24 @@ async function findOrder(event) {
     if (code.startsWith('H4SX-')) {
       const snap = await db.collection('orders').doc(code).get(); if (snap.exists) records = [{ code, ...snap.data() }];
     } else {
-      const lookupId = await phoneLookupId(search);
+      const usernameSearch = !/^[+\d\s().-]+$/.test(search);
+      const lookupId = usernameSearch ? await usernameLookupId(search) : await phoneLookupId(search);
       if (lookupId) {
         const lookup = await db.collection('order_lookups').doc(lookupId).get();
         const codes = lookup.exists ? (lookup.data().orderCodes || []) : [];
         const orders = await Promise.all(codes.map(orderCode => db.collection('orders').doc(orderCode).get()));
-        records = orders.filter(snap => snap.exists).map(snap => ({ code:snap.id, ...snap.data() }));
+        records = orders.filter(snap => snap.exists).map(snap => ({ code:snap.id, ...snap.data(), usernameSearch }));
       }
     }
-    if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi atau WhatsApp dengan admin.'; return; }
+    if (!records.length) { box.textContent = 'Transaksi tidak dijumpai. Semak nombor transaksi, username atau WhatsApp dengan admin.'; return; }
     box.innerHTML = records.map(item => {
       const image = item.image ? '<img src="' + escapeHtml(item.image) + '" alt="Produk" onerror="this.style.display=\'none\'">' : '';
       const invoiceCode = escapeHtml(item.code || '');
       const invoice = '<span class="order-invoice-line"><small>No. transaksi: <b>' + invoiceCode + '</b></small><button class="order-copy-code" type="button" data-code="' + invoiceCode + '" onclick="copyInvoiceCode(this.dataset.code,this)" aria-label="Salin nombor transaksi"><i class="fa-regular fa-copy"></i><span>Copy</span></button></span>';
-      return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong>' + invoice + '<small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Disembunyikan') + '</small><small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status">' + escapeHtml(item.status || 'Dalam proses') + '</span></div></div>';
+      const status = item.status || 'Dalam proses';
+      const statusClass = status.toLowerCase().replace(/\s+/g, '-');
+      const customerIdentity = item.usernameSearch ? '<small>Username: ' + escapeHtml(search.replace(/^@/, '')) + '</small>' : '<small>WhatsApp: ' + escapeHtml(item.phoneMasked || 'Tidak diberikan') + '</small>';
+      return '<div class="order-result-card">' + image + '<div><strong>' + escapeHtml(item.product || 'Produk') + '</strong>' + invoice + customerIdentity + '<small>Tarikh & masa: ' + escapeHtml(formatOrderTimestamp(item.orderedAt || item.updatedAt)) + '</small><small>Jumlah: RM' + Number(item.price || 0).toFixed(2) + '</small><span class="order-status status-' + escapeHtml(statusClass) + '">' + escapeHtml(status) + '</span></div></div>';
     }).join('<hr style="border:0;border-top:1px solid var(--border);margin:12px 0">');
   } catch (error) { console.error(error); box.textContent = 'Tak dapat semak sekarang. Cuba lagi atau chat admin.'; }
 }
@@ -5580,18 +5704,10 @@ function badgeStyle(data = {}) {
   const bg = gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1;
   return `background:${bg}; color:${text}; --badge-glow:${glow}; box-shadow:0 4px 16px -8px ${glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
 }
-  function reviewIdentityBadgeStyle(data = {}) {
-    const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
-    const text = warnaHexSah(data.badgeTextColor, '#ffffff');
-    const glow = warnaHexSah(data.badgeGlowColor, c1);
-    const gradient = data.badgeGradient !== false;
-    const rainbow = data.badgeRainbow === true;
-    const bg = rainbow
-      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
-      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `zoom:${Number.isFinite(Number(data.badgeSize)) && Number(data.badgeSize) > 0 ? Math.max(70, Math.min(200, Number(data.badgeSize))) / 100 : 1}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
-  }
+function reviewPresentation() {
+  if (!window.H4ReviewPresentation) throw new Error('Review presentation helpers are unavailable.');
+  return window.H4ReviewPresentation;
+}
   function reviewIdentityMedalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
     const c2 = warnaHexSah(data.medalColor2, '#e05252');
@@ -5606,27 +5722,9 @@ function badgeStyle(data = {}) {
     const border = outline ? `1.5px solid ${rainbow ? '#7c3aed' : glow}` : '1px solid rgba(255,255,255,.48)';
     return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
   }
-  function reviewIdentityNameStyle(data = {}, isReviewAdmin = false) {
-    if (data.nameColorEnabled !== true) {
-      return isReviewAdmin ? 'color: var(--accent);' : '';
-    }
-    const c1 = warnaHexSah(data.nameColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.nameColor2, '#7c3aed');
-    const glow = warnaHexSah(data.nameGlowColor, c1);
-    const weight = ['700','800','900'].includes(String(data.nameWeight)) ? String(data.nameWeight) : '800';
-    const gradient = data.nameGradient !== false;
-    const rainbow = data.nameRainbow === true;
-    const base = `font-weight:${weight}; text-shadow:0 2px 12px ${glow}55;`;
-    if (rainbow) return `${base} color:#ff3158; background:linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
-    if (!gradient) return `${base} color:${c1};`;
-    return `${base} color:${c1}; background:linear-gradient(120deg, ${c1}, ${c2}, ${c1}); background-size:230% 230%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+  function reviewIdentityProfileImageUrl(data = {}) {
+    return reviewPresentation().profileImageUrl(data);
   }
-  function reviewIdentityNameClass(data = {}) {
-    const rainbow = data.nameColorEnabled === true && data.nameRainbow === true;
-    const animated = data.nameColorEnabled === true && (rainbow || (data.nameAnimated !== false && data.nameGradient !== false));
-    return 'buyer-name custom-name' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '');
-  }
-
 function reviewIdentityCheck(data = {}) {
   if (data.customCheckEnabled !== true) return '';
   const color = warnaHexSah(data.customCheckColor, '#0284c7');
@@ -5634,9 +5732,7 @@ function reviewIdentityCheck(data = {}) {
   return '<span class="review-identity-check' + (gif ? ' is-gif' : '') + '" style="--check-color:' + color + ';zoom:' + (Number.isFinite(Number(data.customCheckSize)) && Number(data.customCheckSize) > 0 ? Math.max(70, Math.min(200, Number(data.customCheckSize))) / 100 : 1) + '" title="Disahkan H4SX" aria-label="Disahkan H4SX"><i class="fa-solid fa-check"></i>' + gif + '</span>';
 }
 function reviewIdentityRole(data = {}) {
-  const text = String(data.badgeText || data.role || '').trim();
-  const animated = data.badgeAnimated !== false || data.badgeRainbow === true;
-  const badge = text ? '<span class="review-identity-role' + (animated ? ' is-animated' : '') + '" style="' + reviewIdentityBadgeStyle(data) + '">' + customNameEmojiHTML(data.badgeEmoji) + escapeHtml(text) + '</span>' : '';
+  const badge = reviewPresentation().badgeMarkup(data, customNameEmojiHTML(data.badgeEmoji));
   const medalText = String(data.medalText || '').trim();
   const medal = medalText ? '<span class="review-identity-medal' + (data.medalAnimated !== false || data.medalRainbow === true ? ' is-animated' : '') + '" style="' + reviewIdentityMedalStyle(data) + '">' + customNameEmojiHTML(data.medalEmoji) + escapeHtml(medalText) + '</span>' : '';
   return badge + medal;
@@ -5984,8 +6080,10 @@ function showReviewShowcasePopup(item, total) {
   const name = item.nama || item.name || 'Pelanggan';
   const text = (item.ulasan || item.komen || item.comment || item.feedback || 'Memberikan rating kepada H4SX STORE.').replace(/^cdg\s*[-:]\s*/i, '');
   const initials = name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2) || '?';
-  const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="Profil ' + escapeHtml(name) + '">'
+  const officialAdminReview = reviewPresentation().isOfficialAdmin(item);
+  const profileImageUrl = reviewIdentityProfileImageUrl(item);
+  const avatar = profileImageUrl
+    ? '<img src="' + escapeHtml(profileImageUrl) + '" style="' + window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100,item.profileOffsetY ?? 0) + '" alt="' + (officialAdminReview ? 'H4SX Admin' : 'Profil ' + escapeHtml(name)) + '">'
     : escapeHtml(item.emojiProfil || initials);
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const roleMarkup = reviewIdentityRole(item);
@@ -6013,9 +6111,9 @@ function showReviewShowcasePopup(item, total) {
     '<button class="review-popup-close" type="button" title="Tutup notis" aria-label="Tutup notis"><i class="fa-solid fa-xmark"></i></button>' +
     '</div>' +
     '<div class="review-popup-link">' +
-    '<span class="review-popup-avatar"' + avatarStyle + '>' + avatar + '</span>' +
+    '<span class="review-popup-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>' +
     '<span class="review-popup-copy">' +
-    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>' + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
+    reviewAnnouncementLabel(announcementConfig) + (item.identityBackplateEnabled === true ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '') + '<span class="review-popup-name">' + customNameEmojiHTML(item.nameEmoji) + reviewPresentation().nameMarkup(item, name, officialAdminReview) + reviewIdentityCheck(item) + '</span>' + (roleMarkup ? '<span class="review-popup-roles">' + roleMarkup + '</span>' : '') + (itemBought ? '<span class="review-popup-item-bought"><i class="fa-solid fa-bag-shopping"></i> ' + escapeHtml(itemBought) + '</span>' : '') + (item.identityBackplateEnabled === true ? '</span>' : '') + (item.hideRating === true ? '' : '<span class="review-popup-stars">' + stars + '</span>') + (item.announcementGifEnabled !== false && item.announcementGif ? '<span class="review-popup-announcement" style="--announcement-gif-size:' + reviewAnnouncementGifSize(item.announcementGifSize) * 0.32 + 'px" aria-label="GIF pengumuman">' + reviewAnnouncementGifHTML(item.announcementGif) + '</span>' : '') +
     '<span class="review-popup-text">' + formatReviewMessageText(text) + '</span>' + readMore + (item.hideReviewTime === true ? '' : '<small>' + toReviewTime(item.diciptaPada || item.timestamp || item.date) + '</small>') + reviewAnnouncementAction(announcementConfig) + '</span></div>' +
     '<span class="review-popup-controls">' + imageButton + videoButton +
     '<button class="review-popup-open" type="button" onclick="openReviewShowcaseWebsite()" title="Buka H4SX Review" aria-label="Buka H4SX Review"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>Review</span></button>' +
@@ -6131,8 +6229,10 @@ function reviewCardHTML(item) {
   const zoomStyle = window.H4ReviewMedia?.profileZoomStyle
     ? window.H4ReviewMedia.profileZoomStyle(item.profileZoom ?? 100, item.profileOffsetY ?? 0)
     : 'object-fit:cover';
-  const avatar = item.profileImg
-    ? '<img src="' + escapeHtml(item.profileImg) + '" style="' + zoomStyle + '" alt="Profil ' + escapeHtml(name) + '" loading="lazy" decoding="async">'
+  const officialAdminReview = reviewPresentation().isOfficialAdmin(item);
+  const profileImageUrl = reviewIdentityProfileImageUrl(item);
+  const avatar = profileImageUrl
+    ? '<img src="' + escapeHtml(profileImageUrl) + '" style="' + zoomStyle + '" alt="' + (officialAdminReview ? 'H4SX Admin' : 'Profil ' + escapeHtml(name)) + '" loading="lazy" decoding="async">'
     : escapeHtml(item.emojiProfil || reviewCardInitials(name));
   const avatarStyle = item.warnaProfil ? ' style="background:' + escapeHtml(item.warnaProfil) + '"' : '';
   const stars = item.hideRating === true
@@ -6160,11 +6260,11 @@ function reviewCardHTML(item) {
     : '<a class="rv-report-link" href="/review?reviewId=' + encodeURIComponent(String(item.id)) + '&report=1"><i class="fa-regular fa-flag" aria-hidden="true"></i> Lapor</a>';
   const backplate = item.identityBackplateEnabled === true;
   const nameBlock = customNameEmojiHTML(item.nameEmoji)
-    + '<strong class="' + reviewIdentityNameClass(item) + '" style="' + reviewIdentityNameStyle(item) + '">' + escapeHtml(name) + '</strong>'
+    + reviewPresentation().nameMarkup(item, name, officialAdminReview)
     + reviewIdentityCheck(item);
   return '<article class="rv-card">'
     + '<div class="rv-card-head">'
-    + '<span class="rv-avatar"' + avatarStyle + '>' + avatar + '</span>'
+    + '<span class="rv-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>'
     + '<div class="rv-card-id">'
     + (backplate ? '<span class="review-identity-backplate" style="' + reviewIdentityBackplateStyle(item) + '">' : '')
     + '<span class="rv-card-name">' + nameBlock + '</span>'
@@ -6221,13 +6321,7 @@ function reviewSortTime(item) {
 }
 
 function reviewsViewItemList(list = latestReviewStatsData) {
-  const items = uniqueReviewRecords(orderedReviewShowcaseRecords(list));
-  const dir = reviewsViewSort === 'oldest' ? 1 : -1;
-  return items.sort((a, b) => {
-    const diff = reviewSortTime(a) - reviewSortTime(b);
-    if (diff) return diff * dir;
-    return String(a.id || '').localeCompare(String(b.id || '')) * dir;
-  });
+  return reviewPresentation().orderReviews(uniqueReviewRecords(list), reviewsViewSort);
 }
 
 function setReviewsSortButtons() {
@@ -7643,13 +7737,6 @@ function buildAddBtnHTML(item, oos) {
   const action = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
   return '<button class="padd' + inCart + '" onclick="event.stopPropagation();event.preventDefault();' + action + '"><i class="fa-solid fa-cart-plus"></i><span class="padd-txt">Cart</span>' + qtyBadge + '</button>';
 }
-function buildQuickBarHTML(item, oos) {
-  if (oos) return '';
-  const hasVariants = productVariants(item).length > 0;
-  const cartAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'addCart(' + item.id + ', this)';
-  const buyAction = hasVariants ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
-  return '<div class="pquick" onclick="event.stopPropagation()"><button class="pquick-btn cart" onclick="event.stopPropagation();' + cartAction + '"><i class="fa-solid fa-cart-plus"></i> ' + (hasVariants ? 'Pilih Type' : 'Add Cart') + '</button><button class="pquick-btn buy whatsapp-buy" onclick="event.stopPropagation();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button></div>';
-}
 let quickPreviewItemId = null;
 function quickPreviewButtonHTML(item) {
   return '<button type="button" class="product-quick-preview-trigger" data-product-id="' + escapeHtml(String(item.id)) + '" onclick="event.stopPropagation();event.preventDefault();openProductQuickPreview(this.dataset.productId)" aria-label="Quick preview ' + escapeHtml(item.name || 'produk') + '" title="Quick Preview"><i class="fa-regular fa-eye"></i><span>Quick View</span></button>';
@@ -7947,9 +8034,9 @@ function productCardHTML(item) {
   const shareBtn = '<button class="pshare" type="button" onclick="event.stopPropagation();event.preventDefault();shareProductItem(' + item.id + ')" title="Kongsi item" aria-label="Kongsi ' + escapeHtml(item.name) + '"><i class="fa-solid fa-share-nodes"></i></button>';
   const buyAction = productVariants(item).length ? 'openProductImage(' + item.id + ')' : 'buyNowItem(' + item.id + ')';
   const buyBtn = oos ? '<button class="pbuy whatsapp-buy" disabled><i class="fa-brands fa-whatsapp"></i> Habis</button>' : '<button class="pbuy whatsapp-buy" onclick="event.stopPropagation();event.preventDefault();' + buyAction + '"><i class="fa-brands fa-whatsapp"></i> Beli WhatsApp</button>';
-  const quickBar = buildQuickBarHTML(item, oos);
   const copyDescBtn = '<button class="pdesc-copy" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductDescriptionById(' + item.id + ')" title="Copy description"><i class="fa-regular fa-copy"></i> Copy Description</button>';
-  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + quickBar + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p>' + copyDescBtn + '<div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
+  const copyLinkBtn = '<button class="pdesc-copy pcard-copy-link" type="button" onclick="event.stopPropagation();event.preventDefault();copyProductLinkById(' + item.id + ')" title="Copy link produk" aria-label="Copy link ' + escapeHtml(item.name) + '"><i class="fa-solid fa-link"></i> Copy Link</button>';
+  return '<div class="pc reveal" style="' + (oos?'opacity:0.65':'') + '" id="product-' + item.id + '">' + promo + '<div class="pimg" role="button" tabindex="0" data-product-id="' + item.id + '" onclick="openProductImage(' + item.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProductImage(' + item.id + ')}">' + renderMediaHTML(item, 'card') + quickPreviewButtonHTML(item) + '</div><div class="pbody">' + pinnedLabel + promotedByHTML + productMiniStatusHTML(item) + '<div class="pname">' + customNameEmojiHTML(item.nameEmoji) + escapeHtml(item.name) + '</div><p class="pdesc">' + escapeHtml(item.desc || '') + '</p><div class="pcard-utility-actions">' + copyDescBtn + copyLinkBtn + '</div><div class="pfoot"><div class="pfoot-top"><div style="display:flex;align-items:baseline;gap:4px;min-width:0">' + pHTML + '</div>' + cartHint + '</div><div class="pactions product-card-actions">' + buyBtn + addBtn + shareBtn + '</div></div>' + itemQRHTML + '</div></div>';
 }
 function productFilterCount(filter) {
   return currentProductItems.filter(filter.test).length;
@@ -8733,6 +8820,7 @@ function updateAddButtons() {
   }
 }
 function addCart(input, originEl, options = {}) {
+  if (blockOrderInClosedCatalogView()) return;
   let item, name;
   if (typeof input === 'number') {
     item = inventory.find(i=>i.id===input);
@@ -9041,6 +9129,7 @@ function handleRobloxUsernameInput() {
   valCO();
 }
 function goCO(focusPayment) {
+  if (blockOrderInClosedCatalogView()) return;
   if (!cartItems.length) { toast('Cart is empty',true); return; }
   document.getElementById('cart-overlay').classList.remove('show');
   let tot = 0;
@@ -9193,6 +9282,8 @@ function renderProductModalSelection(item, refreshMedia = true) {
   const choice = document.getElementById('product-modal-choice');
   const variantWrap = document.getElementById('product-modal-variants');
   const quantityWrap = document.getElementById('product-modal-quantity');
+  const linkButtonLabel = document.querySelector('#product-modal-link-btn span');
+  if (linkButtonLabel) linkButtonLabel.textContent = selected ? 'Copy Link Type' : 'Copy Link';
   if (choice) choice.hidden = !variants.length;
   if (quantityWrap) quantityWrap.hidden = !variants.length;
   if (variantWrap) {
@@ -9245,6 +9336,7 @@ function selectProductVariant(variantId) {
   if (!item || !getProductVariant(item, variantId)) return;
   modalVariantId = String(variantId);
   modalQuantity = 1;
+  updateProductUrl(item, modalVariantId);
   const promoInput = document.getElementById('product-modal-promo-input');
   if (promoInput) promoInput.value = savedProductPromoCode(modalEffectiveItem(item));
   renderProductModalSelection(item);
@@ -9281,7 +9373,7 @@ function openProductImage(id, options = {}) {
   modalVariantId = requestedVariant?.id || variants.find(variant => Number(variant.stock) !== 0)?.id || variants[0]?.id || '';
   modalQuantity = 1;
   resetModalProductDescription();
-  if (!options.fromUrl) updateProductUrl(item);
+  if (!options.fromUrl) updateProductUrl(item, modalVariantId);
   const mediaWrap = document.getElementById('product-modal-media');
   if (mediaWrap) mediaWrap.innerHTML = renderMediaHTML(item, 'modal');
   const gameEl = document.getElementById('product-modal-game');
@@ -9449,6 +9541,7 @@ function showRobloxUsernamePrompt(item, onConfirmed) {
   setTimeout(() => input.focus(), 80);
 }
 function buyNowItem(id, promoCode = '', options = {}) {
+  if (blockOrderInClosedCatalogView()) return;
   const baseItem = inventory.find(i => i.id === id);
   if (!baseItem || !isCustomerProductVisible(baseItem)) return toast('Produk ini sedang disembunyikan.', true);
   if (productRequiresRobloxLookup(baseItem) && !options.robloxProfile) {

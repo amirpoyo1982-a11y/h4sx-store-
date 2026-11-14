@@ -2,11 +2,14 @@ import {
   DEFAULT_OG_IMAGE,
   INVENTORY_URL,
   createProductShareHandler,
+  findProductVariant,
   findInventoryItem,
+  isProxyableProductImage,
   inventoryItems,
   isVisibleCatalogItem,
   normalizeItemId,
-  productImageUrl
+  productImageUrl,
+  productShareItem
 } from '../lib/product-share.js';
 
 let cache = { at: 0, items: [] };
@@ -38,17 +41,33 @@ async function serveOgImage(req, res) {
   let imageUrl = DEFAULT_OG_IMAGE;
   try {
     const item = findInventoryItem(await loadItems(), normalizeItemId(String(req.query?.ogImage || '').replace(/\.png$/i, '')));
-    if (item && isVisibleCatalogItem(item)) imageUrl = productImageUrl(item);
+    if (item && isVisibleCatalogItem(item)) {
+      const variantId = String(req.query?.variant || '').trim();
+      const variant = findProductVariant(item, variantId);
+      const candidate = productImageUrl(variant ? productShareItem(item, variantId) : item);
+      if (isProxyableProductImage(candidate)) imageUrl = candidate;
+    }
   } catch (error) {
     console.warn('OG image inventory lookup failed:', error?.message || error);
   }
 
+  if (!isProxyableProductImage(imageUrl)) return res.redirect(302, DEFAULT_OG_IMAGE);
+
   try {
-    const image = await fetch(imageUrl, {
-      headers: { Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8' },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS)
-    });
+    let imageUrlToFetch = imageUrl;
+    let image;
+    for (let redirectCount = 0; redirectCount <= 4; redirectCount += 1) {
+      if (!isProxyableProductImage(imageUrlToFetch)) throw new Error('Unsupported image host');
+      image = await fetch(imageUrlToFetch, {
+        headers: { Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS)
+      });
+      if (image.status < 300 || image.status >= 400) break;
+      const location = image.headers.get('location');
+      if (!location || redirectCount === 4) throw new Error('Image redirect limit exceeded');
+      imageUrlToFetch = new URL(location, imageUrlToFetch).href;
+    }
     const type = safeImageType(image.headers.get('content-type'));
     if (!image.ok || !type) throw new Error('Image ' + image.status + ' ' + (type || 'invalid content type'));
 

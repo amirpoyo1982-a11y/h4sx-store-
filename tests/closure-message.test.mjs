@@ -60,3 +60,30 @@ test('Store and Review close panels load and use the shared safe message rendere
   assert.match(storeCss, /\.closure-contact \{/);
   assert.match(reviewCss, /\.shop-closed-contact \{/);
 });
+
+test('Store and Review show the configured daily schedule but hide it for manual closure and maintenance', () => {
+  assert.match(storeApp, /tutup_jam:\s*"23:30"/);
+  assert.match(storeApp, /business_hours_text:\s*"Setiap hari: 9:00 PG – 11:30 PTG"/);
+  assert.match(storeApp, /updateBusinessHoursDisplay\(currentStoreConfig, false, closureType === 'hours'\)/);
+  assert.match(storeApp, /hoursPillEl\.style\.display = showHours \? 'inline-flex' : 'none'/);
+  assert.match(reviewPage, /id="reviewBusinessHours"/);
+  assert.match(reviewApp, /flagOn\(data\?\.maintenance\) \|\| flagOff\(data\?\.bukakedai\)/);
+  assert.match(reviewApp, /paparKedaiTutup\('🛠️'.*?, '', 'maintenance'\)/);
+  assert.match(reviewApp, /paparKedaiTutup\('🚫'.*?, ''\)/);
+  assert.match(storePage, /class="closure-review-link"/);
+  assert.match(reviewPage, /class="shop-closed-store"/);
+});
+
+test('closed notices can be hidden without marking the store open or allowing orders', () => {
+  assert.match(storeApp, /store_closed_notice_visible:\s*true/);
+  assert.match(storeApp, /review_closed_notice_visible:\s*true/);
+  assert.match(storeApp, /statusEl\.style\.display = ''/);
+  assert.match(storeApp, /statusTextEl\.textContent = "TUTUP"/);
+  assert.match(storeApp, /closureType !== 'maintenance' && flagOff\(currentStoreConfig\.store_closed_notice_visible\)/);
+  assert.match(storeApp, /function isClosedCatalogView\(config = currentStoreConfig\)/);
+  assert.match(storeApp, /function blockOrderInClosedCatalogView\(\)/);
+  assert.match(storeApp, /if \(blockOrderInClosedCatalogView\(\)\) return;/);
+  assert.match(reviewApp, /flagOff\(data\.review_closed_notice_visible\)/);
+  assert.match(reviewApp, /flagOff\(data\?\.review_closed_notice_visible\)/);
+  assert.match(reviewApp, /flagOn\(data\.review_maintenance\)/);
+});

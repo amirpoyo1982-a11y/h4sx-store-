@@ -378,13 +378,17 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
   }
 
   function reviewBusinessHoursLabel(config = {}) {
-    const start = parseReviewBusinessTime(config.buka_jam);
-    const end = parseReviewBusinessTime(config.tutup_jam);
+    const hasConfiguredTimes = config.buka_jam != null || config.tutup_jam != null;
+    const start = parseReviewBusinessTime(config.buka_jam ?? "09:00");
+    const end = parseReviewBusinessTime(config.tutup_jam ?? "23:30");
     if (start === null || end === null) return config.business_hours_text || "";
     const format = minutes => {
       const hour = Math.floor(minutes / 60);
       return (hour % 12 || 12) + ":" + String(minutes % 60).padStart(2, "0") + (hour < 12 ? " PG" : " PTG");
     };
+    if ((!hasConfiguredTimes || config.buka_jam == null || config.tutup_jam == null) && config.business_hours_text) {
+      return String(config.business_hours_text);
+    }
     return (Array.isArray(config.tutup_hari) && config.tutup_hari.length ? "Waktu operasi" : "Setiap hari")
       + ": " + format(start) + " – " + format(end);
   }
@@ -682,6 +686,15 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
       }
       if (data) latestReviewStoreConfig = data;
       const hoursText = reviewBusinessHoursLabel(data || {});
+      const hoursBanner = document.getElementById("reviewBusinessHours");
+      if (hoursBanner) {
+        const label = hoursBanner.querySelector("span");
+        if (label) label.textContent = hoursText;
+        hoursBanner.hidden = !hoursText || isPreviewBypass() ||
+          flagOn(data?.maintenance) || flagOff(data?.bukakedai) ||
+          flagOn(data?.review_maintenance) || flagOn(data?.maintenance_review) ||
+          flagOn(data?.ulasan_maintenance) || flagOn(data?.reviews_maintenance);
+      }
       reviewClosureCopy = {
         closedTitle: String(data?.tajuk_tutup || data?.closed_title || '').trim(),
         closedMessage: String(data?.mesej_tutup || data?.closed_message || '').trim(),
@@ -707,7 +720,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
           '🔧',
           data.review_maintenance_title || 'Ulasan Dalam Penyelenggaraan',
           data.review_maintenance_message || data.review_maintenance_msg || 'Sistem ulasan sedang diproses dan dikemas semula. Kemungkinan besar feature ulasan akan berfungsi kembali dalam sekitar 2 hari lagi.',
-          hoursText,
+          '',
           'maintenance'
         );
         return;
@@ -715,23 +728,35 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
 
       // 2. Mod penyelenggaraan global — untuk tutup semua website kalau perlu.
       if (data && flagOn(data.maintenance)) {
-        paparKedaiTutup('🛠️', 'Dalam Penyelenggaraan', 'Kedai sedang dalam penyelenggaraan buat masa ini. Sila cuba lagi sebentar lagi.', hoursText, 'maintenance');
+        paparKedaiTutup('🛠️', 'Dalam Penyelenggaraan', 'Kedai sedang dalam penyelenggaraan buat masa ini. Sila cuba lagi sebentar lagi.', '', 'maintenance');
         return;
       }
 
       // 3. Suis manual admin — bukakedai:false = tutup terus, tak kira jam
       if (data && flagOff(data.bukakedai)) {
-        paparKedaiTutup('🚫', 'Kedai Ditutup Sementara', 'Kami sedang berehat. Sila kembali kemudian.', hoursText);
+        if (flagOff(data.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
+        paparKedaiTutup('🚫', 'Kedai Ditutup Sementara', 'Kami sedang berehat. Sila kembali kemudian.', '');
         return;
       }
 
       // 4–5. Hari cuti dan jadual waktu, termasuk operasi lintas tengah malam.
       const automaticClosure = reviewAutomaticClosure(data || {});
       if (automaticClosure.reason === "Hari Tutup") {
+        if (flagOff(data?.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
         paparKedaiTutup('📅', 'Kedai Tutup Hari Ini', 'Kami tidak beroperasi pada hari ini.', hoursText);
         return;
       }
       if (automaticClosure.closed) {
+        if (flagOff(data?.review_closed_notice_visible)) {
+          document.getElementById('shopClosedOverlay').classList.remove('active');
+          return;
+        }
         paparKedaiTutup('🕐', 'Di Luar Waktu Operasi', 'Kami sedang tutup buat masa ini. Sila kembali semasa waktu operasi kami.', hoursText);
         return;
       }
@@ -863,16 +888,7 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return /^#[0-9a-f]{6}$/i.test(nilai || '') ? nilai : fallback;
   }
   function badgeStyle(data = {}) {
-    const c1 = warnaHexSah(data.badgeColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.badgeColor2, '#7c3aed');
-    const text = warnaHexSah(data.badgeTextColor, '#ffffff');
-    const glow = warnaHexSah(data.badgeGlowColor, c1);
-    const gradient = data.badgeGradient !== false;
-    const rainbow = data.badgeRainbow === true;
-    const bg = rainbow
-      ? 'linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158)'
-      : (gradient ? `linear-gradient(120deg, ${c1}, ${c2}, ${c1})` : c1);
-    return `zoom:${badgeSizePercent(data.badgeSize) / 100}; background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --badge-glow:${rainbow ? '#7c3aed' : glow}; box-shadow:0 4px 16px -8px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.26); border:none;`;
+    return window.H4ReviewPresentation.badgeStyle(data);
   }
   function medalStyle(data = {}) {
     const c1 = warnaHexSah(data.medalColor, '#f0a500');
@@ -889,24 +905,10 @@ import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.8.0/fireb
     return `background:${bg}; background-size:${rainbow ? '400% 100%' : '230% 230%'}; color:${text}; --medal-glow:${rainbow ? '#7c3aed' : glow}; border:${border}; box-shadow:0 5px 18px -9px ${rainbow ? '#7c3aed' : glow}, inset 0 1px 0 rgba(255,255,255,.28);`;
   }
   function nameStyle(data = {}, isReviewAdmin = false) {
-    if (data.nameColorEnabled !== true) {
-      return isReviewAdmin ? 'color: var(--accent);' : '';
-    }
-    const c1 = warnaHexSah(data.nameColor, '#2fa8e0');
-    const c2 = warnaHexSah(data.nameColor2, '#7c3aed');
-    const glow = warnaHexSah(data.nameGlowColor, c1);
-    const weight = ['700','800','900'].includes(String(data.nameWeight)) ? String(data.nameWeight) : '800';
-    const gradient = data.nameGradient !== false;
-    const rainbow = data.nameRainbow === true;
-    const base = `font-weight:${weight}; text-shadow:0 2px 12px ${glow}55;`;
-    if (rainbow) return `${base} color:#ff3158; background:linear-gradient(90deg,#ff3158,#ff9f1c,#ffe600,#20d67b,#19bfff,#6558ff,#d946ef,#ff3158); background-size:400% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
-    if (!gradient) return `${base} color:${c1};`;
-    return `${base} color:${c1}; background:linear-gradient(120deg, ${c1}, ${c2}, ${c1}); background-size:230% 230%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;`;
+    return window.H4ReviewPresentation.nameStyle(data, isReviewAdmin);
   }
   function nameClass(data = {}) {
-    const rainbow = data.nameColorEnabled === true && data.nameRainbow === true;
-    const animated = data.nameColorEnabled === true && (rainbow || (data.nameAnimated !== false && data.nameGradient !== false));
-    return 'buyer-name custom-name' + (animated ? ' is-animated' : '') + (rainbow ? ' is-rainbow' : '');
+    return window.H4ReviewPresentation.nameClass(data);
   }
   function reviewEmojiCandidates(value) {
     const raw = String(value || '').trim();

@@ -5678,3 +5678,57 @@ body.review-rewrite-v3 .review-card.has-custom-chat-background p.buyer-feedback 
 :root[data-theme="dark"] .admin-moderation-actions button,:root[data-theme="dark"] .admin-report-controls[open],:root[data-theme="dark"] .admin-report-controls[open] summary{background:#102b3a;color:#d7e8f2;border-color:#28516a}
 :root[data-theme="dark"] .admin-moderation-actions button.danger{background:#3b2028;color:#ffafb5;border-color:#69404b}
 @media(max-width:600px){.admin-moderation-item{grid-template-columns:auto 40px minmax(0,1fr)}.admin-moderation-actions .admin-report-controls[open]{flex-basis:100%}.admin-moderation-actions button{min-height:38px}.admin-bulk-toolbar{position:static}}
+
+.shop-closed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.shop-closed-contact,
+.shop-closed-store {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 0;
+  padding: 11px 17px;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.shop-closed-contact { margin-top: 0 !important; }
+.shop-closed-store {
+  color: #075985;
+  background: rgba(255,255,255,.8);
+  border-color: rgba(14,165,233,.22);
+}
+.shop-closed-actions a:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(8,47,73,.16); }
+.shop-closed-actions a:focus-visible { outline: 3px solid #0369a1; outline-offset: 3px; }
+.review-business-hours {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(35,101,216,.16);
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+  color: #20517b;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(16,38,63,.06);
+}
+.review-business-hours i { color: #168fc0; }
+.review-business-hours[hidden] { display: none !important; }
+@media (max-width: 520px) {
+  .shop-closed-actions { flex-direction: column; }
+  .shop-closed-actions a { width: 100%; box-sizing: border-box; }
+  .review-business-hours { max-width: 100%; box-sizing: border-box; border-radius: 14px; font-size: 12px; }
+}
