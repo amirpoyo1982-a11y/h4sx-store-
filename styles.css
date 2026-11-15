@@ -11347,6 +11347,23 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 .rv-top:hover { background: linear-gradient(135deg,#0284c7,#0369a1); }
 .rv-top[hidden] { display: none !important; }
 
+/* Live background & warna kad pengumuman: ikut tetapan di H4SX Review */
+.rv-card.is-announcement { border-color: var(--announcement-border,#88dbf5); background: var(--announcement-bg,#effbff); box-shadow: 0 5px 22px rgba(0,142,189,.08); }
+.rv-card.is-announcement .rv-card-name strong:not(.custom-name) { color: #173e58; }
+.rv-card.is-announcement .rv-card-bought, .rv-card.is-announcement .rv-card-foot time { color: #5d7485; }
+.rv-card.is-announcement .rv-card-text, :root[data-theme="dark"] .rv-card.is-announcement .rv-card-text { border-color: rgba(23,62,88,.14); color: #254760; background: rgba(255,255,255,.62); }
+.rv-card.has-chat-bg, .rv-chat-bg { position: relative; isolation: isolate; overflow: hidden; background: var(--chat-shade,#fff); }
+.rv-card.has-chat-bg { background: var(--chat-shade,#fff) !important; }
+.rv-chat-bg { border-radius: 12px; }
+:is(.rv-card.has-chat-bg, .rv-chat-bg) > .rv-chat-media { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+:is(.rv-card.has-chat-bg, .rv-chat-bg) > .rv-chat-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+:is(.rv-card.has-chat-bg, .rv-chat-bg) > .rv-chat-shade { position: absolute; inset: 0; z-index: -1; background: var(--chat-shade,#fff); opacity: var(--chat-overlay,.75); pointer-events: none; }
+.rv-chat-bg > .rv-card-text { position: relative; margin: 0; border: 0 !important; color: var(--chat-text,#173d56) !important; background: transparent !important; }
+.rv-card.has-chat-bg .rv-card-text { border-color: rgba(255,255,255,.35) !important; color: var(--chat-text,#173d56) !important; background: rgba(255,255,255,.12) !important; }
+:is(.rv-card.has-chat-bg, .rv-chat-bg).has-motion > .rv-chat-media { transform-origin: center; animation: rvChatMotion 12s ease-in-out infinite alternate; }
+@keyframes rvChatMotion { from { transform: perspective(700px) scale(1.12) rotateY(-3deg) translateX(-1%); } to { transform: perspective(700px) scale(1.16) rotateY(3deg) translateX(1%); } }
+@media (prefers-reduced-motion: reduce) { :is(.rv-card.has-chat-bg, .rv-chat-bg).has-motion > .rv-chat-media { animation: none; } }
+
 /* Warna nama & role bergerak, sama macam notis melayang */
 .rv-card-name strong.is-animated, .rv-card-roles .is-animated { animation: reviewIdentityFlow 3.4s linear infinite; }
 .rv-card-name strong.is-rainbow { animation: reviewIdentityRainbow 4.2s linear infinite; }

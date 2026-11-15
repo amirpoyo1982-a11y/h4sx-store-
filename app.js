@@ -6234,6 +6234,75 @@ function formatReviewMessageText(str) {
       return '<a class="message-link" href="' + url + '" target="_blank" rel="noopener noreferrer">' + url + '</a>' + trailing;
     });
 }
+/* STORE REVIEW LIVE BACKGROUND START */
+function reviewChatImageUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw.length > 2048) return '';
+  let url;
+  try { url = new URL(raw); } catch (error) { return ''; }
+  if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return '';
+  return gameNameEmojiImages(url.href)[0] || '';
+}
+function reviewChatVideoUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    if (url.protocol === 'https:' && !url.username && !url.password && /\.(mp4|webm)$/i.test(url.pathname)) return url.href;
+  } catch (error) {}
+  return '';
+}
+function reviewChatBackgroundConfig(data = {}) {
+  const type = ['image', 'video'].includes(data.chatBackgroundType) ? data.chatBackgroundType : 'none';
+  const url = type === 'image' ? reviewChatImageUrl(data.chatBackgroundUrl) : (type === 'video' ? reviewChatVideoUrl(data.chatBackgroundUrl) : '');
+  const overlay = Number(data.chatBackgroundOverlay);
+  return {
+    type,
+    url,
+    target: data.chatBackgroundTarget === 'message' ? 'message' : 'card',
+    enabled: type !== 'none' && Boolean(url),
+    motion: data.chatBackgroundMotion === true,
+    shade: warnaHexSah(data.chatBackgroundShade, '#ffffff'),
+    textColor: warnaHexSah(data.chatBackgroundTextColor, '#173d56'),
+    overlay: data.chatBackgroundOverlay == null || !Number.isFinite(overlay) ? 75 : Math.max(0, Math.min(95, overlay))
+  };
+}
+function reviewChatBackgroundVars(config) {
+  return '--chat-shade:' + config.shade + ';--chat-overlay:' + (config.overlay / 100) + ';--chat-text:' + config.textColor + ';';
+}
+function reviewChatBackgroundLayers(config) {
+  if (!config.enabled) return '';
+  const safeUrl = escapeHtml(config.url).replace(/"/g, '&quot;');
+  const media = config.type === 'video'
+    ? '<video class="rv-chat-media" data-rv-video-src="' + safeUrl + '" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>'
+    : '<span class="rv-chat-media"><img src="' + safeUrl + '" alt="" loading="lazy" decoding="async"></span>';
+  return media + '<span class="rv-chat-shade" aria-hidden="true"></span>';
+}
+/* STORE REVIEW LIVE BACKGROUND END */
+
+let reviewChatVideoObserver = null;
+function bindReviewChatVideos() {
+  if (reviewChatVideoObserver) reviewChatVideoObserver.disconnect();
+  const videos = document.querySelectorAll('#reviews-list video[data-rv-video-src]');
+  if (!videos.length || typeof IntersectionObserver === 'undefined') return;
+  reviewChatVideoObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const video = entry.target;
+      if (entry.isIntersecting && !document.hidden) {
+        video.muted = true;
+        if (!video.getAttribute('src')) video.src = video.dataset.rvVideoSrc;
+        const playing = video.play();
+        if (playing && playing.catch) playing.catch(() => {});
+      } else {
+        video.pause();
+      }
+    });
+  }, { threshold: 0.25 });
+  videos.forEach(video => reviewChatVideoObserver.observe(video));
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) document.querySelectorAll('#reviews-list video[data-rv-video-src]').forEach(video => video.pause());
+  else bindReviewChatVideos();
+});
+
 function reviewCardHTML(item) {
   const name = String(item.nama || item.name || 'Pelanggan');
   const rating = clampRating(item.bintang ?? item.rating);
@@ -6257,6 +6326,21 @@ function reviewCardHTML(item) {
   const itemBought = String(item.itemDibeli || '').replace(/\s+/g, ' ').trim();
   const announcement = reviewAnnouncementConfig(item);
   const longText = Array.from(text).length > 150;
+  const chatBackground = reviewChatBackgroundConfig(item);
+  const cardBackground = chatBackground.enabled && chatBackground.target === 'card';
+  const messageBackground = chatBackground.enabled && chatBackground.target === 'message';
+  const cardClasses = ['rv-card'];
+  if (announcement.enabled) cardClasses.push('is-announcement');
+  if (cardBackground) cardClasses.push('has-chat-bg');
+  if (cardBackground && chatBackground.motion) cardClasses.push('has-motion');
+  const cardVars = [];
+  if (announcement.enabled || announcement.actionEnabled) cardVars.push(reviewAnnouncementStyle(announcement));
+  if (cardBackground) cardVars.push(reviewChatBackgroundVars(chatBackground));
+  const cardAttrs = ' class="' + cardClasses.join(' ') + '"' + (cardVars.length ? ' style="' + escapeHtml(cardVars.join('')) + '"' : '');
+  const textParagraph = '<p class="rv-card-text">' + formatReviewMessageText(text) + '</p>';
+  const textBlock = messageBackground
+    ? '<div class="rv-chat-bg' + (chatBackground.motion ? ' has-motion' : '') + '" style="' + escapeHtml(reviewChatBackgroundVars(chatBackground)) + '">' + reviewChatBackgroundLayers(chatBackground) + textParagraph + '</div>'
+    : textParagraph;
   const image = item.feedbackImg
     ? '<button type="button" class="rv-media-thumb" data-rv-action="image" data-src="' + escapeHtml(item.feedbackImg).replace(/"/g, '&quot;') + '" aria-label="Lihat gambar ulasan"><img src="' + escapeHtml(item.feedbackImg).replace(/"/g, '&quot;') + '" alt="Gambar ulasan" loading="lazy" decoding="async"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>'
     : '';
@@ -6275,7 +6359,7 @@ function reviewCardHTML(item) {
   const nameBlock = customNameEmojiHTML(item.nameEmoji)
     + reviewPresentation().nameMarkup(item, name, officialAdminReview)
     + reviewIdentityCheck(item);
-  return '<article class="rv-card">'
+  return '<article' + cardAttrs + '>' + (cardBackground ? reviewChatBackgroundLayers(chatBackground) : '')
     + '<div class="rv-card-head">'
     + '<span class="rv-avatar' + (officialAdminReview ? ' is-official-admin' : '') + '"' + avatarStyle + '>' + avatar + (officialAdminReview ? '<span class="rv-avatar-shield" aria-label="Admin rasmi"><i class="fa-solid fa-shield-halved"></i></span>' : '') + '</span>'
     + '<div class="rv-card-id">'
@@ -6287,7 +6371,7 @@ function reviewCardHTML(item) {
     + '</div></div>'
     + reviewAnnouncementLabel(announcement)
     + stars
-    + '<p class="rv-card-text">' + formatReviewMessageText(text) + '</p>'
+    + textBlock
     + (longText ? '<button type="button" class="rv-card-more" data-rv-action="more">Baca lagi</button>' : '')
     + gif
     + media
@@ -6436,6 +6520,7 @@ function renderReviewsView(reset = false, keep = 0) {
     list.insertAdjacentHTML('beforeend', slice.map(item => reviewCardHTML(item)).join(''));
     reviewsViewShown += slice.length;
   }
+  bindReviewChatVideos();
   if (more) more.hidden = reviewsViewShown >= items.length;
   if (status) {
     status.textContent = reviewsViewShown >= items.length
