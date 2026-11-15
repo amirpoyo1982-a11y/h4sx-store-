@@ -4474,8 +4474,18 @@ function schedulePurchasePopup() {
   stopPurchasePopupTimer();
   if (!purchasePopupState.active || purchasePopupDismissed || !purchasePopupState.entries.length || document.hidden) return;
   purchasePopupTimer = window.setTimeout(() => {
-    if (purchasePopupState.entries.length > 1) purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
-    renderPurchasePopup();
+    const total = purchasePopupState.entries.length;
+    const list = document.getElementById('purchase-popup-list');
+    if (total < 2) {
+      renderPurchasePopup();
+      return;
+    }
+    // Fade the current purchase out first, then loop to the next one.
+    if (list) list.classList.add('is-leaving');
+    purchasePopupTimer = window.setTimeout(() => {
+      purchasePopupIndex = (purchasePopupIndex + 1) % purchasePopupState.entries.length;
+      renderPurchasePopup();
+    }, 400);
   }, purchasePopupCycleDelay());
 }
 
@@ -4489,19 +4499,12 @@ function renderPurchasePopup() {
     return;
   }
   if (purchasePopupIndex >= entries.length) purchasePopupIndex = 0;
-  popup.className = 'purchase-popup position-' + purchasePopupState.position + (purchasePopupExpanded ? ' is-expanded' : ' is-collapsed');
-  const rotated = purchasePopupRotatedEntries();
-  const visible = purchasePopupExpanded ? rotated.slice(0, PURCHASE_POPUP_VISIBLE_LIMIT) : rotated.slice(0, 1);
+  purchasePopupExpanded = false;
+  popup.className = 'purchase-popup position-' + purchasePopupState.position;
   const list = document.getElementById('purchase-popup-list');
-  if (list) list.innerHTML = visible.map(purchasePopupItemMarkup).join('');
-  const badge = document.getElementById('purchase-popup-badge');
-  if (badge) badge.textContent = String(entries.length);
-  const fold = document.getElementById('purchase-popup-fold');
-  if (fold) {
-    fold.hidden = entries.length < 2;
-    fold.setAttribute('aria-expanded', purchasePopupExpanded ? 'true' : 'false');
-    fold.setAttribute('aria-label', purchasePopupExpanded ? 'Lipat senarai pembelian' : 'Buka senarai pembelian');
-    fold.innerHTML = '<i class="fa-solid ' + (purchasePopupExpanded ? 'fa-chevron-down' : 'fa-chevron-up') + '"></i>';
+  if (list) {
+    list.classList.remove('is-leaving');
+    list.innerHTML = purchasePopupItemMarkup(entries[purchasePopupIndex]);
   }
   restartPurchasePopupProgress();
   schedulePurchasePopup();
@@ -5400,7 +5403,7 @@ function openCatalogControl(tab = 'products') {
   const safeTab = ['products','games','promos','orders','leaderboard','settings','drafts','health','migration'].includes(tab) ? tab : 'products';
   if (frame.dataset.tab !== safeTab) {
     frame.dataset.tab = safeTab;
-    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=31-visibility';
+    frame.src = 'catalog-control.htm?embedded=1&tab=' + encodeURIComponent(safeTab) + '&v=admin-smooth-20261115';
   }
   overlay.hidden = false;
   requestAnimationFrame(() => overlay.classList.add('show'));

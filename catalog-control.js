@@ -600,9 +600,8 @@ function isAdminCatalogItemVisible(item = {}) {
 
 function renderProducts() {
   const q = byId('product-search').value.trim().toLowerCase();
-  const filtered = products.filter(item => [item.id,item.name,item.game,item.gameGroup,item.platform,item.subcategory].join(' ').toLowerCase().includes(q));
-  byId('product-list').innerHTML = filtered.length ? filtered.map(item => {
-    const index = products.indexOf(item);
+  const filtered = products.map((item, index) => ({ item, index })).filter(({ item }) => [item.id,item.name,item.game,item.gameGroup,item.platform,item.subcategory].join(' ').toLowerCase().includes(q));
+  byId('product-list').innerHTML = filtered.length ? filtered.map(({ item, index }) => {
     const image = item.poster || item.image || item.img || item.thumbnail || '';
     const media = image && !/\.(mp4|webm|mov)(\?|#|$)/i.test(image)
       ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
@@ -687,9 +686,8 @@ function syncGameNameEmojiPreview() {
 }
 function renderGames() {
   const q = byId('game-search').value.trim().toLowerCase();
-  const filtered = games.filter(item => [item.name,item.platform,item.badge].join(' ').toLowerCase().includes(q));
-  byId('game-list').innerHTML = filtered.length ? filtered.map(item => {
-    const index = games.indexOf(item);
+  const filtered = games.map((item, index) => ({ item, index })).filter(({ item }) => [item.name,item.platform,item.badge].join(' ').toLowerCase().includes(q));
+  byId('game-list').innerHTML = filtered.length ? filtered.map(({ item, index }) => {
     const image = item.poster || item.image || item.img || '';
     const media = image && !/\.(mp4|webm|mov)(\?|#|$)/i.test(image)
       ? '<img src="' + escapeHtml(image) + '" alt="" loading="lazy">'
@@ -888,8 +886,12 @@ async function runButtonOperation(button, label, operation) {
   }
 }
 
-byId('product-search').addEventListener('input', renderProducts);
-byId('game-search').addEventListener('input', renderGames);
+function debounceRender(fn, delay = 140) {
+  let timer = 0;
+  return () => { clearTimeout(timer); timer = setTimeout(fn, delay); };
+}
+byId('product-search').addEventListener('input', debounceRender(renderProducts));
+byId('game-search').addEventListener('input', debounceRender(renderGames));
 byId('new-product').addEventListener('click', () => openProductEditor());
 byId('new-game').addEventListener('click', () => openGameEditor());
 byId('new-promo').addEventListener('click', () => openPromoEditor());
