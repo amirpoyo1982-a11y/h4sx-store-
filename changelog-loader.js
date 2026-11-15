@@ -1,32 +1,33 @@
 const CHANGELOG_DATA = {
-  title: 'Kongsi & Kawal Kedai',
-  subtitle: 'Kongsi produk dengan mudah, nikmati paparan lebih kemas dan kawal notis kedai dengan lebih jelas.',
-  date: '6 November 2026',
-  releasedAt: '2026-11-06T00:00:00+08:00',
+  title: 'Pembelian Terkini Lebih Kemas',
+  subtitle: 'Popup pembelian kini terapung dan berpusing satu demi satu, jelas dibaca di phone dan PC, serta panel admin lebih lancar di PC.',
+  date: '15 November 2026',
+  releasedAt: '2026-11-15T00:00:00+08:00',
   time: 'Update pelanggan',
-  version: 'v6.3',
+  version: 'v6.4',
   sections: [
     {
       type: 'added',
-      title: 'Kongsi produk',
+      title: 'Popup pembelian',
       items: [
-        { icon: 'fa-link', text: '<strong>Copy Link pada kad produk</strong><br>Salin pautan produk terus daripada kad individu.' },
-        { icon: 'fa-link', text: '<strong>Copy Link pilihan variant</strong><br>Salin pautan variant yang dipilih terus daripada modal produk.' }
+        { icon: 'fa-bag-shopping', text: '<strong>Satu pembelian pada satu masa</strong><br>Popup Pembelian Terkini berpusing satu demi satu dan mula semula dari awal selepas pembelian terakhir.' },
+        { icon: 'fa-eye', text: '<strong>Latar lut sinar yang jelas dibaca</strong><br>Kad lebih ringan dan tidak menutup kandungan, dengan teks yang kekal terang.' },
+        { icon: 'fa-mobile-screen', text: '<strong>Sesuai di phone dan PC</strong><br>Popup duduk di atas bar navigasi bawah dan memberi ruang kepada butang Helper.' }
+      ]
+    },
+    {
+      type: 'fixed',
+      title: 'Prestasi admin',
+      items: [
+        { icon: 'fa-gauge-high', text: '<strong>Panel admin lebih lancar di PC</strong><br>Kesan blur skrin penuh dibuang dan animasi halaman dijeda semasa panel admin dibuka.' },
+        { icon: 'fa-magnifying-glass', text: '<strong>Carian produk dan game lebih pantas</strong><br>Senarai dikemas kini selepas anda berhenti menaip, bukan pada setiap huruf.' }
       ]
     },
     {
       type: 'removed',
-      title: 'Paparan produk',
+      title: 'Paparan popup',
       items: [
-        { icon: 'fa-image', text: '<strong>Ruang gambar produk lebih luas</strong><br>Butang WhatsApp dan “Pilih Type” dibuang daripada lapisan atas gambar kad produk.' }
-      ]
-    },
-    {
-      type: 'info',
-      title: 'Kawalan notis kedai',
-      items: [
-        { icon: 'fa-toggle-on', text: '<strong>Notis tutup Store dan Review dikawal berasingan</strong><br>Admin boleh memilih untuk memaparkan atau menyembunyikan setiap notis tutup biasa; notis maintenance tetap dipaparkan.' },
-        { icon: 'fa-store', text: '<strong>Status TUTUP kekal kelihatan</strong><br>Apabila notis penuh disembunyikan, status kedai pada bar atas tetap memaparkan TUTUP. Pelanggan boleh melihat katalog, tetapi pesanan tetap disekat selagi <code>bukakedai</code> ditutup.' }
+        { icon: 'fa-list', text: '<strong>Senarai berlipat dibuang</strong><br>Lencana jumlah dan butang buka atau lipat dibuang supaya popup lebih ringkas.' }
       ]
     }
   ]
