@@ -6385,6 +6385,8 @@ function bindReviewCardActions() {
   document.addEventListener('click', event => {
     const sortBtn = event.target.closest('[data-rv-sort]');
     if (sortBtn) { event.preventDefault(); setReviewsSort(sortBtn.dataset.rvSort); return; }
+    const starBtn = event.target.closest('[data-rv-star]');
+    if (starBtn) { event.preventDefault(); setReviewsStar(starBtn.dataset.rvStar); return; }
     const action = event.target.closest('[data-rv-action]');
     if (!action) return;
     const type = action.dataset.rvAction;
@@ -6408,6 +6410,7 @@ function bindReviewCardActions() {
 }
 
 let reviewsViewSort = 'newest';
+let reviewsViewStar = 'all';
 try {
   const savedSort = localStorage.getItem('h4sx_reviews_sort');
   if (savedSort === 'oldest' || savedSort === 'newest') reviewsViewSort = savedSort;
@@ -6417,8 +6420,8 @@ function reviewSortTime(item) {
   return reviewRecordTime(item.diciptaPada || item.timestamp || item.date);
 }
 
-function reviewsViewItemList(list = latestReviewStatsData) {
-  return reviewPresentation().orderReviews(uniqueReviewRecords(list), reviewsViewSort);
+function reviewsViewItemList(list = latestReviewStatsData, star = reviewsViewStar) {
+  return filterReviewsByStar(reviewPresentation().orderReviews(uniqueReviewRecords(list), reviewsViewSort), star);
 }
 
 function setReviewsSortButtons() {
@@ -6433,6 +6436,40 @@ function setReviewsSort(mode) {
   setReviewsSortButtons();
   renderReviewsView(true);
 }
+
+/* STORE REVIEW STAR FILTER START */
+function filterReviewsByStar(list = [], star = 'all') {
+  const wanted = Number.parseInt(star, 10);
+  if (!(wanted >= 1 && wanted <= 5)) return list;
+  return list.filter(item => item.hideRating !== true && clampRating(item.bintang ?? item.rating) === wanted);
+}
+function reviewStarCounts(list = []) {
+  const counts = { all: list.length, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  list.forEach(item => {
+    if (item.hideRating !== true) counts[clampRating(item.bintang ?? item.rating)]++;
+  });
+  return counts;
+}
+/* STORE REVIEW STAR FILTER END */
+
+function updateReviewsStarButtons(list = []) {
+  const counts = reviewStarCounts(list);
+  document.querySelectorAll('[data-rv-star]').forEach(button => {
+    const key = button.dataset.rvStar;
+    const active = key === reviewsViewStar;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    const count = button.querySelector('b');
+    if (count) count.textContent = String(counts[key] ?? 0);
+  });
+}
+
+function setReviewsStar(value) {
+  reviewsViewStar = ['1', '2', '3', '4', '5'].includes(String(value)) ? String(value) : 'all';
+  reviewsViewShown = 0;
+  renderReviewsView(true);
+}
+window.setReviewsStar = setReviewsStar;
 
 function scrollToReviewsTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -6475,8 +6512,10 @@ function renderReviewsView(reset = false, keep = 0) {
   const list = document.getElementById('reviews-list');
   if (!list) return;
   bindReviewCardActions();
+  const allItems = reviewsViewItemList(latestReviewStatsData, 'all');
   const items = reviewsViewItemList();
-  updateReviewsViewStats(items);
+  updateReviewsViewStats(allItems);
+  updateReviewsStarButtons(allItems);
   const more = document.getElementById('rv-more');
   const status = document.getElementById('rv-status');
 
@@ -6507,7 +6546,9 @@ function renderReviewsView(reset = false, keep = 0) {
   }
   if (!items.length) {
     reviewsViewShown = 0;
-    list.innerHTML = reviewsLoadAttempted
+    list.innerHTML = (allItems.length && reviewsViewStar !== 'all')
+      ? '<div class="rv-empty"><i class="fa-regular fa-star" aria-hidden="true"></i><strong>Tiada ulasan ' + reviewsViewStar + ' bintang</strong><span>Cuba pilih bintang lain atau tekan Semua.</span></div>'
+      : reviewsLoadAttempted
       ? '<div class="rv-empty"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i><strong>Belum ada ulasan</strong><span>Ulasan pelanggan akan muncul di sini.</span></div>'
       : '<div class="rv-empty"><i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i><strong>Memuatkan ulasan</strong><span>Sekejap ya, kami tarik ulasan terkini.</span></div>';
     if (more) more.hidden = true;

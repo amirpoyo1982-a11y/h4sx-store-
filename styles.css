@@ -11364,6 +11364,24 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 @keyframes rvChatMotion { from { transform: perspective(700px) scale(1.12) rotateY(-3deg) translateX(-1%); } to { transform: perspective(700px) scale(1.16) rotateY(3deg) translateX(1%); } }
 @media (prefers-reduced-motion: reduce) { :is(.rv-card.has-chat-bg, .rv-chat-bg).has-motion > .rv-chat-media { animation: none; } }
 
+/* Tapis ulasan mengikut bintang */
+.rv-star-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.rv-star-filter button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px; border: 1px solid #cfe6f2; border-radius: 10px; color: #4d7288; background: #f2fbff; font: 800 11px inherit; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
+.rv-star-filter button i { color: #fbbf24; font-size: 10px; }
+.rv-star-filter button b { min-width: 18px; padding: 1px 6px; border-radius: 99px; color: #4d7288; background: #fff; font-size: 9.5px; text-align: center; }
+.rv-star-filter button:hover { border-color: #8fcde9; color: #0b6a8f; }
+.rv-star-filter button.is-active { border-color: #0284c7; color: #fff; background: linear-gradient(135deg,#0ea5e9,#0284c7); box-shadow: 0 4px 10px -4px rgba(2,132,199,.7); }
+.rv-star-filter button.is-active i { color: #fde68a; }
+.rv-star-filter button.is-active b { color: #0369a1; background: rgba(255,255,255,.92); }
+@media (max-width: 520px) { .rv-star-filter button { flex: 1 1 auto; justify-content: center; padding: 0 8px; } }
+
+/* Telefon: peraturan animasi telefon mematikan semua animasi, jadi warna nama/role dan background live ulasan dihidupkan semula di sini. */
+@media (prefers-reduced-motion: no-preference) {
+  .rv-card-name strong.is-animated, .rv-card-roles .is-animated { animation-duration: 3.4s !important; animation-iteration-count: infinite !important; }
+  .rv-card-name strong.is-rainbow, .rv-card-roles .is-rainbow { animation-duration: 4.2s !important; animation-iteration-count: infinite !important; }
+  :is(.rv-card.has-chat-bg, .rv-chat-bg).has-motion > .rv-chat-media { animation-duration: 12s !important; animation-iteration-count: infinite !important; }
+}
+
 /* Warna nama & role bergerak, sama macam notis melayang */
 .rv-card-name strong.is-animated, .rv-card-roles .is-animated { animation: reviewIdentityFlow 3.4s linear infinite; }
 .rv-card-name strong.is-rainbow { animation: reviewIdentityRainbow 4.2s linear infinite; }

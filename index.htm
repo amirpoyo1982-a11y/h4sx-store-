@@ -72,7 +72,7 @@
       }
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=review-live-bg-20261115">
+  <link rel="stylesheet" href="styles.css?v=review-stars-20261115">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
 </head>
@@ -513,6 +513,14 @@
           <button type="button" data-rv-sort="oldest">Paling Lama</button>
         </div>
         <span class="rv-sort-note">Pilih susunan ulasan</span>
+      </div>
+      <div class="rv-star-filter" role="group" aria-label="Tapis ulasan mengikut bintang">
+        <button type="button" class="is-active" data-rv-star="all" aria-pressed="true">Semua <b>0</b></button>
+        <button type="button" data-rv-star="5" aria-pressed="false">5 <i class="fa-solid fa-star" aria-hidden="true"></i> <b>0</b></button>
+        <button type="button" data-rv-star="4" aria-pressed="false">4 <i class="fa-solid fa-star" aria-hidden="true"></i> <b>0</b></button>
+        <button type="button" data-rv-star="3" aria-pressed="false">3 <i class="fa-solid fa-star" aria-hidden="true"></i> <b>0</b></button>
+        <button type="button" data-rv-star="2" aria-pressed="false">2 <i class="fa-solid fa-star" aria-hidden="true"></i> <b>0</b></button>
+        <button type="button" data-rv-star="1" aria-pressed="false">1 <i class="fa-solid fa-star" aria-hidden="true"></i> <b>0</b></button>
       </div>
       <div id="reviews-list" class="rv-list" aria-live="polite"></div>
       <div class="rv-foot">
@@ -1205,7 +1213,7 @@
 <script defer src="/preview-bypass.js?v=default-on-20261021"></script>
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
 <script src="review/review-presentation.js?v=review-identity-fix-20261110"></script>
-<script defer src="app.js?v=review-live-bg-20261115"></script>
+<script defer src="app.js?v=review-stars-20261115"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>

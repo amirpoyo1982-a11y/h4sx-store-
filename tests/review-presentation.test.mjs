@@ -180,3 +180,40 @@ test('storefront review cards apply card or message backgrounds and announcement
   assert.match(storeCss, /prefers-reduced-motion: reduce\) \{ :is\(\.rv-card\.has-chat-bg, \.rv-chat-bg\)\.has-motion/);
 });
 
+
+// Storefront star filter: 5, 4, 3, 2, 1 with live counts.
+const starFilter = { Number };
+vm.createContext(starFilter);
+vm.runInContext('function clampRating(v){const n=parseInt(v,10);return Math.min(5,Math.max(1,Number.isFinite(n)?n:5));}', starFilter);
+vm.runInContext(storeSection('/* STORE REVIEW STAR FILTER START */', '/* STORE REVIEW STAR FILTER END */'), starFilter);
+
+test('storefront star filter returns only the chosen rating and ignores hidden ratings', () => {
+  const list = [
+    { id: 'a', bintang: 5 }, { id: 'b', bintang: 5 }, { id: 'c', bintang: 4 },
+    { id: 'd', bintang: 3 }, { id: 'e', bintang: 2 }, { id: 'f', bintang: 1 },
+    { id: 'g', bintang: 5, hideRating: true }
+  ];
+  const ids = star => [...starFilter.filterReviewsByStar(list, star)].map(item => item.id);
+  assert.deepEqual(ids('5'), ['a', 'b']);
+  assert.deepEqual(ids('4'), ['c']);
+  assert.deepEqual(ids('3'), ['d']);
+  assert.deepEqual(ids('2'), ['e']);
+  assert.deepEqual(ids('1'), ['f']);
+  assert.equal(ids('all').length, 7);
+  assert.equal(ids('9').length, 7);
+});
+
+test('storefront star counts match each button and the page wires the filter', async () => {
+  const counts = starFilter.reviewStarCounts([{ bintang: 5 }, { bintang: 5 }, { bintang: 1 }, { bintang: 4, hideRating: true }]);
+  assert.equal(counts.all, 4);
+  assert.equal(counts[5], 2);
+  assert.equal(counts[1], 1);
+  assert.equal(counts[4], 0);
+  const page = await readFile(new URL('../index.htm', import.meta.url), 'utf8');
+  for (const star of ['all', '5', '4', '3', '2', '1']) assert.match(page, new RegExp('data-rv-star="' + star + '"'));
+  assert.match(storeApp, /data-rv-star\]'\)/);
+  assert.match(storeApp, /setReviewsStar\(starBtn\.dataset\.rvStar\)/);
+  assert.match(storeCss, /\.rv-star-filter button\.is-active/);
+  assert.match(storeCss, /prefers-reduced-motion: no-preference\) \{\s*\.rv-card-name strong\.is-animated/);
+});
+
