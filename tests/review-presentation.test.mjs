@@ -102,3 +102,81 @@ test('pinned then featured reviews stay above regular reviews in either date sor
     ['pin-new', 'pin-old', 'feature-new', 'feature-old', 'old', 'new']
   );
 });
+
+// Storefront review cards must show the same live background and announcement colours saved by the Review Hub.
+const storeApp = await readFile(new URL('../app.js', import.meta.url), 'utf8');
+const storeCss = await readFile(new URL('../styles.css', import.meta.url), 'utf8');
+
+function storeSection(start, end) {
+  const from = storeApp.indexOf(start);
+  const to = storeApp.indexOf(end, from + 1);
+  assert(from >= 0 && to > from, 'Expected app.js section: ' + start);
+  return storeApp.slice(from, to);
+}
+
+const liveBg = { URL };
+vm.createContext(liveBg);
+vm.runInContext('function warnaHexSah(v,f){return /^#[0-9a-f]{6}$/i.test(v||"")?v:f;} function escapeHtml(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}', liveBg);
+vm.runInContext(storeSection('function gameNameEmojiImages(value) {', 'function advanceGameNameEmojiImage'), liveBg);
+vm.runInContext(storeSection('/* STORE REVIEW LIVE BACKGROUND START */', '/* STORE REVIEW LIVE BACKGROUND END */'), liveBg);
+
+test('storefront reads the same chat background fields saved by H4SX Review', () => {
+  const image = liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'image', chatBackgroundUrl: 'https://example.com/bg.gif', chatBackgroundMotion: true, chatBackgroundShade: '#112233', chatBackgroundTextColor: '#ffffff', chatBackgroundOverlay: 40 });
+  assert.equal(image.enabled, true);
+  assert.equal(image.type, 'image');
+  assert.equal(image.target, 'card');
+  assert.equal(image.motion, true);
+  assert.equal(image.shade, '#112233');
+  assert.equal(image.textColor, '#ffffff');
+  assert.equal(image.overlay, 40);
+  const message = liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'video', chatBackgroundUrl: 'https://example.com/loop.mp4', chatBackgroundTarget: 'message' });
+  assert.equal(message.enabled, true);
+  assert.equal(message.target, 'message');
+  assert.equal(message.overlay, 75);
+});
+
+test('unsafe or incomplete storefront background settings are ignored', () => {
+  for (const data of [
+    {},
+    { chatBackgroundType: 'image', chatBackgroundUrl: 'http://example.com/bg.png' },
+    { chatBackgroundType: 'image', chatBackgroundUrl: 'https://user:pass@example.com/bg.png' },
+    { chatBackgroundType: 'image', chatBackgroundUrl: 'javascript:alert(1)' },
+    { chatBackgroundType: 'video', chatBackgroundUrl: 'https://example.com/page.html' },
+    { chatBackgroundType: 'unknown', chatBackgroundUrl: 'https://example.com/bg.png' }
+  ]) assert.equal(liveBg.reviewChatBackgroundConfig(data).enabled, false);
+  assert.equal(liveBg.reviewChatBackgroundLayers(liveBg.reviewChatBackgroundConfig({})), '');
+});
+
+test('storefront overlay is clamped, invalid colours fall back, and emoji.gg uses the first-party endpoint', () => {
+  const config = liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'image', chatBackgroundUrl: 'https://example.com/a.png', chatBackgroundOverlay: 500, chatBackgroundShade: 'red', chatBackgroundTextColor: 'nope' });
+  assert.equal(config.overlay, 95);
+  assert.equal(config.shade, '#ffffff');
+  assert.equal(config.textColor, '#173d56');
+  assert.equal(liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'image', chatBackgroundUrl: 'https://example.com/a.png', chatBackgroundOverlay: -5 }).overlay, 0);
+  assert.equal(liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'image', chatBackgroundUrl: 'https://emoji.gg/emoji/12345-party' }).url, '/api/emoji?name=12345-party');
+});
+
+test('storefront video backgrounds load lazily and image backgrounds render an img with a shade', () => {
+  const video = liveBg.reviewChatBackgroundLayers(liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'video', chatBackgroundUrl: 'https://example.com/loop.webm' }));
+  assert.match(video, /<video class="rv-chat-media" data-rv-video-src="https:\/\/example\.com\/loop\.webm" muted loop playsinline preload="none"/);
+  assert.doesNotMatch(video, / src="/);
+  assert.match(video, /class="rv-chat-shade"/);
+  const image = liveBg.reviewChatBackgroundLayers(liveBg.reviewChatBackgroundConfig({ chatBackgroundType: 'image', chatBackgroundUrl: 'https://example.com/a.png' }));
+  assert.match(image, /<span class="rv-chat-media"><img src="https:\/\/example\.com\/a\.png"/);
+  assert.equal(liveBg.reviewChatBackgroundVars({ shade: '#aabbcc', overlay: 60, textColor: '#000000' }), '--chat-shade:#aabbcc;--chat-overlay:0.6;--chat-text:#000000;');
+});
+
+test('storefront review cards apply card or message backgrounds and announcement colours, and bind videos', () => {
+  const card = storeSection('function reviewCardHTML(item) {', 'function bindReviewCardActions');
+  assert.match(card, /reviewChatBackgroundConfig\(item\)/);
+  assert.match(card, /cardClasses\.push\('has-chat-bg'\)/);
+  assert.match(card, /cardClasses\.push\('is-announcement'\)/);
+  assert.match(card, /reviewAnnouncementStyle\(announcement\)/);
+  assert.match(card, /class="rv-chat-bg/);
+  assert.match(storeApp, /bindReviewChatVideos\(\);\s*if \(more\) more\.hidden/);
+  assert.match(storeCss, /\.rv-card\.has-chat-bg/);
+  assert.match(storeCss, /\.rv-card\.is-announcement/);
+  assert.match(storeCss, /@keyframes rvChatMotion/);
+  assert.match(storeCss, /prefers-reduced-motion: reduce\) \{ :is\(\.rv-card\.has-chat-bg, \.rv-chat-bg\)\.has-motion/);
+});
+
