@@ -11364,6 +11364,11 @@ html.h4sx-opening-active body { overflow:hidden !important; }
 @keyframes rvChatMotion { from { transform: perspective(700px) scale(1.12) rotateY(-3deg) translateX(-1%); } to { transform: perspective(700px) scale(1.16) rotateY(3deg) translateX(1%); } }
 @media (prefers-reduced-motion: reduce) { :is(.rv-card.has-chat-bg, .rv-chat-bg).has-motion > .rv-chat-media { animation: none; } }
 
+/* PC performance: blur latar (backdrop-filter) pada panel besar dan header dikira semula setiap kali scroll, itu punca laggy. Latar sudah hampir pekat, jadi rupa kekal sama. */
+.section-panel { background: rgba(255,255,255,.95); backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.site-header, .site-header-nav-wrap, .business-hours-bar .bh-inner, #shop-section .platform-filter-bar { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.site-header-nav-wrap { background: rgba(255,255,255,.97); }
+
 /* Tapis ulasan mengikut bintang */
 .rv-star-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
 .rv-star-filter button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 0 12px; border: 1px solid #cfe6f2; border-radius: 10px; color: #4d7288; background: #f2fbff; font: 800 11px inherit; cursor: pointer; transition: background .18s ease, color .18s ease, border-color .18s ease; }
