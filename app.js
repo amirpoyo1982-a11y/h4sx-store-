@@ -10373,15 +10373,17 @@ function submitSupportForm() {
   const timestamp = new Date().toLocaleString('ms-MY', { timeZone: 'Asia/Kuala_Lumpur' });
   const waMessage = `*H4SX Store Support Request*\n\n` +
     `*Nama:* ${nama}\n` +
-    `*No. Phone:* ${phone}\n` +
+    `*No. Phone Pelanggan:* ${phoneFormatted}\n` +
     `*Kategori:* ${masalah}\n` +
     `*Pesan:*\n${pesan}\n\n` +
     `_Dihantar pada: ${timestamp}_`;
   
-  const waLink = `https://wa.me/${phoneFormatted}?text=${encodeURIComponent(waMessage)}`;
+  // Send to support number (hardcoded)
+  const supportNumber = '60137426830';
+  const waLink = `https://wa.me/${supportNumber}?text=${encodeURIComponent(waMessage)}`;
   
   // Close modal and send
   closeSupportForm();
   window.open(waLink, '_blank');
-  toast('Hantar ke WhatsApp...');
+  toast('Hantar ke WhatsApp Support...');
 }
