@@ -10372,10 +10372,10 @@ function submitSupportForm() {
   // Build WhatsApp message
   const timestamp = new Date().toLocaleString('ms-MY', { timeZone: 'Asia/Kuala_Lumpur' });
   const waMessage = `*H4SX Store Support Request*\n\n` +
-    `*Nama:* ${nama}\n` +
-    `*No. Phone Pelanggan:* ${phoneFormatted}\n` +
-    `*Kategori:* ${masalah}\n` +
-    `*Pesan:*\n${pesan}\n\n` +
+    `*Nama: ${nama}*\n\n` +
+    `*No. Phone Pelanggan: ${phoneFormatted}*\n\n` +
+    `*Kategori: ${masalah}*\n\n` +
+    `*Pesan: ${pesan}*\n\n` +
     `_Dihantar pada: ${timestamp}_`;
   
   // Send to support number (hardcoded)
