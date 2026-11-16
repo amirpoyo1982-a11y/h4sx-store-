@@ -10323,3 +10323,65 @@ async function shareH4sxStore() {
     }
   }
 }
+
+// --- SUPPORT FORM ---
+function openSupportForm() {
+  const modal = document.getElementById('support-form-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('support-name-input')?.focus();
+  }
+}
+
+function closeSupportForm() {
+  const modal = document.getElementById('support-form-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  // Reset form
+  document.getElementById('support-form')?.reset();
+}
+
+function submitSupportForm() {
+  const form = document.getElementById('support-form');
+  if (!form) return;
+  
+  const nama = document.getElementById('support-name-input')?.value?.trim() || '';
+  const phone = document.getElementById('support-phone-input')?.value?.trim() || '';
+  const masalah = document.getElementById('support-issue-select')?.value || '';
+  const pesan = document.getElementById('support-message-input')?.value?.trim() || '';
+  
+  // Validate
+  if (!nama || !phone || !masalah || !pesan) {
+    toast('Sila isi semua field sebelum hantar.', true);
+    return;
+  }
+  
+  // Format nomor phone (remove non-digits, add + for WhatsApp if needed)
+  let phoneFormatted = phone.replace(/\D/g, '');
+  if (!phoneFormatted.startsWith('6')) {
+    if (phoneFormatted.startsWith('0')) {
+      phoneFormatted = '6' + phoneFormatted.substring(1);
+    } else {
+      phoneFormatted = '6' + phoneFormatted;
+    }
+  }
+  
+  // Build WhatsApp message
+  const timestamp = new Date().toLocaleString('ms-MY', { timeZone: 'Asia/Kuala_Lumpur' });
+  const waMessage = `*H4SX Store Support Request*\n\n` +
+    `*Nama:* ${nama}\n` +
+    `*No. Phone:* ${phone}\n` +
+    `*Kategori:* ${masalah}\n` +
+    `*Pesan:*\n${pesan}\n\n` +
+    `_Dihantar pada: ${timestamp}_`;
+  
+  const waLink = `https://wa.me/${phoneFormatted}?text=${encodeURIComponent(waMessage)}`;
+  
+  // Close modal and send
+  closeSupportForm();
+  window.open(waLink, '_blank');
+  toast('Hantar ke WhatsApp...');
+}

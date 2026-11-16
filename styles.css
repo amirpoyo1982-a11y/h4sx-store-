@@ -1,4 +1,4 @@
-/* H4SX STORE v4 ? Soft White + Blue Elegance */
+﻿/* H4SX STORE v4 ? Soft White + Blue Elegance */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #f8fafc;
@@ -10154,7 +10154,7 @@ body { padding-top: 74px !important; }
 html.review-submit-direct body,
 body.h4rf-open { padding-top: 0 !important; }
 
-/* Review form redesign v2 — structured, compact and distraction-free. */
+/* Review form redesign v2 â€” structured, compact and distraction-free. */
 body.h4rf-open { overflow:hidden !important; }
 body.h4rf-open .business-hours-bar,
 body.h4rf-open .bottom-nav,
@@ -11455,3 +11455,59 @@ body:has(.order-modal.show, .catalog-control-overlay.show) > :not(.order-modal):
 body:has(.order-modal.show, .catalog-control-overlay.show) > :not(.order-modal):not(.catalog-control-overlay):not(#toasts) *::before,
 body:has(.order-modal.show, .catalog-control-overlay.show) > :not(.order-modal):not(.catalog-control-overlay):not(#toasts) *::after { animation-play-state:paused !important; }
 
+
+/* SUPPORT FORM MODAL */
+.support-form-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px); background: rgba(15, 23, 42, 0.5);
+  opacity: 0; visibility: hidden; transition: all 0.3s ease;
+}
+.support-form-modal[style*="display: flex"] { opacity: 1; visibility: visible; }
+.support-form-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.support-form-card {
+  position: relative; width: 90%; max-width: 450px;
+  background: var(--bg2); border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column; animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.support-form-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px; border-bottom: 1px solid var(--border); background: rgba(14, 165, 233, 0.05);
+}
+.support-form-header h2 { font-size: 18px; font-weight: 600; color: var(--ink); margin: 0; display: flex; align-items: center; gap: 10px; }
+.support-form-header h2 i { color: #25d366; }
+.support-form-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.2s; }
+.support-form-close:hover { background: var(--bg3); color: var(--ink); }
+#support-form {
+  padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; max-height: 60vh;
+}
+.support-form-group { display: flex; flex-direction: column; gap: 6px; }
+.support-form-group label { font-size: 13px; font-weight: 600; color: var(--ink); }
+.support-form-group input,
+.support-form-group textarea,
+.support-form-group select {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-family: inherit; font-size: 14px; color: var(--ink);
+  background: var(--bg2); transition: all 0.2s;
+}
+.support-form-group input:focus,
+.support-form-group textarea:focus,
+.support-form-group select:focus {
+  outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow);
+}
+.support-form-group textarea { resize: vertical; font-size: 13px; }
+.support-form-actions {
+  display: flex; gap: 10px; padding: 15px 20px 20px; border-top: 1px solid var(--border);
+}
+.support-form-actions button { flex: 1; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s; font-size: 13px; }
+.support-form-actions .ghost { background: transparent; color: var(--muted); }
+.support-form-actions .ghost:hover { background: var(--bg3); color: var(--ink); }
+.support-form-actions .primary { background: #25d366; color: white; border-color: #25d366; }
+.support-form-actions .primary:hover { background: #1cba55; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25); }
+.support-form-actions .primary i { margin-right: 6px; }
+@media (max-width: 640px) {
+  .support-form-card { width: 95%; }
+  #support-form { max-height: 70vh; }
+  .support-form-header h2 { font-size: 16px; }
+}
