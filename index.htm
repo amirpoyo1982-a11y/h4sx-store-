@@ -75,6 +75,7 @@
   <link rel="stylesheet" href="styles.css?v=admin-smooth-20261115">
   <link rel="stylesheet" href="admin-sessions.css?v=20261010-2">
   <link rel="stylesheet" href="/review-edit.css?v=center-dialogs-20261015">
+  <link rel="stylesheet" href="support-form.css?v=initial-launch-20261117">
 </head>
 <body class="market-layout-v2">
 <div id="h4sx-intro-host" class="h4sx-intro-host" role="dialog" aria-modal="true" aria-label="Selamat datang ke H4SX Store">
@@ -234,9 +235,9 @@
         <i class="fa-solid fa-bag-shopping"></i>
         <span id="cart-badge" class="cart-badge">0</span>
       </button>
-      <a href="https://wa.me/60137426830" target="_blank" class="btn-wa" id="nav-support-btn">
+      <button class="btn-wa" id="nav-support-btn" onclick="openSupportForm()">
         <i class="fa-brands fa-whatsapp"></i><span class="btn-txt"> Support</span>
-      </a>
+      </button>
       <button class="nav-ham" onclick="toggleMenu()"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -675,7 +676,7 @@
     <button class="bn-item" onclick="openSearch()"><span class="tab-emoji"><picture><img src="assets/animated-nav/search.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-magnifying-glass" hidden></i></span>Search</button>
     <button class="bn-item bn-cart" onclick="toggleCart()"><span class="tab-emoji"><picture><img src="assets/animated-nav/cart.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-bag-shopping" hidden></i></span>Cart<span id="bn-badge" class="bn-badge"></span></button>
     <button class="bn-item" onclick="openOrderHistory()"><span class="tab-emoji"><picture><img src="assets/animated-nav/orders.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-solid fa-receipt" hidden></i></span>Histori</button>
-    <a href="https://wa.me/6285178259060" target="_blank" class="bn-item"><span class="tab-emoji"><picture><img src="assets/animated-nav/support.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-brands fa-whatsapp" hidden></i></span>Support</a>
+    <button class="bn-item" onclick="openSupportForm()"><span class="tab-emoji"><picture><img src="assets/animated-nav/support.webp" alt="" width="24" height="24" decoding="async" onerror="this.closest('picture').hidden=true;this.closest('.tab-emoji').querySelector('i').hidden=false"></picture><i class="fa-brands fa-whatsapp" hidden></i></span>Support</button>
   </div>
 </div>
 <!-- BUSINESS HOURS DISPLAY -->
@@ -1194,6 +1195,61 @@
   </div>
 </aside>
 <div id="toasts"></div>
+
+<!-- SUPPORT FORM MODAL -->
+<div id="support-form-modal" class="order-modal" onclick="if(event.target===this)closeSupportForm()" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="support-form-title">
+  <div class="support-form-card">
+    <button class="support-form-close" onclick="closeSupportForm()" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    <div class="support-form-header">
+      <i class="fa-brands fa-whatsapp"></i>
+      <h2 id="support-form-title">H4SX Support</h2>
+    </div>
+    <p class="support-form-description">Hubungi kami dengan isu atau pertanyaan anda. Mesej akan dihanta terus ke WhatsApp support kami.</p>
+    <div class="support-form-content">
+      <form id="support-form" onsubmit="submitSupportForm(event)">
+        <div class="support-form-group">
+          <label for="support-name">Nama<span class="required">*</span></label>
+          <input id="support-name" type="text" maxlength="60" autocomplete="name" placeholder="Nama anda" required>
+        </div>
+        <div class="support-form-group">
+          <label for="support-phone">Nomor WhatsApp<span class="required">*</span></label>
+          <input id="support-phone" type="tel" maxlength="24" inputmode="tel" autocomplete="tel" placeholder="Contoh: 0123456789" required>
+        </div>
+        <div class="support-form-group">
+          <label for="support-issue-type">Jenis Isu<span class="required">*</span></label>
+          <select id="support-issue-type" required>
+            <option value="">-- Pilih Jenis Isu --</option>
+          </select>
+        </div>
+        <div class="support-form-group">
+          <label for="support-description">Pernyataan Masalah<span class="required">*</span></label>
+          <textarea id="support-description" maxlength="500" placeholder="Terangkan masalah atau pertanyaan anda dengan jelas..." required></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="support-form-actions">
+      <button type="button" class="btn-cancel" onclick="closeSupportForm()">Batal</button>
+      <button type="button" class="btn-submit" onclick="submitSupportForm(event)"><i class="fa-solid fa-paper-plane"></i> Hantar ke WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUPPORT CONFIRMATION DIALOG -->
+<div id="support-confirm-dialog" class="order-modal" onclick="if(event.target===this)closeSupportConfirmation()" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="support-confirm-title">
+  <div class="support-confirm-card">
+    <div class="support-confirm-header">
+      <i class="fa-solid fa-check-circle"></i>
+      <h3 id="support-confirm-title">Semak Mesej Anda</h3>
+    </div>
+    <div class="support-confirm-text" id="support-confirm-text"></div>
+    <div class="support-confirm-actions">
+      <button type="button" class="btn-back" id="support-confirm-cancel"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+      <button type="button" class="btn-confirm" id="support-confirm-send"><i class="fa-brands fa-whatsapp"></i> Hantar ke WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
 <div id="reviews-coach" class="rv-coach" hidden aria-hidden="true">
   <div class="rv-coach-bubble" role="dialog" aria-label="Notis petunjuk">
     <button type="button" class="rv-coach-close" onclick="markCoachSeen()" aria-label="Tutup petunjuk">&times;</button>
@@ -1208,6 +1264,7 @@
 <script defer src="/closure-message.js?v=safe-links-20261022"></script>
 <script src="review/review-presentation.js?v=review-identity-fix-20261110"></script>
 <script defer src="app.js?v=changelog-v64-20261115"></script>
+<script defer src="support-form.js?v=initial-launch-20261117"></script>
 
 <script defer src="/review-edit-client.js?v=review-reactivation-20261018"></script>
 </body>
