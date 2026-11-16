@@ -1,11 +1,20 @@
 const CHANGELOG_DATA = {
-  title: 'Pembelian Terkini Lebih Kemas',
-  subtitle: 'Popup pembelian kini terapung dan berpusing satu demi satu, jelas dibaca di phone dan PC, serta panel admin lebih lancar di PC.',
-  date: '15 November 2026',
-  releasedAt: '2026-11-15T00:00:00+08:00',
-  time: 'Update pelanggan',
-  version: 'v6.4',
+  title: 'WhatsApp Support Form + Pembelian Terkini Lebih Kemas',
+  subtitle: 'Pesan support WhatsApp kini berteks lebih cantik dengan formatting bold yang betul, serta popup pembelian terapung dan berpusing satu demi satu.',
+  date: '17 November 2026',
+  releasedAt: '2026-11-17T00:00:00+08:00',
+  time: 'Update pelanggan & sokongan',
+  version: 'v6.5',
   sections: [
+    {
+      type: 'added',
+      title: 'Borang sokongan WhatsApp',
+      items: [
+        { icon: 'fa-whatsapp', text: '<strong>Pesan support dengan formatting cantik</strong><br>Keseluruhan baris label dan nilai kini dibold sekaligus untuk paparan lebih jelas di WhatsApp.' },
+        { icon: 'fa-mobile-screen', text: '<strong>Jarak baris lebih bersih</strong><br>Setiap medan sokongan dipisah dengan ruang yang cukup untuk mudah dibaca dalam perbualan WhatsApp.' },
+        { icon: 'fa-lock', text: '<strong>Pengesahan pelanggan terintegrasi</strong><br>Nombor telefon pelanggan disertakan dalam setiap pesan untuk pengesahan identiti pasukan sokongan.' }
+      ]
+    },
     {
       type: 'added',
       title: 'Popup pembelian',
@@ -17,8 +26,9 @@ const CHANGELOG_DATA = {
     },
     {
       type: 'fixed',
-      title: 'Prestasi admin',
+      title: 'Mesej dan prestasi admin',
       items: [
+        { icon: 'fa-message', text: '<strong>Format pesan WhatsApp lebih konsisten</strong><br>Asterisk kini membungkus keseluruhan baris (label + nilai) untuk rendering bold yang betul dalam WhatsApp.' },
         { icon: 'fa-gauge-high', text: '<strong>Panel admin lebih lancar di PC</strong><br>Kesan blur skrin penuh dibuang dan animasi halaman dijeda semasa panel admin dibuka.' },
         { icon: 'fa-magnifying-glass', text: '<strong>Carian produk dan game lebih pantas</strong><br>Senarai dikemas kini selepas anda berhenti menaip, bukan pada setiap huruf.' }
       ]
